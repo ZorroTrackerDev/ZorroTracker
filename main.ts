@@ -1,30 +1,33 @@
-const { app, BrowserWindow } = require("electron");
-const path = require("path");
+import electron from "electron";
+import path from "path";
 
 function createWindow () {
-	const win = new BrowserWindow({
+	const win = new electron.BrowserWindow({
 		width: 800,
 		height: 600,
+		frame: false,
 		webPreferences: {
-			preload: path.join(__dirname, "preload.js"),
+			preload: path.join(__dirname, "ui/main.preload.js"),
+			contextIsolation: false,		// NOTE: possible security risk. Need to be careful about how to access anything outside the app ecosystem.
+			enableRemoteModule: true,
 		},
 	});
   
 	win.loadFile("ui/main.html");
 }
   
-app.whenReady().then(() => {
+electron.app.whenReady().then(() => {
 	createWindow()
   
-	app.on("activate", () => {
-		if (BrowserWindow.getAllWindows().length === 0) {
+	electron.app.on("activate", () => {
+		if (electron.BrowserWindow.getAllWindows().length === 0) {
 			createWindow();
 		}
 	});
 });
   
-app.on("window-all-closed", () => {
+electron.app.on("window-all-closed", () => {
 	if (process.platform !== "darwin") {
-		app.quit();
+		electron.app.quit();
 	}
 });

@@ -1,5 +1,5 @@
 {
-    "watchFolder": "ui/less",
-    "outputFolder": "build/ui/less",
+    "watchFolder": "ui",
+    "outputFolder": "build/ui",
     "sourceMap": true
 }

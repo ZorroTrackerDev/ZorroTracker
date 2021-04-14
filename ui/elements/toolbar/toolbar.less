@@ -1,0 +1,144 @@
+// global: do not allow user selection. Must allow per-element! Below, a few elements are allowed by default
+html {
+	user-select: none;
+	-webkit-app-region: no-drag;
+	background: @toolbarbg;
+}
+
+input {
+	user-select: text;
+}
+
+.__main__ {
+	left: 0;
+	right: 0;
+	position: absolute;
+}
+
+/* content wrapper */
+#main_content {
+	.__main__();
+	-webkit-app-region: no-drag;
+	overflow: hidden;
+	top: @height;
+	bottom: 0;
+	background: #4b4b4b;
+	overflow: hidden;
+}
+
+// height of the toolbar
+@height: 24px;
+@dragh: 4px;
+@toolbarbg: #222222;
+
+/* toolbar wrapper */
+#main_toolbar {
+	.__main__();
+	top: 0;
+	bottom: @height - @dragh;
+	background: @toolbarbg;
+	-webkit-app-region: drag;
+	margin-top: @dragh;		// hack! this allows dragging on the sides of the content, because apparently making something -webkit-app-region: drag; borks that! great.
+}
+
+/* helper classes */
+.__menus__ {
+	position: relative;
+	height: @height;
+	display: inline-block;
+	-webkit-app-region: no-drag;
+	margin-top: -@dragh;
+}
+
+.__items__ {
+	.__button__();
+	height: @height;
+	display: inline-block;
+	position: relative;
+	background: #00000000;
+}
+
+.__button__ {
+	cursor: pointer;
+	transition: background-color ease .2s;
+
+	&:hover {
+		background: #3b3b3b;
+	}
+}
+
+/* classes for the dropdown buttons */
+.main_toolbar_dropdown {
+	.__menus__();
+	float: left;
+	color: #c4c4c4;
+}
+
+.main_toolbar_dropdown_text {
+	.__items__();
+	padding: 0 8px;
+	font-size: 18px;
+}
+
+/* classes for the dropdown menus */
+@dropdown_border: 2px solid #575757;
+@dropdown_corners: 7px;
+
+.main_toolbar_dropdown_content {
+	position: absolute;
+	top: @height;
+	transition: height ease .3s;
+	z-index: 99000;
+	overflow: hidden;
+	transform-origin: top;
+
+	&:not(._active) {
+		height: 0 !important;
+	}
+}
+
+.main_toolbar_dropdown_item {
+	background: #252525;
+	font-size: 20px;
+	width: 150px;
+	text-align: left;
+	padding: 4px 8px 4px 32px;
+	height: 22px;			// notice: this value is used in toolbar.ts! Remember to keep in sync
+	border: @dropdown_border;
+	border-top: none;
+	.__button__();
+
+	&:last-child {
+		border-bottom-left-radius: @dropdown_corners;
+		border-bottom-right-radius: @dropdown_corners;
+	}
+}
+
+/* classes for the buttons (minimize, maximize, close) */
+#main_toolbar_controls {
+	.__menus__();
+	float: right;
+	color: white;
+	z-index: 99001;
+
+	&> div {
+		width: @height * 1.5;
+		.__items__();
+	
+		/* the x-button should be red */
+		&:last-child:hover {
+			background: #9b3636;
+		}
+
+		/* this holds the actual text for the buttons */
+		&> span {
+			position: absolute;
+			margin-top: -5px;
+			height: @height;
+			width: @height * 1.5;
+			font-size: 26px;
+			text-align: center;
+			pointer-events: none;
+		}
+	}
+}

@@ -1,12 +1,14 @@
 {
   "name": "zorrotracker",
   "version": "0.0.0",
-  "description": "Sega Mega Drive/Genesis music tracker program based on Electron",
+  "description": "Sega Mega Drive/Genesis music tracker program based on Electron. Project code is created by Aurora Fields, funded and adviced by: Silverhand, acrouzet, Nat The Porcupine.",
   "main": "build/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "less": "less-watch-compiler",
-    "start": "npx tsc & copyfiles -e \"./node_modules/**/*.*\" -e \"./build/**/*.*\" \"./**/*.html\" build & electron build/main.js"
+    "copy": "copyfiles -e \"./node_modules/**/*.*\" -e \"./build/**/*.*\" \"./**/*.html\" build",
+    "electron": "electron build/main.js",
+    "start": "npx tsc & npm run copy & npm run electron"
   },
   "repository": {
     "type": "git",
@@ -18,13 +20,11 @@
     "url": "https://github.com/ZorroTrackerDev/ZorroTracker/issues"
   },
   "homepage": "https://github.com/ZorroTrackerDev/ZorroTracker#readme",
-  "dependencies": {
-    "electron": "^12.0.4"
-  },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.22.0",
     "@typescript-eslint/parser": "^4.22.0",
     "copyfiles": "^2.4.1",
+    "electron": "^12.0.4",
     "eslint": "^7.24.0",
     "less": "^4.1.1",
     "less-watch-compiler": "^1.14.6",

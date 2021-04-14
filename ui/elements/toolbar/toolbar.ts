@@ -1,4 +1,4 @@
-const HEIGHT = 22+4+4;		// also defined in toolbar.less. Make sure to keep these in sync!
+const HEIGHT = 18+4+4;		// also defined in toolbar.less. Make sure to keep these in sync!
 
 window.onload = function() {
 	/** code to generate the dropdown menus, using the "menus" variable.

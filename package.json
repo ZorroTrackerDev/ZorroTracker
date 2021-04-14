@@ -1,33 +1,91 @@
 {
-  "name": "zorrotracker",
-  "version": "0.0.0",
-  "description": "Sega Mega Drive/Genesis music tracker program based on Electron. Project code is created by Aurora Fields, funded and adviced by: Silverhand, acrouzet, Nat The Porcupine.",
-  "main": "build/main.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "less": "less-watch-compiler",
-    "copy": "copyfiles -e \"./node_modules/**/*.*\" -e \"./build/**/*.*\" \"./**/*.html\" build",
-    "electron": "electron build/main.js",
-    "start": "npx tsc & npm run copy & npm run electron"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ZorroTrackerDev/ZorroTracker.git"
-  },
-  "author": "Aurora Fields",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/ZorroTrackerDev/ZorroTracker/issues"
-  },
-  "homepage": "https://github.com/ZorroTrackerDev/ZorroTracker#readme",
-  "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^4.22.0",
-    "@typescript-eslint/parser": "^4.22.0",
-    "copyfiles": "^2.4.1",
-    "electron": "^12.0.4",
-    "eslint": "^7.24.0",
-    "less": "^4.1.1",
-    "less-watch-compiler": "^1.14.6",
-    "typescript": "^4.2.4"
-  }
+	"name": "zorrotracker",
+	"version": "0.0.0",
+	"description": "Sega Mega Drive/Genesis music tracker program based on Electron. Project code is created by Aurora Fields, funded and adviced by: Silverhand, acrouzet, Nat The Porcupine.",
+	"main": "build/main.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"less": "less-watch-compiler",
+		"copy": "copyfiles -e \"./node_modules/**/*.*\" -e \"./dist/**/*.*\" -e \"./build/**/*.*\" \"./**/*.json5\" \"./**/*.html\" build",
+		"electron": "electron build/main.js",
+		"start": "npx tsc & npm run copy & npm run electron",
+		"compile": "electron-webpack",
+		"pack": "npx tsc & npm run copy & electron-builder --dir",
+		"dist": "npx tsc & npm run copy & electron-builder"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/ZorroTrackerDev/ZorroTracker.git"
+	},
+	"author": "Aurora Fields",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/ZorroTrackerDev/ZorroTracker/issues"
+	},
+	"homepage": "https://github.com/ZorroTrackerDev/ZorroTracker#readme",
+	"devDependencies": {
+		"@typescript-eslint/eslint-plugin": "^4.22.0",
+		"@typescript-eslint/parser": "^4.22.0",
+		"copyfiles": "^2.4.1",
+		"electron": "^12.0.4",
+		"electron-builder": "^22.10.5",
+		"eslint": "^7.24.0",
+		"less": "^4.1.1",
+		"less-watch-compiler": "^1.14.6",
+		"typescript": "^4.2.4"
+	},
+	"dependencies": {
+		"json5": "^2.2.0"
+	},
+	"build": {
+		"appId": "dev.zorrotracker",
+		"productName": "ZorroTracker",
+		"directories": {
+			"output": "./dist"
+		},
+		"files": [
+			"./build/**/*",
+			"./node_modules/**/*",
+			"./package.json",
+			"*.js",
+			"*.css",
+			"*.json5",
+			"*.html"
+		],
+		"extraFiles": [
+			"./settings/**/*"
+		],
+		"win": {
+			"target": [
+				{
+					"target": "nsis",
+					"arch": [ "x64", "ia32" ]
+				},
+				{
+					"target": "zip",
+					"arch": [ "x64", "ia32" ]
+				}
+			]
+		},
+		"mac": {
+			"target": [
+				{
+					"target": "default",
+					"arch": [ "x64", "ia32", "arm64" ]
+				},
+				{
+					"target": "tar.gz",
+					"arch": [ "x64", "ia32", "arm64" ]
+				}
+			]
+		}
+	},
+	"linux": {
+		"target": [
+			{
+				"target": "tar.gz",
+				"arch": [ "x64", "ia32", "arm64" ]
+			}
+		]
+	}
 }

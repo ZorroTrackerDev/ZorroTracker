@@ -5,7 +5,10 @@ function createWindow () {
 	const win = new electron.BrowserWindow({
 		width: 800,
 		height: 600,
+		minWidth: 400,
+		minHeight: 400,
 		frame: false,
+
 		webPreferences: {
 			preload: path.join(__dirname, "ui/main.preload.js"),
 			contextIsolation: false,		// NOTE: possible security risk. Need to be careful about how to access anything outside the app ecosystem.
@@ -13,7 +16,8 @@ function createWindow () {
 		},
 	});
   
-	win.loadFile("ui/main.html");
+	win.removeMenu();			// remove default shortcuts
+	win.loadFile(path.join(__dirname, "./ui/main.html"));
 }
   
 electron.app.whenReady().then(() => {

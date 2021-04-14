@@ -1,5 +1,8 @@
-const { remote, webFrame, shell } = require('electron');
+import { remote, webFrame, shell } from "electron";
 webFrame.setZoomFactor(1);		// testing only
+
+/* load shortcuts handler file */
+import "./misc/shortcuts";
 
 window.preload = {
 	/* close the current window */

@@ -27,7 +27,7 @@ input {
 }
 
 // height of the toolbar
-@height: 24px;
+@height: 20px;
 @dragh: 4px;
 @toolbarbg: #222222;
 
@@ -39,6 +39,7 @@ input {
 	background: @toolbarbg;
 	-webkit-app-region: drag;
 	margin-top: @dragh;		// hack! this allows dragging on the sides of the content, because apparently making something -webkit-app-region: drag; borks that! great.
+	font-family: 'Noto Sans', sans-serif;
 }
 
 /* helper classes */
@@ -77,7 +78,7 @@ input {
 .main_toolbar_dropdown_text {
 	.__items__();
 	padding: 0 8px;
-	font-size: 18px;
+	font-size: 15px;
 }
 
 /* classes for the dropdown menus */
@@ -99,11 +100,11 @@ input {
 
 .main_toolbar_dropdown_item {
 	background: #252525;
-	font-size: 20px;
+	font-size: 16px;
 	width: 150px;
 	text-align: left;
 	padding: 4px 8px 4px 32px;
-	height: 22px;			// notice: this value is used in toolbar.ts! Remember to keep in sync
+	height: 18px;			// notice: this value is used in toolbar.ts! Remember to keep in sync
 	border: @dropdown_border;
 	border-top: none;
 	.__button__();
@@ -133,10 +134,9 @@ input {
 		/* this holds the actual text for the buttons */
 		&> span {
 			position: absolute;
-			margin-top: -5px;
-			height: @height;
+			margin-top: -8px;
 			width: @height * 1.5;
-			font-size: 26px;
+			font-size: 22px;
 			text-align: center;
 			pointer-events: none;
 		}

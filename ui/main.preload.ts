@@ -29,6 +29,8 @@ window.preload = {
 
 	/* function to open an URL in an external browser. DO NOT open in Electron please! */
 	openInBrowser: function(url:string){
-		shell.openExternal(url);
+		shell.openExternal(url).catch(() => {
+			// TODO: Do not ignore error
+		});
 	},
 }

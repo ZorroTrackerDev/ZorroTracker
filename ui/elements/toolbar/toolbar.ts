@@ -1,7 +1,8 @@
 const HEIGHT = 18+4+4;		// also defined in toolbar.less. Make sure to keep these in sync!
 
 window.onload = function() {
-	/** code to generate the dropdown menus, using the "menus" variable.
+	/*
+	 * code to generate the dropdown menus, using the "menus" variable.
 	 * format is as follows:
 	 * <div class='main_toolbar_dropdown' onclick='[toggle dropdown menu]'>
 	 *     <div class='main_toolbar_dropdown_text'>[item name]</div>
@@ -11,27 +12,29 @@ window.onload = function() {
 	 *        </div>
 	 *     </div>
 	 * </div>
-	 * */
+	 */
 	let data = "";
 
 	for(const x of Object.keys(menus)) {
 		data += "<div class='main_toolbar_dropdown' onclick='window.toolbarFunc.dropdown(this.children[1], event)'>";
 		data += "<div class='main_toolbar_dropdown_text'>"+ x +"</div>";
 		data += "<div class='main_toolbar_dropdown_content' style='height:"+ ((Object.keys(menus[x]).length * HEIGHT) + 5) +"px'>";
-		
+
 		for(const y of Object.keys(menus[x])) {
-			data += "<div class='main_toolbar_dropdown_item' onclick='"+ menus[x][y] +";window.toolbarFunc.dropdown(this.parentNode, event)'>"+ y +"</div>";
+			data += "<div class='main_toolbar_dropdown_item' onclick='"+
+				menus[x][y] +";window.toolbarFunc.dropdown(this.parentNode, event)'>"+ y +"</div>";
 		}
 
 		data += "</div></div>";
 	}
 
-	/** code to generate the window buttons, using the "buttons" variable.
+	/*
+	 *  code to generate the window buttons, using the "buttons" variable.
 	 * format is as follows:
 	 * <div class='main_toolbar_controls'>
 	 *     <div onclick='[run function in item]'>[item name]</div>
 	 * </div>
-	 * */
+	 */
 	data += "<div id='main_toolbar_controls'>";
 	for(const x of Object.keys(buttons)) {
 		data += "<div onclick='"+ buttons[x] +"'><span>"+ x +"</span></div>";
@@ -41,7 +44,9 @@ window.onload = function() {
 
 	// set as toolbar content
 	const toolbar = document.getElementById("main_toolbar");
-	toolbar && (toolbar.innerHTML = data);
+	if(toolbar){
+		toolbar.innerHTML = data;
+	}
 }
 
 // helper function to hide all dropdown menus when anything outside of it is clicked, or a dropdown was activated
@@ -90,11 +95,12 @@ window.toolbarFunc = {
 		return false;
 	},
 	openGithub: () => {
-		window.preload.openInBrowser('https://github.com/ZorroTrackerDev/ZorroTracker');
-	}
+		window.preload.openInBrowser("https://github.com/ZorroTrackerDev/ZorroTracker");
+	},
 };
 
-/** this defines the window menu. Each item will be added to the top row.
+/*
+ * this defines the window menu. Each item will be added to the top row.
  * top-level item = item in the toolbar
  * second-level item = item that will appear in the dropdown menu for the toolbar item
  * the code inside second-level item will appear as the onclick handler
@@ -111,7 +117,9 @@ const menus: { [key: string]: { [key: string]: string|{ [key: string]: string } 
 	},
 };
 
-/** this defines the window buttons. These are just to control the program, just like windows programs are (sorry linux and mac users - this will be sorted later!)
+/*
+ * this defines the window buttons. These are just to control the program, just like windows programs are
+ * (sorry linux and mac users - this will be sorted later!)
  * each entry is just the name (icon) of the entry, and the value is the onclick handler code
  */
 const buttons: { [key: string]: string } = {

@@ -2,7 +2,8 @@ import json5 from "json5";
 import fs from "fs";
 import { remote } from "electron";
 
-/* this is a translation layer array that converts your keypresses into the appropriate shortcut "codes".
+/*
+ * this is a translation layer array that converts your keypresses into the appropriate shortcut "codes".
  * "shortcutcodes" contains the actual functions that will be ran when a specific code is found. If the code is invalid,
  * then it is logged to the console and ignored. This array has entry points for the different types of combinations of modifier keys.
  * each modifier key array itself also has arrays of key names that are registered.
@@ -17,20 +18,24 @@ const keymap:{ [key:string]:{ [key:string]:string }} = {
 	shiftalt: {},
 };
 
-/* this is the array containing functions to deal with shortcuts.
+/*
+ * this is the array containing functions to deal with shortcuts.
  * each shortcut is given its own "code" for sorts. shortcuts.json5 uses these codes to define shortcut keys.
  * this array only shows the code, used by "keymap" and shortcuts.json5 to run them.
  */
-const shortcutcodes:{ [key:string]:(e:Event) => any|void } = {
+const shortcutcodes:{ [key:string]:(e:Event) => unknown|void } = {
 
 	/* shortcut for opening chrome dev tools */
-	"ui.opendevtools": (e:Event) => {
+	"ui.opendevtools": () => {
 		remote.webContents.getFocusedWebContents().toggleDevTools();
 	},
 
 	/* shortcut for inspect element */
-	"ui.inspectelement": (e:Event) => {
-		/* because Electron, we have to actually get the mouse position relative to the SCREEN rather than the current window. I don't know why but oh well */
+	"ui.inspectelement": () => {
+		/*
+		 * because Electron, we have to actually get the mouse position relative to the SCREEN rather than the current window.
+		 * I don't know why but oh well
+		 */
 		const bounds = remote.getCurrentWindow().getContentBounds();
 		const mouse = remote.screen.getCursorScreenPoint();
 
@@ -47,9 +52,9 @@ const shortcutcodes:{ [key:string]:(e:Event) => any|void } = {
 		remote.webContents.getFocusedWebContents().inspectElement(-1, -1);
 	},
 
-	"ui.maximize": (e:Event) => {
+	"ui.maximize": () => {
 		window.preload.maximize();
-	}
+	},
 };
 
 /**
@@ -97,8 +102,10 @@ document.addEventListener("keyup", (e) => {
  */
 fs.readFile("settings/shortcuts.json5", "utf8", (err, data) => {
 	if(err) {
-		// in case of an error, quickly abandon this idea
-		// TODO: Also let the user know.
+		/*
+		 * in case of an error, quickly abandon this idea
+		 * TODO: Also let the user know.
+		 */
 		console.log("!!! FAILED TO LOAD shortcuts.json5!!!\nHere is the error:\n\n", err);
 		return;
 	}
@@ -111,10 +118,12 @@ fs.readFile("settings/shortcuts.json5", "utf8", (err, data) => {
 			for(const shortcut of input[command]) {
 				// check if modifier keys are applied
 				let ctrl = false, alt = false, shift = false, button:string|null = null;
-				
+
 				for(const key of shortcut.split("+")) {
-					// this switch-case will either enable some flags or set the key
-					// this is lazy and allows things to be set multiple times.
+					/*
+					 * this switch-case will either enable some flags or set the key
+					 * this is lazy and allows things to be set multiple times.
+					 */
 					switch(key.toLowerCase()) {
 						case "ctrl": ctrl = true; break;
 						case "shift": shift = true; break;
@@ -122,13 +131,13 @@ fs.readFile("settings/shortcuts.json5", "utf8", (err, data) => {
 						default: button = key; break;
 					}
 				}
-	
+
 				// make sure "button" is not null. Will skip this check if so
 				if(button === null) {
 					console.log("!!! FAILED TO PARSE shortcuts.json5!!!\nInvalid key combo for "+ command +": "+ shortcut);
 					continue;
 				}
-	
+
 				// grab the array name for these key combos
 				const arrayname = getKeymapName(ctrl, shift, alt);
 
@@ -144,8 +153,10 @@ fs.readFile("settings/shortcuts.json5", "utf8", (err, data) => {
 		}
 
 	} catch(ex) {
-		// in case of an error, quickly abandon this idea
-		// TODO: Also let the user know.
+		/*
+		 * in case of an error, quickly abandon this idea
+		 * TODO: Also let the user know.
+		 */
 		console.log("!!! FAILED TO PARSE shortcuts.json5!!!\nHere is the error:\n\n", ex);
 	}
 });

@@ -8,7 +8,7 @@ function createWindow () {
 		height: 600,
 		minWidth: 400,
 		minHeight: 400,
-		frame: false,
+		frame: process.env.NODE_ENV === "test",
 
 		webPreferences: {
 			preload: path.join(__dirname, "ui/main.preload.js"),
@@ -16,6 +16,11 @@ function createWindow () {
 			enableRemoteModule: true,
 		},
 	});
+
+	// TEST: remove dev tools! They're evil!
+	if (process.env.NODE_ENV === "test") {
+		win.webContents.closeDevTools();
+	}
 
 	win.removeMenu();			// remove default shortcuts
 	win.loadFile(path.join(__dirname, "./ui/main.html")).catch(() => {

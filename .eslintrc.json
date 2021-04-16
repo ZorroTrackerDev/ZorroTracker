@@ -93,7 +93,7 @@
 		"prefer-object-spread": "error",
 		"quotes": ["warn", "double"],
 		"no-var":"error",
-		"multiline-comment-style": ["error", "starred-block"],
+		"multiline-comment-style": ["warn", "starred-block"],
 		"@typescript-eslint/no-empty-function": ["off"],
 		"@typescript-eslint/no-explicit-any": "warn",
 		"@typescript-eslint/ban-ts-comment": "off",

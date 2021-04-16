@@ -1,18 +1,26 @@
 {
 	"name": "zorrotracker",
-	"version": "0.0.0",
+	"version": "0.0.0-alpha",
 	"description": "Sega Mega Drive/Genesis music tracker program based on Electron. Project code is created by Aurora Fields, funded and adviced by: Silverhand, acrouzet, Nat The Porcupine.",
 	"main": "build/main.js",
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1",
+		"init": "npm run build",
+		"test": "npm run build && jest",
 		"lint": "eslint . --ext .ts",
-		"less": "less-watch-compiler",
-		"copy": "copyfiles -e \"./node_modules/**/*.*\" -e \"./dist/**/*.*\" -e \"./build/**/*.*\" \"./**/*.json5\" \"./**/*.html\" build",
+
+		"less-compile": "compile-less -d ui -o build/ui",
+		"less-watch": "less-watch-compiler",
+		"tsc": "npx tsc -p tsconfig.build.json",
+		"copy": "copyfiles -e \"./tst/**/*.*\" -e \"./node_modules/**/*.*\" -e \"./dist/**/*.*\" -e \"./build/**/*.*\" \"./**/*.json5\" \"./**/*.html\" build",
+		"build": "npm run tsc & npm run less-compile & npm run copy",
+
 		"electron": "electron build/main.js",
-		"start": "npx tsc & npm run copy & npm run electron",
-		"compile": "electron-webpack",
-		"pack": "npx tsc & npm run copy & electron-builder --dir",
-		"dist": "npx tsc & npm run copy & electron-builder"
+		"start": "npm run build & npm run electron",
+		"pack": "npm run build & electron-builder --dir",
+
+		"travis_init": "npm run build",
+		"travis_test": "jest",
+		"travis_deploy": "electron-builder build --publish never"
 	},
 	"repository": {
 		"type": "git",
@@ -25,22 +33,44 @@
 	},
 	"homepage": "https://github.com/ZorroTrackerDev/ZorroTracker#readme",
 	"devDependencies": {
+		"@types/jest": "^26.0.22",
 		"@typescript-eslint/eslint-plugin": "^4.22.0",
 		"@typescript-eslint/parser": "^4.22.0",
+		"chromedriver": "^89.0.0",
+		"compile-less-cli": "^1.7.0",
 		"copyfiles": "^2.4.1",
 		"electron": "^12.0.4",
 		"electron-builder": "^22.10.5",
 		"eslint": "^7.24.0",
+		"jest": "^26.6.3",
 		"less": "^4.1.1",
 		"less-watch-compiler": "^1.14.6",
+		"spectron": "^14.0.0",
+		"ts-jest": "^26.5.4",
 		"typescript": "^4.2.4"
 	},
 	"dependencies": {
 		"json5": "^2.2.0"
 	},
+	"jest": {
+		"verbose": true,
+		"preset": "ts-jest",
+		"testEnvironment": "node",
+		"testMatch": [
+			"**/tests/**/*.[jt]s?(x)",
+			"**/?(*.)+(spec|test).[jt]s?(x)"
+		],
+		"modulePathIgnorePatterns": [
+			"/tests/_base.ts"
+		],
+		"clearMocks": true,
+		"coverageDirectory": "coverage",
+		"coverageProvider": "v8"
+	},
 	"build": {
 		"appId": "dev.zorrotracker",
 		"productName": "ZorroTracker",
+		"generateUpdatesFilesForAllChannels": true,
 		"directories": {
 			"output": "./dist"
 		},
@@ -56,27 +86,27 @@
 		"extraFiles": [
 			"./settings/**/*"
 		],
+		"artifactName": "${productName}-${os}-${arch}-${buildVersion}.${ext}",
 		"win": {
 			"target": [
 				{
-					"target": "nsis",
-					"arch": [ "x64", "ia32" ]
-				},
-				{
-					"target": "zip",
-					"arch": [ "x64", "ia32" ]
+					"target": "tar.gz",
+					"arch": [
+						"x64",
+						"ia32"
+					]
 				}
 			]
 		},
 		"mac": {
 			"target": [
 				{
-					"target": "default",
-					"arch": [ "x64", "ia32", "arm64" ]
-				},
-				{
 					"target": "tar.gz",
-					"arch": [ "x64", "ia32", "arm64" ]
+					"arch": [
+						"x64",
+						"ia32",
+						"arm64"
+					]
 				}
 			]
 		}
@@ -85,7 +115,11 @@
 		"target": [
 			{
 				"target": "tar.gz",
-				"arch": [ "x64", "ia32", "arm64" ]
+				"arch": [
+					"x64",
+					"ia32",
+					"arm64"
+				]
 			}
 		]
 	}

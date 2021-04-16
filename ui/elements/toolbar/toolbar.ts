@@ -1,129 +1,207 @@
 const HEIGHT = 18+4+4;		// also defined in toolbar.less. Make sure to keep these in sync!
 
-window.onload = function() {
-	/*
-	 * code to generate the dropdown menus, using the "menus" variable.
-	 * format is as follows:
-	 * <div class='main_toolbar_dropdown' onclick='[toggle dropdown menu]'>
-	 *     <div class='main_toolbar_dropdown_text'>[item name]</div>
-	 *     <div class='main_toolbar_dropdown_content' style='height:[height of the menu ((number of items * HEIGHT) + 5)]'>
-	 *         <div class='main_toolbar_dropdown_item' onclick='[run function in item] + [toggle dropdown menu]'>
-	 *             [item name]
-	 *        </div>
-	 *     </div>
-	 * </div>
-	 */
-	let data = "";
-
-	for(const x of Object.keys(menus)) {
-		data += "<div class='main_toolbar_dropdown' onclick='window.toolbarFunc.dropdown(this.children[1], event)'>";
-		data += "<div class='main_toolbar_dropdown_text'>"+ x +"</div>";
-		data += "<div class='main_toolbar_dropdown_content' style='height:"+ ((Object.keys(menus[x]).length * HEIGHT) + 5) +"px'>";
-
-		for(const y of Object.keys(menus[x])) {
-			data += "<div class='main_toolbar_dropdown_item' onclick='"+
-				menus[x][y] +";window.toolbarFunc.dropdown(this.parentNode, event)'>"+ y +"</div>";
-		}
-
-		data += "</div></div>";
-	}
-
-	/*
-	 *  code to generate the window buttons, using the "buttons" variable.
-	 * format is as follows:
-	 * <div class='main_toolbar_controls'>
-	 *     <div onclick='[run function in item]'>[item name]</div>
-	 * </div>
-	 */
-	data += "<div id='main_toolbar_controls'>";
-	for(const x of Object.keys(buttons)) {
-		data += "<div onclick='"+ buttons[x] +"'><span>"+ x +"</span></div>";
-	}
-
-	data += "</div>";
-
-	// set as toolbar content
-	const toolbar = document.getElementById("main_toolbar");
-	if(toolbar){
-		toolbar.innerHTML = data;
-	}
-}
-
-// helper function to hide all dropdown menus when anything outside of it is clicked, or a dropdown was activated
-const _c = "_active";
-
-function hideAll(e?:Event) {
-	e?.preventDefault();
-
-	// deactivate all other dropdown menus
-	const x = document.getElementById("main_toolbar")?.children;
-
-	for(let i = 0;i < (x ? x.length : 0);i ++){
-		if((x as HTMLCollection)[i].classList.contains("main_toolbar_dropdown")) {
-			// remove the _active class (even if it doesn't have that)
-			(x as HTMLCollection)[i].children[1].classList.remove(_c);
-		}
-	}
-
-	// remove the hideall event handler
-	document.removeEventListener("click", hideAll);
-}
-
-// add helper functions here
-window.toolbarFunc = {
-	dropdown: (element:Element, e:Event) => {
-		// DO NOT call the document click handler this time
-		e.preventDefault();
-		e.stopPropagation();
-
-		if(element.classList.contains(_c)) {
-			// menu already active: deactivate
-			element.classList.remove(_c);
-
-			// remove the hideall event handler
-			document.removeEventListener("click", hideAll);
-
-		} else {
-			// menu not active: activate
-			hideAll();
-			element.classList.add(_c);
-
-			// add the hideall event handler
-			document.addEventListener("click", hideAll);
-		}
-
-		return false;
-	},
-	openGithub: () => {
-		window.preload.openInBrowser("https://github.com/ZorroTrackerDev/ZorroTracker");
-	},
-};
-
 /*
  * this defines the window menu. Each item will be added to the top row.
- * top-level item = item in the toolbar
- * second-level item = item that will appear in the dropdown menu for the toolbar item
- * the code inside second-level item will appear as the onclick handler
  */
-const menus: { [key: string]: { [key: string]: string|{ [key: string]: string } }; } = {
+type ToolbarMenu = { [key: string]: ToolbarMenuEntry };
+type ToolbarMenuEntry = { enabled?:boolean, action?: ToolbarMenuAction, child?: ToolbarMenu };
+type ToolbarMenuAction = string;
+
+const defaultMenu:ToolbarMenu = {
 	"File": {
-		"Exit": "window.preload.close()",
+		enabled: true,
+		child: {
+			"Exit": {
+				enabled: true,
+				action: "window.preload.close()",
+			},
+		},
 	},
 	"Edit": {
+		enabled: false,
+		child: {
 
+		},
 	},
 	"About": {
-		"Github": "window.toolbarFunc.openGithub()",
+		enabled: true,
+		child: {
+			"Github": {
+				enabled: true,
+				action: "window.toolbarFunc.openGithub()",
+			},
+		},
 	},
 };
 
 /*
  * this defines the window buttons. These are just to control the program, just like windows programs are
  * (sorry linux and mac users - this will be sorted later!)
- * each entry is just the name (icon) of the entry, and the value is the onclick handler code
  */
-const buttons: { [key: string]: string } = {
-	"-": "window.preload.minimize()",
-	"□": "window.preload.maximize()",
-	"x": "window.preload.close()",
+type WindowButtons = { text: string, action: string }[];
+
+const defaultButtons:WindowButtons = [
+	{
+		text: "-",
+		action: "window.preload.minimize()",
+	},
+	{
+		text: "□",
+		action: "window.preload.maximize()",
+	},
+	{
+		text: "x",
+		action: "window.preload.close()",
+	},
+];
+
+/**
+ * Creates a new toolbar menu and window buttons for the app.
+ *
+ * @param menu the `ToolbarMenu` instance that describes this toolbar.
+ * @param buttons the `WindowButtons` array that contains the buttons to be added.
+ * @returns HTML code that can be appended to the DOM
+ */
+function makeToolbar(menu:ToolbarMenu, buttons:WindowButtons){
+	// generate the window buttons here
+	const buttonHTML = /*html*/`
+		<div id='main_toolbar_controls'>
+			${
+				// convert every button into HTML and then merge it together
+				buttons.map((button) => {
+					return /*html*/`
+						<div onclick='${button.action}'>
+							<span>${button.text}</span>
+						</div>
+					`;
+				}).join("\n")
+			}
+		</div>
+	`;
+
+	// loop for each key in the "menu" object. This code will eventually generate the toolbar menu itself.
+	let menuHTML = "";
+
+	for(const name of Object.keys(menu)) {
+		// height of the dropdown menu in pixels.
+		const height = (Object.keys(menu[name]).length * HEIGHT) + 5;
+
+		menuHTML += /*html*/`
+			<button class='main_toolbar_dropdown' onclick='window.toolbarFunc.handleDropdown(this.children[1], event)'>
+				<div class='main_toolbar_dropdown_text'>${name}</div>
+				<div class='main_toolbar_dropdown_content' style='height:${height}px'>
+					${getDropdownMenu(menu[name])}
+				</div>
+			</button>
+		`;
+	}
+
+	return menuHTML + buttonHTML;
+}
+
+/**
+ * function to generate HTML for a dropdown menu
+ *
+ * @param entry the entry in the `ToolbarMenu` that we want to generate dropdown menu HTML for.
+ */
+function getDropdownMenu(entry:ToolbarMenuEntry) {
+	// TODO: entry.enabled is ignored!
+	let html = "";
+
+	// run through every object in the array. If this field was not specified, use {} as a shorthand for 0 items.
+	for(const name in entry.child ?? {}) {
+		// typescript is not smart enough to notice that we actually can't get an undefined object here.
+		const item = (entry.child as ToolbarMenu)[name];
+
+		html += /* html */`
+			<div class='main_toolbar_dropdown_item' onclick='${
+				// if this has an action, enable the onclick handler, otherwise do nothing
+				item.action ? item.action : ""
+			};window.toolbarFunc.handleDropdown(this.parentNode, event)' >
+				${name}
+			</div>
+		`;
+
+		// TODO: we're ignoring entry.child.child!
+	}
+
+	return html;
+}
+
+// create the default toolbar
+try {
+	// find the DOM element for the toolbar
+	const toolbarDiv = document.getElementById("main_toolbar");
+
+	if(toolbarDiv){
+		// note: only calculating the toolbar if the element exists!
+		toolbarDiv.innerHTML = makeToolbar(defaultMenu, defaultButtons);
+	}
+
+} catch(ex) {
+	// TODO: handle errors
+}
+
+// the classnamve for the active class used by the dropdown menu
+const activeClass = "active";
+
+/**
+ * Hide every dropdown menu currently active
+ *
+ * @param event if this was invoked via `document.onclick`, this will be the event object
+ */
+function hideDropdownMenus(event?:Event) {
+	event?.preventDefault();
+
+	// deactivate all other dropdown menus
+	const menuButtons = document.getElementById("main_toolbar")?.children;
+
+	for(let i = 0;i < (menuButtons ? menuButtons.length : 0);i ++){
+		// Checks if this is a menu button. typescript is not smart enough to realize this can't be null or undefined.
+		if((menuButtons as HTMLCollection)[i].classList.contains("main_toolbar_dropdown")) {
+			// remove the active class (even if it doesn't have that)
+			(menuButtons as HTMLCollection)[i].children[1].classList.remove(activeClass);
+		}
+	}
+
+	// remove the "hideDropdownMenus" event handler from document
+	document.removeEventListener("click", hideDropdownMenus);
+}
+
+// add helper functions here
+window.toolbarFunc = {
+	/**
+	 * handle the dropdown menu interactions correctly.
+	 *
+	 * @param element the target element that will be acted upon
+	 * @param event the event that triggered this interaction
+	 * @returns false
+	 */
+	handleDropdown: (element:Element, event:Event) => {
+		// this prevents the document click handler from getting the click event.
+		event.preventDefault();
+		event.stopPropagation();
+
+		if(element.classList.contains(activeClass)) {
+			// menu is already active, remove the active class
+			element.classList.remove(activeClass);
+
+			// also remove the "hideDropdownMenus" handler from document
+			document.removeEventListener("click", hideDropdownMenus);
+
+		} else {
+			// menu is already active, hide the dropdown menus and add the active class
+			hideDropdownMenus();
+			element.classList.add(activeClass);
+
+			// also add the "hideDropdownMenus" handler to document
+			document.addEventListener("click", hideDropdownMenus);
+		}
+
+		return false;
+	},
+	/** simply opens the project Github page */
+	openGithub: () => {
+		window.preload.openInBrowser("https://github.com/ZorroTrackerDev/ZorroTracker");
+	},
 };

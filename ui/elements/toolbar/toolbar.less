@@ -26,6 +26,9 @@ input {
 	overflow: hidden;
 }
 
+// variables
+@menufont: 'Noto Sans', sans-serif;
+
 // height of the toolbar
 @height: 20px;
 @dragh: 4px;
@@ -39,16 +42,22 @@ input {
 	background: @toolbarbg;
 	-webkit-app-region: drag;
 	margin-top: @dragh;		// hack! this allows dragging on the sides of the content, because apparently making something -webkit-app-region: drag; borks that! great.
-	font-family: 'Noto Sans', sans-serif;
+	font-family: @menufont;
 }
 
 /* helper classes */
+.__nooutline__ {
+    border: none;
+    outline: none;
+}
+
 .__menus__ {
 	position: relative;
 	height: @height;
 	display: inline-block;
 	-webkit-app-region: no-drag;
 	margin-top: -@dragh;
+	.__nooutline__();
 }
 
 .__items__ {
@@ -56,7 +65,7 @@ input {
 	height: @height;
 	display: inline-block;
 	position: relative;
-	background: #00000000;
+	background: transparent;
 }
 
 .__button__ {
@@ -71,15 +80,18 @@ input {
 /* classes for the dropdown buttons */
 .main_toolbar_dropdown {
 	.__menus__();
+	padding: 0;
 	float: left;
 	color: #c4c4c4;
+	background: transparent;
 }
 
 .main_toolbar_dropdown_text {
-	.__items__();
 	padding: 0 8px;
-	font-size: 15px;
+	font: 15px @menufont;
+	.__items__();
 }
+
 
 /* classes for the dropdown menus */
 @dropdown_border: 2px solid #575757;
@@ -93,14 +105,15 @@ input {
 	overflow: hidden;
 	transform-origin: top;
 
-	&:not(._active) {
+	&:not(.active) {
 		height: 0 !important;
+		pointer-events: none;
 	}
 }
 
 .main_toolbar_dropdown_item {
 	background: #252525;
-	font-size: 16px;
+	font: 16px @menufont;
 	width: 150px;
 	text-align: left;
 	padding: 4px 8px 4px 32px;
@@ -125,7 +138,7 @@ input {
 	&> div {
 		width: @height * 1.5;
 		.__items__();
-	
+
 		/* the x-button should be red */
 		&:last-child:hover {
 			background: #9b3636;

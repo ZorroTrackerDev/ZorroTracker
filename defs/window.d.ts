@@ -9,7 +9,7 @@ declare global {
 			openInBrowser: (url:string) => void,
 		},
 		toolbarFunc: {
-			dropdown: (element:Element, e:Event) => void,
+			handleDropdown (element:Element, event:Event): void,
 			openGithub: () => void,
 		}
 	}

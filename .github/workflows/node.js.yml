@@ -1,0 +1,50 @@
+name: ZorroTracker GHA
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: 15.x
+  
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      
+    - name: Install Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build
+      run: npm run build
+
+    # Only macOS works for these tests
+    # Flakey tests, may sometimes get stuck
+    - name: Test [macOS]
+      if: runner.os == 'macOS'
+      run: npm run test
+
+    # Only the packaging on Windows works
+    - name: Package artefact [Windows]
+      if: runner.os == 'Windows'
+      run: npm run travis_deploy
+
+    - name: Upload artifact [Windows]
+      if: runner.os == 'Windows'
+      uses: actions/upload-artifact@v2
+      with:
+        name: ZorroTracker-${{ runner.os }}-${{ github.sha }}
+        path: dist/ZorroTracker-*

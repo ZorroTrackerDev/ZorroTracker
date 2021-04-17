@@ -1,0 +1,10 @@
+/*
+	This file defines the links to other settings files the program will use to open/process your settings.
+	You can choose to define multiple files for a single type as well. The last file will overwrite the previous files,
+	in case of collisions (such as multiple preferences files, the last file will be the most important one!)
+	Unless you know what you are doing, I recommend you not to mess with this file, as it can break the program.
+*/
+
+{
+	"shortcuts": [ "shortcuts.json5" ]
+}

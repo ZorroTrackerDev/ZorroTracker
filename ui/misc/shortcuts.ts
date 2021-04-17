@@ -1,6 +1,16 @@
-import json5 from "json5";
-import fs from "fs";
 import { remote } from "electron";
+import { FileApi, SettingsTypes } from "../../api/files";
+
+/**
+ * add a class for various shortcut errors
+ */
+class ShortcutError extends Error {
+	name = "ShortcutError";
+
+	constructor(message?:string) {
+		super(message)
+	}
+}
 
 /*
  * this is a translation layer array that converts your keypresses into the appropriate shortcut "codes".
@@ -8,7 +18,7 @@ import { remote } from "electron";
  * then it is logged to the console and ignored. This array has entry points for the different types of combinations of modifier keys.
  * each modifier key array itself also has arrays of key names that are registered.
  */
-const keymap:{ [key:string]:{ [key:string]:string }} = {
+const keyMappings:{ [key:string]:{ [key:string]:string }} = {
 	none: {},
 	ctrl: {},
 	shift: {},
@@ -23,7 +33,7 @@ const keymap:{ [key:string]:{ [key:string]:string }} = {
  * each shortcut is given its own "code" for sorts. shortcuts.json5 uses these codes to define shortcut keys.
  * this array only shows the code, used by "keymap" and shortcuts.json5 to run them.
  */
-const shortcutcodes:{ [key:string]:(e:Event) => unknown|void } = {
+const shortcutFunction:{ [key:string]:(e:Event) => unknown|void } = {
 
 	/* shortcut for opening chrome dev tools */
 	"ui.opendevtools": () => {
@@ -34,7 +44,7 @@ const shortcutcodes:{ [key:string]:(e:Event) => unknown|void } = {
 	"ui.inspectelement": () => {
 		/*
 		 * because Electron, we have to actually get the mouse position relative to the SCREEN rather than the current window.
-		 * I don't know why but oh well
+		 * I don't know why but oh well.
 		 */
 		const bounds = remote.getCurrentWindow().getContentBounds();
 		const mouse = remote.screen.getCursorScreenPoint();
@@ -43,7 +53,7 @@ const shortcutcodes:{ [key:string]:(e:Event) => unknown|void } = {
 		if(mouse.x >= bounds.x && mouse.x < bounds.x + bounds.width &&
 			mouse.y >= bounds.y && mouse.y < bounds.y + bounds.height) {
 
-				// open dev tools here
+				// open dev tools at the mouse position relative the to the window
 				remote.webContents.getFocusedWebContents().inspectElement(mouse.x - bounds.x, mouse.y - bounds.y);
 				return;
 			}
@@ -52,21 +62,23 @@ const shortcutcodes:{ [key:string]:(e:Event) => unknown|void } = {
 		remote.webContents.getFocusedWebContents().inspectElement(-1, -1);
 	},
 
-	"ui.maximize": () => {
+	/* shortcut for fullscreen */
+	"ui.fullscreen": () => {
 		window.preload.maximize();
 	},
 };
 
 /**
- * Return the proper name for "keymap", for specific modifier key combos.
+ * Return the proper name for the "keyMappings" object, for specific modifier key combos.
+ *
  * @param ctrl If the control key is pressed
  * @param shift If the shift key is pressed
  * @param alt If the alt key is pressed
  */
-
-function getKeymapName(ctrl:boolean, shift:boolean, alt:boolean): string{
+function getKeymappingsName(ctrl:boolean, shift:boolean, alt:boolean): string{
 	const ret = (ctrl ? "ctrl" : "") + (shift ? "shift" : "") + (alt ? "alt" : "");
 
+	// if any of the modifier keys are pressed, return the calculated value
 	if(ret.length > 0) {
 		return ret;
 	}
@@ -78,85 +90,93 @@ function getKeymapName(ctrl:boolean, shift:boolean, alt:boolean): string{
 /*
  * Handle user input, to check for special shortcut keys. This won't override things such as input fields, however.
  */
-document.addEventListener("keyup", (e) => {
+document.addEventListener("keyup", (event) => {
 	// check if this key has a registered command
-	const arrayname = getKeymapName(e.ctrlKey, e.shiftKey, e.altKey);
+	const arrayname = getKeymappingsName(event.ctrlKey, event.shiftKey, event.altKey);
 
-	const com = keymap[arrayname][e.key];
-	if(com) {
-		// check if there is a command to be executed here
-		if(!shortcutcodes[com]){
-			// invalid command, log.
-			console.log("!!! Invalid command!!!\nShortcut had an invalid command "+ com);
-			return;
-		}
+	// get the function name from "keyMappings", and return if none were defined
+	const com = keyMappings[arrayname][event.key];
 
-		// we can execute the command!!
-		shortcutcodes[com](e);
-		e.preventDefault();
-	}
-});
-
-/*
- * Open shortcuts.json5 and dump the shortcut keys mappings into "keymap"
- */
-fs.readFile("settings/shortcuts.json5", "utf8", (err, data) => {
-	if(err) {
-		/*
-		 * in case of an error, quickly abandon this idea
-		 * TODO: Also let the user know.
-		 */
-		console.log("!!! FAILED TO LOAD shortcuts.json5!!!\nHere is the error:\n\n", err);
+	if(!com) {
 		return;
 	}
 
-	try {
-		// convert input into an object!
-		const input = json5.parse(data);
+	// check if there is a shortcut function defined here
+	if(!shortcutFunction[com]){
+		// there is not, log it. TODO: handle this better.
+		console.log("!!! Invalid command!!!\nShortcut had an invalid command "+ com);
+		return;
+	}
 
-		for(const command of Object.keys(input)) {
-			for(const shortcut of input[command]) {
-				// check if modifier keys are applied
-				let ctrl = false, alt = false, shift = false, button:string|null = null;
+	// the function exists, execute it with the current event.
+	shortcutFunction[com](event);
+	event.preventDefault();
+});
 
-				for(const key of shortcut.split("+")) {
-					/*
-					 * this switch-case will either enable some flags or set the key
-					 * this is lazy and allows things to be set multiple times.
-					 */
-					switch(key.toLowerCase()) {
-						case "ctrl": ctrl = true; break;
-						case "shift": shift = true; break;
-						case "alt": alt = true; break;
-						default: button = key; break;
-					}
+/**
+ * Add shortcuts to the program. Duplicated shortcuts will override previous ones.
+ *
+ * @param shortcuts the data describing the shortcut key functionality.
+ */
+function addShortcuts(shortcuts:{ [key:string]: string|string[] }) {
+	// run for each shortcut in the array
+	for(const functionName in shortcuts) {
+
+		// helper function to add each shortcut. This allows to use both string and string[] for functions.
+		const addSingleShortcut = (keyCombo:string) => {
+			let ctrl = false, alt = false, shift = false, button:string|null = null;
+
+			// check if modifier keys are applied
+			for(const key of keyCombo.split("+")) {
+				/*
+				 * this switch-case will either enable some flags or set the key
+				 * this is lazy and allows things to be set multiple times.
+				 */
+				switch(key.toLowerCase()) {
+					case "ctrl": ctrl = true; break;
+					case "shift": shift = true; break;
+					case "alt": alt = true; break;
+					default: button = key; break;
 				}
-
-				// make sure "button" is not null. Will skip this check if so
-				if(button === null) {
-					console.log("!!! FAILED TO PARSE shortcuts.json5!!!\nInvalid key combo for "+ command +": "+ shortcut);
-					continue;
-				}
-
-				// grab the array name for these key combos
-				const arrayname = getKeymapName(ctrl, shift, alt);
-
-				// check if there is a collision here
-				if(keymap[arrayname][button]) {
-					console.log("!!! FAILED TO PARSE shortcuts.json5!!!\nShortcut collision for "+ command +": "+ shortcut);
-					continue;
-				}
-
-				// apply the new code
-				keymap[arrayname][button] = command;
 			}
+
+			// make sure "button" is not null. If it is, throw an error.
+			if(button === null) {
+				throw new ShortcutError(`Failed to parse function ${functionName} shortcut ${keyCombo}!`);
+			}
+
+			// get the array name for the "keyMappings" based on modifier keys, and apply the new shortcut function.
+			const arrayname = getKeymappingsName(ctrl, shift, alt);
+			keyMappings[arrayname][button] = functionName;
 		}
 
-	} catch(ex) {
-		/*
-		 * in case of an error, quickly abandon this idea
-		 * TODO: Also let the user know.
-		 */
-		console.log("!!! FAILED TO PARSE shortcuts.json5!!!\nHere is the error:\n\n", ex);
+		if(Array.isArray(shortcuts[functionName])) {
+			// add multiple shortcut keys from array
+			(shortcuts[functionName] as string[]).forEach(addSingleShortcut);
+
+		} else {
+			// this is a single shortcut key
+			addSingleShortcut(shortcuts[functionName] as string);
+		}
 	}
-});
+}
+
+/**
+ * Load the default shortcuts for the program.
+ *
+ * @throws anything. Invalid files will throw just about any error.
+ */
+function loadDefaultShortcuts(){
+	// load the files we need to inspect and pass them right to "addShortcuts" function. This pretends files are in the correct format.
+	const files = FileApi.loadSettingsFiles(SettingsTypes.shortcuts) as { [key: string]: string|string[]}[];
+	files.forEach(addShortcuts);
+}
+
+// load the default shortcuts here
+try {
+	loadDefaultShortcuts();
+
+} catch(ex) {
+	// TODO: actual error handling
+	console.log("!!! FAILED TO PARSE SHORTCUTS!!!\n", ex);
+}

@@ -17,13 +17,14 @@ window.preload = {
 
 	/* maximize/unmaximize the current window */
 	maximize: function() {
-		const w = remote.getCurrentWindow();
+		const window = remote.getCurrentWindow();
 
-		if (!w.isMaximized()) {
-			w.maximize();
+		// maximize or unmaximize depending on the current state
+		if (!window.isMaximized()) {
+			window.maximize();
 
 		} else {
-			w.unmaximize();
+			window.unmaximize();
 		}
 	},
 

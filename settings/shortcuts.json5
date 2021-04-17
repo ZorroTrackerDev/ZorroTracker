@@ -1,4 +1,4 @@
-/*	
+/*
 	This file defines the shortcuts usable on ZorroTracker. A single shortcut can have multiple aliases, or have none at all.
 	This file is checked when the program runs (so, you can not edit it as the program is running), and will allow the shortcuts
 	to be mapped to application functionality. If you use an invalid key or function name, the shortcut will be ignored,
@@ -8,5 +8,5 @@
 {
 	"ui.opendevtools": [ "F12", "ctrl+shift+I" ],					/* shortcut for opening Chromium dev tools */
 	"ui.inspectelement": [ "shift+F12" ],							/* shortcut for inspect element in Chromium dev tools */
-	"ui.maximize": [ "F11" ],										/* shortcut for entering/exiting maximized mode. */
+	"ui.fullscreen": [ "F11" ],										/* shortcut for entering/exiting maximized mode. */
 }

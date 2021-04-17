@@ -3,6 +3,7 @@ html {
 	user-select: none;
 	-webkit-app-region: no-drag;
 	background: @toolbarbg;
+	overflow: hidden;
 }
 
 input {
@@ -137,6 +138,7 @@ input {
 	&> div {
 		width: @height * 1.5;
 		.__items__();
+		overflow: hidden;
 
 		/* the x-button should be red */
 		&:last-child:hover {
@@ -144,25 +146,32 @@ input {
 		}
 
 		/* this holds the actual text for the buttons */
-		&:after {
-			position: absolute;
-			margin-top: -8px;
-			width: @height * 1.5;
-			font-size: 22px;
-			text-align: center;
-			pointer-events: none;
+		&> * {
+			width: 100%;
+			height: 100%;
+
+			// this is for the nice scaling effect when you hover over the button
+			transform: scale(1);
+			transform-origin: center;
+			transition: transform .2s ease-in-out;
+		}
+
+		&:hover > div {
+			transform: scale(1.5);
+		}
+
+		&:active > div {
+			transform: scale(2);
+			transition: transform .05s linear;
 		}
 	}
 }
 
-#main_toolbar_minimize:after {
-	content: "-";
+#main_toolbar_maximize > svg > path {
+	transition: d .25s ease .15s;
+	d: path("M25 25 H75 V75 H25 V25  M75 25 V25 H75 V25 H75");
 }
 
-#main_toolbar_maximize:after {
-	content: "□";
-}
-
-#main_toolbar_exit:after {
-	content: "x";
+#main_toolbar_maximize.maximized > svg > path {
+	d: path("M25 40 H60 V75 H25 V40  M40 40 V25 H75 V60 H60");
 }

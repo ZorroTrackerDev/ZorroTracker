@@ -7,6 +7,7 @@ declare global {
 			minimize: () => void,
 			maximize: () => void,
 			openInBrowser: (url:string) => void,
+			updateMaximizeButtonState: () => void,
 		},
 		toolbarFunc: {
 			handleDropdown (element:Element, event:Event): void,

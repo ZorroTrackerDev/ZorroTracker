@@ -38,20 +38,57 @@ const defaultMenu:ToolbarMenu = {
  * this defines the window buttons. These are just to control the program, just like windows programs are
  * (sorry linux and mac users - this will be sorted later!)
  */
-type WindowButtons = { id: string, action: string }[];
+type WindowButtons = { id: string, action: string, child: string }[];
 
 const defaultButtons:WindowButtons = [
 	{
 		id: "main_toolbar_minimize",
 		action: "window.preload.minimize()",
+		child: `
+			<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" version="1.1">
+				<line x1="25%" y1="50%" x2="75%" y2="50%" stroke="white" stroke-width="10" stroke-linecap="butt" />
+			</svg>
+		`,
 	},
 	{
 		id: "main_toolbar_maximize",
-		action: "window.preload.maximize()",
+		action: "window.preload.maximize();",
+		child: `
+			<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" version="1.1">
+				<path fill="none" stroke="white" stroke-width="8" stroke-linecap="square"/>
+			</svg>
+		`,
 	},
 	{
 		id: "main_toolbar_exit",
-		action: "window.preload.close()",
+		action: "window.preload.close();",
+		child: `
+			<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" version="1.1">
+				<path fill="white" stroke="white" stroke-width="10" stroke-linecap="butt" d="
+					M 25 25
+
+					H 27
+					L 50 50
+					L 73 25
+					H 75
+
+					V 27
+					L 50 50
+					L 75 73
+					V 75
+
+					H 73
+					L 50 50
+					L 27 75
+					H 25
+
+					V 73
+					L 50 50
+					L 25 27
+					V 25
+					Z"/>
+			</svg>
+		`,
 	},
 ];
 
@@ -70,7 +107,9 @@ function makeToolbar(menu:ToolbarMenu, buttons:WindowButtons){
 				// convert every button into HTML and then merge it together
 				buttons.map((button) => {
 					return /*html*/`
-						<div onclick='${button.action}' id='${button.id}'></div>
+						<div onclick="${button.action}" id="${button.id}">
+							${button.child}
+						</div>
 					`;
 				}).join("\n")
 			}
@@ -112,10 +151,10 @@ function getDropdownMenu(entry:ToolbarMenuEntry) {
 		const item = (entry.child as ToolbarMenu)[name];
 
 		html += /* html */`
-			<div class='main_toolbar_dropdown_item' onclick='${
+			<div class='main_toolbar_dropdown_item' onclick="${
 				// if this has an action, enable the onclick handler, otherwise do nothing
 				item.action ? item.action : ""
-			};window.toolbarFunc.handleDropdown(this.parentNode, event)' >
+			};window.toolbarFunc.handleDropdown(this.parentNode, event)" >
 				${name}
 			</div>
 		`;
@@ -134,6 +173,7 @@ try {
 	if(toolbarDiv){
 		// note: only calculating the toolbar if the element exists!
 		toolbarDiv.innerHTML = makeToolbar(defaultMenu, defaultButtons);
+		window.preload.updateMaximizeButtonState();
 	}
 
 } catch(ex) {

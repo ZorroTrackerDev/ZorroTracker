@@ -40,6 +40,9 @@ async function createWindow () {
 		electron.app.quit();
 	});
 
+	// focus the window
+	win.focus();
+
 	// when the window is closed, update the cookies
 	win.on("close", async() => {
 		setCookie("main_devtools", win.webContents.isDevToolsOpened() +"");

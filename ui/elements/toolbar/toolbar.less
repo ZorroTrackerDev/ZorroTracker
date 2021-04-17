@@ -92,7 +92,6 @@ input {
 	.__items__();
 }
 
-
 /* classes for the dropdown menus */
 @dropdown_border: 2px solid #575757;
 @dropdown_corners: 7px;
@@ -145,7 +144,7 @@ input {
 		}
 
 		/* this holds the actual text for the buttons */
-		&> span {
+		&:after {
 			position: absolute;
 			margin-top: -8px;
 			width: @height * 1.5;
@@ -154,4 +153,16 @@ input {
 			pointer-events: none;
 		}
 	}
+}
+
+#main_toolbar_minimize:after {
+	content: "-";
+}
+
+#main_toolbar_maximize:after {
+	content: "□";
+}
+
+#main_toolbar_exit:after {
+	content: "x";
 }

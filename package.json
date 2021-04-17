@@ -7,10 +7,12 @@
 		"init": "npm run build",
 		"test": "npm run build && jest",
 		"lint": "eslint . --ext .ts",
+		"dev": "concurrently \"npm run tsc-watch\" \"npm run less-watch\"",
 
 		"less-compile": "compile-less -d ui -o build/ui",
 		"less-watch": "less-watch-compiler",
 		"tsc": "npx tsc -p tsconfig.build.json",
+		"tsc-watch": "npx tsc -w -p tsconfig.build.json",
 		"copy": "copyfiles -e \"./tst/**/*.*\" -e \"./node_modules/**/*.*\" -e \"./dist/**/*.*\" -e \"./build/**/*.*\" \"./**/*.json5\" \"./**/*.html\" build",
 		"build": "npm run tsc & npm run less-compile & npm run copy",
 

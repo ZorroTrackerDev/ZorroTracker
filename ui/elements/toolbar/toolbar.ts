@@ -38,19 +38,19 @@ const defaultMenu:ToolbarMenu = {
  * this defines the window buttons. These are just to control the program, just like windows programs are
  * (sorry linux and mac users - this will be sorted later!)
  */
-type WindowButtons = { text: string, action: string }[];
+type WindowButtons = { id: string, action: string }[];
 
 const defaultButtons:WindowButtons = [
 	{
-		text: "-",
+		id: "main_toolbar_minimize",
 		action: "window.preload.minimize()",
 	},
 	{
-		text: "□",
+		id: "main_toolbar_maximize",
 		action: "window.preload.maximize()",
 	},
 	{
-		text: "x",
+		id: "main_toolbar_exit",
 		action: "window.preload.close()",
 	},
 ];
@@ -70,9 +70,7 @@ function makeToolbar(menu:ToolbarMenu, buttons:WindowButtons){
 				// convert every button into HTML and then merge it together
 				buttons.map((button) => {
 					return /*html*/`
-						<div onclick='${button.action}'>
-							<span>${button.text}</span>
-						</div>
+						<div onclick='${button.action}' id='${button.id}'></div>
 					`;
 				}).join("\n")
 			}

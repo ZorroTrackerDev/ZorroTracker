@@ -1,5 +1,5 @@
-import { remote } from "electron";
-import { FileApi, SettingsTypes } from "../../api/files";
+import { remote, session } from "electron";
+import { loadSettingsFiles, SettingsTypes } from "../../api/files";
 
 /**
  * add a class for various shortcut errors
@@ -168,7 +168,7 @@ function addShortcuts(shortcuts:{ [key:string]: string|string[] }) {
  */
 function loadDefaultShortcuts(){
 	// load the files we need to inspect and pass them right to "addShortcuts" function. This pretends files are in the correct format.
-	const files = FileApi.loadSettingsFiles(SettingsTypes.shortcuts) as { [key: string]: string|string[]}[];
+	const files = loadSettingsFiles(SettingsTypes.shortcuts) as { [key: string]: string|string[]}[];
 	files.forEach(addShortcuts);
 }
 

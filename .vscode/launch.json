@@ -4,12 +4,18 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-    {
-      "command": "npm start",
-      "name": "Build & Run",
-      "request": "launch",
-      "type": "node-terminal"
-    },
+		{
+		"command": "npm start",
+		"name": "Build & Run",
+		"request": "launch",
+		"type": "node-terminal"
+		},
+		{
+		"command": "npm run electron",
+		"name": "Run",
+		"request": "launch",
+		"type": "node-terminal"
+		},
 		{
 			"type": "node",
 			"request": "launch",

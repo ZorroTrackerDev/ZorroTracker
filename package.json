@@ -5,7 +5,7 @@
 	"main": "build/main.js",
 	"scripts": {
 		"init": "npm run build",
-		"test": "npm run build && jest",
+		"test": "npm run build & jest --coverage & pause",
 		"lint": "eslint . --ext .ts",
 		"dev": "concurrently \"npm run tsc-watch\" \"npm run less-watch\"",
 
@@ -20,9 +20,9 @@
 		"start": "npm run build & npm run electron",
 		"pack": "npm run build & electron-builder --dir",
 
-		"travis_init": "npm run build",
-		"travis_test": "jest",
-		"travis_deploy": "electron-builder build --publish never"
+		"ci_init": "npm run build",
+		"ci_test": "jest",
+		"ci_deploy": "electron-builder build --publish never"
 	},
 	"repository": {
 		"type": "git",
@@ -67,7 +67,10 @@
 		],
 		"clearMocks": true,
 		"coverageDirectory": "coverage",
-		"coverageProvider": "v8"
+		"coverageProvider": "v8",
+		"collectCoverageFrom": [
+		  "**/*.ts*"
+		]
 	},
 	"build": {
 		"appId": "dev.zorrotracker",
@@ -94,7 +97,6 @@
 				{
 					"target": "tar.gz",
 					"arch": [
-						"x64",
 						"ia32"
 					]
 				}
@@ -105,9 +107,7 @@
 				{
 					"target": "tar.gz",
 					"arch": [
-						"x64",
-						"ia32",
-						"arm64"
+						"ia32"
 					]
 				}
 			]
@@ -118,9 +118,7 @@
 			{
 				"target": "tar.gz",
 				"arch": [
-					"x64",
-					"ia32",
-					"arm64"
+					"ia32"
 				]
 			}
 		]

@@ -46,6 +46,17 @@ input {
 	font-family: @menufont;
 }
 
+#main_toolbar_name {
+	color: rgb(156, 156, 156);
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: -5;
+	text-align: center;
+	font: 16px @menufont;
+	pointer-events: none;
+}
+
 /* helper classes */
 .__nooutline__ {
     border: none;
@@ -84,7 +95,7 @@ input {
 	padding: 0;
 	float: left;
 	color: #c4c4c4;
-	background: transparent;
+	background: @toolbarbg;
 }
 
 .main_toolbar_dropdown_text {
@@ -130,6 +141,7 @@ input {
 
 /* classes for the buttons (minimize, maximize, close) */
 #main_toolbar_controls {
+	background: @toolbarbg;
 	.__menus__();
 	float: right;
 	color: white;

@@ -4,7 +4,6 @@ import path from "path";
 // function that creates a new window and loads ui/main.html.
 async function createWindow () {
 	const settings = await loadWindowSettings("main");
-	console.log(settings)
 
 	const win = new electron.BrowserWindow({
 		width: settings.w, height: settings.h,

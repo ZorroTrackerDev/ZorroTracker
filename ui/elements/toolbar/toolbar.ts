@@ -133,7 +133,7 @@ function makeToolbar(menu:ToolbarMenu, buttons:WindowButtons){
 		`;
 	}
 
-	return menuHTML + buttonHTML;
+	return /*html*/"<div id='main_toolbar_name'>ZorroTracker 🦊</div>"+ menuHTML + buttonHTML;
 }
 
 /**

@@ -2,6 +2,7 @@ export {};
 
 declare global {
 	export interface Window {
+		exports: unknown,
 		preload: {
 			close: () => void,
 			minimize: () => void,

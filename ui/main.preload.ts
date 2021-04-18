@@ -1,3 +1,11 @@
+/**
+ * So.. In oreder for Jest testing to work, we need to load stuff as modules. However, browsers really don't like CommonJS modules
+ * Also, Electron does not work with ES2015 modules. Also, trying to use mix of both is apparently borked to hell. Here we have an
+ * amazing solution: Just pretend "exports" exists. Yeah. This will be filled with garbage, probably. But this fixes the issue
+ * where browsers don't support CommonJS modules. As it turns out, this single line will fix the issues we're having. I hate this.
+ */
+window.exports = {};
+
 import { remote, webFrame, shell } from "electron";
 webFrame.setZoomFactor(1);		// testing only
 

@@ -26,6 +26,7 @@ const keyMappings:{ [key:string]:{ [key:string]:string }} = {
 	ctrlshift: {},
 	ctrlalt: {},
 	shiftalt: {},
+	ctrlshiftalt: {},
 };
 
 /*
@@ -118,7 +119,7 @@ document.addEventListener("keyup", (event) => {
  *
  * @param shortcuts the data describing the shortcut key functionality.
  */
-function addShortcuts(shortcuts:{ [key:string]: string|string[] }) {
+export function addShortcuts(shortcuts:{ [key:string]: string|string[] }):void {
 	// run for each shortcut in the array
 	for(const functionName in shortcuts) {
 
@@ -136,6 +137,7 @@ function addShortcuts(shortcuts:{ [key:string]: string|string[] }) {
 					case "ctrl": ctrl = true; break;
 					case "shift": shift = true; break;
 					case "alt": alt = true; break;
+					case "": break;
 					default: button = key; break;
 				}
 			}
@@ -166,7 +168,7 @@ function addShortcuts(shortcuts:{ [key:string]: string|string[] }) {
  *
  * @throws anything. Invalid files will throw just about any error.
  */
-function loadDefaultShortcuts(){
+export function loadDefaultShortcuts(): void {
 	// load the files we need to inspect and pass them right to "addShortcuts" function. This pretends files are in the correct format.
 	const files = loadSettingsFiles(SettingsTypes.shortcuts) as { [key: string]: string|string[]}[];
 	files.forEach(addShortcuts);

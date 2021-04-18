@@ -99,7 +99,7 @@ const defaultButtons:WindowButtons = [
  * @param buttons the `WindowButtons` array that contains the buttons to be added.
  * @returns HTML code that can be appended to the DOM
  */
-function makeToolbar(menu:ToolbarMenu, buttons:WindowButtons){
+ export function makeToolbar(menu:ToolbarMenu, buttons:WindowButtons): string {
 	// generate the window buttons here
 	const buttonHTML = /*html*/`
 		<div id='main_toolbar_controls'>
@@ -166,18 +166,22 @@ function getDropdownMenu(entry:ToolbarMenuEntry) {
 }
 
 // create the default toolbar
-try {
-	// find the DOM element for the toolbar
-	const toolbarDiv = document.getElementById("main_toolbar");
+loadDefaultToolbar();
 
-	if(toolbarDiv){
-		// note: only calculating the toolbar if the element exists!
-		toolbarDiv.innerHTML = makeToolbar(defaultMenu, defaultButtons);
-		window.preload.updateMaximizeButtonState();
+export function loadDefaultToolbar(): void {
+	try {
+		// find the DOM element for the toolbar
+		const toolbarDiv = document.getElementById("main_toolbar");
+
+		if(toolbarDiv){
+			// note: only calculating the toolbar if the element exists!
+			toolbarDiv.innerHTML = makeToolbar(defaultMenu, defaultButtons);
+			window.preload.updateMaximizeButtonState();
+		}
+
+	} catch(ex) {
+		// TODO: handle errors
 	}
-
-} catch(ex) {
-	// TODO: handle errors
 }
 
 // the classnamve for the active class used by the dropdown menu

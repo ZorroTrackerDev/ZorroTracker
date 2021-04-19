@@ -78,7 +78,9 @@
 			"coverage",
 			"dist",
 			"main.ts",
-			".*.d.ts"
+			".*.d.ts",
+			".*.c",
+			".*.h"
 		]
 	},
 	"build": {
@@ -98,7 +100,8 @@
 			"*.html"
 		],
 		"extraFiles": [
-			"./settings/**/*"
+			"./settings/**/*",
+			"./scripts/**/*"
 		],
 		"artifactName": "${productName}-${os}-${arch}-${buildVersion}.${ext}",
 		"win": {

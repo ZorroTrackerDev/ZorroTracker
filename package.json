@@ -8,18 +8,15 @@
 		"test": "npm run build & jest --coverage & pause",
 		"lint": "eslint . --ext .ts",
 		"dev": "concurrently \"npm run tsc-watch\" \"npm run less-watch\"",
-
 		"less-compile": "compile-less -d ui -o build/ui",
 		"less-watch": "less-watch-compiler",
 		"tsc": "npx tsc -p tsconfig.build.json",
 		"tsc-watch": "npx tsc -w -p tsconfig.build.json",
-		"copy": "copyfiles -e \"./tst/**/*.*\" -e \"./node_modules/**/*.*\" -e \"./dist/**/*.*\" -e \"./build/**/*.*\" \"./**/*.json5\" \"./**/*.html\" build",
+		"copy": "copyfiles -e \"./tst/**/*.*\" -e \"./node_modules/**/*.*\" -e \"./dist/**/*.*\" -e \"./build/**/*.*\" \"./**/*.js\" \"./**/*.json5\" \"./**/*.html\" build",
 		"build": "npm run tsc & npm run less-compile & npm run copy",
-
 		"electron": "electron build/main.js",
 		"start": "npm run build & npm run electron",
 		"pack": "npm run build & electron-builder --dir",
-
 		"ci_init": "npm run build",
 		"ci_test": "jest",
 		"ci_deploy": "electron-builder build --publish never"
@@ -53,6 +50,7 @@
 		"typescript": "^4.2.4"
 	},
 	"dependencies": {
+		"audify": "^1.5.7",
 		"json5": "^2.2.0"
 	},
 	"jest": {

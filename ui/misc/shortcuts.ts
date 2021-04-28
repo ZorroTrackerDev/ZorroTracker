@@ -1,4 +1,4 @@
-import { remote, session } from "electron";
+import { remote } from "electron";
 import { loadSettingsFiles, SettingsTypes } from "../../api/files";
 
 /**

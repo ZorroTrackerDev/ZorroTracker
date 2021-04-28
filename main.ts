@@ -1,5 +1,6 @@
 import electron from "electron";
 import path from "path";
+import { test } from "./system/test";
 
 // function that creates a new window and loads ui/main.html.
 async function createWindow () {
@@ -73,6 +74,14 @@ async function createWindow () {
 			setCookie("main_y", ""+ win.getNormalBounds().y);
 		}
 	});
+
+	// extra code for loading the chip emulation routines
+	try {
+		await test();
+
+	} catch(ex) {
+		console.log(ex);
+	}
 }
 
 // this is responsible for creating the window.

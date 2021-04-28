@@ -2,7 +2,10 @@
  * This is the configuration file for YM2612-js + SN76489-js This configures the emulator and allows it to work with ZorroTracker
  */
 {
+	uuid: "jsmd",									// please generate a *unique ID* for your configuration
 	version: "b0",									// the API version identifier. ZorroTracker will support some older versions as long as the API does not have breaking changes. Do not change this by yourself!
-	"entry": "script.js",							// the entry point for code for this script. This should never be a .ts file, you should always compile TypeScript files down to JavaScript before using them.
-	"name": "js-MD",								// the user-friendly name of this script
+	entry: "script.js",								// the entry point for code for this script. This should never be a .ts file, you should always compile TypeScript files down to JavaScript before using them.
+	name: "js-MD",									// the user-friendly name of this script
+	fmvol: 1.0,										// relative volume for FM  (1 = 100%, 0 = 0%)
+	psgvol: 1.0,									// relative volume for PSG (1 = 100%, 0 = 0%)
 }

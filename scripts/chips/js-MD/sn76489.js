@@ -102,7 +102,7 @@ S.prototype.reset = function() {
 	})(sn76489);
 };
 S.prototype.init = function(pcl, srate) {	// int clock value, int sampling rate
-	sn76489.dClock = pcl*1.0/(srate<<4);
+	sn76489.dClock = (pcl||3579545)*1.0/(srate<<4);
 	console.log("SN::init("+pcl+','+srate+','+sn76489.dClock+")");
 	this.reset();
 };

@@ -22,7 +22,7 @@ var cfg = {
 	debugLocal:0,
 	debugArr:[],
 	mode:0,	// 0=gpgx, 1=vb/scale
-	strict:true	// abort on bad input if true
+	strict:false	// abort on bad input if true
 };
 
 /**** GLOBALS ****/

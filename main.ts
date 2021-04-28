@@ -1,6 +1,6 @@
 import electron from "electron";
 import path from "path";
-import { test } from "./system/test";
+import * as Emulator from "./system/emulator";
 
 // function that creates a new window and loads ui/main.html.
 async function createWindow () {
@@ -77,7 +77,8 @@ async function createWindow () {
 
 	// extra code for loading the chip emulation routines
 	try {
-		await test();
+		Emulator.setVolume(0.25);
+		Emulator.load((await Emulator.findAll())["jsmd"]);
 
 	} catch(ex) {
 		console.log(ex);

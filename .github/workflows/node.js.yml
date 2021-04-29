@@ -21,10 +21,20 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
+    - name: Install system dependencies [Linux]
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt update
+        sudo apt install \
+          libasound2-dev \
+          libpulse-dev \
+          libjack-jackd2-dev
+
     - name: Install Node.js
       uses: actions/setup-node@v2
       with:
         node-version: ${{ env.NODE_VERSION }}
+
     - name: Install dependencies
       run: npm install
 

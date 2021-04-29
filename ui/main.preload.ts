@@ -36,6 +36,7 @@ window.preload = {
 			window.unmaximize();
 			return false;
 		}
+
 	},
 
 	/* function to open an URL in an external browser. DO NOT open in Electron please! */
@@ -80,5 +81,22 @@ window.preload = {
 		remote.getCurrentWindow().on("unmaximize", () => {
 			editClass(false);
 		});
+	},
+
+	/* open a file or a project */
+	open: function() {
+		remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
+			properties: ["openFile", ], defaultPath: __dirname, filters: [
+				{ name: "Vgm Files", extensions: ["vgm"], },
+				{ name: "All Files", extensions: ["*"], },
+			],
+		}).then((v) => {
+			if(v.filePaths.length !== 1) {
+				return;
+			}
+
+
+
+		}).catch(console.log);
 	},
 }

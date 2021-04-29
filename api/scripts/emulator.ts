@@ -1,12 +1,6 @@
-export enum ConfigVersion {
-	b0 = "b0",
-}
+import { GenericConfig } from "./config";
 
-export interface EmulatorConfig {
-	version: ConfigVersion,
-	entry: string,
-	name: string,
-	uuid: string,
+export interface EmulatorConfig extends GenericConfig {
 	fmvol?: number,
 	psgvol?: number,
 }
@@ -18,7 +12,9 @@ export interface Emulator {
 	writePSG:(command:PSGCMD) => void;
 	readYM:() => number;
 	readPSG:() => number;
-	buffer:(samples: number, volume:number) => Buffer;
+	initBuffer:(totalsamples: number) => void;
+	runBuffer:(samples: number, volume:number) => number;
+	getBuffer:() => Buffer;
 }
 
 export enum PSGCMD {

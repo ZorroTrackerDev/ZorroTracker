@@ -8,5 +8,6 @@
 {
 	"ui.opendevtools": [ "F12", "ctrl+shift+I" ],					/* shortcut for opening Chromium dev tools */
 	"ui.inspectelement": [ "shift+F12" ],							/* shortcut for inspect element in Chromium dev tools */
-	"ui.fullscreen": [ "F11" ],										/* shortcut for entering/exiting maximized mode. */
+	"ui.fullscreen": [ "F11" ],										/* shortcut for entering/exiting maximized mode */
+	"ui.open": [ "CTRL+O" ],										/* shortcut for opening a file or a project */
 }

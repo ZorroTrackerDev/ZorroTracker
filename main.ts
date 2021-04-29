@@ -1,6 +1,6 @@
 import electron from "electron";
 import path from "path";
-import * as Emulator from "./system/emulator";
+import { Worker } from "worker_threads";
 
 // function that creates a new window and loads ui/main.html.
 async function createWindow () {
@@ -77,8 +77,7 @@ async function createWindow () {
 
 	// extra code for loading the chip emulation routines
 	try {
-		Emulator.setVolume(0.25);
-		Emulator.load((await Emulator.findAll())["jsmd"]);
+		const worker = new Worker(path.join(__dirname, "system", "emulator.js"));
 
 	} catch(ex) {
 		console.log(ex);

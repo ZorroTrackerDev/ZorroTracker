@@ -67,6 +67,11 @@ const shortcutFunction:{ [key:string]:(e:Event) => unknown|void } = {
 	"ui.fullscreen": () => {
 		window.preload.maximize();
 	},
+
+	/* shortcut for open */
+	"ui.open": () => {
+		window.preload.open();
+	},
 };
 
 /**

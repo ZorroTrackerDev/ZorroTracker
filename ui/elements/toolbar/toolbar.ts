@@ -11,6 +11,10 @@ const defaultMenu:ToolbarMenu = {
 	"File": {
 		enabled: true,
 		child: {
+			"Open": {
+				enabled: true,
+				action: "window.preload.open()",
+			},
 			"Exit": {
 				enabled: true,
 				action: "window.preload.close()",

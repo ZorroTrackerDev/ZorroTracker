@@ -22,10 +22,12 @@ export default class implements Emulator {
 		this.FM.init(undefined, samplerate);
 		this.FM.config(9);
 		this.FM.reset();
+
+		this.writeYM1(0x2B, 0x80);
 	}
 
 	public writeYM1(register: YMREG, value: number): void {
-		this.FM.write(register & 0xFF, value);
+		this.FM.write(register, value);
 	}
 
 	public writeYM2(register: YMREG, value: number): void {
@@ -45,16 +47,41 @@ export default class implements Emulator {
 		return 0xFF;
 	}
 
-	public buffer(samples:number, volume:number): Buffer {
-		const buf = Buffer.alloc(samples * 4);
-		const bfm = this.FM.update(samples);
-		const bpsg = this.PSG.update(samples);
+	private buffer:Buffer|undefined;
+	private bufpos = 0;
 
-		// mix samples
-		for(let addr = 0;addr < samples * 4;addr += 2) {
-			buf.writeInt16LE((bfm.readInt16LE(addr) * volume * this.fmvol) + (bpsg.readInt16LE(addr) * volume * this.psgvol), addr);
+	public initBuffer(totalsamples: number):void {
+		this.buffer = Buffer.alloc(totalsamples * 4);
+		this.bufpos = 0;
+	}
+
+	public runBuffer(samples: number, volume:number):number {
+		if(!this.buffer) {
+			throw new Error("initBuffer was not called before runBuffer!");
 		}
 
-		return buf;
+		const smp = Math.min(samples, (this.buffer.length - this.bufpos) / 4);
+		const _fm = this.FM.update(smp);
+		const _psg = this.PSG.update(smp);
+
+		for(let addr = 0;addr < smp * 4;addr += 4) {
+			this.buffer.writeInt16LE(
+				(_fm.readInt16LE(addr) * volume * this.fmvol) + (_psg.readInt16LE(0) * volume * this.psgvol), this.bufpos);
+
+			this.buffer.writeInt16LE(
+				(_fm.readInt16LE(addr + 2) * volume * this.fmvol) + (_psg.readInt16LE(2) * volume * this.psgvol), this.bufpos + 2);
+
+			this.bufpos += 4;
+		}
+
+		return smp;
+	}
+
+	public getBuffer():Buffer {
+		if(!this.buffer) {
+			throw new Error("initBuffer was not called before getBuffer!");
+		}
+
+		return this.buffer;
 	}
 }

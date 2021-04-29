@@ -1,10 +1,12 @@
-import { ConfigVersion, EmulatorConfig, Emulator, YMREG, PSGCMD, YMKey, YMHelp } from "../api/scripts/emulator";
+import { ConfigVersion } from "../api/scripts/config";
+import { EmulatorConfig, Emulator } from "../api/scripts/emulator";
+import { Driver } from "../api/scripts/driver";
 import { RtAudio, RtAudioApi, RtAudioFormat } from "audify";
 import fs from "fs";
 import path from "path";
 import json5 from "json5";
 
-const RATE = 53267, SAMPLES = (RATE * 0.025) | 0;
+const RATE = 53267, SAMPLES = (RATE * 0.025) | 0, GAP = 5;
 const emus = path.join(__dirname, "..", "scripts", "chips");
 let volume = 1;
 
@@ -51,68 +53,10 @@ export const load = (config:EmulatorConfig):void => {
 	const emulator:Emulator = new (require(config.entry).default)();
 	emulator.init(RATE, config);
 
-	emulator.writePSG(PSGCMD.PSG4 | PSGCMD.WHITE | PSGCMD.N40);
-	emulator.writePSG(PSGCMD.PSG4 | PSGCMD.VOLUME | 0);
-
-	emulator.writePSG(PSGCMD.PSG1 | PSGCMD.VOLUME | 5);
-	emulator.writePSG(PSGCMD.PSG1 | PSGCMD.FREQ | 2);
-	emulator.writePSG(0x20);
-
-	emulator.writeYM1(YMREG.LFO, 0);
-	emulator.writeYM1(YMREG.TimersCh3, 0);
-	emulator.writeYM1(YMREG.Key, YMKey.FM1);
-	emulator.writeYM1(YMREG.Key, YMKey.FM2);
-	emulator.writeYM1(YMREG.Key, YMKey.FM3);
-	emulator.writeYM1(YMREG.Key, YMKey.FM4);
-	emulator.writeYM1(YMREG.Key, YMKey.FM5);
-	emulator.writeYM1(YMREG.Key, YMKey.FM6);
-	emulator.writeYM1(YMREG.DAC, YMHelp.DACDisable);
-
-	emulator.writeYM1(YMREG.ch1 | YMREG.DM | YMREG.op1, 0x62);
-	emulator.writeYM1(YMREG.ch1 | YMREG.DM | YMREG.op2, 0x44);
-	emulator.writeYM1(YMREG.ch1 | YMREG.DM | YMREG.op3, 0x40);
-	emulator.writeYM1(YMREG.ch1 | YMREG.DM | YMREG.op4, 0x32);
-
-	emulator.writeYM1(YMREG.ch1 | YMREG.RSAR | YMREG.op1, 0x12);
-	emulator.writeYM1(YMREG.ch1 | YMREG.RSAR | YMREG.op2, 0x12);
-	emulator.writeYM1(YMREG.ch1 | YMREG.RSAR | YMREG.op3, 0x12);
-	emulator.writeYM1(YMREG.ch1 | YMREG.RSAR | YMREG.op4, 0x1C);
-
-	emulator.writeYM1(YMREG.ch1 | YMREG.D1R | YMREG.op1, 0x0B);
-	emulator.writeYM1(YMREG.ch1 | YMREG.D1R | YMREG.op2, 0x02);
-	emulator.writeYM1(YMREG.ch1 | YMREG.D1R | YMREG.op3, 0x0A);
-	emulator.writeYM1(YMREG.ch1 | YMREG.D1R | YMREG.op4, 0x01);
-
-	emulator.writeYM1(YMREG.ch1 | YMREG.D2R | YMREG.op1, 0x08);
-	emulator.writeYM1(YMREG.ch1 | YMREG.D2R | YMREG.op2, 0x04);
-	emulator.writeYM1(YMREG.ch1 | YMREG.D2R | YMREG.op3, 0x0B);
-	emulator.writeYM1(YMREG.ch1 | YMREG.D2R | YMREG.op4, 0x06);
-
-	emulator.writeYM1(YMREG.ch1 | YMREG.DLRR | YMREG.op1, 0x08);
-	emulator.writeYM1(YMREG.ch1 | YMREG.DLRR | YMREG.op2, 0x08);
-	emulator.writeYM1(YMREG.ch1 | YMREG.DLRR | YMREG.op3, 0x08);
-	emulator.writeYM1(YMREG.ch1 | YMREG.DLRR | YMREG.op4, 0x08);
-
-	emulator.writeYM1(YMREG.ch1 | YMREG.SSGEG | YMREG.op1, 0);
-	emulator.writeYM1(YMREG.ch1 | YMREG.SSGEG | YMREG.op2, 0);
-	emulator.writeYM1(YMREG.ch1 | YMREG.SSGEG | YMREG.op3, 0);
-	emulator.writeYM1(YMREG.ch1 | YMREG.SSGEG | YMREG.op4, 0);
-
-	emulator.writeYM1(YMREG.ch1 | YMREG.TL | YMREG.op1, 0x2A);
-	emulator.writeYM1(YMREG.ch1 | YMREG.TL | YMREG.op2, 0x2B);
-	emulator.writeYM1(YMREG.ch1 | YMREG.TL | YMREG.op3, 0x1A);
-	emulator.writeYM1(YMREG.ch1 | YMREG.TL | YMREG.op4, 0x00);
-
-	const f = 0x12D3;
-	emulator.writeYM1(YMREG.ch1 | YMREG.FreqMSB, f & 0xFF);
-	emulator.writeYM1(YMREG.ch1 | YMREG.FreqLSB, f >> 8);
-	emulator.writeYM1(YMREG.ch1 | YMREG.FA, 0x3);
-	emulator.writeYM1(YMREG.ch1 | YMREG.PL, YMHelp.PanCenter);
-
-	setInterval(() => {
-		emulator.writeYM1(YMREG.Key, YMKey.FM1);
-		setTimeout(() => emulator.writeYM1(YMREG.Key, YMKey.FM1 | YMKey.OpAll), 60);
-	}, 1000);
+	const driver:Driver = new (require("./vgm").default)();
+	driver.init(RATE, {
+		version: ConfigVersion.b0, entry: "null", name: "null", uuid: "null",
+	}, emulator);
 
 	// AUDIO HANDLER
 	const rtAudio = new RtAudio(process.platform === "win32" ? RtAudioApi.WINDOWS_WASAPI : undefined);
@@ -120,12 +64,19 @@ export const load = (config:EmulatorConfig):void => {
 		deviceId: rtAudio.getDefaultOutputDevice(),
 		nChannels: 2,
 
-	}, null, RtAudioFormat.RTAUDIO_SINT16, RATE, SAMPLES /* ~25ms */, "ZorroTracker emulation", null, () => {
+	}, null, RtAudioFormat.RTAUDIO_SINT16, RATE, SAMPLES /* SAMPLES * GAP of delay */, "ZorroTracker", null, () => {
 		// poll YM and SN here
-		rtAudio.write(emulator.buffer(SAMPLES, volume));
+		rtAudio.write(driver.buffer(SAMPLES, volume));
 	});
 
 	rtAudio.start();
-	rtAudio.write(emulator.buffer(SAMPLES, volume));
-	rtAudio.write(emulator.buffer(SAMPLES, volume));
+
+	for(let i = 0;i < GAP;i ++) {
+		rtAudio.write(driver.buffer(SAMPLES, volume));
+	}
 }
+
+(async() => {
+	setVolume(0.75);
+	load((await findAll())["jsmd"]);
+})().catch(console.log);

@@ -8,4 +8,6 @@ export interface DriverConfig extends GenericConfig {
 export interface Driver {
 	init:(samplerate:number, config:DriverConfig, emulator:Emulator) => void;
 	buffer:(samples: number, volume:number) => Buffer;
+	play:(special?:string) => void;
+	stop:() => void;
 }

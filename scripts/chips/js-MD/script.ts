@@ -22,8 +22,11 @@ export default class implements Emulator {
 		this.FM.init(undefined, samplerate);
 		this.FM.config(9);
 		this.FM.reset();
+	}
 
-		this.writeYM1(0x2B, 0x80);
+	public reset(): void {
+		this.PSG.reset();
+		this.FM.reset();
 	}
 
 	public writeYM1(register: YMREG, value: number): void {
@@ -66,10 +69,10 @@ export default class implements Emulator {
 
 		for(let addr = 0;addr < smp * 4;addr += 4) {
 			this.buffer.writeInt16LE(
-				(_fm.readInt16LE(addr) * volume * this.fmvol) + (_psg.readInt16LE(0) * volume * this.psgvol), this.bufpos);
+				(_fm.readInt16LE(addr) * volume * this.fmvol) + (_psg.readInt16LE(addr) * volume * this.psgvol), this.bufpos);
 
 			this.buffer.writeInt16LE(
-				(_fm.readInt16LE(addr + 2) * volume * this.fmvol) + (_psg.readInt16LE(2) * volume * this.psgvol), this.bufpos + 2);
+				(_fm.readInt16LE(addr + 2) * volume * this.fmvol) + (_psg.readInt16LE(addr + 2) * volume * this.psgvol), this.bufpos + 2);
 
 			this.bufpos += 4;
 		}

@@ -7,6 +7,7 @@ export interface EmulatorConfig extends GenericConfig {
 
 export interface Emulator {
 	init:(samplerate:number, config:EmulatorConfig) => void;
+	reset:() => void;
 	writeYM1:(register:YMREG, value:number) => void;
 	writeYM2:(register:YMREG, value:number) => void;
 	writePSG:(command:PSGCMD) => void;

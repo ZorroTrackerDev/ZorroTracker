@@ -16,12 +16,17 @@ export default class implements Driver {
 	private emulator:Emulator|undefined;
 
 	constructor() {
-		this.vgm = fs.readFileSync("./test.vgm");
-		this.block = Buffer.alloc(0);
+		this.vgm = this.block = Buffer.alloc(0);
 	}
 
-	public init(samplerate:number, config:DriverConfig, emulator:Emulator):void {
+	public init(samplerate:number, config:DriverConfig|null, emulator:Emulator):void {
 		this.emulator = emulator;
+	}
+
+	public loadVGM(file:string):void {
+		this.block = Buffer.alloc(0);
+		this.vgm = fs.readFileSync(file);
+		this.blockAddr = 0;
 
 		// verify this is a vgm file
 		if(this.vgm.readUInt32BE(0) !== 0x56676d20 /* "Vgm " */) {
@@ -30,10 +35,6 @@ export default class implements Driver {
 
 		// get the vgm version
 		this.version = this.vgm.readUInt16LE(8);
-
-	//	if(this.version > 0x150) {
-	//		throw new Error("wtf is this VGM version "+ this.version.toString(16));
-	//	}
 
 		// read the starting address, and lenghts and loop point
 		this.addr = this.version <= 0x150 ? 0x40 : this.vgm.readUInt32LE(0x34) + 0x34;
@@ -45,7 +46,22 @@ export default class implements Driver {
 		}
 	}
 
+	public play(special?:string):void {
+		if(special) {
+			this._play = false;
+			this.loadVGM(special);
+			this.emulator?.reset();
+		}
+
+		this._play = true;
+	}
+
+	public stop():void {
+		this._play = false;
+	}
+
 	private _ticks = 0;
+	private _play = false;
 
 	public buffer(samples: number, volume:number):Buffer {
 		if(!this.emulator) {
@@ -53,9 +69,15 @@ export default class implements Driver {
 		}
 
 		this.emulator.initBuffer(samples);
+
+		if(!this._play){
+			// WILL mute
+			return this.emulator.getBuffer();
+		}
+
 		let left = samples;
 
-		if(this._ticks > samples) {
+		if(this._ticks >= samples) {
 			// only ticks
 			this.emulator.runBuffer(samples, volume);
 			this._ticks -= samples;
@@ -162,12 +184,20 @@ export default class implements Driver {
 						break;
 					}
 
+					// ignore
+					case 0x90: this.addr += 4; break;
+					case 0x91: this.addr += 4; break;
+					case 0x92: this.addr += 5; break;
+					case 0x93: this.addr += 10; break;
+					case 0x94: this.addr += 1; break;
+					case 0x95: this.addr += 4; break;
+
 					default:
 						throw new Error("Command "+ this.vgm[this.addr - 1].toString(16) +" was not recognized!");
 				}
 
 				// if delay processing needed
-				if(delay > left) {
+				if(delay >= left) {
 					this.emulator.runBuffer(left, volume);
 					this._ticks = delay - left;
 					return this.emulator.getBuffer();

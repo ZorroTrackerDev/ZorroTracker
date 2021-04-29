@@ -6,9 +6,12 @@
  */
 window.exports = {};
 
+import path from "path";
 import { remote, webFrame, shell } from "electron";
 webFrame.setZoomFactor(1);		// testing only
 
+/* ip communication */
+import "./ipc ui";
 /* load shortcuts handler file */
 import "./misc/shortcuts";
 
@@ -84,19 +87,37 @@ window.preload = {
 	},
 
 	/* open a file or a project */
-	open: function() {
+	open: async function() {
+		const folder = (await window.ipc.cookie.get("openfolder")) ?? remote.app.getPath("documents");
+		console.log(folder)
+
+		// get the path cookie
 		remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
-			properties: ["openFile", ], defaultPath: __dirname, filters: [
+			properties: ["openFile", ], defaultPath: folder, filters: [
 				{ name: "Vgm Files", extensions: ["vgm"], },
 				{ name: "All Files", extensions: ["*"], },
 			],
+
 		}).then((v) => {
 			if(v.filePaths.length !== 1) {
 				return;
 			}
 
-
+			// reload audio and update folder
+			window.ipc.audio.stop();
+			window.ipc.cookie.set("openfolder", path.dirname(v.filePaths[0]));
+			setTimeout(() => window.ipc.audio.play(v.filePaths[0]), 50);
 
 		}).catch(console.log);
 	},
 }
+
+// initialize emulator and driver
+window.ipc.audio.findAll().then((emus) => {
+	if(emus["jsmd"]){
+		// @ts-ignore
+		window.ipc.audio.init(emus["jsmd"], undefined);
+		window.ipc.audio.volume(0.75);
+	}
+
+}).catch(console.log);

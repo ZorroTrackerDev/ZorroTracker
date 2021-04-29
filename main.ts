@@ -1,6 +1,8 @@
 import electron from "electron";
 import path from "path";
-import { Worker } from "worker_threads";
+
+// add the IPC handlers here
+import { getCookie, setCookie } from "./system/ipc";
 
 // function that creates a new window and loads ui/main.html.
 async function createWindow () {
@@ -14,7 +16,7 @@ async function createWindow () {
 		show: true, backgroundColor: "#222222",
 
 		webPreferences: {
-			preload: path.join(__dirname, "ui/main.preload.js"),
+			preload: path.join(__dirname, "ui", "main.preload.js"),
 			contextIsolation: false,		// TODO: possible security risk. Need to be careful about how to access anything outside the app ecosystem
 			enableRemoteModule: true,
 		},
@@ -74,14 +76,6 @@ async function createWindow () {
 			setCookie("main_y", ""+ win.getNormalBounds().y);
 		}
 	});
-
-	// extra code for loading the chip emulation routines
-	try {
-		const worker = new Worker(path.join(__dirname, "system", "emulator.js"));
-
-	} catch(ex) {
-		console.log(ex);
-	}
 }
 
 // this is responsible for creating the window.
@@ -148,7 +142,6 @@ async function loadWindowSettings(window:string) {
 	}
 }
 
-
 /**
  * Returns the value of the cookie you want to check.
  *
@@ -162,16 +155,4 @@ async function getCookieValue(name:string){
 	if(value && value.length > 0){
 		return value[0].value;
 	}
-}
-
-// get a browser cookie. This is useful for settings that are irrelevant for the user.
-function getCookie(name:string){
-	return electron.session.defaultSession.cookies.get({ url: "http://ZorroTracker", name: name, });
-}
-
-// set a browser cookie. This is useful for settings that are irrelevant for the user.
-function setCookie(name:string, value:string){
-	electron.session.defaultSession.cookies.set({ url: "http://ZorroTracker", name: name, value: value, expirationDate: 4102488000, }).catch(() => {
-		// if we failed just ignore it.
-	});
 }

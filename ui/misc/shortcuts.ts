@@ -101,7 +101,7 @@ document.addEventListener("keyup", (event) => {
 	const arrayname = getKeymappingsName(event.ctrlKey, event.shiftKey, event.altKey);
 
 	// get the function name from "keyMappings", and return if none were defined
-	const com = keyMappings[arrayname][event.key];
+	const com = keyMappings[arrayname][event.key.toUpperCase()];
 
 	if(!com) {
 		return;
@@ -143,7 +143,7 @@ export function addShortcuts(shortcuts:{ [key:string]: string|string[] }):void {
 					case "shift": shift = true; break;
 					case "alt": alt = true; break;
 					case "": break;
-					default: button = key; break;
+					default: button = key.toUpperCase(); break;
 				}
 			}
 

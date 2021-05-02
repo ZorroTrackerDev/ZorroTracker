@@ -7,7 +7,7 @@
 window.exports = {};
 
 import path from "path";
-import { remote, webFrame, shell } from "electron";
+import { remote, webFrame } from "electron";
 webFrame.setZoomFactor(1);		// testing only
 
 /* ip communication */
@@ -16,103 +16,52 @@ import "./ipc ui";
 import "./misc/shortcuts";
 
 window.preload = {
-	/* close the current window */
-	close: function() {
-		remote.getCurrentWindow().close();
-	},
-
-	/* minimize the current window */
-	minimize: function() {
-		remote.getCurrentWindow().minimize();
-	},
-
-	/* maximize/unmaximize the current window. Returns the new state as boolean. */
-	maximize: function() {
-		const window = remote.getCurrentWindow();
-
-		// maximize or unmaximize depending on the current state
-		if (!window.isMaximized()) {
-			window.maximize();
-			return true;
-
-		} else {
-			window.unmaximize();
-			return false;
-		}
-
-	},
-
-	/* function to open an URL in an external browser. DO NOT open in Electron please! */
-	openInBrowser: function(url:string){
-		shell.openExternal(url).catch(() => {
-			// TODO: Do not ignore error
-		});
-	},
-
-	/*
-	 * this method is needed because apparently Electron is silly and won't let me do this in toolbar.ts
-	 * what does this amazing function do? Simply, it just updates "main_toolbar_maximize" to correct state
-	 * based on whether the program is maximized or not, and then adds event listeners for the state change.
-	 * This then applies or removes the .maximized class.
-	 * Can't do it in "preload.ts" tho! No way! Too dangerous or something! Really?
+	/**
+	 * Helper function to update the maximize UI button depending on the window state. This info comes from the Node side using IPC.
+	 *
+	 * @param mode This is the mode for the button to use (maximized or not).
 	 */
-	updateMaximizeButtonState: () => {
-		// helper function for code below
-		const editClass = (mode:boolean) => {
-			const button = document.getElementById("main_toolbar_maximize");
+	updateMaximizeButtonState: (mode:boolean) => {
+		const button = document.getElementById("main_toolbar_maximize");
 
-			// if we could not find the button, just ignore this.
-			if(!button) {
-				return;
-			}
-
-			// I do not understand why using a string directly doesn't work, but it doesnt! great!
-			button.classList[mode ? "add" : "remove"]("maximized");
+		// if we could not find the button, just ignore this.
+		if(!button) {
+			return;
 		}
 
-		// special handling for the maximize button, to initialize its state
-		if(remote.getCurrentWindow().isMaximized()) {
-			editClass(true);
-		}
-
-		// handle the maximize event, to set the maximize button to different graphic
-		remote.getCurrentWindow().on("maximize", () => {
-			editClass(true);
-		});
-
-		// handle the unmaximize event, to set the maximize button to different graphic
-		remote.getCurrentWindow().on("unmaximize", () => {
-			editClass(false);
-		});
+		// add or remove the actual class here. The UI will handle the icon.
+		button.classList[mode ? "add" : "remove"]("maximized");
 	},
 
-	/* open a file or a project */
+	/* open a file or a project and handle response. */
 	open: async function() {
+		// use the cookie "openfolder" to grab the last path that was used. Otherwise, use the documents folder.
 		const folder = (await window.ipc.cookie.get("openfolder")) ?? remote.app.getPath("documents");
-		console.log(folder)
 
 		// get the path cookie
-		remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
-			properties: ["openFile", ], defaultPath: folder, filters: [
-				{ name: "Vgm Files", extensions: ["vgm"], },
-				{ name: "All Files", extensions: ["*"], },
+		const result = await remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
+			properties: [ "openFile", ], defaultPath: folder,
+			filters: [
+				{ name: "Vgm Files", extensions: [ "vgm", ], },
+				{ name: "All Files", extensions: [ "*", ], },
 			],
+		});
 
-		}).then((v) => {
-			if(v.filePaths.length !== 1) {
-				return;
-			}
+		// if invalid file was applied or operation was cancelled, abort
+		if(!result || result.filePaths.length !== 1) {
+			return;
+		}
 
-			// reload audio and update folder
-			window.ipc.audio.stop();
-			window.ipc.cookie.set("openfolder", path.dirname(v.filePaths[0]));
-			setTimeout(() => window.ipc.audio.play(v.filePaths[0]), 50);
+		// update the "openfolder" cookie to remember the last folder in the next run
+		window.ipc.cookie.set("openfolder", path.dirname(result.filePaths[0]));
 
-		}).catch(console.log);
+		// stop the audio playback and restart it with the new file opened. TODO: This is only test code!
+		window.ipc.audio.stop();
+		setTimeout(() => window.ipc.audio.play(result.filePaths[0]), 50);
 	},
 }
 
-// initialize emulator and driver
+// TODO: Temporary code to initiate the audio system with an emulator and set volume. Bad!
 window.ipc.audio.findAll().then((emus) => {
 	if(emus["jsmd"]){
 		// @ts-ignore

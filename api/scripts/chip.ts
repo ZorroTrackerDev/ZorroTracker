@@ -1,41 +1,125 @@
 import { GenericConfig } from "./config";
 
-export interface EmulatorConfig extends GenericConfig {
+// chip configuration file format
+export interface ChipConfig extends GenericConfig {
+	// this is the relative FM volume. 1.0 = 100% of the output volume.
 	fmvol?: number,
+
+	// this is the relative PSG volume. 1.0 = 100% of the output volume.
 	psgvol?: number,
 }
 
-export interface Emulator {
-	init:(samplerate:number, config:EmulatorConfig) => void;
+// interface for the chip emulator. All chips must use this interface.
+export interface Chip {
+	/**
+	 * Initialize the chip.
+	 *
+	 * @param samplerate The sample rate that the chip is requested to emulate in.
+	 * @param config The configuration object for the chip.
+	 */
+	init:(samplerate:number, config:ChipConfig) => void;
+
+	/**
+	 * Reset the chip.
+	 */
 	reset:() => void;
+
+	/**
+	 * Mute some YM2612 channels (separate from doing it via YM2612 registers)
+	 *
+	 * @param bitfield Each bit represents a channel, 1-6 = FM, 0 = DAC
+	 */
+	muteYM:(bitfield:number) => void;
+
+	/**
+	 * Write command to YM2612 port 1.
+	 *
+	 * @param register The YM2612 register to write to
+	 * @param value The value to write into port 1
+	 */
 	writeYM1:(register:YMREG, value:number) => void;
+
+	/**
+	 * Write command to YM2612 port 2.
+	 *
+	 * @param register The YM2612 register to write to
+	 * @param value The value to write into port 2
+	 */
 	writeYM2:(register:YMREG, value:number) => void;
-	writePSG:(command:PSGCMD) => void;
+
+	/**
+	 * Read from YM2612 port 1.
+	 *
+	 * @returns the current status of the YM2612
+	 */
 	readYM:() => number;
-	readPSG:() => number;
+
+	/**
+	 * Mute some SN76489 channels (separate from doing it via SN76489 commands)
+	 *
+	 * @param bitfield Each bit represents a channel, 1-3 = PSG, 4 = PSG noise
+	 */
+	mutePSG:(bitfield:number) => void;
+
+	/**
+	 * Write command to SN76489 command port.
+	 *
+	 * @param command The SN76489 command to write
+	 */
+	writePSG:(command:PSGCMD) => void;
+
+	/**
+	 * Read from SN76489 command port
+	 *
+	 * @returns the current status of the SN76489, or `null` if the operation is not permitted
+	 */
+	readPSG:() => number|null;
+
+	/**
+	 * Set the chip emulation volume.
+	 *
+	 * @param volume Volume as percentage from 0% to 100% (0.0 to 1.0)
+	 */
+	setVolume:(volume:number) => void;
+
+	/**
+	 * Initialize a new buffer for audio output.
+	 *
+	 * @param totalsamples The number of samples that the buffer needs to fit
+	 */
 	initBuffer:(totalsamples: number) => void;
-	runBuffer:(samples: number, volume:number) => number;
+
+	/**
+	 * Run chip emulation for number of samples before returning.
+	 *
+	 * @returns The actual number of samples that were emulated
+	 */
+	runBuffer:(samples: number) => number;
+
+	/**
+	 * Get the last audio buffer
+	 *
+	 * @returns The buffer potentially filled with audio data
+	 */
 	getBuffer:() => Buffer;
 }
 
+// helper enums for PSG commands
 export enum PSGCMD {
-	PSG1 = 0x80,
-	PSG2 = 0xA0,
-	PSG3 = 0xC0,
-	PSG4 = 0xE0,
+	// channel equates
+	PSG1 = 0x80, PSG2 = 0xA0, PSG3 = 0xC0, PSG4 = 0xE0,
 
-	VOLUME = 0x10,
-	FREQ = 0x00,
+	// command type equates
+	VOLUME = 0x10, FREQ = 0x00,
 
-	PERIODIC = 0x00,
-	WHITE = 0x04,
+	// noise mode equates
+	PERIODIC = 0x00, WHITE = 0x04,
 
-	N10 = 0x00,
-	N20 = 0x01,
-	N40 = 0x02,
-	TONE3 = 0x03,
+	// noise frequency equates
+	N10 = 0x00, N20 = 0x01, N40 = 0x02, TONE3 = 0x03,
 }
 
+// helper enums for YM registers
 export enum YMREG {
 	// Port 1 only
 	LFO = 0x22,
@@ -56,7 +140,7 @@ export enum YMREG {
 	FreqCh3Op4LSB = 0xAA,			// Frequency LSB FM3 Special Mode Operator 4
 	FreqCh3Op4MSB = 0xAE,			// Frequency MSB FM3 Special Mode Operator 4
 
-	// op register codes
+	// Op register codes
 	ch1 = 0x00, ch2 = 0x01, ch3 = 0x02,
 	op1 = 0x00, op2 = 0x04, op3 = 0x08, op4 = 0x0C,
 
@@ -76,7 +160,7 @@ export enum YMREG {
 	PL = 0xB4,				// Panning + LFO
 }
 
-// LFO = 0x22
+// Equates for LFO (register 0x22)
 export enum YMLFO {
 	Enable = 0x8,
 	F3_98 = 0x00,
@@ -89,7 +173,7 @@ export enum YMLFO {
 	F72_2 = 0x07,
 }
 
-// LFO = 0x28
+// Equates for Key (register 0x28)
 export enum YMKey {
 	FM1 = 0x0,
 	FM2 = 0x1,
@@ -105,6 +189,7 @@ export enum YMKey {
 	OpAll = Op1 | Op2 | Op3 | Op4,
 }
 
+// various helper enums for YM register values
 export enum YMHelp {
 	// TimerA = 0x24-0x25
 	ShiftTimerALSB = 2,
@@ -169,11 +254,13 @@ export enum YMHelp {
 	AndFMS = 0x38,
 	AndAMS = 0x03,
 
+	// AMS equates
 	AMS0 = 0x00,
 	AMS1_4 = 0x01,
 	AMS5_9 = 0x02,
 	AMS11_8 = 0x03,
 
+	// FMS equates
 	FMS0 = 0x00,
 	FMS3_4 = 0x08,
 	FMS6_7 = 0x10,

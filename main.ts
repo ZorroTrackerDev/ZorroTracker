@@ -2,13 +2,16 @@ import electron from "electron";
 import path from "path";
 
 // add the IPC handlers here
-import { getCookie, setCookie } from "./system/ipc";
+import { getCookie, setCookie, updateMaximized } from "./system/ipc";
+
+// static reference to the main window
+export let window:electron.BrowserWindow|null = null;
 
 // function that creates a new window and loads ui/main.html.
 async function createWindow () {
 	const settings = await loadWindowSettings("main");
 
-	const win = new electron.BrowserWindow({
+	window = new electron.BrowserWindow({
 		width: settings.w, height: settings.h,
 		minWidth: 400, minHeight: 400,
 		x: settings.x, y: settings.y,
@@ -24,63 +27,66 @@ async function createWindow () {
 
 	// TEST: remove dev tools! They're evil!
 	if (process.env.NODE_ENV === "test") {
-		win.webContents.closeDevTools();
+		window.webContents.closeDevTools();
 
 	} else if(settings.devtools) {
 		// if not in test, open devtools if devtools flag was set
-		win.webContents.openDevTools();
+		window.webContents.openDevTools();
 	}
 
 	// maximize window if the settings tell to
 	if(settings.maximized) {
-		win.maximize();
+		window.maximize();
+		updateMaximized(true);
 	}
 
-	win.removeMenu();			// remove default shortcuts
-	win.loadFile(path.join(__dirname, "./ui/main.html")).catch(() => {
+	window.removeMenu();			// remove default shortcuts
+	window.loadFile(path.join(__dirname, "./ui/main.html")).catch(() => {
 		// TODO: should we add a logging file that will log errors?
 		electron.app.quit();
 	});
 
 	// focus the window
-	win.focus();
+	window.focus();
 
 	// when the window is closed, update the cookies
-	win.on("close", async() => {
-		setCookie("main_devtools", win.webContents.isDevToolsOpened() +"");
+	window.on("close", async() => {
+		setCookie("main_devtools", window?.webContents.isDevToolsOpened() +"");
 		await electron.session.defaultSession.cookies.flushStore();
 	});
 
 	// when window is unmaximized, update the cookie value
-	win.on("unmaximize", () => {
+	window.on("unmaximize", () => {
+		updateMaximized(false);
 		setCookie("main_maximized", "false");
 	});
 
 	// when window is maximized, update the cookie value
-	win.on("maximize", () => {
+	window.on("maximize", () => {
+		updateMaximized(true);
 		setCookie("main_maximized", "true");
 	});
 
 	// when window is resized and not maximized, update its coordinates
-	win.on("resize", () => {
-		if(!win.isMaximized()) {
-			setCookie("main_w", ""+ win.getNormalBounds().width);
-			setCookie("main_h", ""+ win.getNormalBounds().height);
+	window.on("resize", () => {
+		if(!window?.isMaximized()) {
+			setCookie("main_w", ""+ window?.getNormalBounds().width);
+			setCookie("main_h", ""+ window?.getNormalBounds().height);
 		}
 	});
 
 	// when window is moved and not maximized, update its coordinates
-	win.on("move", () => {
-			if(!win.isMaximized()) {
-			setCookie("main_x", ""+ win.getNormalBounds().x);
-			setCookie("main_y", ""+ win.getNormalBounds().y);
+	window.on("move", () => {
+		if(!window?.isMaximized()) {
+			setCookie("main_x", ""+ window?.getNormalBounds().x);
+			setCookie("main_y", ""+ window?.getNormalBounds().y);
 		}
 	});
 }
 
 // this is responsible for creating the window.
 electron.app.whenReady().then(async() => {
-	await createWindow()
+	await createWindow();
 
 	// on Mac OS, we want to be able to respawn the app without fully closing it apparently
 	electron.app.on("activate", async() => {

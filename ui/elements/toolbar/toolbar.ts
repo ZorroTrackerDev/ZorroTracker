@@ -17,7 +17,7 @@ const defaultMenu:ToolbarMenu = {
 			},
 			"Exit": {
 				enabled: true,
-				action: "window.preload.close()",
+				action: "window.ipc.ui.close()",
 			},
 		},
 	},
@@ -47,7 +47,7 @@ type WindowButtons = { id: string, action: string, child: string }[];
 const defaultButtons:WindowButtons = [
 	{
 		id: "main_toolbar_minimize",
-		action: "window.preload.minimize()",
+		action: "window.ipc.ui.minimize()",
 		child: `
 			<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" version="1.1">
 				<line x1="25%" y1="50%" x2="75%" y2="50%" stroke="white" stroke-width="10" stroke-linecap="butt" />
@@ -56,7 +56,7 @@ const defaultButtons:WindowButtons = [
 	},
 	{
 		id: "main_toolbar_maximize",
-		action: "window.preload.maximize();",
+		action: "window.ipc.ui.maximize();",
 		child: `
 			<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" version="1.1">
 				<path fill="none" stroke="white" stroke-width="8" stroke-linecap="square"/>
@@ -65,7 +65,7 @@ const defaultButtons:WindowButtons = [
 	},
 	{
 		id: "main_toolbar_exit",
-		action: "window.preload.close();",
+		action: "window.ipc.ui.close();",
 		child: `
 			<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" version="1.1">
 				<path fill="white" stroke="white" stroke-width="10" stroke-linecap="butt" d="
@@ -180,7 +180,7 @@ export function loadDefaultToolbar(): void {
 		if(toolbarDiv){
 			// note: only calculating the toolbar if the element exists!
 			toolbarDiv.innerHTML = makeToolbar(defaultMenu, defaultButtons);
-			window.preload.updateMaximizeButtonState();
+			window.ipc.ui.updateMaximized();
 		}
 
 	} catch(ex) {
@@ -246,8 +246,11 @@ window.toolbarFunc = {
 
 		return false;
 	},
-	/** simply opens the project Github page */
+
+	/**
+	 * Helper function to open the Github repository in an external browser.
+	 */
 	openGithub: () => {
-		window.preload.openInBrowser("https://github.com/ZorroTrackerDev/ZorroTracker");
+		window.ipc.ui.openInBrowser("https://github.com/ZorroTrackerDev/ZorroTracker");
 	},
 };

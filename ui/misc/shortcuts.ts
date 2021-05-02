@@ -1,4 +1,3 @@
-import { remote } from "electron";
 import { loadSettingsFiles, SettingsTypes } from "../../api/files";
 
 /**
@@ -35,40 +34,22 @@ const keyMappings:{ [key:string]:{ [key:string]:string }} = {
  * this array only shows the code, used by "keymap" and shortcuts.json5 to run them.
  */
 const shortcutFunction:{ [key:string]:(e:Event) => unknown|void } = {
-
 	/* shortcut for opening chrome dev tools */
 	"ui.opendevtools": () => {
-		remote.webContents.getFocusedWebContents().toggleDevTools();
+		window.ipc.ui.devTools();
 	},
 
 	/* shortcut for inspect element */
 	"ui.inspectelement": () => {
-		/*
-		 * because Electron, we have to actually get the mouse position relative to the SCREEN rather than the current window.
-		 * I don't know why but oh well.
-		 */
-		const bounds = remote.getCurrentWindow().getContentBounds();
-		const mouse = remote.screen.getCursorScreenPoint();
-
-		// check if the mouse is inside of the browser window
-		if(mouse.x >= bounds.x && mouse.x < bounds.x + bounds.width &&
-			mouse.y >= bounds.y && mouse.y < bounds.y + bounds.height) {
-
-				// open dev tools at the mouse position relative the to the window
-				remote.webContents.getFocusedWebContents().inspectElement(mouse.x - bounds.x, mouse.y - bounds.y);
-				return;
-			}
-
-		// open dev tools at an arbitary position
-		remote.webContents.getFocusedWebContents().inspectElement(-1, -1);
+		window.ipc.ui.inspectElement();
 	},
 
 	/* shortcut for fullscreen */
 	"ui.fullscreen": () => {
-		window.preload.maximize();
+		window.ipc.ui.maximize();
 	},
 
-	/* shortcut for open */
+	/* shortcut for opening a file or a project */
 	"ui.open": () => {
 		window.preload.open();
 	},

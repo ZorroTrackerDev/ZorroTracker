@@ -1,21 +1,23 @@
 import { YM2612 } from "./ym2612";
 import { SN76489 } from "./sn76489";
-import { Emulator, YMREG, PSGCMD, EmulatorConfig } from "../../../api/scripts/emulator";
+import { Chip, YMREG, PSGCMD, ChipConfig } from "../../../api/scripts/chip";
 
-export default class implements Emulator {
+export default class implements Chip {
 	private FM:YM2612;
 	private PSG:SN76489;
-	private fmvol = 1;
-	private psgvol = 1;
+	private storedfmvol = 1;
+	private storedpsgvol = 1;
+	private curfmvol = 1;
+	private curpsgvol = 1;
 
 	constructor() {
 		this.FM = new YM2612();
 		this.PSG = new SN76489();
 	}
 
-	public init(samplerate: number, config:EmulatorConfig): void {
-		this.fmvol = config.fmvol ?? 1;
-		this.psgvol = config.psgvol ?? 1;
+	public init(samplerate: number, config:ChipConfig): void {
+		this.storedfmvol = config.fmvol ?? 1;
+		this.storedpsgvol = config.psgvol ?? 1;
 		this.PSG.init(undefined, samplerate);
 		this.PSG.config(0xf, 0, 0, 9, 16);
 
@@ -29,6 +31,10 @@ export default class implements Emulator {
 		this.FM.reset();
 	}
 
+	public muteYM(bitfield: number): void {
+		// TODO: Implement
+	}
+
 	public writeYM1(register: YMREG, value: number): void {
 		this.FM.write(register, value);
 	}
@@ -37,17 +43,26 @@ export default class implements Emulator {
 		this.FM.write(register | 0x100, value);
 	}
 
-	public writePSG(command: PSGCMD): void {
-		this.PSG.write(command);
-	}
-
 	public readYM(): number {
 		return this.FM.read();
 	}
 
+	public mutePSG(bitfield: number): void {
+		// TODO: Implement
+	}
+
+	public writePSG(command: PSGCMD): void {
+		this.PSG.write(command);
+	}
+
 	// eslint-disable-next-line class-methods-use-this
-	public readPSG(): number {
-		return 0xFF;
+	public readPSG(): null {
+		return null;
+	}
+
+	public setVolume(volume:number): void {
+		this.curfmvol = this.storedfmvol * volume;
+		this.curpsgvol = this.storedpsgvol * volume;
 	}
 
 	private buffer:Buffer|undefined;
@@ -58,7 +73,7 @@ export default class implements Emulator {
 		this.bufpos = 0;
 	}
 
-	public runBuffer(samples: number, volume:number):number {
+	public runBuffer(samples: number):number {
 		if(!this.buffer) {
 			throw new Error("initBuffer was not called before runBuffer!");
 		}
@@ -69,10 +84,10 @@ export default class implements Emulator {
 
 		for(let addr = 0;addr < smp * 4;addr += 4) {
 			this.buffer.writeInt16LE(
-				(_fm.readInt16LE(addr) * volume * this.fmvol) + (_psg.readInt16LE(addr) * volume * this.psgvol), this.bufpos);
+				(_fm.readInt16LE(addr) * this.curfmvol) + (_psg.readInt16LE(addr) * this.curpsgvol), this.bufpos);
 
 			this.buffer.writeInt16LE(
-				(_fm.readInt16LE(addr + 2) * volume * this.fmvol) + (_psg.readInt16LE(addr + 2) * volume * this.psgvol), this.bufpos + 2);
+				(_fm.readInt16LE(addr + 2) * this.curfmvol) + (_psg.readInt16LE(addr + 2) * this.curpsgvol), this.bufpos + 2);
 
 			this.bufpos += 4;
 		}

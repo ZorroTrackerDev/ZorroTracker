@@ -1,6 +1,6 @@
 import { Driver, DriverConfig } from "../api/scripts/driver";
 import fs from "fs";
-import { Emulator } from "../api/scripts/emulator";
+import { Chip } from "../api/scripts/chip";
 
 export default class implements Driver {
 	private vgm:Buffer;
@@ -13,19 +13,18 @@ export default class implements Driver {
 
 	private block:Buffer;
 	private blockAddr = 0;
-	private emulator:Emulator|undefined;
+	private chip:Chip|undefined;
 
 	constructor() {
 		this.vgm = this.block = Buffer.alloc(0);
 	}
 
-	public init(samplerate:number, config:DriverConfig|null, emulator:Emulator):void {
-		this.emulator = emulator;
+	public init(samplerate:number, config:DriverConfig|null, chip:Chip):void {
+		this.chip = chip;
 	}
 
-	public loadVGM(file:string):void {
+	public reset():void {
 		this.block = Buffer.alloc(0);
-		this.vgm = fs.readFileSync(file);
 		this.blockAddr = 0;
 
 		// verify this is a vgm file
@@ -46,11 +45,16 @@ export default class implements Driver {
 		}
 	}
 
+	public loadVGM(file:string):void {
+		this.vgm = fs.readFileSync(file);
+	}
+
 	public play(special?:string):void {
 		if(special) {
 			this._play = false;
 			this.loadVGM(special);
-			this.emulator?.reset();
+			this.reset();
+			this.chip?.reset();
 		}
 
 		this._play = true;
@@ -63,29 +67,28 @@ export default class implements Driver {
 	private _ticks = 0;
 	private _play = false;
 
-	public buffer(samples: number, volume:number):Buffer {
-		if(!this.emulator) {
-			throw new Error("emulator is null");
+	public buffer(initSamples: number, advance:(samples:number) => number):void {
+		if(!this.chip) {
+			throw new Error("chip is null");
 		}
 
-		this.emulator.initBuffer(samples);
+		// need to modify the value over time
+		let left = initSamples;
 
 		if(!this._play){
-			// WILL mute
-			return this.emulator.getBuffer();
+			// playback disabled
+			advance(left);
+			return;
 		}
 
-		let left = samples;
-
-		if(this._ticks >= samples) {
+		if(this._ticks >= left) {
 			// only ticks
-			this.emulator.runBuffer(samples, volume);
-			this._ticks -= samples;
-			return this.emulator.getBuffer();
+			advance(left);
+			this._ticks -= left;
+			return;
 
 		} else if(this._ticks > 0){
-			this.emulator.runBuffer(this._ticks, volume);
-			left -= this._ticks;
+			left = advance(this._ticks);
 			this._ticks = 0;
 		}
 
@@ -97,15 +100,15 @@ export default class implements Driver {
 
 				switch(this.vgm[this.addr++]) {
 					case 0x52:
-						this.emulator.writeYM1(this.vgm[this.addr++], this.vgm[this.addr++]);
+						this.chip.writeYM1(this.vgm[this.addr++], this.vgm[this.addr++]);
 						break;
 
 					case 0x53:
-						this.emulator.writeYM2(this.vgm[this.addr++], this.vgm[this.addr++]);
+						this.chip.writeYM2(this.vgm[this.addr++], this.vgm[this.addr++]);
 						break;
 
 					case 0x4F: case 0x50:
-						this.emulator.writePSG(this.vgm[this.addr++]);
+						this.chip.writePSG(this.vgm[this.addr++]);
 						break;
 
 					case 0x66:
@@ -116,8 +119,8 @@ export default class implements Driver {
 						} else {
 							// no more data 4 u
 							this._ticks = Infinity;
-							this.emulator.runBuffer(left, volume);
-							return this.emulator.getBuffer();
+							left = advance(left);
+							return;
 						}
 
 					case 0x61:
@@ -145,7 +148,7 @@ export default class implements Driver {
 					case 0x88: case 0x89: case 0x8A: case 0x8B:
 					case 0x8C: case 0x8D: case 0x8E: case 0x8F:
 						if(this.blockAddr < this.block.length){
-							this.emulator.writeYM1(0x2A, this.block[this.blockAddr++])
+							this.chip.writeYM1(0x2A, this.block[this.blockAddr++])
 						}
 
 						delay = (this.vgm[this.addr - 1] & 0xF);
@@ -198,17 +201,14 @@ export default class implements Driver {
 
 				// if delay processing needed
 				if(delay >= left) {
-					this.emulator.runBuffer(left, volume);
+					advance(left);
 					this._ticks = delay - left;
-					return this.emulator.getBuffer();
+					return;
 
 				} else if(delay > 0) {
-					this.emulator.runBuffer(delay, volume);
-					left -= delay;
+					left = advance(delay);
 				}
 			}
 		}
-
-		return this.emulator.getBuffer();
 	}
 }

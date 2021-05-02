@@ -19,8 +19,8 @@ let _cachedFileMappings: { [key: string]: string|string[] };
 /**
  * load the settings file data structures depending on the type of setting you're trying to load.
  *
- * @param settingsType describes the type of data you are trying to load. This enum will figure out the correct filename for you.
- * @returns list of the file data for the defines files. JSON files are interpreted by default. No guarantee of what you might get out. Be careful
+ * @param settingsType Describes the type of data you are trying to load. This enum will figure out the correct filename for you.
+ * @returns List of the file data for the defines files. JSON files are interpreted by default. No guarantee of what you might get out. Be careful
  * @throws anything. Invalid files will throw just about any error.
  */
 export function loadSettingsFiles(settingsType:SettingsTypes): unknown[] {

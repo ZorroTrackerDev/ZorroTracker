@@ -83,7 +83,7 @@ export interface Chip {
 	setVolume:(volume:number) => void;
 
 	/**
-	 * Initialize a new buffer for audio output.
+	 * Initialize a new buffer for audio output. The buffer is expected to be little-endian 16-bit per samples, left and right speakers interleaved.
 	 *
 	 * @param totalsamples The number of samples that the buffer needs to fit
 	 */

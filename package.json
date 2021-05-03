@@ -88,7 +88,8 @@
 		"generateUpdatesFilesForAllChannels": true,
 		"asar": false,
 		"directories": {
-			"output": "./dist"
+			"output": "./dist",
+			"buildResources": "./res"
 		},
 		"files": [
 			{

@@ -40,8 +40,8 @@ async function createWindow () {
 		updateMaximized(true);
 	}
 
-	window.removeMenu();			// remove default shortcuts
-	window.loadFile(path.join(__dirname, "./ui/main.html")).catch(() => {
+	//window.removeMenu();			// remove default shortcuts
+	window.loadFile(path.join(__dirname, "ui", "main.html")).catch(() => {
 		// TODO: should we add a logging file that will log errors?
 		electron.app.quit();
 	});

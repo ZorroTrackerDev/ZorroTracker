@@ -4,7 +4,7 @@ import path from "path";
 import json5 from "json5";
 import { ConfigVersion, GenericConfig } from "../api/scripts/config";
 
-export const scriptsFolder = path.join(__dirname, "..", "scripts");
+export const scriptsFolder = "scripts";
 
 // function to find all emulators
 export async function findAll(folder:string):Promise<{ [key:string]: GenericConfig }> {

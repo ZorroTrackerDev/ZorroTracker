@@ -2,7 +2,9 @@
  * @jest-environment jsdom
  */
 
-import { addShortcuts, loadDefaultShortcuts } from "../../ui/misc/shortcuts";
+// NOTE: fs relies on being in the correct directory!!
+process.chdir("src");
+import { addShortcuts, loadDefaultShortcuts } from "../../src/ui/misc/shortcuts";
 
 test("Can load test shortcuts", function () {
 	expect(() =>

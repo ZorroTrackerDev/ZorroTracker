@@ -3,6 +3,7 @@ import { ChipConfig, Chip } from "../api/scripts/chip";
 import { Driver } from "../api/scripts/driver";
 import { RtAudio, RtAudioApi, RtAudioFormat } from "audify";
 import { parentPort } from "worker_threads";
+import path from "path";
 
 // the output sample rate of the program. TODO: Not hardcode.
 const RATE = 53267;
@@ -45,8 +46,9 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 			 * data: ChipConfig to use for loading and initializing the chip.
 			 */
 			case "chip":
+				// why process.cwd()? There are differences between dev environment and the actual app. Yeah so... We gotta hack this together! >:(
 				/* eslint-disable @typescript-eslint/no-var-requires */
-				chip = new (require((data.data as ChipConfig).entry).default)();
+				chip = new (require(path.join(process.cwd(), (data.data as ChipConfig).entry)).default)();
 				chip?.init(RATE, data.data as ChipConfig);
 				break;
 

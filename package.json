@@ -2,19 +2,19 @@
 	"name": "zorrotracker",
 	"version": "0.0.0-alpha",
 	"description": "Sega Mega Drive/Genesis music tracker program based on Electron. Project code is created by Aurora Fields, funded and adviced by: Silverhand, acrouzet, Nat The Porcupine.",
-	"main": "build/main.js",
+	"main": "main.js",
 	"scripts": {
 		"init": "npm run build",
 		"test": "npm run build & jest --coverage & pause",
 		"lint": "eslint . --ext .ts",
 		"dev": "concurrently \"npm run tsc-watch\" \"npm run less-watch\"",
-		"less-compile": "compile-less -d ui -o build/ui",
+		"less-compile": "compile-less -d src/ui -o build/ui",
 		"less-watch": "less-watch-compiler",
 		"tsc": "npx tsc -p tsconfig.build.json",
 		"tsc-watch": "npx tsc -w -p tsconfig.build.json",
-		"copy": "copyfiles -e \"./tst/**/*.*\" -e \"./node_modules/**/*.*\" -e \"./dist/**/*.*\" -e \"./build/**/*.*\" \"./**/*.js\" \"./**/*.json5\" \"./**/*.html\" build",
+		"copy": "copyfiles -u 1 \"src/**/*.js\" \"./src/**/*.json5\" \"./src/**/*.html\" build",
 		"build": "npm run tsc & npm run less-compile & npm run copy",
-		"electron": "electron build/main.js",
+		"electron": "cd build & electron main.js",
 		"start": "npm run build & npm run electron",
 		"pack": "npm run build & electron-builder --dir",
 		"ci_init": "npm run build",
@@ -59,7 +59,8 @@
 		"testEnvironment": "node",
 		"testMatch": [
 			"**/tests/**/*.[jt]s?(x)",
-			"**/?(*.)+(spec|test).[jt]s?(x)"
+			"**/src/**/?(*.)+(spec|test).[jt]s?(x)",
+			"!**/dist/**/*"
 		],
 		"modulePathIgnorePatterns": [
 			"/tests/_base.ts"
@@ -68,17 +69,17 @@
 		"coverageDirectory": "coverage",
 		"coverageProvider": "v8",
 		"collectCoverageFrom": [
-			"**/*.ts*"
+			"**/*.ts",
+			"!**/*.d.ts"
 		],
 		"coveragePathIgnorePatterns": [
 			"node_modules",
 			"build",
 			"coverage",
 			"dist",
-			"main.ts",
-			".*.d.ts",
-			".*.c",
-			".*.h"
+			"src/main.ts",
+			"src/system/ipc.ts",
+			"src/ui/ipc ui.ts"
 		]
 	},
 	"build": {
@@ -90,15 +91,27 @@
 			"output": "./dist"
 		},
 		"files": [
-			"./build/**/*",
+			{
+				"from": "./build",
+				"to": ".",
+				"filter": [ "**/*", "!settings/**/*", "!scripts/**/*" ]
+			},
 			"./node_modules/**/*",
 			"./package.json",
 			"!./build/settings/**/*",
 			"!./build/scripts/**/*"
 		],
 		"extraFiles": [
-			"./settings/**/*",
-			"./scripts/**/*"
+			{
+				"from": "./build/settings",
+				"filter": "**/*",
+				"to": "./settings"
+			},
+			{
+				"from": "./build/scripts/",
+				"filter": "**/*",
+				"to": "./scripts"
+			}
 		],
 		"artifactName": "${productName}-${os}-${arch}-${buildVersion}.${ext}",
 		"win": {

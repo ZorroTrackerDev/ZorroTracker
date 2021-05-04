@@ -1,4 +1,5 @@
 export enum ipcEnum {
+	UiPath = "ui-path",
 	UiOpenURL = "ui-openurl",
 	UiGetMaximize = "ui-getmaximize",
 	UiMaximize = "ui-maximize",

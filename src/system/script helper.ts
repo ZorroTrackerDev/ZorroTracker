@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import json5 from "json5";
 import { ConfigVersion, GenericConfig } from "../api/scripts/config";
+import { dataPath } from "./ipc";
 
 export const scriptsFolder = "scripts";
 
@@ -10,11 +11,11 @@ export const scriptsFolder = "scripts";
 export async function findAll(folder:string):Promise<{ [key:string]: GenericConfig }> {
 	const ret:{ [key:string]: GenericConfig } = {};
 
-	for(const dir of await fs.promises.readdir(path.join(scriptsFolder, folder))) {
+	for(const dir of await fs.promises.readdir(path.join(dataPath, scriptsFolder, folder))) {
 		// check if this is a valid chip
 		try {
 			const obj = json5.parse(await fs.promises.readFile(
-				path.join(scriptsFolder, folder, dir, "config.json5"), "utf8")) as GenericConfig;
+				path.join(dataPath, scriptsFolder, folder, dir, "config.json5"), "utf8")) as GenericConfig;
 
 			// this is the only valid version
 			if(obj.version !== ConfigVersion.b0){
@@ -27,7 +28,7 @@ export async function findAll(folder:string):Promise<{ [key:string]: GenericConf
 			}
 
 			// check file exists and update entry to absolute file
-			await fs.promises.access(obj.entry = path.join(scriptsFolder, folder, dir, obj.entry));
+			await fs.promises.access(obj.entry = path.join(dataPath, scriptsFolder, folder, dir, obj.entry));
 
 			// append it to results
 			ret[obj.uuid] = obj;

@@ -26,7 +26,7 @@ let _cachedFileMappings: { [key: string]: string|string[] };
 export function loadSettingsFiles(settingsType:SettingsTypes): unknown[] {
 	if(!_cachedFileMappings) {
 		// if the configuration file was not cached, cache it now.
-		const rawfile = fs.readFileSync(fileMappingsSource, "utf-8");
+		const rawfile = fs.readFileSync(path.join(window.path, fileMappingsSource), "utf-8");
 		_cachedFileMappings = json5.parse(rawfile);
 	}
 
@@ -41,7 +41,7 @@ export function loadSettingsFiles(settingsType:SettingsTypes): unknown[] {
 	const convertSingleFile = (fileName:string) => {
 		try {
 			// read the file based on its filename. All files must be in the "settingsDirectory".
-			const fileAddress = path.join(settingsDirectory, fileName);
+			const fileAddress = path.join(window.path, settingsDirectory, fileName);
 			let fileData = fs.readFileSync(fileAddress, "utf-8");
 
 			if(fileAddress.endsWith(".json") || fileAddress.endsWith(".json5")) {

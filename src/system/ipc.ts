@@ -1,4 +1,4 @@
-import { ipcMain, session, shell, screen } from "electron";
+import { ipcMain, session, shell, screen, app } from "electron";
 import { Worker } from "worker_threads";
 import path from "path";
 import { ipcEnum } from "./ipc enum";
@@ -9,8 +9,19 @@ import { DriverConfig } from "../api/scripts/driver";
 import { window } from "../main";
 
 /**
+ * The application data directory path. This is where the settings and scripts folders are found.
+ * This is needed because development and packed builds have different relative paths from app.getAppPath() for the main directory!
+ */
+export const dataPath = path.join(app.getAppPath(), app.isPackaged ? ".." : ".", app.isPackaged ? ".." : ".");
+
+/**
  * Various handlers for dealing with the UI.
  */
+
+// handle the UI requesting the application path
+ipcMain.on(ipcEnum.UiPath, (event) => {
+	event.reply(ipcEnum.UiPath, dataPath);
+});
 
 /**
  * Helper function to tell the UI when the window has been maximized or unmaximized.
@@ -155,7 +166,9 @@ function _findall(folder:ScriptFolders, eventName:ipcEnum, event:IpcMainEvent) {
 	ScriptHelper.findAll(folder).then((res) => {
 		event.reply(eventName, res);
 
-	}).catch(() => {
+	}).catch((ex) => {
+		// for some reason this didn't work, just throw an error
+		console.log(ex);
 		event.reply(eventName, []);
 	})
 }

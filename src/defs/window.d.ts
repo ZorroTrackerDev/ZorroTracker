@@ -5,6 +5,12 @@ export {};
 declare global {
 	export interface Window {
 		exports: unknown,
+
+		/**
+		 * The absolute path for the program data directory. This is where the exe file is in production, or the build directory in development.
+		 */
+		path: string,
+
 		preload: {
 			/**
 			 * Helper function to update the maximize UI button depending on the window state. This info comes from the Node side using IPC.
@@ -35,6 +41,13 @@ declare global {
 		},
 		ipc: {
 			ui: {
+				/**
+				 * Get the program path from backend. This is saved to window.path
+				 *
+				 * @returns A promise that indicates when the action is completed.
+				 */
+				path: () => Promise<void>,
+
 				/**
 				 * Request the backend for the maximized state.
 				 */

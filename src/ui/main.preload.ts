@@ -10,10 +10,8 @@ import path from "path";
 import { remote, webFrame } from "electron";
 webFrame.setZoomFactor(1);		// testing only
 
-/* ip communication */
+/* ipc communication */
 import "./ipc ui";
-/* load shortcuts handler file */
-import "./misc/shortcuts";
 
 window.preload = {
 	/**
@@ -61,8 +59,15 @@ window.preload = {
 	},
 }
 
-// TODO: Temporary code to initiate the audio system with an emulator and set volume. Bad!
-window.ipc.audio.findAll().then((emus) => {
+// request the appPath variable from main thread
+window.ipc.ui.path().then(() => {
+	/* load shortcuts handler file */
+	import("./misc/shortcuts");
+
+	return window.ipc.audio.findAll();
+
+}).then((emus) => {
+	// TODO: Temporary code to initiate the audio system with an emulator and set volume. Bad!
 	if(emus["jsmd"]){
 		// @ts-ignore
 		window.ipc.audio.init(emus["jsmd"], undefined);
@@ -70,3 +75,4 @@ window.ipc.audio.findAll().then((emus) => {
 	}
 
 }).catch(console.log);
+

@@ -46,9 +46,8 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 			 * data: ChipConfig to use for loading and initializing the chip.
 			 */
 			case "chip":
-				// why process.cwd()? There are differences between dev environment and the actual app. Yeah so... We gotta hack this together! >:(
 				/* eslint-disable @typescript-eslint/no-var-requires */
-				chip = new (require(path.join(process.cwd(), (data.data as ChipConfig).entry)).default)();
+				chip = new (require(path.join((data.data as ChipConfig).entry)).default)();
 				chip?.init(RATE, data.data as ChipConfig);
 				break;
 
@@ -118,12 +117,12 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
  * Function to handle opening a new output stream and buffering audio.
  */
 function openStream() {
-	if(!driver) {
-		throw new Error("Driver is invalid!");
-	}
-
 	if(!chip) {
 		throw new Error("Chip is invalid!");
+	}
+
+	if(!driver) {
+		throw new Error("Driver is invalid!");
 	}
 
 	// open 2-channel audio stream, 16-bit little endian, named ZorroTracker.

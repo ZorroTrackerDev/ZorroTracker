@@ -28,25 +28,35 @@ ipcRenderer.on(ipcEnum.UiGetMaximize, (event, state:boolean) => {
 // create the functions table for various IPC actions. This abstracts the actual calling code from the rest of the codebase.
 window.ipc = {
 	ui: {
+		path: () => {
+			return new Promise((res) => {
+				ipcRenderer.once(ipcEnum.UiPath, (result, value) => {
+					window.path = value;
+					res(value);
+				});
+
+				ipcRenderer.send(ipcEnum.UiPath);
+			});
+		},
 		updateMaximized: () => {
 			ipcRenderer.send(ipcEnum.UiGetMaximize);
 		},
-		close: function() {
+		close: () => {
 			ipcRenderer.send(ipcEnum.UiClose);
 		},
-		minimize: function() {
+		minimize: () => {
 			ipcRenderer.send(ipcEnum.UiMinimize);
 		},
-		maximize: function() {
+		maximize: () => {
 			ipcRenderer.send(ipcEnum.UiMaximize);
 		},
-		openInBrowser: function(url:string){
+		openInBrowser: (url:string) => {
 			ipcRenderer.send(ipcEnum.UiOpenURL, url);
 		},
-		devTools: function() {
+		devTools: () => {
 			ipcRenderer.send(ipcEnum.UiDevTools);
 		},
-		inspectElement: function() {
+		inspectElement: () => {
 			ipcRenderer.send(ipcEnum.UiInspectElement);
 		},
 	},

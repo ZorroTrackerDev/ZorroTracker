@@ -64,7 +64,7 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 				/* eslint-disable @typescript-eslint/no-var-requires */
 				driver = new (require("./vgm").default)();
 				driver?.init(RATE, {
-					version: ConfigVersion.b0, entry: "null", name: "null", uuid: "null",
+					version: ConfigVersion.b0, entry: "null", name: "null", uuid: "null", date: "null", credits: [],
 				}, chip);
 				break;
 
@@ -172,7 +172,7 @@ function stream(samples:number) {
 
 	// helper function to advance the chip emulation
 	const advance = (numSamples:number) => {
-		left -= (chip as Chip).runBuffer(numSamples);
+		left = samples - (chip as Chip).runBuffer(numSamples);
 		return left;
 	};
 

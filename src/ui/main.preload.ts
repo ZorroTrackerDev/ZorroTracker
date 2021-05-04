@@ -68,9 +68,9 @@ window.ipc.ui.path().then(() => {
 
 }).then((emus) => {
 	// TODO: Temporary code to initiate the audio system with an emulator and set volume. Bad!
-	if(emus["jsmd"]){
+	if(emus["nuked"]){
 		// @ts-ignore
-		window.ipc.audio.init(emus["jsmd"], undefined);
+		window.ipc.audio.init(emus["nuked"], undefined);
 		window.ipc.audio.volume(0.75);
 	}
 

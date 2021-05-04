@@ -7,6 +7,9 @@ export interface ChipConfig extends GenericConfig {
 
 	// this is the relative PSG volume. 1.0 = 100% of the output volume.
 	psgvol?: number,
+
+	// any additional properties that are chip-specific
+	[x: string]: unknown;
 }
 
 // interface for the chip emulator. All chips must use this interface.

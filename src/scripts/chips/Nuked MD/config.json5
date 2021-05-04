@@ -1,8 +1,0 @@
-/*
- * This is the configuration file for MAME MD (YM2612 + SN76489). This configures the emulator and allows it to work with ZorroTracker
- */
-{
-	version: "b0",									// the API version identifier. ZorroTracker will support some older versions as long as the API does not have breaking changes. Do not change this by yourself!
-	"entry": "script.js",							// the entry point for code for this script. This should never be a .ts file, you should always compile TypeScript files down to JavaScript before using them.
-	"name": "Nuked FM+PSG Emulator",				// the user-friendly name of this script
-}

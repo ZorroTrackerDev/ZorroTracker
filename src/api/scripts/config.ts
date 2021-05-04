@@ -16,4 +16,10 @@ export interface GenericConfig {
 
 	// an unique identifier for the script or configuration
 	uuid: string,
+
+	// the date the configuration object was created
+	date: string,
+
+	// credits information for the configuration
+	credits: { author:string, url?:string, info:string, }[],
 }

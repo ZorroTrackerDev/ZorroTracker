@@ -1,0 +1,14 @@
+/*
+ * This is the configuration file for MAME MD (YM2612 + SN76489). This configures the emulator and allows it to work with ZorroTracker
+ */
+{
+	uuid: "nuked",									// please generate a *unique ID* for your configuration
+	name: "Nuked",									// the user-friendly name of this script
+	version: "b0",									// the API version identifier. ZorroTracker will support some older versions as long as the API does not have breaking changes. Do not change this by yourself!
+	entry: "script.js",								// the entry point for code for this script. This should never be a .ts file, you should always compile TypeScript files down to JavaScript before using them.
+	date: "2021/5/4",								// the date the chip configuration was created
+	credits: [],									// the credits of people who contributed to this chip
+
+	fmvol: 1.0,										// relative volume for FM  (1 = 100%, 0 = 0%)
+	psgvol: 1.0,									// relative volume for PSG (1 = 100%, 0 = 0%)
+}

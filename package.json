@@ -12,7 +12,7 @@
 		"less-watch": "less-watch-compiler",
 		"tsc": "npx tsc -p tsconfig.build.json",
 		"tsc-watch": "npx tsc -w -p tsconfig.build.json",
-		"copy": "copyfiles -u 1 \"src/**/*.js\" \"./src/**/*.json5\" \"./src/**/*.html\" build",
+		"copy": "copyfiles -u 1 \"src/**/*.node\" \"src/**/*.js\" \"./src/**/*.json5\" \"./src/**/*.html\" build",
 		"build": "npm run tsc & npm run less-compile & npm run copy",
 		"electron": "cd build & electron main.js",
 		"start": "npm run build & npm run electron",

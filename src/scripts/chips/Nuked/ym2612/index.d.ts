@@ -1,5 +1,6 @@
 export const YM2612: string;
-export const YM3438: string;
+export const ASICYM3438: string;
+export const DiscreteYM3438: string;
 
 export declare class YM {
     constructor(type: string);
@@ -17,6 +18,3 @@ export declare class YM {
     public generateResampled(): Array<number>;
     public update(samplesSize: number): Array<number>;
 }
-
-export function newYM2612Chip(): YM;
-export function newYM3438Chip(): YM;

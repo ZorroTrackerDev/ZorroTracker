@@ -59,15 +59,12 @@ class YM {
 }
 
 const YM2612 = "YM2612"
-const YM3438 = "YM3438"
-
-const newYM2612Chip = () => new YM(YM2612)
-const newYM3438Chip = () => new YM(YM3438)
+const ASICYM3438 = "ASICYM3438"
+const DiscreteYM3438 = "DiscreteYM3438"
 
 exports = module.exports = {
     YM2612,
-    YM3438,
-    newYM2612Chip,
-    newYM3438Chip,
+    ASICYM3438,
+    DiscreteYM3438,
     YM,
 }

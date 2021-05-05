@@ -7,6 +7,7 @@ export enum ipcEnum {
 	UiClose = "ui-close",
 	UiDevTools = "ui-devtools",
 	UiInspectElement = "ui-inspectelement",
+	UiDialog = "ui-dialog",
 
 	CookieSet = "cookie-set",
 	CookieGet = "cookie-get",

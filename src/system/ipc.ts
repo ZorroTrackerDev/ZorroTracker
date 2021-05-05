@@ -1,9 +1,9 @@
-import { ipcMain, session, shell, screen, app } from "electron";
+import { ipcMain, session, shell, screen, app, dialog } from "electron";
 import { Worker } from "worker_threads";
 import path from "path";
 import { ipcEnum } from "./ipc enum";
 import * as ScriptHelper from "./script helper";
-import { Cookie, IpcMainEvent } from "electron/main";
+import { Cookie, IpcMainEvent, OpenDialogOptions } from "electron/main";
 import { ChipConfig } from "../api/scripts/chip";
 import { DriverConfig } from "../api/scripts/driver";
 import { window } from "../main";
@@ -97,6 +97,41 @@ ipcMain.on(ipcEnum.UiInspectElement, () => {
 
 	// open dev tools at an arbitary position
 	window.webContents.inspectElement(-1, -1);
+});
+
+// handle the UI requesting a dialog box be opened
+ipcMain.on(ipcEnum.UiDialog, async(event, cookie:string, settings:OpenDialogOptions) => {
+	if(!window) {
+		event.reply(ipcEnum.UiDialog, null);
+		return;
+	}
+
+	// get the supplies cookie value
+	const _cookies = await getCookie(cookie);
+
+	if(_cookies.length > 0) {
+		// cookie is valid, use it as the default path
+		settings.defaultPath = _cookies[0].value;
+
+	} else {
+		// otherwise use the user documents folder
+		settings.defaultPath = app.getPath("documents");
+	}
+
+	// show the dialog to the user
+	const result = await dialog.showOpenDialog(window, settings);
+
+	// if the operation was cancelled, do not update the cookie
+	if(!result || result.filePaths.length !== 1) {
+		event.reply(ipcEnum.UiDialog, null);
+		return;
+	}
+
+	// update the requested cookie to remember the last folder in the next run
+	setCookie(cookie, path.dirname(result.filePaths[0]));
+
+	// send the data back to UI
+	event.reply(ipcEnum.UiDialog, result);
 });
 
 /**
@@ -209,3 +244,13 @@ ipcMain.on(ipcEnum.AudioPlay, (event, special?:string) => {
 ipcMain.on(ipcEnum.AudioStop, () => {
 	worker.postMessage({ code: "stop", });
 });
+
+/**
+ * Function to close the program safely
+ *
+ * @returns A promise that will resolve into an exit code for worker, when it is terminated.
+ */
+export function close(): Promise<number> {
+	worker.postMessage({ code: "stop", });
+	return worker.terminate();
+}

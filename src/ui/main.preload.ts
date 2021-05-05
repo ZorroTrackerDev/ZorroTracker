@@ -6,8 +6,7 @@
  */
 window.exports = {};
 
-import path from "path";
-import { remote, webFrame } from "electron";
+import { webFrame } from "electron";
 webFrame.setZoomFactor(1);		// testing only
 
 /* ipc communication */
@@ -33,12 +32,8 @@ window.preload = {
 
 	/* open a file or a project and handle response. */
 	open: async function() {
-		// use the cookie "openfolder" to grab the last path that was used. Otherwise, use the documents folder.
-		const folder = (await window.ipc.cookie.get("openfolder")) ?? remote.app.getPath("documents");
-
-		// get the path cookie
-		const result = await remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
-			properties: [ "openFile", ], defaultPath: folder,
+		const result = await window.ipc.ui.dialog("openfolder", {
+			properties: [ "openFile", ],
 			filters: [
 				{ name: "Vgm Files", extensions: [ "vgm", ], },
 				{ name: "All Files", extensions: [ "*", ], },
@@ -49,9 +44,6 @@ window.preload = {
 		if(!result || result.filePaths.length !== 1) {
 			return;
 		}
-
-		// update the "openfolder" cookie to remember the last folder in the next run
-		window.ipc.cookie.set("openfolder", path.dirname(result.filePaths[0]));
 
 		// stop the audio playback and restart it with the new file opened. TODO: This is only test code!
 		window.ipc.audio.stop();
@@ -67,12 +59,16 @@ window.ipc.ui.path().then(() => {
 	return window.ipc.audio.findAll();
 
 }).then((emus) => {
-	// TODO: Temporary code to initiate the audio system with an emulator and set volume. Bad!
-	if(emus["nuked"]){
-		// @ts-ignore
-		window.ipc.audio.init(emus["nuked"], undefined);
-		window.ipc.audio.volume(0.75);
-	}
+
+	return window.ipc.driver.findAll().then((drivers) => {
+		// TODO: Temporary code to initiate the audio system with an emulator and set volume. Bad!
+		if(emus["9d8d2954-ad94-11eb-8529-0242ac130003"] && drivers["9d8d267a-ad94-11eb-8529-0242ac130003"]){
+			// @ts-ignore
+			window.ipc.audio.init(emus["9d8d2954-ad94-11eb-8529-0242ac130003"], drivers["9d8d267a-ad94-11eb-8529-0242ac130003"]);
+			window.ipc.audio.volume(0.75);
+		}
+
+	}).catch(console.log);
 
 }).catch(console.log);
 

@@ -2,7 +2,7 @@ import electron from "electron";
 import path from "path";
 
 // add the IPC handlers here
-import { getCookie, setCookie, updateMaximized } from "./system/ipc";
+import { getCookie, setCookie, updateMaximized, close as IpcClose } from "./system/ipc";
 
 // static reference to the main window
 export let window:electron.BrowserWindow|null = null;
@@ -49,8 +49,12 @@ async function createWindow () {
 	// focus the window
 	window.focus();
 
-	// when the window is closed, update the cookies
+	// handle when the window is asked to be closed.
 	window.on("close", async() => {
+		// make sure all IPC-related tasks are safe to close
+		await IpcClose();
+
+		// update cookies and flush stored cookies
 		setCookie("main_devtools", window?.webContents.isDevToolsOpened() +"");
 		await electron.session.defaultSession.cookies.flushStore();
 	});

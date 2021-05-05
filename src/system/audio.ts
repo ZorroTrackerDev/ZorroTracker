@@ -1,6 +1,6 @@
 import { ConfigVersion } from "../api/scripts/config";
 import { ChipConfig, Chip } from "../api/scripts/chip";
-import { Driver } from "../api/scripts/driver";
+import { Driver, DriverConfig } from "../api/scripts/driver";
 import { RtAudio, RtAudioApi, RtAudioFormat } from "audify";
 import { parentPort } from "worker_threads";
 import path from "path";
@@ -62,10 +62,8 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 				}
 
 				/* eslint-disable @typescript-eslint/no-var-requires */
-				driver = new (require("./vgm").default)();
-				driver?.init(RATE, {
-					version: ConfigVersion.b0, entry: "null", name: "null", uuid: "null", date: "null", credits: [],
-				}, chip);
+				driver = new (require((data.data as DriverConfig).entry).default)();
+				driver?.init(RATE, data.data as DriverConfig, chip);
 				break;
 
 			/**

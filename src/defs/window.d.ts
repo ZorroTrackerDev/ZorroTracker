@@ -1,5 +1,6 @@
 import { DriverConfig } from "../api/scripts/driver";
 import { ChipConfig } from "../api/scripts/chip";
+import { OpenDialogOptions, OpenDialogReturnValue } from "electron";
 
 export {};
 declare global {
@@ -76,14 +77,21 @@ declare global {
 				openInBrowser: (url:string) => void,
 
 				/**
-				 * Helper function to open Chrome DevTools
+				 * Helper function to open Chrome DevTools.
 				 */
 				devTools: () => void,
 
 				/**
-				 * Helper function to open inspect element at cursor
+				 * Helper function to open inspect element at cursor.
 				 */
 				inspectElement: () => void,
+
+				/**
+				 * Helper function to open a dialog and return the result, reading the initial directory from a cookie.
+				 *
+				 * @param cookie The cookie name to read from
+				 */
+				dialog: (cookie:string, settings:OpenDialogOptions) => Promise<OpenDialogReturnValue>,
 			},
 			cookie: {
 				/**

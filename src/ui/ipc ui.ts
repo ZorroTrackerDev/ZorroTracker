@@ -2,6 +2,7 @@ import { ipcEnum } from "../system/ipc enum";
 import { ipcRenderer } from "electron";
 import { ChipConfig } from "../api/scripts/chip";
 import { DriverConfig } from "../api/scripts/driver";
+import { OpenDialogOptions, OpenDialogReturnValue } from "electron/main";
 
 /**
  * Helper function to run an async IPC event, returning the async value for it.
@@ -59,6 +60,7 @@ window.ipc = {
 		inspectElement: () => {
 			ipcRenderer.send(ipcEnum.UiInspectElement);
 		},
+		dialog: (cookie:string, settings:OpenDialogOptions) => _async(ipcEnum.UiDialog, cookie, settings) as Promise<OpenDialogReturnValue>,
 	},
 	cookie: {
 		set: (name:string, value:string) => {

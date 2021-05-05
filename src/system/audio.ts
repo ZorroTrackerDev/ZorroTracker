@@ -6,7 +6,7 @@ import { parentPort } from "worker_threads";
 import path from "path";
 
 // the output sample rate of the program. TODO: Not hardcode.
-const RATE = 53267;
+const RATE = 44100;
 
 // the output sample duration in milliseconds (eg how long to emulate chips before pushing the audio buffer). TODO: Not hardcode.
 const SAMPLEDURATION = 0.025;

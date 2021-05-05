@@ -5,27 +5,23 @@ import { YM, YM2612, YM3438 } from "./ym2612/index";
 export default class implements Chip {
 	private FM:YM|undefined;
 //	private PSG:SN76489;
-	private storedfmvol = 1;
-	private storedpsgvol = 1;
 	private curfmvol = 1;
 	private curpsgvol = 1;
-	private samplerate = 0;
+	private config:ChipConfig|null = null;
 
 	public init(samplerate: number, config:ChipConfig): void {
-		this.storedfmvol = config.fmvol ?? 1;
-		this.storedpsgvol = config.psgvol ?? 1;
+		this.config = config;
 		this.FM = new YM(config.YM3438 ? YM3438 : YM2612);
 
 	//	this.PSG.init(undefined, samplerate);
 	//	this.PSG.config(0xf, 0, 0, 9, 16);
 
-	// note sure what the first param is. `samplerate` and `7*10*6` at least produce sound
-		this.FM.resetWithClockRate(7*10*6, this.samplerate = samplerate);
+		this.FM.resetWithClockRate(this.config.MLCK as number, this.config.samplerate = samplerate);
 	}
 
 	public reset(): void {
 	//	this.PSG.reset();
-		this.FM?.resetWithClockRate(7*10*6, this.samplerate);
+		this.FM?.resetWithClockRate(this.config?.MLCK as number, this.config?.samplerate as number);
 	}
 
 	public muteYM(bitfield: number): void {
@@ -60,8 +56,8 @@ export default class implements Chip {
 	}
 
 	public setVolume(volume:number): void {
-		this.curfmvol = this.storedfmvol * volume;
-		this.curpsgvol = this.storedpsgvol * volume;
+		this.curfmvol = (this.config?.fmvol ?? 1) * volume;
+		this.curpsgvol = (this.config?.psgvol ?? 1) * volume;
 	}
 
 	private buffer:Buffer|undefined;
@@ -83,8 +79,8 @@ export default class implements Chip {
 
 		for(let addr = 0;addr < smp * 2;addr += 2) {
 
-			this.buffer.writeInt16LE(((_fm[addr]     * 4) * this.curfmvol) + (0 * this.curpsgvol), this.bufpos);
-			this.buffer.writeInt16LE(((_fm[addr + 1] * 4) * this.curfmvol) + (0 * this.curpsgvol), this.bufpos + 2);
+			this.buffer.writeInt16LE(((_fm[addr]) * this.curfmvol) + (0 * this.curpsgvol), this.bufpos);
+			this.buffer.writeInt16LE(((_fm[addr + 1]) * this.curfmvol) + (0 * this.curpsgvol), this.bufpos + 2);
 			this.bufpos += 4;
 		}
 

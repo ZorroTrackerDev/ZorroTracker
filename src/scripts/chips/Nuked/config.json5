@@ -11,4 +11,7 @@
 
 	fmvol: 1.0,										// relative volume for FM  (1 = 100%, 0 = 0%)
 	psgvol: 1.0,									// relative volume for PSG (1 = 100%, 0 = 0%)
+
+	YM3438: false,									// true = use YM3438, false = use YM2612
+	MLCK: 7670453,									// system MLCK. This is based on NSTC values.
 }

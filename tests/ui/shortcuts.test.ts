@@ -6,6 +6,10 @@
 process.chdir("src");
 import { addShortcuts, loadDefaultShortcuts } from "../../src/ui/misc/shortcuts";
 
+beforeAll(() => {
+	window.path = "./";
+});
+
 test("Can load test shortcuts", function () {
 	expect(() =>
 		addShortcuts({

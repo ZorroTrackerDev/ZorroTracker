@@ -92,7 +92,7 @@ export default class implements Chip {
 			this.bufpos += 4;
 		}
 
-		return smp;
+		return this.bufpos / 4;
 	}
 
 	public getBuffer():Buffer {

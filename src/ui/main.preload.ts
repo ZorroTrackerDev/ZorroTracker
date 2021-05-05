@@ -54,12 +54,13 @@ window.preload = {
 // request the appPath variable from main thread
 window.ipc.ui.path().then(() => {
 	/* load shortcuts handler file */
-	import("./misc/shortcuts");
+	import("./misc/shortcuts").then((module) => {
+		module.loadDefaultShortcuts();
+	}).catch(console.log);
 
-	return window.ipc.audio.findAll();
+	return window.ipc.chip.findAll();
 
 }).then((emus) => {
-
 	return window.ipc.driver.findAll().then((drivers) => {
 		// TODO: Temporary code to initiate the audio system with an emulator and set volume. Bad!
 		if(emus["9d8d2954-ad94-11eb-8529-0242ac130003"] && drivers["9d8d267a-ad94-11eb-8529-0242ac130003"]){

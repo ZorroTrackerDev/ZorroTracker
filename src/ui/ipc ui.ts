@@ -69,8 +69,6 @@ window.ipc = {
 		get: (name:string) => _async(ipcEnum.CookieGet, name) as Promise<string | null>,
 	},
 	audio: {
-		findAll: () => _async(ipcEnum.AudioFindAll) as Promise<{ [key:string]: ChipConfig }>,
-
 		init: (emu:ChipConfig, driver:DriverConfig) => {
 			ipcRenderer.send(ipcEnum.AudioCreate, emu, driver);
 		},
@@ -90,6 +88,9 @@ window.ipc = {
 		close: () => {
 			ipcRenderer.send(ipcEnum.AudioClose);
 		},
+	},
+	chip: {
+		findAll: () => _async(ipcEnum.AudioFindAll) as Promise<{ [key:string]: ChipConfig }>,
 	},
 	driver: {
 		findAll: () => _async(ipcEnum.DriverFindAll) as Promise<{ [key:string]: DriverConfig }>,

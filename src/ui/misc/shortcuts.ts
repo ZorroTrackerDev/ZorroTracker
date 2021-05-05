@@ -159,12 +159,3 @@ export function loadDefaultShortcuts(): void {
 	const files = loadSettingsFiles(SettingsTypes.shortcuts) as { [key: string]: string|string[]}[];
 	files.forEach(addShortcuts);
 }
-
-// load the default shortcuts here
-try {
-	loadDefaultShortcuts();
-
-} catch(ex) {
-	// TODO: actual error handling
-	console.log("!!! FAILED TO PARSE SHORTCUTS!!!\n", ex);
-}

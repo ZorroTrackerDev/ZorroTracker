@@ -1,45 +1,34 @@
 import { Application } from "spectron";
 import electron from "electron";
 
-export let app:Application;
+const allApps:Application[] = [];
 
-beforeAll(async(done) => {
-	try {
-		process.env.NODE_ENV = "test";
+export async function getApp():Promise<Application> {
+	process.env.NODE_ENV = "test";
 
-		// this is valid somehow
-		app = new Application({
-			//@ts-ignore
-			path: electron,
-			args: [ ".", ],
-			chromeDriverArgs: [
-				"headless",
-				"disable-gpu",
-				"window-size=800,600",
-				"no-sandbox",
-				"whitelisted-ips=",
-				"disable-dev-shm-usage",
-			],
-		});
+	// this is valid somehow
+	const app = new Application({
+		//@ts-ignore
+		path: electron,
+		args: [ ".", ],
+		port: 9515 + allApps.length,
+		chromeDriverArgs: [
+			"headless",
+			"disable-gpu",
+			"window-size=800,600",
+			"no-sandbox",
+			"whitelisted-ips=",
+			"disable-dev-shm-usage",
+		],
+	});
 
-		await app.start();
+	allApps.push(app);
+	await app.start();
+	return app;
+}
 
-	} catch(ex) {
-		console.log(ex);
+export async function closeApp(app:Application):Promise<void> {
+	if (app && app.isRunning()) {
+		await app.stop();
 	}
-
-	done();
-}, 1000*10);
-
-afterAll(async(done) => {
-	try {
-		if (app && app.isRunning()) {
-			await app.stop();
-		}
-
-	} catch(ex) {
-		console.log(ex);
-	}
-
-	done();
-}, 1000*10);
+}

@@ -2,7 +2,7 @@
 	"name": "zorrotracker",
 	"version": "0.0.0-alpha",
 	"description": "Sega Mega Drive/Genesis music tracker program based on Electron. Project code is created by Aurora Fields, funded and adviced by: Silverhand, acrouzet, Nat The Porcupine.",
-	"main": "main.js",
+	"main": "build/main.js",
 	"scripts": {
 		"init": "npm run build",
 		"test": "npm run build & jest --coverage & pause",
@@ -14,7 +14,7 @@
 		"tsc-watch": "npx tsc -w -p tsconfig.build.json",
 		"copy": "copyfiles -u 1 \"src/**/*.node\" \"src/**/*.js\" \"./src/**/*.json5\" \"./src/**/*.html\" build",
 		"build": "npm run tsc & npm run less-compile & npm run copy",
-		"electron": "cd build & electron main.js",
+		"electron": "electron build/main.js",
 		"start": "npm run build & npm run electron",
 		"pack": "npm run build & electron-builder --dir",
 		"ci_init": "npm run build",
@@ -79,7 +79,10 @@
 			"dist",
 			"src/main.ts",
 			"src/system/ipc.ts",
-			"src/ui/ipc ui.ts"
+			"src/ui/ipc ui.ts",
+			"src/scripts/",
+			"src/system/",
+			"src/ui/"
 		]
 	},
 	"build": {

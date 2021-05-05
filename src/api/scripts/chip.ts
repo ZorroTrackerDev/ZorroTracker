@@ -95,7 +95,7 @@ export interface Chip {
 	/**
 	 * Run chip emulation for number of samples before returning.
 	 *
-	 * @returns The actual number of samples that were emulated
+	 * @returns The position in the buffer we are now at (in samples, not bytes)
 	 */
 	runBuffer:(samples: number) => number;
 

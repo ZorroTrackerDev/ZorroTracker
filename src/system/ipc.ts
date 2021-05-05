@@ -12,7 +12,12 @@ import { window } from "../main";
  * The application data directory path. This is where the settings and scripts folders are found.
  * This is needed because development and packed builds have different relative paths from app.getAppPath() for the main directory!
  */
-export const dataPath = path.join(app.getAppPath(), app.isPackaged ? ".." : ".", app.isPackaged ? ".." : ".");
+export const dataPath = path.join(
+	app.getAppPath(),
+	app.isPackaged ? ".." : ".",
+	app.isPackaged ? ".." : ".",
+	process.env.NODE_ENV === "test" ? "build" : "."
+);
 
 /**
  * Various handlers for dealing with the UI.

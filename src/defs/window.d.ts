@@ -112,13 +112,6 @@ declare global {
 			},
 			audio: {
 				/**
-				 * Find all chip scripts and return their configurations.
-				 *
-				 * @returns A promise which resolves to the list of chip configurations.
-				 */
-				findAll: () => Promise<{ [key:string]: ChipConfig }>,
-
-				/**
 				 * Initialize the audio adapter instance.
 				 *
 				 * @param chip This is the configuration for the chip the system is going to use
@@ -148,6 +141,14 @@ declare global {
 				 */
 				close: () => void,
 			},
+			chip: {
+				/**
+				 * Find all chip scripts and return their configurations.
+				 *
+				 * @returns A promise which resolves to the list of chip configurations.
+				 */
+				findAll: () => Promise<{ [key:string]: ChipConfig }>,
+			}
 			driver: {
 				/**
 				 * Find all driver scripts and return their configurations.

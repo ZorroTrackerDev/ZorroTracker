@@ -97,7 +97,7 @@
 		"files": [
 			{
 				"from": "./build",
-				"to": ".",
+				"to": "./build",
 				"filter": [ "**/*", "!settings/**/*", "!scripts/**/*" ]
 			},
 			"./node_modules/**/*",

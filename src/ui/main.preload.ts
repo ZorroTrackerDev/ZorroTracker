@@ -58,6 +58,11 @@ window.ipc.ui.path().then(() => {
 		module.loadDefaultShortcuts();
 	}).catch(console.log);
 
+	// load the editor layout
+	import("./layout").then((module) => {
+		return module.editorLayout();
+	}).catch(console.log);
+
 	return window.ipc.chip.findAll();
 
 }).then((emus) => {
@@ -66,7 +71,6 @@ window.ipc.ui.path().then(() => {
 		if(emus["9d8d2954-ad94-11eb-8529-0242ac130003"] && drivers["9d8d267a-ad94-11eb-8529-0242ac130003"]){
 			// @ts-ignore
 			window.ipc.audio.init(emus["9d8d2954-ad94-11eb-8529-0242ac130003"], drivers["9d8d267a-ad94-11eb-8529-0242ac130003"]);
-			window.ipc.audio.volume(0.75);
 		}
 
 	}).catch(console.log);

@@ -21,7 +21,7 @@ async function createWindow () {
 		webPreferences: {
 			preload: path.join(__dirname, "ui", "main.preload.js"),
 			contextIsolation: false,		// TODO: possible security risk. Need to be careful about how to access anything outside the app ecosystem
-			enableRemoteModule: true,
+			enableRemoteModule: false,
 		},
 	});
 

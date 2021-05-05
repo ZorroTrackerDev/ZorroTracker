@@ -1,0 +1,96 @@
+.slider {
+	background: #1c1b1f;
+	display: inline-block;
+	padding: 0.25em 0.4em;
+	font-size: 13pt;
+	font-family: monospace;
+
+	&> .slider_text {
+		display: inline-block;
+
+		&> div, textarea {
+			display: inline-block;
+			color: #d6d6d6;
+			overflow: hidden;
+		}
+
+		&> .slider_value {
+			outline: none;
+			overflow-wrap: normal;
+			white-space: nowrap;
+			resize: none;
+			background: transparent;
+			border: none;
+			font: inherit;
+			border-radius: 4px;
+			transition: background-color ease .2s;
+
+			&:hover {
+				background: #2e2f30;
+			}
+
+			&:focus {
+				background: #393b40;
+			}
+		}
+	}
+
+	&> .slider_bar {
+		background: #2c2d31;
+		display: inline-block;
+		position: relative;
+		border-radius: 4px;
+
+		&> div {
+			position: relative;
+
+			&> button {
+				width: 0.75em;
+				height: 100%;
+				border: none;
+				outline: none;
+				display: inline-block;
+				position: absolute;
+				background: #626573;
+				border-radius: 2px;
+				top: 0;
+				left: 0;
+			}
+		}
+	}
+}
+
+.slider.slider_horizontal.slider_medium {
+	@height: 1.5em;
+	height: @height;
+
+	&> .slider_text {
+		padding-right: 0.35em;
+		height: 100%;
+
+		&> .slider_value {
+			width: 4em;
+			text-align: center;
+		}
+	}
+
+	&> .slider_bar {
+		width: 7em;
+		margin: @height*0.1 0%;
+		height: @height*0.8;
+		padding-right: 0.75em;
+
+		&> div {
+			height: 100%;
+
+			&> button {
+				width: 0.75em;
+				height: 100%;
+			}
+		}
+	}
+}
+
+.slider.slider_horizontal.slider_medium > .slider_bar > div.animate {
+	transition: left ease-in-out .25s;
+}

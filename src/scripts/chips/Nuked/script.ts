@@ -16,12 +16,13 @@ export default class implements Chip {
 	//	this.PSG.init(undefined, samplerate);
 	//	this.PSG.config(0xf, 0, 0, 9, 16);
 
-		this.FM.resetWithClockRate(this.config.MLCK as number, this.config.samplerate = samplerate);
+		// psg is / 15
+		this.FM.resetWithClockRate((this.config.MLCK as number / 7) | 0, this.config.samplerate = samplerate);
 	}
 
 	public reset(): void {
 	//	this.PSG.reset();
-		this.FM?.resetWithClockRate(this.config?.MLCK as number, this.config?.samplerate as number);
+		this.FM?.resetWithClockRate((this.config?.MLCK as number / 7) | 0, this.config?.samplerate as number);
 	}
 
 	public muteYM(bitfield: number): void {
@@ -79,8 +80,8 @@ export default class implements Chip {
 
 		for(let addr = 0;addr < smp * 2;addr += 2) {
 
-			this.buffer.writeInt16LE(((_fm[addr]) * this.curfmvol) + (0 * this.curpsgvol), this.bufpos);
-			this.buffer.writeInt16LE(((_fm[addr + 1]) * this.curfmvol) + (0 * this.curpsgvol), this.bufpos + 2);
+			this.buffer.writeInt16LE(Math.max(Math.min(((_fm[addr]) * this.curfmvol) + (0 * this.curpsgvol), 0x7FFF), -0x8000), this.bufpos);
+			this.buffer.writeInt16LE(Math.max(Math.min(((_fm[addr + 1]) * this.curfmvol) + (0 * this.curpsgvol), 0x7FFF), -0x8000), this.bufpos + 2);
 			this.bufpos += 4;
 		}
 

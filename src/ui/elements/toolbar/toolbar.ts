@@ -103,7 +103,7 @@ const defaultButtons:WindowButtons = [
  * @param buttons the `WindowButtons` array that contains the buttons to be added.
  * @returns HTML code that can be appended to the DOM
  */
- export function makeToolbar(menu:ToolbarMenu, buttons:WindowButtons): string {
+export function makeToolbar(menu:ToolbarMenu, buttons:WindowButtons): string {
 	// generate the window buttons here
 	const buttonHTML = /*html*/`
 		<div id='main_toolbar_controls'>

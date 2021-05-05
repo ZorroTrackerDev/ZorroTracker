@@ -17,5 +17,5 @@
 	psgvol: 1.0,									// relative volume for PSG (1 = 100%, 0 = 0%)
 
 	type: 0,										// chip type: 0 = YM2612, 1 = ASIC YM3438, 2 = Discrete YM3438
-	MLCK: 7670453,									// system MLCK. This is based on NSTC values.
+	MLCK: 53693175,									// system MLCK. This is based on NSTC values.
 }

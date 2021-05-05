@@ -26,6 +26,9 @@ let chip:Chip|undefined;
 // holds the driver we are using for audio emulation
 let driver:Driver|undefined;
 
+// holds the volume for the chip because programming™
+let volume = 0;
+
 // handle messages from the parent thread
 parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 	try {
@@ -37,7 +40,8 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 			 * data: Volume as percentage from 0% to 100% (0.0 to 1.0)
 			 */
 			case "volume":
-				chip?.setVolume(data.data as number);
+				volume = ((Math.exp(data.data as number) - 1) / (Math.E - 1));
+				chip?.setVolume(volume);
 				break;
 
 			/**
@@ -49,6 +53,7 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 				/* eslint-disable @typescript-eslint/no-var-requires */
 				chip = new (require(path.join((data.data as ChipConfig).entry)).default)();
 				chip?.init(RATE, data.data as ChipConfig);
+				chip?.setVolume(volume);
 				break;
 
 			/**

@@ -36,6 +36,26 @@ class YM {
     read(port) {
         return addon.read(this.inner, port)
     }
+
+    setClockRate(clock, rate) {
+        addon.setClockRate(this.inner, clock, rate)
+    }
+
+    resetWithClockRate(clock, rate) {
+        addon.resetWithClockRate(this.inner, clock, rate)
+    }
+
+    writeBuffered(port, data) {
+        addon.writeBuffered(this.inner, port, data)
+    }
+
+    generateResampled() {
+        return addon.generateResampled(this.inner)
+    }
+
+    update(samplesSize) {
+        return addon.update(this.inner, samplesSize)
+    }
 }
 
 const YM2612 = "YM2612"

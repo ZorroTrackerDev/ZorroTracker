@@ -11,6 +11,11 @@ export declare class YM {
     public readTestPin(): number;
     public readIrqPin(): number;
     public read(port: number): number;
+    public setClockRate(clock: number, rate: number): void;
+    public resetWithClockRate(clock: number, rate: number): void;
+    public writeBuffered(port: number, data: number): void;
+    public generateResampled(): Array<number>;
+    public update(samplesSize: number): Array<number>;
 }
 
 export function newYM2612Chip(): YM;

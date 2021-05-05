@@ -9,6 +9,7 @@ export default class implements Chip {
 	private storedpsgvol = 1;
 	private curfmvol = 1;
 	private curpsgvol = 1;
+	private samplerate = 0;
 
 	public init(samplerate: number, config:ChipConfig): void {
 		this.storedfmvol = config.fmvol ?? 1;
@@ -18,12 +19,13 @@ export default class implements Chip {
 	//	this.PSG.init(undefined, samplerate);
 	//	this.PSG.config(0xf, 0, 0, 9, 16);
 
-		this.FM.reset();
+	// note sure what the first param is. `samplerate` and `7*10*6` at least produce sound
+		this.FM.resetWithClockRate(7*10*6, this.samplerate = samplerate);
 	}
 
 	public reset(): void {
 	//	this.PSG.reset();
-		this.FM?.reset();
+		this.FM?.resetWithClockRate(7*10*6, this.samplerate);
 	}
 
 	public muteYM(bitfield: number): void {
@@ -31,32 +33,13 @@ export default class implements Chip {
 	}
 
 	public writeYM1(register: YMREG, value: number): void {
-		this.FM?.write(0, register);
-
-		// HMM >:(
-		for(let i = 0;i < 8; i++) {
-			(this.FM as YM).clock();
-		}
-
-		this.FM?.write(1, value);
-
-		for(let i = 0;i < 8; i++) {
-			(this.FM as YM).clock();
-		}
+		this.FM?.writeBuffered(0, register);
+		this.FM?.writeBuffered(1, value);
 	}
 
 	public writeYM2(register: YMREG, value: number): void {
-		this.FM?.write(2, register);
-
-		for(let i = 0;i < 8; i++) {
-			(this.FM as YM).clock();
-		}
-
-		this.FM?.write(3, value);
-
-		for(let i = 0;i < 8; i++) {
-			(this.FM as YM).clock();
-		}
+		this.FM?.writeBuffered(2, register);
+		this.FM?.writeBuffered(3, value);
 	}
 
 	public readYM(): number {
@@ -95,13 +78,13 @@ export default class implements Chip {
 		}
 
 		const smp = Math.min(samples, (this.buffer.length - this.bufpos) / 4);
+		const _fm = (this.FM as YM).update(smp);
+	//	const _psg = this.FM?.clock();
 
-		for(let addr = 0;addr < smp * 4;addr += 4) {
-			const _fm = (this.FM as YM).clock();
-		//	const _psg = this.FM?.clock();
+		for(let addr = 0;addr < smp * 2;addr += 2) {
 
-			this.buffer.writeInt16LE(((_fm[0] * 32) * this.curfmvol) + (0 * this.curpsgvol), this.bufpos);
-			this.buffer.writeInt16LE(((_fm[1] * 32) * this.curfmvol) + (0 * this.curpsgvol), this.bufpos + 2);
+			this.buffer.writeInt16LE(((_fm[addr]     * 4) * this.curfmvol) + (0 * this.curpsgvol), this.bufpos);
+			this.buffer.writeInt16LE(((_fm[addr + 1] * 4) * this.curfmvol) + (0 * this.curpsgvol), this.bufpos + 2);
 			this.bufpos += 4;
 		}
 

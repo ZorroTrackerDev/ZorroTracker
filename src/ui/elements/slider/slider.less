@@ -1,19 +1,25 @@
+/**
+ * Main slider handler
+ */
+
 .slider {
 	background: #1c1b1f;
 	display: inline-block;
-	padding: 0.25em 0.4em;
-	font-size: 13pt;
-	font-family: monospace;
+	font-family: 'Noto Sans', sans-serif;
 
+	// the container for the editable value and the icon
 	&> .slider_text {
 		display: inline-block;
+		position: relative;
 
 		&> div, textarea {
 			display: inline-block;
 			color: #d6d6d6;
 			overflow: hidden;
+			padding: 0;
 		}
 
+		// slider value
 		&> .slider_value {
 			outline: none;
 			overflow-wrap: normal;
@@ -35,18 +41,20 @@
 		}
 	}
 
+	// slider bar and ball
 	&> .slider_bar {
 		background: #2c2d31;
 		display: inline-block;
 		position: relative;
 		border-radius: 4px;
 
+		// ball container
 		&> div {
 			position: relative;
+			pointer-events: none;
 
+			// ball
 			&> button {
-				width: 0.75em;
-				height: 100%;
 				border: none;
 				outline: none;
 				display: inline-block;
@@ -55,42 +63,133 @@
 				border-radius: 2px;
 				top: 0;
 				left: 0;
+				padding: 0;
 			}
 		}
 	}
 }
 
+/**
+ * Font sizes for all slider size variants
+ */
+.slider.slider_small {
+	font-size: 10pt;
+}
+
+.slider.slider_medium {
+	font-size: 12pt;
+}
+
+.slider.slider_large {
+	font-size: 15pt;
+}
+
+/**
+ * Code to handle horizontal slider bars
+ */
+
+.slider.slider_horizontal > .slider_bar > div.animate {
+	transition: left ease-in-out .25s;
+}
+
+.slider.slider_horizontal.slider_small {
+	.slider_horizontal(1.5em, 5em, 3em, 0.6em, 0.6em, 0.2em);
+}
+
 .slider.slider_horizontal.slider_medium {
-	@height: 1.5em;
+	.slider_horizontal(1.5em, 6em, 4em, 0.85em, 0.7em, 0.25em);
+}
+
+.slider.slider_horizontal.slider_large {
+	.slider_horizontal(1.6em, 9em, 4.5em, 1em, 0.7em, 0.3em);
+}
+
+.slider_horizontal(@height, @bar_width, @value_width, @ball_width, @bar_pad, @bar_margin) {
 	height: @height;
 
 	&> .slider_text {
 		padding-right: 0.35em;
-		height: 100%;
+		margin: @height*0.15 0%;
+		height: @height*0.7;
 
 		&> .slider_value {
-			width: 4em;
+			width: @value_width;
 			text-align: center;
+		}
+
+		&> div, textarea {
+			height: 100%;
 		}
 	}
 
 	&> .slider_bar {
-		width: 7em;
-		margin: @height*0.1 0%;
-		height: @height*0.8;
-		padding-right: 0.75em;
+		float: right;
+		width: @bar_width;
+		margin: @height*0.2 0%;
+		height: @height*0.6;
+		padding-right: @bar_pad;
+		margin-right: @bar_margin;
 
 		&> div {
 			height: 100%;
 
 			&> button {
-				width: 0.75em;
+				width: @ball_width;
 				height: 100%;
 			}
 		}
 	}
 }
 
-.slider.slider_horizontal.slider_medium > .slider_bar > div.animate {
-	transition: left ease-in-out .25s;
+/**
+ * Code to handle vertical slider bars
+ */
+
+.slider.slider_vertical > .slider_bar > div.animate {
+	transition: top ease-in-out .25s;
+}
+
+.slider.slider_vertical.slider_small {
+	.slider_vertical(1.5em, 5em, 3em, 0.6em, 0.6em, 0.2em);
+}
+
+.slider.slider_vertical.slider_medium {
+	.slider_vertical(1.75em, 6em, 4em, 0.85em, 0.7em, 0.25em);
+}
+
+.slider.slider_vertical.slider_large {
+	.slider_vertical(2em, 9em, 4.5em, 1em, 0.7em, 0.3em);
+}
+
+.slider_vertical(@width, @bar_height, @value_width, @ball_height, @bar_pad, @bar_margin) {
+	width: @width;
+
+	&> .slider_text {
+		padding-bottom: 0.35em;
+		margin: 0% @width*0.15;
+		width: @width*0.7;
+
+		&> div, textarea {
+			width: 100%;
+			text-align: center;
+		}
+	}
+
+	&> .slider_bar {
+		float: right;
+		height: @bar_height;
+		margin: 0% @width*0.2;
+		width: @width*0.6;
+		padding-bottom: @bar_pad;
+		margin-bottom: @bar_margin;
+
+		&> div {
+			height: 100%;
+
+			&> button {
+				height: @ball_height;
+				width: 100%;
+			}
+		}
+	}
 }

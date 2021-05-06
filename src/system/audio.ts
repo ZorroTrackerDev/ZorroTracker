@@ -18,7 +18,7 @@ const SAMPLES = (RATE * SAMPLEDURATION) | 0;
 const GAP = 5;
 
 // initialize rtAudio backend. Note that on Windows, we force WASAPI because the default option sucks.
-const rtAudio = new RtAudio(process.platform === "win32" ? RtAudioApi.WINDOWS_WASAPI : undefined);
+const rtAudio = new RtAudio(process.platform === "win32" ? RtAudioApi.WINDOWS_WASAPI : RtAudioApi.UNSPECIFIED);
 
 // holds the chip we are using for audio emulation
 let chip:Chip|undefined;
@@ -37,7 +37,7 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 			/**
 			 * Set the current volume.
 			 *
-			 * data: Volume as percentage from 0% to 100% (0.0 to 1.0)
+			 * data: Volume as percentage from 0% to 200% (0.0 to 2.0)
 			 */
 			case "volume":
 				volume = data.data as number === 0 ? 0 : ((3.1623e-3 * Math.exp(data.data as number / 2 * 5.757)) * 2);
@@ -133,7 +133,7 @@ function openStream() {
 		deviceId: rtAudio.getDefaultOutputDevice(),
 		nChannels: 2,
 
-	}, null, RtAudioFormat.RTAUDIO_SINT16, RATE, SAMPLES /* SAMPLES * GAP of delay */, "ZorroTracker", null, () => {
+	}, null, RtAudioFormat.RTAUDIO_SINT32, RATE, SAMPLES /* SAMPLES * GAP of delay */, "ZorroTracker", null, () => {
 		try {
 			// automagically buffer audio when the previous audio is finished playing.
 			rtAudio.write(stream(SAMPLES));

@@ -81,12 +81,12 @@ export interface Chip {
 	/**
 	 * Set the chip emulation volume.
 	 *
-	 * @param volume Volume as percentage from 0% to 100% (0.0 to 1.0)
+	 * @param volume Volume as percentage from 0% to 200% (0.0 to 2.0)
 	 */
 	setVolume:(volume:number) => void;
 
 	/**
-	 * Initialize a new buffer for audio output. The buffer is expected to be little-endian 16-bit per samples, left and right speakers interleaved.
+	 * Initialize a new buffer for audio output. The buffer is expected to be little-endian 32-bit per samples, left and right speakers interleaved.
 	 *
 	 * @param totalsamples The number of samples that the buffer needs to fit
 	 */

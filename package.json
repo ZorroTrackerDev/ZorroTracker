@@ -12,7 +12,7 @@
 		"less-watch": "less-watch-compiler",
 		"tsc": "npx tsc -p tsconfig.build.json",
 		"tsc-watch": "npx tsc -w -p tsconfig.build.json",
-		"copy": "copyfiles -u 1 \"src/**/*.node\" \"src/**/*.js\" \"./src/**/*.json5\" \"./src/**/*.html\" build",
+		"copy": "copyfiles -V -u 1 \"src/**/*.node\" \"src/**/*.js\" \"src/**/*.json5\" \"src/**/*.html\" build",
 		"build": "npm run tsc & npm run less-compile & npm run copy",
 		"electron": "electron build/main.js",
 		"start": "npm run build & npm run electron",
@@ -98,7 +98,11 @@
 			{
 				"from": "./build",
 				"to": "./build",
-				"filter": [ "**/*", "!settings/**/*", "!scripts/**/*" ]
+				"filter": [
+					"**/*",
+					"!settings/**/*",
+					"!scripts/**/*"
+				]
 			},
 			"./node_modules/**/*",
 			"./package.json",

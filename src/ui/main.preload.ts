@@ -19,15 +19,20 @@ window.preload = {
 	 * @param mode This is the mode for the button to use (maximized or not).
 	 */
 	updateMaximizeButtonState: (mode:boolean) => {
-		const button = document.getElementById("main_toolbar_maximize");
+		// a helper function to update a single element class
+		const update = (element:Element|null) => {
+			// if we could not find the element, just ignore this.
+			if(!element) {
+				return;
+			}
 
-		// if we could not find the button, just ignore this.
-		if(!button) {
-			return;
+			// add or remove the actual class here. The UI will handle the rest.
+			element.classList[mode ? "add" : "remove"]("maximized");
 		}
 
-		// add or remove the actual class here. The UI will handle the icon.
-		button.classList[mode ? "add" : "remove"]("maximized");
+		// update both the main toolbar and the maximize button
+		update(document.getElementById("main_toolbar"));
+		update(document.getElementById("main_toolbar_maximize"));
 	},
 
 	/* open a file or a project and handle response. */

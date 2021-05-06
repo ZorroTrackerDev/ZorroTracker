@@ -32,7 +32,7 @@ input {
 
 // height of the toolbar
 @height: 20px;
-@dragh: 4px;
+@dragh: 6px;
 @toolbarbg: #222222;
 
 /* toolbar wrapper */
@@ -44,6 +44,11 @@ input {
 	-webkit-app-region: drag;
 	margin-top: @dragh;		// hack! this allows dragging on the sides of the content, because apparently making something -webkit-app-region: drag; borks that! great.
 	font-family: @menufont;
+
+	&.maximized {
+		bottom: @height !important;
+		margin-top: 0 !important;
+	}
 }
 
 #main_toolbar_name {
@@ -51,10 +56,18 @@ input {
 	position: absolute;
 	left: 0;
 	right: 0;
-	top: -5;
+	top: -1 - @dragh;
 	text-align: center;
 	font: 16px @menufont;
 	pointer-events: none;
+}
+
+#main_toolbar.maximized > #main_toolbar_name {
+	top: -1;
+}
+
+#main_toolbar.maximized > #main_toolbar_controls, #main_toolbar.maximized > .main_toolbar_dropdown {
+	margin-top: 0 !important;
 }
 
 /* helper classes */
@@ -69,6 +82,7 @@ input {
 	display: inline-block;
 	-webkit-app-region: no-drag;
 	margin-top: -@dragh;
+
 	.__nooutline__();
 }
 
@@ -96,6 +110,10 @@ input {
 	float: left;
 	color: #c4c4c4;
 	background: @toolbarbg;
+
+	&.maximized {
+		margin-top: 0 !important;
+	}
 }
 
 .main_toolbar_dropdown_text {

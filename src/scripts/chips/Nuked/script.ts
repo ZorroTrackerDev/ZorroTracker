@@ -26,7 +26,7 @@ export default class implements Chip {
 	}
 
 	public muteYM(bitfield: number): void {
-		// TODO: Implement
+		this.FM?.setMutemask(bitfield);
 	}
 
 	public writeYM1(register: YMREG, value: number): void {

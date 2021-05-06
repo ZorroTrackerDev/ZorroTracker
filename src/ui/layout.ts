@@ -7,7 +7,7 @@ export async function editorLayout():Promise<void> {
 
 async function volumeSlider():Promise<Element> {
 	const limitVolume = (volume:number) => {
-		return Math.max(0, Math.min(1, volume));
+		return Math.round(Math.max(0, Math.min(1, volume)) * 2000) / 2000;
 	}
 
 	const convertVolume = (value:string, multiply:number) => {

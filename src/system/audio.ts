@@ -40,7 +40,7 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 			 * data: Volume as percentage from 0% to 100% (0.0 to 1.0)
 			 */
 			case "volume":
-				volume = ((Math.exp(data.data as number) - 1) / (Math.E - 1));
+				volume = data.data as number === 0 ? 0 : ((3.1623e-3 * Math.exp(data.data as number / 2 * 5.757)) * 2);
 				chip?.setVolume(volume);
 				break;
 

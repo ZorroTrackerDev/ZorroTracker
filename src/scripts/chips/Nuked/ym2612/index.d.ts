@@ -1,6 +1,8 @@
 export const YM2612: string;
 export const ASICYM3438: string;
 export const DiscreteYM3438: string;
+export const YM2612WithMD1: string;
+
 
 export declare class YM {
 	constructor(type: string);

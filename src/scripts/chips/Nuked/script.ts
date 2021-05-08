@@ -1,6 +1,6 @@
 
 import { Chip, YMREG, PSGCMD, ChipConfig } from "../../../api/scripts/chip";
-import { YM, YM2612, ASICYM3438, DiscreteYM3438 } from "./ym2612/index";
+import { YM, YM2612, ASICYM3438, DiscreteYM3438, YM2612WithMD1 } from "./ym2612/index";
 
 export default class implements Chip {
 	private FM:YM|undefined;
@@ -13,7 +13,7 @@ export default class implements Chip {
 
 	public init(samplerate: number, config:ChipConfig): void {
 		this.config = config;
-		this.FM = new YM(this.type = [ YM2612, ASICYM3438, DiscreteYM3438, ][Math.abs(config.type as number) % 3]);
+		this.FM = new YM(this.type = [ YM2612, ASICYM3438, DiscreteYM3438, YM2612WithMD1, ][Math.abs(config.type as number) % 4]);
 
 	//	this.PSG.init(undefined, samplerate);
 	//	this.PSG.config(0xf, 0, 0, 9, 16);

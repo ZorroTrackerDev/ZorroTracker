@@ -7,7 +7,7 @@ export default class implements Chip {
 //	private PSG:SN76489;
 	private curfmvol = 1;
 	private curpsgvol = 1;
-	private volumefactor = 1 << 15;
+	private volumefactor = 1 << 19;
 	private config:ChipConfig|null = null;
 
 	public init(samplerate: number, config:ChipConfig): void {
@@ -91,9 +91,19 @@ export default class implements Chip {
 		return this.bufpos / 8;
 	}
 
+	private _a = 0;
+
 	public getBuffer():Buffer {
 		if(!this.buffer) {
 			throw new Error("initBuffer was not called before getBuffer!");
+		}
+
+		for(let addr = 0; addr < this.bufpos; addr += 8){
+			const b = this.buffer.readInt32LE()
+			if(b >= 0x7FFFFFFE || b <= -0x7FFFFFFE) {
+				console.log("clipping ", this._a++);
+				break;
+			}
 		}
 
 		return this.buffer;

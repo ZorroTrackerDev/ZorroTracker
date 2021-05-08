@@ -9,6 +9,7 @@ export default class implements Chip {
 	private storedpsgvol = 1;
 	private curfmvol = 1;
 	private curpsgvol = 1;
+	private volumefactor = 1 << 16;
 
 	constructor() {
 		this.FM = new YM2612();
@@ -61,15 +62,15 @@ export default class implements Chip {
 	}
 
 	public setVolume(volume:number): void {
-		this.curfmvol = this.storedfmvol * volume;
-		this.curpsgvol = this.storedpsgvol * volume;
+		this.curfmvol = this.storedfmvol * volume * this.volumefactor;
+		this.curpsgvol = this.storedpsgvol * volume * this.volumefactor;
 	}
 
 	private buffer:Buffer|undefined;
 	private bufpos = 0;
 
 	public initBuffer(totalsamples: number):void {
-		this.buffer = Buffer.alloc(totalsamples * 4);
+		this.buffer = Buffer.alloc(totalsamples * 8);
 		this.bufpos = 0;
 	}
 
@@ -78,21 +79,21 @@ export default class implements Chip {
 			throw new Error("initBuffer was not called before runBuffer!");
 		}
 
-		const smp = Math.min(samples, (this.buffer.length - this.bufpos) / 4);
+		const smp = Math.min(samples, (this.buffer.length - this.bufpos) / 8);
 		const _fm = this.FM.update(smp);
 		const _psg = this.PSG.update(smp);
 
-		for(let addr = 0;addr < smp * 4;addr += 4) {
-			this.buffer.writeInt16LE(
-				(_fm.readInt16LE(addr) * this.curfmvol) + (_psg.readInt16LE(addr) * this.curpsgvol), this.bufpos);
+		for(let addr = 0;addr < smp;addr++) {
+			this.buffer.writeInt32LE(Math.max(Math.min((_fm.readInt16LE(addr * 4) * this.curfmvol) +
+				(_psg.readInt16LE(addr * 4) * this.curpsgvol), 0x7FFFFFFF), -0x80000000), this.bufpos);
 
-			this.buffer.writeInt16LE(
-				(_fm.readInt16LE(addr + 2) * this.curfmvol) + (_psg.readInt16LE(addr + 2) * this.curpsgvol), this.bufpos + 2);
+			this.buffer.writeInt32LE(Math.max(Math.min((_fm.readInt16LE(addr * 4 + 2) * this.curfmvol) +
+				(_psg.readInt16LE(addr * 4 + 2) * this.curpsgvol), 0x7FFFFFFF), -0x80000000), this.bufpos + 4);
 
-			this.bufpos += 4;
+			this.bufpos += 8;
 		}
 
-		return this.bufpos / 4;
+		return this.bufpos / 8;
 	}
 
 	public getBuffer():Buffer {

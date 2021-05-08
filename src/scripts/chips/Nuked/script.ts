@@ -9,21 +9,24 @@ export default class implements Chip {
 	private curpsgvol = 1;
 	private volumefactor = 1 << 19;
 	private config:ChipConfig|null = null;
+	private type = "";
 
 	public init(samplerate: number, config:ChipConfig): void {
 		this.config = config;
-		this.FM = new YM([ YM2612, ASICYM3438, DiscreteYM3438, ][Math.abs(config.type as number) % 3]);
+		this.FM = new YM(this.type = [ YM2612, ASICYM3438, DiscreteYM3438, ][Math.abs(config.type as number) % 3]);
 
 	//	this.PSG.init(undefined, samplerate);
 	//	this.PSG.config(0xf, 0, 0, 9, 16);
 
 		// psg is / 15
 		this.FM.resetWithClockRate((this.config.MLCK as number / 7) | 0, this.config.samplerate = samplerate);
+		this.FM.setType(this.type);
 	}
 
 	public reset(): void {
 	//	this.PSG.reset();
 		this.FM?.resetWithClockRate((this.config?.MLCK as number / 7) | 0, this.config?.samplerate as number);
+		this.FM?.setType(this.type)
 	}
 
 	public muteYM(bitfield: number): void {
@@ -91,19 +94,9 @@ export default class implements Chip {
 		return this.bufpos / 8;
 	}
 
-	private _a = 0;
-
 	public getBuffer():Buffer {
 		if(!this.buffer) {
 			throw new Error("initBuffer was not called before getBuffer!");
-		}
-
-		for(let addr = 0; addr < this.bufpos; addr += 8){
-			const b = this.buffer.readInt32LE()
-			if(b >= 0x7FFFFFFE || b <= -0x7FFFFFFE) {
-				console.log("clipping ", this._a++);
-				break;
-			}
 		}
 
 		return this.buffer;

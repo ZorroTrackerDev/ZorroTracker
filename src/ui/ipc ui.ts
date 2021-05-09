@@ -90,7 +90,15 @@ window.ipc = {
 		},
 	},
 	chip: {
-		findAll: () => _async(ipcEnum.AudioFindAll) as Promise<{ [key:string]: ChipConfig }>,
+		findAll: () => _async(ipcEnum.ChipFindAll) as Promise<{ [key:string]: ChipConfig }>,
+
+		muteFM: (channel:number, state:boolean) => {
+			ipcRenderer.send(ipcEnum.ChipMuteFM, channel, state);
+		},
+
+		mutePSG: (channel:number, state:boolean) => {
+			ipcRenderer.send(ipcEnum.ChipMutePSG, channel, state);
+		},
 	},
 	driver: {
 		findAll: () => _async(ipcEnum.DriverFindAll) as Promise<{ [key:string]: DriverConfig }>,

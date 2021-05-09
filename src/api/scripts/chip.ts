@@ -30,9 +30,10 @@ export interface Chip {
 	/**
 	 * Mute some YM2612 channels (separate from doing it via YM2612 registers)
 	 *
-	 * @param bitfield Each bit represents a channel, 1-6 = FM, 0 = DAC
+	 * @param channel Represents the channel to mute, 0-5 = FM 1-6, 6 = DAC
+	 * @param state The state of the channel. true = muted, false = not muted
 	 */
-	muteYM:(bitfield:number) => void;
+	muteYM:(channel:number, state:boolean) => void;
 
 	/**
 	 * Write command to YM2612 port 1.
@@ -60,9 +61,10 @@ export interface Chip {
 	/**
 	 * Mute some SN76489 channels (separate from doing it via SN76489 commands)
 	 *
-	 * @param bitfield Each bit represents a channel, 1-3 = PSG, 4 = PSG noise
+	 * @param channel Represents the channel to mute, 0-2 = PSG 1-3, 3 = PSG noise
+	 * @param state The state of the channel. true = muted, false = not muted
 	 */
-	mutePSG:(bitfield:number) => void;
+	mutePSG:(channel:number, state:boolean) => void;
 
 	/**
 	 * Write command to SN76489 command port.

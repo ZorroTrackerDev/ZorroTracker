@@ -192,7 +192,7 @@ ipcMain.on(ipcEnum.CookieGet, (event, name:string) => {
 type ScriptFolders = "chips"|"drivers";
 
 // find all different kind of scripts.
-ipcMain.on(ipcEnum.AudioFindAll, (event) => _findall("chips", ipcEnum.AudioFindAll, event));
+ipcMain.on(ipcEnum.ChipFindAll, (event) => _findall("chips", ipcEnum.ChipFindAll, event));
 ipcMain.on(ipcEnum.DriverFindAll, (event) => _findall("drivers", ipcEnum.DriverFindAll, event));
 
 /**
@@ -248,6 +248,20 @@ ipcMain.on(ipcEnum.AudioPlay, (event, special?:string) => {
 // handle telling the audio adapter instance to stop playing audio.
 ipcMain.on(ipcEnum.AudioStop, () => {
 	worker.postMessage({ code: "stop", });
+});
+
+/**
+ * Various handlers for dealing with the chip
+ */
+
+// handle FM mute command
+ipcMain.on(ipcEnum.ChipMuteFM, (event, channel:number, state:boolean) => {
+	worker.postMessage({ code: "mutefm", data: [ channel, state, ], });
+});
+
+// handle PSG mute command
+ipcMain.on(ipcEnum.ChipMuteFM, (event, channel:number, state:boolean) => {
+	worker.postMessage({ code: "mutepsg", data: [ channel, state, ], });
 });
 
 /**

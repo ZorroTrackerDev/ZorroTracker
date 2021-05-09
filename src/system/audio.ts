@@ -110,6 +110,24 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 			case "stop":
 				driver?.stop();
 				break;
+
+			/**
+			 * Mute or unmute FM channel.
+			 *
+			 * data: Array with the properties
+			 */
+			case "mutefm":
+				chip?.muteYM((data.data as [number, boolean])[0], (data.data as [number, boolean])[1])
+				break;
+
+			/**
+			 * Mute or unmute PSG channel.
+			 *
+			 * data: Array with the properties
+			 */
+			case "mutepsg":
+				chip?.mutePSG((data.data as [number, boolean])[0], (data.data as [number, boolean])[1])
+				break;
 		}
 	} catch(ex) {
 		console.log(ex);

@@ -14,10 +14,13 @@ export enum ipcEnum {
 
 	AudioCreate = "audio-create",
 	AudioClose = "audio-close",
-	AudioFindAll = "audio-findall",
 	AudioVolume = "audio-volume",
 	AudioPlay = "audio-play",
 	AudioStop = "audio-stop",
 
 	DriverFindAll = "driver-findall",
+
+	ChipFindAll = "chip-findall",
+	ChipMuteFM = "chip-mutefm",
+	ChipMutePSG = "chip-mutepsg",
 }

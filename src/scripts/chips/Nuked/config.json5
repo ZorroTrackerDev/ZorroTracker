@@ -16,6 +16,6 @@
 	fmvol: 1.0,										// relative volume for FM  (1 = 100%, 0 = 0%)
 	psgvol: 1.0,									// relative volume for PSG (1 = 100%, 0 = 0%)
 
-	type: 0,										// chip type: 0 = YM2612, 1 = ASIC YM3438, 2 = Discrete YM3438
+	type: 3,										// chip type: 0 = YM2612, 1 = ASIC YM3438, 2 = Discrete YM3438, 3 = YM2612 with MD1 filtering (to be obsoleted)
 	MLCK: 53693175,									// system MLCK. This is based on NSTC values.
 }

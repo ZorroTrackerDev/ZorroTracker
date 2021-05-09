@@ -36,7 +36,7 @@ export default class implements Driver {
 		this.version = this.vgm.readUInt16LE(8);
 
 		// read the starting address, and lenghts and loop point
-		this.addr = this.version <= 0x150 ? 0x40 : this.vgm.readUInt32LE(0x34) + 0x34;
+		this.addr = this.version < 0x150 ? 0x40 : this.vgm.readUInt32LE(0x34) + 0x34;
 		this.length = this.vgm.readUInt32LE(0x18) + 0x18;
 		this.loop = this.vgm.readUInt32LE(0x1C);
 
@@ -182,7 +182,7 @@ export default class implements Driver {
 							}
 
 							default:
-								throw new Error("Data block type "+ this.vgm[this.addr - 1].toString(16) +" was not recognized!");
+								throw new Error("Data block type "+ type.toString(16) +" was not recognized!");
 						}
 						break;
 					}

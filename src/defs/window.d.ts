@@ -148,6 +148,22 @@ declare global {
 				 * @returns A promise which resolves to the list of chip configurations.
 				 */
 				findAll: () => Promise<{ [key:string]: ChipConfig }>,
+
+				/**
+				 * Function for muting or unmuting an FM channel.
+				 *
+				 * @param channel The channel to target. 0-5 = FM 1-6, 6 = DAC
+				 * @param state Whether to mute or unmute. true = mute, false = unmute
+				 */
+				muteFM: (channel:number, state:boolean) => void,
+
+				/**
+				 * Function for muting or unmuting a PSG channel.
+				 *
+				 * @param channel The channel to target. 0-3 = PSG 1-3, 4 = PSG noise
+				 * @param state Whether to mute or unmute. true = mute, false = unmute
+				 */
+				mutePSG: (channel:number, state:boolean) => void,
 			}
 			driver: {
 				/**

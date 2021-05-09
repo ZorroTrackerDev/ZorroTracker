@@ -7,7 +7,7 @@ export default class implements Chip {
 //	private PSG:SN76489;
 	private curfmvol = 1;
 	private curpsgvol = 1;
-	private volumefactor = 1 << 19;
+	private volumefactor = 1 << 18;
 	private config:ChipConfig|null = null;
 	private type = "";
 
@@ -29,8 +29,22 @@ export default class implements Chip {
 		this.FM?.setType(this.type)
 	}
 
-	public muteYM(bitfield: number): void {
-		this.FM?.setMutemask(bitfield);
+	// muted FM channels for this chip
+	private fmmute = 0;
+
+	public muteYM(channel:number, state:boolean): void {
+		const last = this.fmmute;
+
+		if(state) {
+			this.fmmute |= 1 << channel;
+
+		} else {
+			this.fmmute &= 0x3F - (1 << channel);
+		}
+
+		if(last !== this.fmmute){
+			this.FM?.setMutemask(this.fmmute);
+		}
 	}
 
 	public writeYM1(register: YMREG, value: number): void {
@@ -47,8 +61,22 @@ export default class implements Chip {
 		return this.FM?.read(0) ?? 0x00;
 	}
 
-	public mutePSG(bitfield: number): void {
-		// TODO: Implement
+	// muted PSG channels for this chip
+	private psgmute = 0;
+
+	public mutePSG(channel: number, state:boolean): void {
+		const last = this.psgmute;
+
+		if(state) {
+			this.psgmute |= 1 << channel;
+
+		} else {
+			this.psgmute &= 0x0F - (1 << channel);
+		}
+
+		if(last !== this.psgmute){
+		//	this.PSG?.setMutemask(this.psgmute);
+		}
 	}
 
 	public writePSG(command: PSGCMD): void {

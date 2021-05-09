@@ -283,3 +283,103 @@ export function makeSlider(type:SliderEnum, functions:SliderFunctions):SliderRet
 	// return the main element, label element, and a function to edit the value
 	return { element: e, label: labelNode, setValue: _set, };
 }
+
+type SimpleSliderReturn = {
+	/**
+	 * The slider element.
+	 */
+	element: HTMLDivElement,
+
+	/**
+	 * The label element that should be controlled by the calling code.
+	 */
+	label: HTMLDivElement,
+
+	/**
+	 * Function to set the slider value in the UI. This can control the slider from the calling code.
+	 * `getValue` and `toText` are called when this is used, so there is no need for special handling here.
+	 *
+	 * @param value The value as a string or a number, in units of multiplier
+	 * @param initial The value to use as the initial default value, if conversion fails
+	 */
+	setValue:(value:string, initial:number) => void,
+};
+
+/**
+ * Function to create a simple slider that maps value from `1.0` to `1.0*multiplier`. This differs from the normal slider function by
+ * handling the values for you, only requiring you to save the value yourself. You can still set the value but it is not necessary preferred.
+ *
+ * @param type The type of the slider to create. There are various standard settings for size and direction
+ * @param multiplier The multiplier of the value to use. This defines the scale of the slider in your code
+ * @param steps The number of possible steps to use
+ * @param digits The number of digits in the output value
+ * @param suffix The string or value to add to the end of the text field. This is also used when parsing input text
+ * @param pos The function that is called when the value is updated. This lets you save the value in the slider
+ * @returns And object containing the element, the label, and a function to set the value from code into the slider.
+ */
+export function simpleSlider(type:SliderEnum, multiplier:number, steps:number, digits:number, suffix:string, post:(value:number) => void):
+	SimpleSliderReturn {
+	/**
+	 * function to handle limiting the input in steps
+	 *
+	 * @param v The input value
+	 * @returns The output value, after stepping is done
+	 */
+	const limit = (v:number) => {
+		return Math.round(Math.max(0, Math.min(1, v)) * steps) / steps;
+	}
+
+	/**
+	 * Convert string to value, also stepping it correctly
+	 *
+	 * @param value Input string value to be converted
+	 * @returns The converted value or null, if conversion failed
+	 */
+	const convert = (value:string) => {
+		// parse input as a float
+		let v:number|null = parseFloat(value);
+
+		// check for null and divide by the multiplier
+		v = isNaN(v) ? null : v / multiplier;
+
+		if(v !== null) {
+			// limit the value and apply steps
+			v = limit(v);
+		}
+
+		// return value
+		return v;
+	}
+
+	// create the slider with the proper functions, and get the return value
+	const ret = makeSlider(type, {
+		toText: (value) => {
+			// convert the value into a decimal with `digits` number of digits
+			return (value * multiplier).toFixed(digits) + suffix;
+		},
+		fromText: (value:string) => {
+			// get the volume string, removing possible suffix
+			const volume = value.substring(0, value.length - (value.endsWith(suffix) ? suffix.length : 0));
+
+			// go to convert the value
+			return convert(volume);
+		},
+		getValue: (value:number) => {
+			// limit the value input
+			const v = limit(value);
+
+			// tell the caller about this change
+			post(v * multiplier);
+			return v;
+		},
+		getValueOffset: (value:number, offset:number) => {
+			// add the offset correctly to value
+			return value + (offset / multiplier);
+		},
+	});
+
+	// return the values but make a special setValue function, to help converting strings to values.
+	return { element: ret.element, label: ret.label, setValue: (value: string|number, initial:number) => {
+		ret.setValue(convert(value ? value.toString() : "") ?? initial);
+	}, };
+}

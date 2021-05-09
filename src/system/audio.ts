@@ -9,13 +9,13 @@ import path from "path";
 const RATE = 44100;
 
 // the output sample duration in milliseconds (eg how long to emulate chips before pushing the audio buffer). TODO: Not hardcode.
-const SAMPLEDURATION = 0.025;
+const SAMPLEDURATION = 0.015;
 
 // how many samples to emulate before pushing to audio buffer. TODO: Not hardcode.
 const SAMPLES = (RATE * SAMPLEDURATION) | 0;
 
 // how big of a gap to leave between audio buffering and playing. This is multiplied by SAMPLEDURATION. TODO: Not hardcode.
-const GAP = 5;
+const GAP = 3;
 
 // initialize rtAudio backend. Note that on Windows, we force WASAPI because the default option sucks.
 const rtAudio = new RtAudio(process.platform === "win32" ? RtAudioApi.WINDOWS_WASAPI : RtAudioApi.UNSPECIFIED);

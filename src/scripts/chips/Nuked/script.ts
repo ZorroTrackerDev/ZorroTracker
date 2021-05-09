@@ -26,7 +26,10 @@ export default class implements Chip {
 	public reset(): void {
 	//	this.PSG.reset();
 		this.FM?.resetWithClockRate((this.config?.MLCK as number / 7) | 0, this.config?.samplerate as number);
-		this.FM?.setType(this.type)
+		this.FM?.setType(this.type);
+
+		this.FM?.setMutemask(this.fmmute);
+	//	this.PSG?.setMutemask(this.psgmute);
 	}
 
 	// muted FM channels for this chip
@@ -39,7 +42,7 @@ export default class implements Chip {
 			this.fmmute |= 1 << channel;
 
 		} else {
-			this.fmmute &= 0x3F - (1 << channel);
+			this.fmmute &= 0x7F - (1 << channel);
 		}
 
 		if(last !== this.fmmute){

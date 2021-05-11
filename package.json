@@ -51,7 +51,8 @@
 	},
 	"dependencies": {
 		"audify": "^1.5.7",
-		"json5": "^2.2.0"
+		"json5": "^2.2.0",
+		"nuked-opn2-node": "file:./vendor/Nuked-OPN2.rs/nuked-opn2-node"
 	},
 	"jest": {
 		"verbose": true,

@@ -1,0 +1,3 @@
+[submodule "vendor/Nuked-OPN2.rs"]
+	path = vendor/Nuked-OPN2.rs
+	url = https://github.com/ZorroTrackerDev/Nuked-OPN2.rs

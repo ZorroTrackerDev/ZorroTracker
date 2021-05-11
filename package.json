@@ -19,7 +19,7 @@
 		"pack": "npm run build & electron-builder --dir",
 		"ci_init": "npm run build",
 		"ci_test": "jest",
-		"ci_deploy": "electron-builder build --publish never"
+		"ci_deploy": "npm run build && electron-builder build --publish never"
 	},
 	"repository": {
 		"type": "git",

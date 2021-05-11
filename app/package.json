@@ -1,0 +1,5 @@
+{
+    "dependencies": {
+		"nuked-opn2-node": "file:../vendor/Nuked-OPN2.rs/nuked-opn2-node"
+	}
+}

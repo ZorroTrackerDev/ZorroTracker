@@ -1,17 +1,17 @@
 {
     "name": "zorrotracker",
 	"version": "0.0.0-alpha",
-	"description": "Sega Mega Drive/Genesis music tracker program based on Electron. Project code is created by Aurora Fields, funded and adviced by: Silverhand, acrouzet, Nat The Porcupine.",
-	"main": "build/main.js",
+    "description": "Sega Mega Drive/Genesis music tracker program based on Electron. Project code is created by Aurora Fields, funded and adviced by: Silverhand, acrouzet, Nat The Porcupine.",
+    "main": "entrypoint.js",
     "author": "Aurora Fields",
-	"license": "ISC",
+    "license": "ISC",
     "bugs": {
-		"url": "https://github.com/ZorroTrackerDev/ZorroTracker/issues"
+        "url": "https://github.com/ZorroTrackerDev/ZorroTracker/issues"
 	},
-	"homepage": "https://github.com/ZorroTrackerDev/ZorroTracker#readme",
+    "homepage": "https://github.com/ZorroTrackerDev/ZorroTracker#readme",
     "dependencies": {
-		"audify": "^1.5.7",
-		"json5": "^2.2.0",
-		"nuked-opn2-node": "file:../vendor/Nuked-OPN2.rs/nuked-opn2-node"
-	}
+        "audify": "^1.5.7",
+        "json5": "^2.2.0",
+        "nuked-opn2-node": "file:../vendor/Nuked-OPN2.rs/nuked-opn2-node"
+    }
 }

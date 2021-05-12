@@ -1,5 +1,5 @@
 
-import { Chip, YMREG, PSGCMD, ChipConfig } from "../../../api/scripts/chip";
+import { Chip, YMREG, PSGCMD, ChipConfig } from "../../../../api/scripts/chip";
 import { YMChip, YM2612, ASICYM3438, DiscreteYM3438, YM2612WithMD1 } from "nuked-opn2-node";
 
 export default class implements Chip {

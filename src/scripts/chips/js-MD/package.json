@@ -1,0 +1,20 @@
+{
+  "name": "zorrotracker-js-md",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "webpack"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ts-loader": "*",
+    "typescript": "*",
+    "webpack": "*",
+    "webpack-cli": "*",
+    "nuked-opn2-node": "file:../../../../vendor/Nuked-OPN2.rs/nuked-opn2-node"
+  },
+  "devDependencies": {
+    "@types/node": "*"
+  }
+}

@@ -1,6 +1,6 @@
-import { Driver, DriverConfig } from "../../../api/scripts/driver";
-import fs from "fs";
-import { Chip } from "../../../api/scripts/chip";
+import { Driver, DriverConfig } from "../../../../api/scripts/driver";
+import * as fs from "fs";
+import { Chip } from "../../../../api/scripts/chip";
 
 export default class implements Driver {
 	private vgm:Buffer;

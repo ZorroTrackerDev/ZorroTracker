@@ -2,3 +2,7 @@
 	path = vendor/Nuked-OPN2.rs
 	url = https://github.com/ZorroTrackerDev/Nuked-OPN2.rs
 	ignore = dirty
+[submodule "vendor/Nuked-PSG.rs"]
+	path = vendor/Nuked-PSG.rs
+	url = https://github.com/ZorroTrackerDev/Nuked-PSG.rs.git
+	ignore = dirty

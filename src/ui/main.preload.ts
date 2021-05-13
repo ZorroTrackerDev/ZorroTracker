@@ -58,15 +58,18 @@ window.preload = {
 
 // request the appPath variable from main thread
 window.ipc.ui.path().then(() => {
+	/* logging helpers */
+	import("./misc/logger").catch(console.error);
+
 	/* load shortcuts handler file */
 	import("./misc/shortcuts").then((module) => {
 		module.loadDefaultShortcuts();
-	}).catch(console.log);
+	}).catch(console.error);
 
 	// load the editor layout
 	import("./layout").then((module) => {
 		return module.editorLayout();
-	}).catch(console.log);
+	}).catch(console.error);
 
 	return window.ipc.chip.findAll();
 
@@ -78,7 +81,8 @@ window.ipc.ui.path().then(() => {
 			window.ipc.audio.init(emus["9d8d2954-ad94-11eb-8529-0242ac130003"], drivers["9d8d267a-ad94-11eb-8529-0242ac130003"]);
 		}
 
-	}).catch(console.log);
+	}).catch(console.error);
 
-}).catch(console.log);
+}).catch(console.error);
 
+console.error("ass")

@@ -18,7 +18,7 @@ const SAMPLES = (RATE * SAMPLEDURATION) | 0;
 const GAP = 3;
 
 // initialize rtAudio backend. Note that on Windows, we force WASAPI because the default option sucks.
-const rtAudio = new RtAudio(process.platform === "win32" ? RtAudioApi.WINDOWS_WASAPI : RtAudioApi.UNSPECIFIED);
+const rtAudio = new RtAudio(process.platform === "win32" ? RtAudioApi.WINDOWS_DS : RtAudioApi.UNSPECIFIED);
 
 // holds the chip we are using for audio emulation
 let chip:Chip|undefined;
@@ -130,7 +130,7 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 				break;
 		}
 	} catch(ex) {
-		console.log(ex);
+		parentPort?.postMessage({ code: "error", data: [ ex, ], });
 	}
 });
 
@@ -158,7 +158,7 @@ function openStream() {
 
 		} catch(ex) {
 			// panic on error and close the stream.
-			console.log(ex);
+			parentPort?.postMessage({ code: "error", data: [ ex, ], });
 			rtAudio.closeStream();
 		}
 	});
@@ -173,7 +173,7 @@ function openStream() {
 
 		} catch(ex) {
 			// panic on error and close the stream.
-			console.log(ex);
+			parentPort?.postMessage({ code: "error", data: [ ex, ], });
 			rtAudio.closeStream();
 		}
 	}

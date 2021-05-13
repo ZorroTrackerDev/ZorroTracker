@@ -12,6 +12,13 @@ declare global {
 		 */
 		path: string,
 
+		/**
+		 * A function to add a new close handler into the system, so that we can safely quit the application.
+		 *
+		 * @param func The function to call. If false is returned, the closing is cancelled
+		 */
+		addCloseHandler: (func:() => boolean) => void,
+
 		preload: {
 			/**
 			 * Helper function to update the maximize UI button depending on the window state. This info comes from the Node side using IPC.

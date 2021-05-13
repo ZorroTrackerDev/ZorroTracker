@@ -104,3 +104,36 @@ window.ipc = {
 		findAll: () => _async(ipcEnum.DriverFindAll) as Promise<{ [key:string]: DriverConfig }>,
 	},
 }
+
+/**
+ * Various handlers for dealing with the console
+ */
+
+ipcRenderer.on(ipcEnum.LogInfo, (event, args:unknown[]) => {
+	console.info(...args);
+});
+
+ipcRenderer.on(ipcEnum.LogWarn, (event, args:unknown[]) => {
+	console.warn(...args);
+});
+
+ipcRenderer.on(ipcEnum.LogError, (event, args:unknown[]) => {
+	console.error(...args);
+});
+
+// listen to when the UiExit event is passed from the backend, to gracefully close the program (maybe)
+ipcRenderer.on(ipcEnum.UiExit, () => {
+	let exit = true;
+
+	// run all the close handlers
+	_closeHandlers.forEach((fun) => exit = exit && fun());
+
+	// tell the backend what we decided
+	ipcRenderer.send(ipcEnum.UiExit, exit);
+});
+
+const _closeHandlers:(() => boolean)[] = [];
+
+window.addCloseHandler = (func:() => boolean): void => {
+	_closeHandlers.push(func);
+};

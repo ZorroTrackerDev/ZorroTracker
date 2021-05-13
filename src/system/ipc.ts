@@ -218,6 +218,12 @@ function _findall(folder:ScriptFolders, eventName:ipcEnum, event:IpcMainEvent) {
  */
 const worker = new Worker(path.join(__dirname, "audio.js"));
 
+worker.on("message", (data:{ code:string, data:unknown }) => {
+	switch(data.code) {
+		case "error": log.error(...(data.data as unknown[]));
+	}
+});
+
 // handle changing the volume of the audio adapter instance.
 ipcMain.on(ipcEnum.AudioVolume, (event, volume:number) => {
 	worker.postMessage({ code: "volume", data: volume, });
@@ -270,6 +276,34 @@ ipcMain.on(ipcEnum.ChipMuteFM, (event, channel:number, state:boolean) => {
  * @returns A promise that will resolve into an exit code for worker, when it is terminated.
  */
 export function close(): Promise<number> {
-	worker.postMessage({ code: "stop", });
-	return worker.terminate();
+	return new Promise((res, rej) => {
+		// ask the UI to exit gracefully
+		window?.webContents.send(ipcEnum.UiExit);
+
+		// listen to the UI's response
+		ipcMain.once(ipcEnum.UiExit, (event, state:boolean) => {
+			if(!state) {
+				// will not be closed
+				rej();
+				return;
+			}
+
+			// will be closed, tell the worker about it and terminate it
+			worker.postMessage({ code: "stop", });
+			worker.terminate().then(res).catch(rej);
+		});
+	});
 }
+
+/**
+ * Helper functions to tell the UI about log information
+ *
+ * @param args Arguments to send to UI
+ */
+export const log = {
+	info: (...args:unknown[]):void => window?.webContents.send(ipcEnum.LogInfo, args),
+	warn: (...args:unknown[]):void => window?.webContents.send(ipcEnum.LogWarn, args),
+	error:(...args:unknown[]):void => window?.webContents.send(ipcEnum.LogError, args),
+}
+
+worker.on("error", log.error);

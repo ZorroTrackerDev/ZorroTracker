@@ -87,7 +87,7 @@ export default class implements Chip {
 	}
 
 	public readPSG(): number {
-		return this.PSG?.read();
+		return this.PSG?.read() ?? 0x00;
 	}
 
 	public setVolume(volume:number): void {

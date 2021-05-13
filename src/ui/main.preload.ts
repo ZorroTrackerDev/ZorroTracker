@@ -84,5 +84,3 @@ window.ipc.ui.path().then(() => {
 	}).catch(console.error);
 
 }).catch(console.error);
-
-console.error("ass")

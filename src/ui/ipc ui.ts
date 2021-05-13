@@ -60,6 +60,9 @@ window.ipc = {
 		inspectElement: () => {
 			ipcRenderer.send(ipcEnum.UiInspectElement);
 		},
+		console: () => {
+			ipcRenderer.send(ipcEnum.UiConsole);
+		},
 		dialog: (cookie:string, settings:OpenDialogOptions) => _async(ipcEnum.UiDialog, cookie, settings) as Promise<OpenDialogReturnValue>,
 	},
 	cookie: {

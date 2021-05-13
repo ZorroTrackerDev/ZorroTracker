@@ -50,7 +50,7 @@ function intercept(method:string, func:(...args:unknown[]) => void){
  */
 function _log(prefix:string, ...args:unknown[]) {
 	// convert arguments to string and then join them together
-	const _out = args.map((v:Error|any) => ("stack" in v) ? v.stack : v.toString()).join(" ");
+	const _out = args.map((v:Error|any) => (v instanceof Error) ? v.stack : v.toString()).join(" ");
 
 	// write it to the log file
 	_write(`[${new Date().toISOString()}][${prefix}] ${_out}${_out.indexOf("\n") >= 0 ? "\n" : ""}\n`);
@@ -70,4 +70,7 @@ intercept("warn", (...args:unknown[]) => {
 
 intercept("error", (...args:unknown[]) => {
 	_log("ERROR", ...args);
+
+	// add the error class to this object
+	document.getElementById("main_toolbar_errors")?.classList.add("error");
 });

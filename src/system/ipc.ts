@@ -76,7 +76,12 @@ ipcMain.on(ipcEnum.UiOpenURL, (event, url:string) => {
 
 // handle the UI requesting Developer Tools to be opened
 ipcMain.on(ipcEnum.UiDevTools, () => {
-	window?.webContents.toggleDevTools();
+	if(window?.webContents.isDevToolsOpened()) {
+		window?.webContents.closeDevTools();
+
+	} else {
+		window?.webContents.openDevTools({ mode: "right", activate: false, });
+	}
 });
 
 // handle the UI requesting Inspect Element functionality
@@ -102,6 +107,11 @@ ipcMain.on(ipcEnum.UiInspectElement, () => {
 
 	// open dev tools at an arbitary position
 	window.webContents.inspectElement(-1, -1);
+});
+
+// handle the UI requesting Console to be opened
+ipcMain.on(ipcEnum.UiConsole, () => {
+	window?.webContents.openDevTools({ mode: "bottom", activate: false, });
 });
 
 // handle the UI requesting a dialog box be opened

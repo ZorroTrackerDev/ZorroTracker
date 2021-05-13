@@ -94,6 +94,11 @@ declare global {
 				inspectElement: () => void,
 
 				/**
+				 * Helper function to open the Chrome DevTools console.
+				 */
+				console: () => void,
+
+				/**
 				 * Helper function to open a dialog and return the result, reading the initial directory from a cookie.
 				 *
 				 * @param cookie The cookie name to read from

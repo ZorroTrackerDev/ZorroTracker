@@ -46,9 +46,20 @@ type WindowButtons = { id: string, action: string, child: string }[];
 
 const defaultButtons:WindowButtons = [
 	{
+		id: "main_toolbar_errors",
+		action: "this.className = ''; window.ipc.ui.console()",
+		child: /*html*/`
+			<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" version="1.1">
+				<circle cx="50" cy="50" r="30" stroke="#FF8080" stroke-width="8" fill="none" />
+				<line x1="50" y1="30" x2="50" y2="55" stroke="#FF8080" stroke-width="8" stroke-linecap="butt" />
+				<line x1="50" y1="61" x2="50" y2="70" stroke="#FF8080" stroke-width="8" stroke-linecap="butt" />
+			</svg>
+		`,
+	},
+	{
 		id: "main_toolbar_minimize",
 		action: "window.ipc.ui.minimize()",
-		child: `
+		child: /*html*/`
 			<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" version="1.1">
 				<line x1="25%" y1="50%" x2="75%" y2="50%" stroke="white" stroke-width="10" stroke-linecap="butt" />
 			</svg>
@@ -57,7 +68,7 @@ const defaultButtons:WindowButtons = [
 	{
 		id: "main_toolbar_maximize",
 		action: "window.ipc.ui.maximize();",
-		child: `
+		child: /*html*/`
 			<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" version="1.1">
 				<path fill="none" stroke="white" stroke-width="8" stroke-linecap="square"/>
 			</svg>
@@ -66,7 +77,7 @@ const defaultButtons:WindowButtons = [
 	{
 		id: "main_toolbar_exit",
 		action: "window.ipc.ui.close();",
-		child: `
+		child: /*html*/`
 			<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" version="1.1">
 				<path fill="white" stroke="white" stroke-width="10" stroke-linecap="butt" d="
 					M 25 25

@@ -119,7 +119,11 @@
 			},
 			{
 				"from": "./build/scripts/",
-				"filter": ["chips/*/dist/**/*", "drivers/*/dist/**/*", "**/*.json5"],
+				"filter": [
+					"chips/*/dist/**/*",
+					"drivers/*/dist/**/*",
+					"**/*.json5"
+				],
 				"to": "./scripts"
 			}
 		],

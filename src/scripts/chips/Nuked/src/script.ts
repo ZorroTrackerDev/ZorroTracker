@@ -110,9 +110,14 @@ export default class implements Chip {
 
 		const smp = Math.min(samples, (this.buffer.length - this.bufpos) / 8);
 		const _fm = (this.FM as YMChip).update(smp);
+		let _psg = 0;
 
 		for(let addr = 0;addr < smp * 2;addr += 2) {
-			const _psg = (this.PSG as PSGChip).generate();
+			_psg = (this.PSG as PSGChip).generate();
+			_psg = (this.PSG as PSGChip).generate();
+			_psg = (this.PSG as PSGChip).generate();
+			_psg = (this.PSG as PSGChip).generate();
+			_psg = (this.PSG as PSGChip).generate();
 
 			this.buffer.writeInt32LE(Math.max(Math.min(
 				((_fm[addr]) * this.curfmvol) + (_psg * this.curpsgvol), 0x7FFFFFFF), -0x80000000), this.bufpos);

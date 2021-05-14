@@ -16,15 +16,15 @@ export default class implements Chip {
 		this.config = config;
 		this.FM = new YMChip(this.type = [ YM2612, ASICYM3438, DiscreteYM3438, YM2612WithMD1, ][Math.abs(config.type as number) % 4]);
 		this.PSG = new PSGChip();
-		// this.PSG.config(0xf, 0, 0, 9, 16);
 
-		// psg is / 15
-		this.FM.resetWithClockRate((this.config.MLCK as number / 7) | 0, this.config.samplerate = samplerate);
-		this.FM.setType(this.type);
+		this.config.samplerate = samplerate;
+		this.reset();
 	}
 
 	public reset(): void {
 		this.PSG?.init();
+
+		// psg is / 15
 		this.FM?.resetWithClockRate((this.config?.MLCK as number / 7) | 0, this.config?.samplerate as number);
 		this.FM?.setType(this.type);
 
@@ -83,11 +83,11 @@ export default class implements Chip {
 	}
 
 	public writePSG(command: PSGCMD): void {
-		this.PSG?.write(command);
+		this.PSG?.writeBuffered(command);
 	}
 
 	public readPSG(): number {
-		return this.PSG?.read() ?? 0x00;
+		return this.PSG?.read() ?? 0xFF;
 	}
 
 	public setVolume(volume:number): void {
@@ -110,14 +110,14 @@ export default class implements Chip {
 
 		const smp = Math.min(samples, (this.buffer.length - this.bufpos) / 8);
 		const _fm = (this.FM as YMChip).update(smp);
-	//	const _psg = this.FM?.clock();
 
 		for(let addr = 0;addr < smp * 2;addr += 2) {
+			const _psg = (this.PSG as PSGChip).generate();
 
 			this.buffer.writeInt32LE(Math.max(Math.min(
-				((_fm[addr]) * this.curfmvol) + (0 * this.curpsgvol), 0x7FFFFFFF), -0x80000000), this.bufpos);
+				((_fm[addr]) * this.curfmvol) + (_psg * this.curpsgvol), 0x7FFFFFFF), -0x80000000), this.bufpos);
 			this.buffer.writeInt32LE(Math.max(Math.min(
-				((_fm[addr + 1]) * this.curfmvol) + (0 * this.curpsgvol), 0x7FFFFFFF), -0x80000000), this.bufpos + 4);
+				((_fm[addr + 1]) * this.curfmvol) + (_psg * this.curpsgvol), 0x7FFFFFFF), -0x80000000), this.bufpos + 4);
 			this.bufpos += 8;
 		}
 

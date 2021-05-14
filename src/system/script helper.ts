@@ -33,7 +33,9 @@ export async function findAll(folder:string):Promise<{ [key:string]: GenericConf
 			// append it to results
 			ret[obj.uuid] = obj;
 
-		} catch {/* ignore */}
+		} catch {
+			console.log(":(")
+		}
 	}
 
 	return ret;

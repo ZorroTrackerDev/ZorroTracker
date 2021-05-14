@@ -1,6 +1,6 @@
 import { YM2612 } from "./ym2612";
 import { SN76489 } from "./sn76489";
-import { Chip, YMREG, PSGCMD, ChipConfig } from "../../../api/scripts/chip";
+import { Chip, YMREG, PSGCMD, ChipConfig } from "../../../../api/scripts/chip";
 
 export default class implements Chip {
 	private FM:YM2612;

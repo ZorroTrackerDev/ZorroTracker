@@ -4,6 +4,7 @@
 	"description": "Sega Mega Drive/Genesis music tracker program based on Electron. Project code is created by Aurora Fields, funded and adviced by: Silverhand, acrouzet, Nat The Porcupine.",
 	"main": "build/main.js",
 	"scripts": {
+		"prebuild": "node bin/build-packages.js",
 		"init": "npm run build",
 		"test": "npm run build & jest --coverage & pause",
 		"lint": "eslint . --ext .ts",
@@ -118,7 +119,11 @@
 			},
 			{
 				"from": "./build/scripts/",
-				"filter": "**/*",
+				"filter": [
+					"chips/*/dist/**/*",
+					"drivers/*/dist/**/*",
+					"**/*.json5"
+				],
 				"to": "./scripts"
 			}
 		],

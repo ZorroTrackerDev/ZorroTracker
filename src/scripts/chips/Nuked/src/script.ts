@@ -1,10 +1,11 @@
 
-import { Chip, YMREG, PSGCMD, ChipConfig } from "../../../api/scripts/chip";
+import { Chip, YMREG, PSGCMD, ChipConfig } from "../../../../api/scripts/chip";
 import { YMChip, YM2612, ASICYM3438, DiscreteYM3438, YM2612WithMD1 } from "nuked-opn2-node";
+import { PSGChip } from "nuked-psg-node";
 
 export default class implements Chip {
 	private FM:YMChip|undefined;
-//	private PSG:SN76489;
+	private PSG:PSGChip|undefined;
 	private curfmvol = 1;
 	private curpsgvol = 1;
 	private volumefactor = 1 << 18;
@@ -14,9 +15,8 @@ export default class implements Chip {
 	public init(samplerate: number, config:ChipConfig): void {
 		this.config = config;
 		this.FM = new YMChip(this.type = [ YM2612, ASICYM3438, DiscreteYM3438, YM2612WithMD1, ][Math.abs(config.type as number) % 4]);
-
-	//	this.PSG.init(undefined, samplerate);
-	//	this.PSG.config(0xf, 0, 0, 9, 16);
+		this.PSG = new PSGChip();
+		// this.PSG.config(0xf, 0, 0, 9, 16);
 
 		// psg is / 15
 		this.FM.resetWithClockRate((this.config.MLCK as number / 7) | 0, this.config.samplerate = samplerate);
@@ -24,7 +24,7 @@ export default class implements Chip {
 	}
 
 	public reset(): void {
-	//	this.PSG.reset();
+		this.PSG?.init();
 		this.FM?.resetWithClockRate((this.config?.MLCK as number / 7) | 0, this.config?.samplerate as number);
 		this.FM?.setType(this.type);
 
@@ -83,12 +83,11 @@ export default class implements Chip {
 	}
 
 	public writePSG(command: PSGCMD): void {
-	//	this.PSG.write(command);
+		this.PSG?.write(command);
 	}
 
-	// eslint-disable-next-line class-methods-use-this
-	public readPSG(): null {
-		return null;
+	public readPSG(): number {
+		return this.PSG?.read() ?? 0x00;
 	}
 
 	public setVolume(volume:number): void {

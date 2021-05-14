@@ -1,0 +1,25 @@
+{
+  "name": "zorrotracker-nuked",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "install-nuked": "(cd ../../../../vendor/Nuked-OPN2.rs/nuked-opn2-node && npm install)",
+    "install-psg": "(cd ../../../../vendor/Nuked-PSG.rs/nuked-psg-node && npm install)",
+    "prebuild": "npm run install-nuked & npm run install-psg",
+    "build": "webpack"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-loader": "*",
+    "nuked-opn2-node": "file:../../../../vendor/Nuked-OPN2.rs/nuked-opn2-node",
+    "nuked-psg-node": "file:../../../../vendor/Nuked-PSG.rs/nuked-psg-node",
+    "ts-loader": "*",
+    "typescript": "*",
+    "webpack": "*",
+    "webpack-cli": "*"
+  },
+  "devDependencies": {
+    "@types/node": "*"
+  }
+}

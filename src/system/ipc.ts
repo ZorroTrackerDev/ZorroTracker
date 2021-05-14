@@ -214,9 +214,11 @@ ipcMain.on(ipcEnum.DriverFindAll, (event) => _findall("drivers", ipcEnum.DriverF
  */
 function _findall(folder:ScriptFolders, eventName:ipcEnum, event:IpcMainEvent) {
 	ScriptHelper.findAll(folder).then((res) => {
+		console.log("yesss")
 		event.reply(eventName, res);
 
 	}).catch((ex) => {
+		console.log("Hey")
 		// for some reason this didn't work, just throw an error
 		console.log(ex);
 		event.reply(eventName, []);

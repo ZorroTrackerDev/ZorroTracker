@@ -149,17 +149,17 @@
 					]
 				}
 			]
+		},
+		"linux": {
+			"category": "Audio",
+			"target": [
+				{
+					"target": "tar.gz",
+					"arch": [
+						"x64"
+					]
+				}
+			]
 		}
-	},
-	"linux": {
-		"category": "Audio",
-		"target": [
-			{
-				"target": "tar.gz",
-				"arch": [
-					"x64"
-				]
-			}
-		]
 	}
 }

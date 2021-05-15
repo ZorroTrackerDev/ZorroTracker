@@ -140,6 +140,7 @@
 			]
 		},
 		"mac": {
+			"category": "public.app-category.developer-tools",
 			"target": [
 				{
 					"target": "tar.gz",
@@ -151,6 +152,7 @@
 		}
 	},
 	"linux": {
+		"category": "Audio",
 		"target": [
 			{
 				"target": "tar.gz",

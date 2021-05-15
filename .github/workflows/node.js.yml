@@ -61,3 +61,15 @@ jobs:
       with:
         name: ZorroTracker-${{ runner.os }}-${{ github.sha }}
         path: dist/ZorroTracker-*
+
+    # test if Linux works
+    - name: Package artifact [Linux]
+      if: runner.os == 'Linux'
+      run: npm run ci_deploy
+
+    - name: Upload artifact [Linux]
+      if: runner.os == 'Linux'
+      uses: actions/upload-artifact@v2
+      with:
+        name: ZorroTracker-${{ runner.os }}-${{ github.sha }}
+        path: dist/ZorroTracker-*

@@ -1,6 +1,16 @@
-import { simpleSlider, SliderEnum } from "./elements/slider/slider";
+import { volumeSlider, simpleSlider, SliderEnum } from "./elements/slider/slider";
 
 export async function editorLayout():Promise<void> {
+	/**
+	 * -------------------------------------
+	 * patterns | settings
+	 * -------------------------------------
+	 * tracker editor
+	 * -------------------------------------
+	 */
+
+
+
 	const getspace = () => {
 		const space = document.createElement("div");
 		space.style.width = "20px";
@@ -37,30 +47,4 @@ export async function editorLayout():Promise<void> {
 	body?.appendChild(btn("PSG2", "window.ipc.chip.mutePSG(1, this.checked)"));
 	body?.appendChild(btn("PSG3", "window.ipc.chip.mutePSG(2, this.checked)"));
 	body?.appendChild(btn("PSG4", "window.ipc.chip.mutePSG(3, this.checked)"));
-}
-
-async function volumeSlider(type:SliderEnum):Promise<Element> {
-	const { element, setValue, label, } = simpleSlider(type, 200, 2000, 1, "%", (volume:number) => {
-		window.ipc.audio.volume(volume / 100);
-		window.ipc.cookie.set("main_volume", volume +"");
-
-		if(volume > 100) {
-			label.innerText = "📣";
-
-		} else if(volume > 50){
-			label.innerText = "🔊";
-
-		} else if(volume > 0){
-			label.innerText = "🔉";
-
-		} else {
-			label.innerText = "🔈";
-		}
-
-		label.style.width = "1.3em";
-	});
-
-	const cookie = await window.ipc.cookie.get("main_volume") ?? "";
-	setValue(cookie, 0.25);
-	return element;
 }

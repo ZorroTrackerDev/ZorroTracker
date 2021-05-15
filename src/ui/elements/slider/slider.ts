@@ -383,3 +383,71 @@ export function simpleSlider(type:SliderEnum, multiplier:number, steps:number, d
 		ret.setValue(convert(value ? value.toString() : "") ?? initial);
 	}, };
 }
+
+/**
+ * Create the standard volume slider for the UI.
+ *
+ * @param type Type of the slider to create
+ * @returns Returns the finished element
+ */
+export async function volumeSlider(type:SliderEnum):Promise<Element> {
+	// create a simple slider element with range from 0 to 200%.
+	const { element, setValue, label, } = simpleSlider(type, 200, 2000, 1, "%", (volume:number) => {
+		// update the volume on backend and cookies
+		window.ipc.audio.volume(volume / 100);
+		window.ipc.cookie.set("main_volume", volume +"");
+
+		// get the appropriate class for the volume
+		if(volume > 120) {
+			// @ts-expect-error as it turns out, this is completely valid. But TypeScript won't like this anyway
+			label.classList = "volume_loud";
+
+		} else if(volume > 80){
+			// @ts-expect-error as it turns out, this is completely valid. But TypeScript won't like this anyway
+			label.classList = "volume_3";
+
+		} else if(volume > 40){
+			// @ts-expect-error as it turns out, this is completely valid. But TypeScript won't like this anyway
+			label.classList = "volume_2";
+
+		} else if(volume > 0){
+			// @ts-expect-error as it turns out, this is completely valid. But TypeScript won't like this anyway
+			label.classList = "volume_1";
+
+		} else {
+			// @ts-expect-error as it turns out, this is completely valid. But TypeScript won't like this anyway
+			label.classList = "volume_mute";
+		}
+	});
+
+	// apply the default SVG object to the label
+	label.innerHTML = /*html*/`
+		<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" version="1.1">
+			<path fill="none" stroke="white" stroke-width="8" stroke-linejoin="round" d="
+				M 50 10
+				V 90
+
+				L 25 65
+				H 5
+				V 35
+				H 25
+				L 50 10
+
+				Z"/>
+			<path fill="none" stroke="white" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" />
+			<path fill="none" stroke="white" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" />
+			<path fill="none" stroke="white" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" />
+		</svg>
+	`;
+
+	// give the label an ID and default width
+	label.id = "main_volume_slider";
+	label.style.width = "1.3em";
+
+	// update the volume from cookies or default value
+	const cookie = await window.ipc.cookie.get("main_volume") ?? "";
+	setValue(cookie, 0.25);
+
+	// return the slider element
+	return element;
+}

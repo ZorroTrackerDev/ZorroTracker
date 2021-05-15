@@ -5,7 +5,7 @@
 .slider {
 	background: #1c1b1f;
 	display: inline-block;
-	font-family: 'Noto Sans', sans-serif;
+	font-family: sans-serif;
 
 	// the container for the editable value and the icon
 	&> .slider_text {
@@ -191,5 +191,76 @@
 				width: 100%;
 			}
 		}
+	}
+}
+
+/**
+ * Volume slider classes
+ */
+#main_volume_slider {
+	padding-left: 0.1em;
+
+	&> svg {
+		width: 100%;
+		height: 100%;
+
+		&> path {
+			transition: d 0.25s ease, stroke .2s ease-in-out;
+		}
+	}
+}
+
+._vb_1_en(@child) {
+	&:nth-child(@{child}) {
+		d: path("M 61 36 C 68,44 68,56 61,64");
+	}
+}
+
+._vb_2_en(@child) {
+	&:nth-child(@{child}) {
+		d: path("M 70 22 C 84,40 84,60 70,78");
+	}
+}
+
+._vb_3_en(@child) {
+	&:nth-child(@{child}) {
+		d: path("M 78 9 C 100,32 100,68 78,91");
+	}
+}
+
+.volume_loud > svg > path {
+	._vb_1_en(2);
+	._vb_2_en(3);
+	._vb_3_en(4);
+	stroke: #ff8080;
+}
+
+.volume_3 > svg > path {
+	._vb_1_en(2);
+	._vb_2_en(3);
+	._vb_3_en(4);
+}
+
+.volume_2 > svg > path {
+	._vb_1_en(2);
+	._vb_2_en(3);
+	._vb_2_en(4);
+}
+
+.volume_1 > svg > path {
+	._vb_1_en(2);
+	._vb_1_en(3);
+	._vb_1_en(4);
+}
+
+.volume_mute > svg > path {
+	&:nth-child(2) {
+		d: path("M 66 30 C 80,50 80,50 95,70");
+	}
+	&:nth-child(3) {
+		d: path("M 66 30 C 80,50 80,50 95,70");
+	}
+	&:nth-child(4) {
+		d: path("M 95 30 C 80,50 80,50 65,70");
 	}
 }

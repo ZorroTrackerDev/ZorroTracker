@@ -50,37 +50,10 @@ jobs:
       if: runner.os == 'macOS'
       run: npm run ci_test
 
-    # Only the packaging on Windows works
-    - name: Package artifact [Windows]
-      if: runner.os == 'Windows'
+    - name: Package artifact
       run: npm run ci_deploy
 
-    - name: Upload artifact [Windows]
-      if: runner.os == 'Windows'
-      uses: actions/upload-artifact@v2
-      with:
-        name: ZorroTracker-${{ runner.os }}-${{ github.sha }}
-        path: dist/ZorroTracker-*
-
-    # test if Linux works
-    - name: Package artifact [Linux]
-      if: runner.os == 'Linux'
-      run: npm run ci_deploy
-
-    - name: Upload artifact [Linux]
-      if: runner.os == 'Linux'
-      uses: actions/upload-artifact@v2
-      with:
-        name: ZorroTracker-${{ runner.os }}-${{ github.sha }}
-        path: dist/ZorroTracker-*
-
-    # test if MacOS works
-    - name: Package artifact [macOS]
-      if: runner.os == 'macOS'
-      run: npm run ci_deploy
-
-    - name: Upload artifact [macOS]
-      if: runner.os == 'macOS'
+    - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
         name: ZorroTracker-${{ runner.os }}-${{ github.sha }}

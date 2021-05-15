@@ -1,10 +1,32 @@
+// scrollbar styles
+.__scrollbar {
+	&::-webkit-scrollbar {
+		width: 10px;
+		height: 10px;
+	}
+
+	&::-webkit-scrollbar {
+		background: transparent;
+		border-radius: 10px;
+	}
+
+	&::-webkit-scrollbar-thumb {
+		background: #66647d;
+		border-radius: 10px;
+	}
+
+	&::-webkit-scrollbar-corner {
+		background: transparent;
+	}
+}
+
 // pattern editor wrapper. This will attempt to be at most 50% wide, and 100% high. Scrollbar on the left will always appear, but on the bottom only when too wide.
 .patterneditor {
 	height: 100%;
 	width: max-content;
 	max-width: 50%;
 	background: black;
-	overflow-y: hidden;
+	overflow-y: scroll;
 	overflow-x: auto;
 	white-space: nowrap;
 
@@ -15,51 +37,64 @@
 	font-family: 'Noto Sans', sans-serif;
 	font-size: 11pt;
 
+	.__scrollbar();
+
 	// width of the first row
 	@firstrow: 26px;
 	@otherrows: 50px;
 	@rowheight: 20px;
 
 	.__item {
-		margin: 1px;
 		border-radius: 4px;
 		display: inline-block;
 	}
 
 	// channel elements
-	&> .patterneditor_channels > div {
-		.__item();
-		text-align: center;
-		width: @otherrows;
-		height: @rowheight;
-		background: #3b3c46;
-		color: white;
-		border-top-left-radius: 0;
-		border-top-right-radius: 0;
+	&> .patterneditor_channels {
+		position: sticky;
+		top: 0;
 
-		&:first-child {
-			width: @firstrow;
-			border-bottom-left-radius: 0;
+		&> div {
+			.__item();
+			border: 1px solid black;
+			text-align: center;
+			width: @otherrows;
+			height: @rowheight;
+			background: #3b3c46;
+			color: white;
+			border-top-left-radius: 0;
+			border-top-right-radius: 0;
+
+			&:first-child {
+				width: @firstrow;
+				border-bottom-left-radius: 0;
+			}
 		}
 	}
 
 	// vertical row wrapper
 	&> .patterneditor_rows {
+		.__scrollbar();
 		text-align: center;
-		overflow-y: scroll;
+		width: 100%;
 		height: calc(100% - @rowheight - 2px);
 
 		&> div {
 			display: block;
 			height: @rowheight;
 			width: max-content;
+			margin: 1px 0;
 
 			// both channel header and channel tracker elements
 			&> div {
 				.__item();
+				margin: 1px;
 				width: @otherrows;
 				height: 100%;
 				color: #d6d6d6;
+				background: #28282b;
+				cursor: pointer;
+				transition: background-color .3s ease;
 
 				// the first row is special, as it shows the song position
 				&:first-child {
@@ -71,12 +106,6 @@
 					border-top-left-radius: 0;
 					border-bottom-left-radius: 0;
 				}
-			}
-
-			&> .patterneditor_pattern {
-				background: #28282b;
-				cursor: pointer;
-				transition: background-color .3s ease;
 
 				&:not(:first-child):hover {
 					background: #474752;
@@ -111,24 +140,5 @@
 			}
 		}
 
-		// custom scrollbar theme
-		&::-webkit-scrollbar {
-			width: 10px;
-			height: 10px;
-		}
-
-		&::-webkit-scrollbar {
-			background: transparent;
-			border-radius: 10px;
-		}
-
-		&::-webkit-scrollbar-thumb {
-			background: #66647d;
-			border-radius: 10px;
-		}
-
-		&::-webkit-scrollbar-corner {
-			background: transparent;
-		}
 	}
 }

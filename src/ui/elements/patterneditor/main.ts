@@ -16,32 +16,18 @@ export class PatternEditor {
 		this.element.appendChild(this.elrows);
 
 		this.setChannels([ "FM1", "FM2", "FM3", "FM4", "FM5", "FM6", "DAC", "PSG1", "PSG2", "PSG3", "PSG4", ]);
+		this.addRow(0x00);
 
-		for(let i = 0;i < 20;i ++){
-			const x = document.createElement("div");
-			this.elrows.appendChild(x);
+		for(let i = 1; i < 20;i ++)
+			this.addRow(i);
 
-			for(let s = 0;s < this.elchans.children.length;s ++) {
-				const y = document.createElement("div");
-				y.classList.add("patterneditor_pattern");
-
-				if(s){
-					y.innerText = ((Math.random() * 256) | 0).toString(16).toUpperCase();
-
-				} else {
-					y.innerText = i.toString(16).toUpperCase();
-				}
-
-				if(y.innerText.length === 1){
-					y.innerText = "0"+ y.innerText;
-				}
-				x.appendChild(y);
-			}
-		}
-
-		this.select(10, 5);
 	}
 
+	/**
+	 * Function to set the channels this editor recognizes
+	 *
+	 * @param list List of channel names as string array
+	 */
 	private setChannels(list:string[]) {
 		// helper function to add a new element with text
 		const _add = (text:string) => {
@@ -57,6 +43,9 @@ export class PatternEditor {
 
 	private static SELECT_CLASS = "selected";
 
+	/**
+	 * Clear the user selection
+	 */
 	private clearSelect() {
 		// remove class from all rows
 		for(const row of this.element.children){
@@ -69,6 +58,13 @@ export class PatternEditor {
 		}
 	}
 
+	/**
+	 * Function to set the current selection of the pattern editor
+	 *
+	 * @param row The row to select
+	 * @param channel The channel to select
+	 * @returns True if selection can be applied, false if not
+	 */
 	public select(row:number, channel:number):boolean {
 		// clear any previous selections
 		this.clearSelect();
@@ -90,5 +86,20 @@ export class PatternEditor {
 
 		// unable to select
 		return false;
+	}
+
+	public addRow(value:number):number {
+		const count = this.elrows.children.length;
+
+		const row = document.createElement("div");
+		this.elrows.appendChild(row);
+
+		for(let channel = 0;channel < this.elchans.children.length; channel++) {
+			const cell = document.createElement("div");
+			cell.innerText = value.toString(16).toUpperCase();
+			row.appendChild(cell);
+		}
+
+		return count;
 	}
 }

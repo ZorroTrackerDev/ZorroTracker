@@ -128,6 +128,17 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 			case "mutepsg":
 				chip?.mutePSG((data.data as [number, boolean])[0], (data.data as [number, boolean])[1])
 				break;
+
+			/**
+			 * Clean up and exit the instance
+			 *
+			 * data: Irrelevant
+			 */
+			case "quit":
+				driver?.stop();
+				rtAudio.closeStream();
+				parentPort?.postMessage({ code: "quit", data: null, });
+				break;
 		}
 	} catch(ex) {
 		parentPort?.postMessage({ code: "error", data: [ ex, ], });

@@ -34,7 +34,7 @@
 		"curly": "error",
 		"default-case-last": 2,
 		"eqeqeq": "error",
-		"dot-location": "warn",
+		"dot-location": "off",
 		"no-alert": "error",
 		"no-caller": "error",
 		"no-constructor-return": 2,

@@ -62,6 +62,36 @@ ipcMain.on(ipcEnum.UiMinimize, () => {
 	window?.minimize();
 });
 
+/**
+ * Function to close the program safely
+ *
+ * @returns A promise that will resolve into an exit code for worker, when it is terminated.
+ */
+export function close(): Promise<number> {
+	return new Promise((res, rej) => {
+		// ask the UI to exit gracefully
+		window?.webContents.send(ipcEnum.UiExit);
+
+		// listen to the UI's response
+		ipcMain.once(ipcEnum.UiExit, (event, state:boolean) => {
+			if(!state) {
+				// will not be closed
+				rej();
+				return;
+			}
+
+			// will be closed, tell the worker about it and terminate it
+			worker.postMessage({ code: "quit", });
+
+			worker.once("message", (data:{ code:string, data:unknown }) => {
+				if(data.code === "quit"){
+					worker.terminate().then(res).catch(rej);
+				}
+			});
+		});
+	});
+}
+
 // handle the UI requesting the current window to be closed
 ipcMain.on(ipcEnum.UiClose, () => {
 	window?.close();
@@ -214,11 +244,9 @@ ipcMain.on(ipcEnum.DriverFindAll, (event) => _findall("drivers", ipcEnum.DriverF
  */
 function _findall(folder:ScriptFolders, eventName:ipcEnum, event:IpcMainEvent) {
 	ScriptHelper.findAll(folder).then((res) => {
-		console.log("yesss")
 		event.reply(eventName, res);
 
 	}).catch((ex) => {
-		console.log("Hey")
 		// for some reason this didn't work, just throw an error
 		console.log(ex);
 		event.reply(eventName, []);
@@ -281,31 +309,6 @@ ipcMain.on(ipcEnum.ChipMuteFM, (event, channel:number, state:boolean) => {
 ipcMain.on(ipcEnum.ChipMuteFM, (event, channel:number, state:boolean) => {
 	worker.postMessage({ code: "mutepsg", data: [ channel, state, ], });
 });
-
-/**
- * Function to close the program safely
- *
- * @returns A promise that will resolve into an exit code for worker, when it is terminated.
- */
-export function close(): Promise<number> {
-	return new Promise((res, rej) => {
-		// ask the UI to exit gracefully
-		window?.webContents.send(ipcEnum.UiExit);
-
-		// listen to the UI's response
-		ipcMain.once(ipcEnum.UiExit, (event, state:boolean) => {
-			if(!state) {
-				// will not be closed
-				rej();
-				return;
-			}
-
-			// will be closed, tell the worker about it and terminate it
-			worker.postMessage({ code: "stop", });
-			worker.terminate().then(res).catch(rej);
-		});
-	});
-}
 
 /**
  * Helper functions to tell the UI about log information

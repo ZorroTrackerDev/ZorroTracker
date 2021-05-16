@@ -35,14 +35,15 @@
 	border-bottom-right-radius: 8px;
 
 	font-family: 'Noto Sans', sans-serif;
-	font-size: 11pt;
+	font-size: 9.5pt;
+	font-weight: bold;
 
 	.__scrollbar();
 
 	// width of the first row
-	@firstrow: 26px;
-	@otherrows: 50px;
-	@rowheight: 20px;
+	@firstrow: 20px;
+	@otherrows: 36px;
+	@rowheight: 18px;
 	@butwidth: 60px;
 	@butwidths: 25px;
 	@butheight: 23px;
@@ -54,6 +55,8 @@
 
 	// channel elements
 	&> .patterneditor_channels {
+		font-weight: normal;
+		font-size: 9pt;
 		position: sticky;
 		top: 0;
 
@@ -83,7 +86,7 @@
 
 				&:hover {
 					background-color: #494a5a;
-					background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='%23fff' stroke-width='14' d='M50 10v80M10 50h80'/%3E%3C/svg%3E");
+					background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='%23fff' stroke-width='16' d='M50 10v80M10 50h80'/%3E%3C/svg%3E");
 				}
 			}
 		}
@@ -108,13 +111,14 @@
 				margin: 1px;
 				width: @otherrows;
 				height: 100%;
-				color: #d6d6d6;
+				color: #b7b7b7;
 				background: #28282b;
 				cursor: pointer;
 				transition: background-color .3s ease;
 
 				// the first row is special, as it shows the song position
 				&:first-child {
+					font-weight: normal;
 					width: @firstrow;
 					color: #f5c6c6;
 					background: #28282b;

@@ -1,8 +1,8 @@
-import electron from "electron";
+import electron, { BrowserWindow } from "electron";
 import path from "path";
 
 // add the IPC handlers here
-import { getCookie, setCookie, updateMaximized, close as IpcClose } from "./system/ipc";
+import { log, getCookie, setCookie, updateMaximized, close as IpcClose } from "./system/ipc";
 
 // static reference to the main window
 export let window:electron.BrowserWindow|null = null;
@@ -51,13 +51,20 @@ async function createWindow () {
 	window.focus();
 
 	// handle when the window is asked to be closed.
-	window.on("close", async() => {
+	window.on("close", (event:Event) => {
 		// update cookies and flush stored cookies
 		setCookie("main_devtools", window?.webContents.isDevToolsOpened() ? "true" : "");
-		await electron.session.defaultSession.cookies.flushStore();
+		electron.session.defaultSession.cookies.flushStore()
+			// make sure all IPC-related tasks are safe to close
+			.then(IpcClose)
+			// destroy the current window if successful
+			.then(() => window?.destroy())
+			// if we failed, just log it as if it's fine.
+			.catch(console.error);
 
-		// make sure all IPC-related tasks are safe to close
-		await IpcClose();
+		// prevent Electron closing our window before we can be sure its free to close
+		event.preventDefault();
+		return event.returnValue = false;
 	});
 
 	// when window is unmaximized, update the cookie value

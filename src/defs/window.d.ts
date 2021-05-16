@@ -46,6 +46,11 @@ declare global {
 			 * Helper function to open the Github repository in an external browser.
 			 */
 			openGithub: () => void,
+
+			/**
+			 * Helper function to open the Discord server link in an external browser.
+			 */
+			openDiscord: () => void,
 		},
 		ipc: {
 			ui: {

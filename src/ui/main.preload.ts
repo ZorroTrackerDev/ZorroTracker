@@ -9,6 +9,9 @@ window.exports = {};
 import { webFrame } from "electron";
 webFrame.setZoomFactor(1);		// testing only
 
+/* load object extensions */
+import "./extensions";
+
 /* ipc communication */
 import "./ipc ui";
 

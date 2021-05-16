@@ -34,6 +34,10 @@ const defaultMenu:ToolbarMenu = {
 				enabled: true,
 				action: "window.toolbarFunc.openGithub()",
 			},
+			"Discord": {
+				enabled: true,
+				action: "window.toolbarFunc.openDiscord()",
+			},
 		},
 	},
 };
@@ -263,5 +267,12 @@ window.toolbarFunc = {
 	 */
 	openGithub: () => {
 		window.ipc.ui.openInBrowser("https://github.com/ZorroTrackerDev/ZorroTracker");
+	},
+
+	/**
+	 * Helper function to open the Discord server link in an external browser.
+	 */
+	openDiscord: () => {
+		window.ipc.ui.openInBrowser("https://discord.gg/VhR3kwtZ5r");
 	},
 };

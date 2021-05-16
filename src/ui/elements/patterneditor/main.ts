@@ -1,11 +1,31 @@
-export class PatternEditor {
-	// various standard elements for the pattern editor
-	public element:HTMLElement;
-	private elchans:HTMLElement;
-	private elrows:HTMLElement;
-	private elbtns:HTMLElement;
+import { PatternIndex } from "../../../api/pattern";
 
-	constructor() {
+/**
+ * Class to interact between the UI and the PatternIndex entry. Helps manage UI integration and intercommunication
+ */
+export class PatternIndexEditor {
+	// various standard elements for the pattern editor
+	public element!:HTMLElement;
+	private elchans!:HTMLElement;
+	private elrows!:HTMLElement;
+	private elbtns!:HTMLElement;
+
+	// the pattern index this editor is affecting
+	public index:PatternIndex;
+
+	constructor(index:PatternIndex) {
+		// initialize the pattern index. TODO: Driver-dependant behavior
+		this.index = index;
+		this.setLayout();
+
+		// generate the first row
+		this.insertRow(0);
+
+		// select the first row first channel
+		this.select(0, 0);
+	}
+
+	private setLayout() {
 		// generate the main element for this editor
 		this.element = document.createElement("div");
 		this.element.classList.add("patterneditor");
@@ -25,56 +45,101 @@ export class PatternEditor {
 		this.elbtns.classList.add("patterneditor_buttons");
 		this.element.appendChild(this.elbtns);
 
-		/**
-		 * Helper function to create a new button at the bottom row
-		 *
-		 * @param text The button inner text
-		 * @param title The tooltip to display when hovering with a mouse
-		 * @param mouseup The event to run when the user clicks on the button
-		 */
-		const _makebutton = (text:string, title:string, mouseup:(event:MouseEvent) => unknown) => {
-			const b = document.createElement("div");
-			b.innerText = text;
-			b.title = title;
-			b.onmouseup = mouseup;
-			this.elbtns.appendChild(b);
-		}
+		// enable all the standard buttons
+		this.standardButtons.forEach((button) => this.appendButton(button.text, button.title, button.click));
 
-		// the insert button: Insert a row below the current selection
-		_makebutton("insert", "insert at selection", (event:MouseEvent) => {
-			if(event.button === 0 && this.selectedRow >= -1) {
-				// insert below selection
-				this.addRow(this.selectedRow + 1);
-				this.select(this.selectedRow + 1, this.selectedChan);
-			}
-		});
+		// enable the channels
+		this.setChannels();
+	}
 
-		// the delete button: Delete the currently selected row
-		_makebutton("delete", "delete at selection", (event:MouseEvent) => {
-			if(event.button === 0 && this.selectedRow >= 0) {
-				// delete the currently selected row
-				this.deleteRow(this.selectedRow);
-				this.select(Math.min(this.selectedRow, this.elrows.children.length -1), this.selectedChan);
-			}
-		});
+	/**
+	 * All the different standard buttons for controlling the pattern editor. This also has the functionality of these buttons.
+	 */
+	private standardButtons = [
+		{
+			text: "↑",
+			title: "move selection up",
+			click: (edit:PatternIndexEditor, event:MouseEvent) => {
+				if(event.button === 0 && edit.selectedRow > 0) {
+					// swap this row with the previous
+					if(edit.index.swapRows(edit.selectedRow, edit.selectedRow - 1)){
+						// re-render rows and re-select
+						edit.renderRow(edit.selectedRow);
+						edit.renderRow(edit.selectedRow - 1);
+						edit.select(edit.selectedRow - 1, edit.selectedChan);
 
-		// the copy button: Duplicate the currently selected row below
-		_makebutton("copy", "duplicate selection", (event:MouseEvent) => {
-			if(event.button === 0 && this.selectedRow >= 0) {
-				// insert below selection
-				this.copyRow(this.selectedRow, this.selectedRow + 1);
-				this.select(this.selectedRow + 1, this.selectedChan);
-			}
-		});
+						// fix row indices too
+						edit.fixRowIndices();
+					}
+				}
+			},
+		},
+		{
+			text: "insert",
+			title: "insert at selection",
+			click: (edit:PatternIndexEditor, event:MouseEvent) => {
+				if(event.button === 0 && edit.selectedRow >= 0) {
+					// insert below selection
+					edit.insertRow(edit.selectedRow + 1);
+					edit.select(edit.selectedRow + 1, edit.selectedChan);
+				}
+			},
+		},
+		{
+			text: "delete",
+			title: "delete at selection",
+			click: (edit:PatternIndexEditor, event:MouseEvent) => {
+				if(event.button === 0 && edit.selectedRow >= 0 && edit.elrows.children.length > 1) {
+					// delete the currently selected row
+					edit.deleteRow(edit.selectedRow);
+					edit.select(Math.min(edit.selectedRow, edit.elrows.children.length -1), edit.selectedChan);
+				}
+			},
+		},
+		{
+			text: "copy",
+			title: "duplicate selection",
+			click: (edit:PatternIndexEditor, event:MouseEvent) => {
+				if(event.button === 0 && edit.selectedRow >= 0) {
+					// insert below selection
+					edit.copyRow(edit.selectedRow, edit.selectedRow + 1);
+					edit.select(edit.selectedRow + 1, edit.selectedChan);
+				}
+			},
+		},
+		{
+			text: "↓",
+			title: "move selection down",
+			click: (edit:PatternIndexEditor, event:MouseEvent) => {
+				if(event.button === 0 && edit.selectedRow >= 0) {
+					// swap this row with the next
+					if(edit.index.swapRows(edit.selectedRow, edit.selectedRow + 1)) {
+						// re-render rows and re-select
+						edit.renderRow(edit.selectedRow);
+						edit.renderRow(edit.selectedRow + 1);
+						edit.select(edit.selectedRow + 1, edit.selectedChan);
 
-		// static channel set function. TODO: Driver-dependant behavior
-		this.setChannels([ "FM1", "FM2", "FM3", "FM4", "FM5", "FM6", "PCM", "PSG1", "PSG2", "PSG3", "PSG4", ]);
+						// fix row indices too
+						edit.fixRowIndices();
+					}
+				}
+			},
+		},
+	];
 
-		// generate the first row
-		this.addRow(0);
-
-		// select the first row first channel
-		this.select(0, 0);
+	/**
+	 * Helper function to create a new button at the bottom row
+	 *
+	 * @param text The button inner text
+	 * @param title The tooltip to display when hovering with a mouse
+	 * @param mouseup The event to run when the user clicks on the button
+	 */
+	private appendButton(text:string, title:string, click:(edit:PatternIndexEditor, event:MouseEvent) => unknown) {
+		const button = document.createElement("div");
+		button.innerText = text;
+		button.title = title;
+		button.onmouseup = (event:MouseEvent) => click(this, event);
+		this.elbtns.appendChild(button);
 	}
 
 	/**
@@ -82,7 +147,7 @@ export class PatternEditor {
 	 *
 	 * @param list List of channel names as string array
 	 */
-	private setChannels(list:string[]) {
+	private setChannels() {
 		// helper function to add a new element with text
 		const _add = (text:string) => {
 			const z = document.createElement("div");
@@ -93,7 +158,7 @@ export class PatternEditor {
 
 		// add each channel into the mix along with the insert button
 		const insert = _add("​");
-		list.forEach(_add);
+		this.index.channels.forEach(_add);
 
 		// add class and title for the insert button
 		insert.classList.add("patterneditor_insert");
@@ -103,12 +168,12 @@ export class PatternEditor {
 		insert.onmouseup = (event:MouseEvent) => {
 			switch(event.button) {
 				case 0:		// left button, generate a new row at the very bottom and scroll down to it
-					this.addRow(Number.MAX_SAFE_INTEGER);
+					this.insertRow(this.elrows.children.length);
 					this.element.scroll({ top: Number.MAX_SAFE_INTEGER, });
 					break;
 
 				case 2:		// right button, generate a new row at the very top and scroll up to it
-					this.addRow(0);
+					this.insertRow(0);
 					this.element.scroll({ top: 0, });
 					break;
 			}
@@ -149,11 +214,11 @@ export class PatternEditor {
 	private clearSelect() {
 		// remove class from all rows
 		for(const row of this.elrows.children){
-			row.classList.remove(PatternEditor.SELECT_CLASS);
+			row.classList.remove(PatternIndexEditor.SELECT_CLASS);
 
 			// remove class from all elements
 			for(const e of row.children){
-				e.classList.remove(PatternEditor.SELECT_CLASS);
+				e.classList.remove(PatternIndexEditor.SELECT_CLASS);
 			}
 		}
 	}
@@ -182,8 +247,8 @@ export class PatternEditor {
 				const echan = erow.children[channel + 1];
 
 				// apply special styles
-				erow.classList.add(PatternEditor.SELECT_CLASS);
-				echan.classList.add(PatternEditor.SELECT_CLASS);
+				erow.classList.add(PatternIndexEditor.SELECT_CLASS);
+				echan.classList.add(PatternIndexEditor.SELECT_CLASS);
 
 				// also update the selection too
 				this.selectedRow = row;
@@ -201,32 +266,81 @@ export class PatternEditor {
 	}
 
 	/**
-	 * Function to add a new row into a specific position
+	 * Function to insert a new row into a specific position
 	 *
-	 * @param position position to add a new row into
+	 * @param position position to insert a new row into
 	 * @returns boolean indicating if the operation was successful
 	 */
-	public addRow(position:number):boolean {
-		const count = this.elrows.children.length;
+	public insertRow(position:number):boolean {
+		// generate a new row in the pattern index object
+		const ixrow = this.index.generateRow();
 
-		// if the max nmber of rows exist, then abandon ship
-		if(count > 0xFF || position < 0) {
+		// generate new patterns at values
+		this.index.makePatternsRow(ixrow, false);
+
+		// attempt to insert this new row at position. If it fails, return
+		if(!this.index.insertRow(position, ixrow)){
 			return false;
 		}
 
-		// add a new row element based on the position
+		// add the row to the UI now
+		return this.insertRowUI(position);
+	}
+
+	/**
+	 * Function to insert a new row UI into a specific position
+	 *
+	 * @param position position to insert a new row into
+	 * @param data The data to show on the UI buttons
+	 * @returns boolean indicating if the operation was successful
+	 */
+	private insertRowUI(position:number):boolean {
+		// insert a new row element based on the position
 		const row = document.createElement("div");
-		this.elrows.insertBefore(row, count < position ? null : this.elrows.children[position]);
+		this.elrows.insertBefore(row, this.elrows.children.length < position ? null : this.elrows.children[position]);
+
+		// render the row at position
+		if(!this.renderRow(position)){
+			return false;
+		}
+
+		// fix the row indices
+		this.fixRowIndices();
+		return true;
+	}
+
+	/**
+	 * Function to render a single row of the UI. This will not correctly update the row index, however.
+	 *
+	 * @param position The row index to update
+	 * @returns boolean indicating success
+	 */
+	private renderRow(position:number) {
+		// get the row data and check if it's null (invalid row)
+		const data = this.index.getRow(position);
+
+		if(data === null) {
+			return false;
+		}
+
+		// get the row element
+		const row = this.elrows.children[position] as HTMLDivElement;
+
+		// remove all children
+		while(row.children.length > 0){
+			row.removeChild(row.children[0]);
+		}
 
 		// generate all the pattern indices for this row (based on channel count)
-		for(let channel = 0;channel < this.elchans.children.length; channel++) {
+		for(let channel = 0;channel <= data.length; channel++) {
 			// generate a new cell with the new value (number of rows... I know)
 			const cell = document.createElement("div");
-			cell.innerText = count.toByte();
 			row.appendChild(cell);
 
 			// ignore the row index number
 			if(channel !== 0){
+				cell.innerText = data[channel - 1].toByte();
+
 				// when clicked, select the item
 				cell.onmouseup = (event:MouseEvent) => {
 					switch(event.button) {
@@ -237,22 +351,19 @@ export class PatternEditor {
 								// select this item
 								const index = this.findMe(event.currentTarget as HTMLDivElement);
 								this.select(index.row, index.channel);
-								return true;
 							}
 					}
 				}
 			}
 		}
 
-		// fix the row indices
-		this.fixRowIndex();
-		return false;
+		return true;
 	}
 
 	/**
 	 * Function to fix the row indices, so they always are based on the position
 	 */
-	private fixRowIndex() {
+	private fixRowIndices() {
 		for(let i = this.elrows.children.length - 1; i >= 0;i --) {
 			// fix the innertext of the first child of each row to be position
 			(this.elrows.children[i].children[0] as HTMLDivElement).innerText = i.toByte();
@@ -289,16 +400,16 @@ export class PatternEditor {
 	 * @returns boolean indicating whether the operation was successful
 	 */
 	public deleteRow(position:number):boolean {
-		// check if the position is valid
-		if(position < 0 || position >= this.elrows.children.length){
+		// delete the row data from index, and bail if failed
+		if(!this.index.deleteRow(position)) {
 			return false;
 		}
 
-		// remove the entire row
+		// remove the UI row
 		this.elrows.removeChild(this.elrows.children[position]);
 
 		// fix the row indices
-		this.fixRowIndex();
+		this.fixRowIndices();
 		return true;
 	}
 
@@ -310,27 +421,15 @@ export class PatternEditor {
 	 * @returns boolean indicating whether the operation was successful
 	 */
 	public copyRow(source:number, destination:number):boolean {
-		// check if the source position is valid
-		if(source < 0 || source >= this.elrows.children.length){
+		// get the source row from index
+		const ixrow = this.index.getRow(source);
+
+		// attempt to insert this new row at destination. If it fails, return
+		if(!ixrow || !this.index.insertRow(destination, ixrow)){
 			return false;
 		}
 
-		// check if the destination position is valid
-		if(destination < 0 || destination > this.elrows.children.length){
-			return false;
-		}
-
-		// create the new row
-		this.addRow(destination);
-
-		// copy each row cells from source to destination
-		for(let channel = 0;channel < this.elchans.children.length; channel++) {
-			(this.elrows.children[destination].children[channel] as HTMLDivElement).innerText =
-				(this.elrows.children[source].children[channel] as HTMLDivElement).innerText;
-		}
-
-		// fix the row indices
-		this.fixRowIndex();
-		return true;
+		// add the row to the UI now
+		return this.insertRowUI(destination);
 	}
 }

@@ -44,6 +44,7 @@
 	@otherrows: 50px;
 	@rowheight: 20px;
 	@butwidth: 60px;
+	@butwidths: 25px;
 	@butheight: 23px;
 
 	.__item {
@@ -183,6 +184,7 @@
 
 			&:first-child {
 				border-top-left-radius: 8px;
+				width: @butwidths;
 			}
 
 			&:not(:first-child) {
@@ -191,6 +193,7 @@
 
 			&:last-child {
 				border-top-right-radius: 8px;
+				width: @butwidths;
 			}
 		}
 	}

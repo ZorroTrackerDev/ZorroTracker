@@ -1,4 +1,5 @@
-import { PatternEditor } from "./elements/patterneditor/main";
+import { PatternIndex } from "../api/pattern";
+import { PatternIndexEditor } from "./elements/patterneditor/main";
 import { volumeSlider, simpleSlider, SliderEnum } from "./elements/slider/slider";
 
 export async function editorLayout():Promise<void> {
@@ -10,9 +11,9 @@ export async function editorLayout():Promise<void> {
 
 	/**
 	 * -------------------------------------
-	 * patterns        | settings
+	 * pattern index     | settings
 	 * -------------------------------------
-	 * tracker editor
+	 * pattern edit
 	 * -------------------------------------
 	 */
 
@@ -20,7 +21,9 @@ export async function editorLayout():Promise<void> {
 	_top.id = "editor_top";
 	body.appendChild(_top);
 
-	_top.appendChild(new PatternEditor().element)
+	// initialize the pattern index. TODO: Driver-dependant behavior
+	const index = new PatternIndex([ "FM1", "FM2", "FM3", "FM4", "FM5", "FM6", "PCM", "PSG1", "PSG2", "PSG3", "PSG4", ]);
+	_top.appendChild(new PatternIndexEditor(index).element)
 
 	const _bot = document.createElement("div");
 	_bot.id = "editor_bottom";

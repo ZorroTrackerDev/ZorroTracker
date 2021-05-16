@@ -10,6 +10,7 @@ export let window:electron.BrowserWindow|null = null;
 // function that creates a new window and loads ui/main.html.
 async function createWindow () {
 	const settings = await loadWindowSettings("main");
+	console.log("spawn-main-window", settings);
 
 	window = new electron.BrowserWindow({
 		width: settings.w, height: settings.h,
@@ -51,12 +52,12 @@ async function createWindow () {
 
 	// handle when the window is asked to be closed.
 	window.on("close", async() => {
+		// update cookies and flush stored cookies
+		setCookie("main_devtools", window?.webContents.isDevToolsOpened() ? "true" : "");
+		await electron.session.defaultSession.cookies.flushStore();
+
 		// make sure all IPC-related tasks are safe to close
 		await IpcClose();
-
-		// update cookies and flush stored cookies
-		setCookie("main_devtools", window?.webContents.isDevToolsOpened() +"");
-		await electron.session.defaultSession.cookies.flushStore();
 	});
 
 	// when window is unmaximized, update the cookie value

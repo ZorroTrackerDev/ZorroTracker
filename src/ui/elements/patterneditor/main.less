@@ -22,6 +22,7 @@
 
 // pattern editor wrapper. This will attempt to be at most 50% wide, and 100% high. Scrollbar on the left will always appear, but on the bottom only when too wide.
 .patterneditor {
+	scroll-snap-type: y mandatory;
 	height: 100%;
 	width: max-content;
 	max-width: 50%;
@@ -99,11 +100,15 @@
 		width: 100%;
 		min-height: calc(100% - @rowheight - @butheight - 6px);
 
-		&> div {
+		&> p, div {
+			scroll-snap-align: start;
+			margin: 1px 0;
 			display: block;
 			height: @rowheight;
+		}
+
+		&> div {
 			width: max-content;
-			margin: 1px 0;
 
 			// both channel header and channel tracker elements
 			&> div {

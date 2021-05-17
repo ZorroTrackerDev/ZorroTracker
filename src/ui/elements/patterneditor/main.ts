@@ -23,7 +23,15 @@ export class PatternIndexEditor {
 
 		// select the first row first channel
 		this.select(0, 0);
+
+		// generate fake rows
+		for(let i = 1;i < 20; i++){
+			this.insertRow(i);
+		}
 	}
+
+	// scroll by 3 elements per step
+	private static FILLER_ROWS = 2;
 
 	private setLayout() {
 		// generate the main element for this editor
@@ -40,6 +48,11 @@ export class PatternIndexEditor {
 		this.elrows.classList.add("patterneditor_rows");
 		this.element.appendChild(this.elrows);
 
+		// add the filler rows
+		for(let x = PatternIndexEditor.FILLER_ROWS * 2;x > 0;x --){
+			this.elrows.appendChild(document.createElement("p"));
+		}
+
 		// generate the buttons for this editor
 		this.elbtns = document.createElement("div");
 		this.elbtns.classList.add("patterneditor_buttons");
@@ -50,6 +63,60 @@ export class PatternIndexEditor {
 
 		// enable the channels
 		this.setChannels();
+
+		// special handler for scrolling with mousewheel
+		this.element.addEventListener("wheel", (event:WheelEvent) => {
+			// NOTE: Do not allow vertical scrolling. Horizontal scrolling is unaffected!
+			if(event.deltaY) {
+				// disable default event
+				event.preventDefault();
+				event.stopPropagation();
+
+				// scroll according to the wheel
+				this.scroll(Math.round(event.deltaY / 100 * PatternIndexEditor.SCROLL_STEP));
+			}
+		}, { passive: false, });
+	}
+
+	// scroll by 3 elements per step
+	private static SCROLL_STEP = 2;
+
+	/**
+	 * Function to scroll the index menu by x number of elements.
+	 *
+	 * @param speed Positive or negative value in number of elements.
+	 */
+	private scroll(speed:number) {
+		// get the height of the element. The first value takes into account the border size
+		const height = 1 + ((this.elrows.children[PatternIndexEditor.FILLER_ROWS] as HTMLDivElement|undefined)?.offsetHeight ?? 0);
+
+		// apply scrolling here
+		this.element.scrollTop += speed * height;
+	}
+
+	/**
+	 * Helper function to ensure a specific row is visible. This is usually done after selection.
+	 *
+	 * @param row the row to make visible
+	 */
+	private scrollTo(row:number) {
+		// check that the row is valid
+		if(row >= 0 && this.index.matrixlen > row){
+			// get all the relevant bounding boxes for later
+			const target = this.elrows.children[row + PatternIndexEditor.FILLER_ROWS].getBoundingClientRect();
+			const chan = this.elchans.getBoundingClientRect();
+			const elm = this.element.getBoundingClientRect();
+			const butt = this.elbtns.getBoundingClientRect();
+
+			if(target.top - chan.bottom < 0){
+				// too far below! must move up
+				this.element.scrollTop = this.element.scrollTop + target.top - chan.bottom;
+
+			} else if(target.top > elm.height - butt.height) {
+				// too far above! must move down
+				this.element.scrollTop = this.element.scrollTop + target.bottom - butt.top + 2;
+			}
+		}
 	}
 
 	/**
@@ -89,10 +156,10 @@ export class PatternIndexEditor {
 			text: "delete",
 			title: "delete at selection",
 			click: (edit:PatternIndexEditor, event:MouseEvent) => {
-				if(event.button === 0 && edit.selectedRow >= 0 && edit.elrows.children.length > 1) {
+				if(event.button === 0 && edit.selectedRow >= 0 && edit.index.matrixlen > 1) {
 					// delete the currently selected row
 					edit.deleteRow(edit.selectedRow);
-					edit.select(Math.min(edit.selectedRow, edit.elrows.children.length -1), edit.selectedChan);
+					edit.select(Math.min(edit.selectedRow, edit.index.matrixlen - 1), edit.selectedChan);
 				}
 			},
 		},
@@ -168,39 +235,14 @@ export class PatternIndexEditor {
 		insert.onmouseup = (event:MouseEvent) => {
 			switch(event.button) {
 				case 0:		// left button, generate a new row at the very bottom and scroll down to it
-					this.insertRow(this.elrows.children.length);
-					this.element.scroll({ top: Number.MAX_SAFE_INTEGER, });
+					this.insertRow(this.index.matrixlen);
+					this.scrollTo(this.index.matrixlen - 1);
 					break;
 
 				case 2:		// right button, generate a new row at the very top and scroll up to it
 					this.insertRow(0);
-					this.element.scroll({ top: 0, });
+					this.scrollTo(0);
 					break;
-			}
-		}
-	}
-
-	/**
-	 * Helper function to ensure a specific row is visible. This is usually done after selection.
-	 *
-	 * @param row the row to make visible
-	 */
-	private scrollTo(row:number) {
-		// check that the row is valid
-		if(row >= 0 && this.elrows.children.length > row){
-			// get all the relevant bounding boxes for later
-			const target = this.elrows.children[row].getBoundingClientRect();
-			const chan = this.elchans.getBoundingClientRect();
-			const elm = this.element.getBoundingClientRect();
-			const butt = this.elbtns.getBoundingClientRect();
-
-			if(target.top - chan.bottom < 0){
-				// too far below! must move up
-				this.element.scrollTop = this.element.scrollTop + target.top - chan.bottom;
-
-			} else if(target.top > elm.height - butt.height) {
-				// too far above! must move down
-				this.element.scrollTop = this.element.scrollTop + target.bottom - butt.top + 2;
 			}
 		}
 	}
@@ -239,8 +281,8 @@ export class PatternIndexEditor {
 		this.clearSelect();
 
 		// check if this row exists
-		if(row >= 0 && this.elrows.children.length > row) {
-			const erow = this.elrows.children[row];
+		if(row >= 0 && this.index.matrixlen > row) {
+			const erow = this.elrows.children[row + PatternIndexEditor.FILLER_ROWS];
 
 			// check if the channel exists
 			if(channel >= 0 && erow.children.length > channel) {
@@ -297,7 +339,7 @@ export class PatternIndexEditor {
 	private insertRowUI(position:number):boolean {
 		// insert a new row element based on the position
 		const row = document.createElement("div");
-		this.elrows.insertBefore(row, this.elrows.children.length < position ? null : this.elrows.children[position]);
+		this.elrows.insertBefore(row, this.index.matrixlen <= position ? null : this.elrows.children[position + PatternIndexEditor.FILLER_ROWS]);
 
 		// render the row at position
 		if(!this.renderRow(position)){
@@ -324,7 +366,7 @@ export class PatternIndexEditor {
 		}
 
 		// get the row element
-		const row = this.elrows.children[position] as HTMLDivElement;
+		const row = this.elrows.children[position + PatternIndexEditor.FILLER_ROWS] as HTMLDivElement;
 
 		// remove all children
 		while(row.children.length > 0){
@@ -364,9 +406,9 @@ export class PatternIndexEditor {
 	 * Function to fix the row indices, so they always are based on the position
 	 */
 	private fixRowIndices() {
-		for(let i = this.elrows.children.length - 1; i >= 0;i --) {
+		for(let i = this.index.matrixlen - 1; i >= 0;i --) {
 			// fix the innertext of the first child of each row to be position
-			(this.elrows.children[i].children[0] as HTMLDivElement).innerText = i.toByte();
+			(this.elrows.children[i + PatternIndexEditor.FILLER_ROWS].children[0] as HTMLDivElement).innerText = i.toByte();
 		}
 	}
 
@@ -378,13 +420,13 @@ export class PatternIndexEditor {
 	 */
 	private findMe(e:HTMLDivElement) {
 		// loop through all rows and elements in the row
-		for(let r = this.elrows.children.length - 1; r >= 0;r --) {
+		for(let r = this.elrows.children.length - 1 - PatternIndexEditor.FILLER_ROWS; r >= PatternIndexEditor.FILLER_ROWS;r --) {
 			for(let c = this.elrows.children[r].children.length -1;c >= 1;c --) {
 
 				// check if this is the element we are looking for
 				if(this.elrows.children[r].children[c] === e){
 					// if yes, return its position
-					return { row: r, channel: c - 1, };
+					return { row: r - PatternIndexEditor.FILLER_ROWS, channel: c - 1, };
 				}
 			}
 		}
@@ -406,7 +448,7 @@ export class PatternIndexEditor {
 		}
 
 		// remove the UI row
-		this.elrows.removeChild(this.elrows.children[position]);
+		this.elrows.removeChild(this.elrows.children[position + PatternIndexEditor.FILLER_ROWS]);
 
 		// fix the row indices
 		this.fixRowIndices();

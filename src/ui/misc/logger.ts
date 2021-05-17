@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-let _write = (text:string) => {};
+let _write:(text:string) => void = () => {};
 
 fs.open(path.join(window.path, "ZorroTracker.log"), "w", (err, fd) => {
 	if(err){
@@ -50,7 +50,12 @@ function intercept(method:string, func:(...args:unknown[]) => void){
  */
 function _log(prefix:string, ...args:unknown[]) {
 	// convert arguments to string and then join them together
-	const _out = args.map((v:Error|any) => (v instanceof Error) ? v.stack : v.toString()).join(" ");
+	const _out = args.map((v:Error|any) =>
+		v === null ? "<null>" :					// special case for nulls
+		v === undefined ? "<undefined>" :		// special case for undefined
+		(v instanceof Error) ? v.stack :		// special case for any Error
+		v.toString()							// transform anything else to a string
+	).join(" ");
 
 	// write it to the log file
 	_write(`[${new Date().toISOString()}][${prefix}] ${_out}${_out.indexOf("\n") >= 0 ? "\n" : ""}\n`);

@@ -1,9 +1,10 @@
 import { PatternIndex } from "../../../api/pattern";
+import { shortcutDirection, UIElement } from "../../../api/ui";
 
 /**
  * Class to interact between the UI and the PatternIndex entry. Helps manage UI integration and intercommunication
  */
-export class PatternIndexEditor {
+export class PatternIndexEditor implements UIElement {
 	// various standard elements for the pattern editor
 	public element!:HTMLElement;
 	private elchans!:HTMLElement;
@@ -37,6 +38,7 @@ export class PatternIndexEditor {
 		// generate the main element for this editor
 		this.element = document.createElement("div");
 		this.element.classList.add("patterneditor");
+		this.element.tabIndex = 0;						// cool so this whole element will break without this line here!
 
 		// generate the channel display for this editor
 		this.elchans = document.createElement("div");
@@ -61,6 +63,9 @@ export class PatternIndexEditor {
 		// enable all the standard buttons
 		this.standardButtons.forEach((button) => this.appendButton(button.text, button.title, button.click));
 
+		// set editing left column
+		this.setEdit(false);
+
 		// enable the channels
 		this.setChannels();
 
@@ -76,6 +81,28 @@ export class PatternIndexEditor {
 				this.scroll(Math.round(event.deltaY / 100 * PatternIndexEditor.SCROLL_STEP));
 			}
 		}, { passive: false, });
+
+		// DO NOT register button presses
+		this.element.onkeydown = (e) => e.preventDefault();
+	}
+
+	// the current text editing mode: false = left, true = right
+	private editing = false;
+
+	// the array containing the strings for animation iteration count depending on the editing mode
+	private static EDIT_STYLE = (state:boolean) => state ? "infinite" : "0";
+
+	/**
+	 * Set the current editing column for text
+	 *
+	 * @param right Whether we are editing the right column
+	 */
+	private setEdit(right:boolean) {
+		this.editing = right;
+
+		// update CSS styles
+		this.element.style.setProperty("--pattern_edit_left", PatternIndexEditor.EDIT_STYLE(!right));
+		this.element.style.setProperty("--pattern_edit_right", PatternIndexEditor.EDIT_STYLE(right));
 	}
 
 	// scroll by 3 elements per step
@@ -210,6 +237,195 @@ export class PatternIndexEditor {
 	}
 
 	/**
+	 * Function to receive shortcut events from the user.
+	 *
+	 * @param shortcut Array of strings representing the shotcut data
+	 * @returns Whether the shortcut was executed
+	 */
+	public receiveShortcut(data:string[]):boolean {
+		if(document.querySelector(":focus") === this.element) {
+			// focus
+			switch(data.shift()) {
+				case "move":
+					return this.moveSelection(data.shift(), true);
+
+				case "movemax":
+					return this.specialSelection(data.shift(), true);
+
+				case "select":
+					return this.moveSelection(data.shift(), false);
+
+				case "selmax":
+					return this.specialSelection(data.shift(), false);
+
+				case "scroll": {
+						// convert direction string to x/y offsets
+						const dir = shortcutDirection(data.shift());
+
+						if(!dir || !dir.y) {
+							return false;
+						}
+
+						// apply scrolling
+						this.scroll(dir.y * PatternIndexEditor.SCROLL_STEP);
+						return true;
+					}
+
+				case "hex":{
+					// check that there is a valid selection active
+					if(this.selectedRow < 0 || this.selectedChan < 0) {
+						return false;
+					}
+
+					// parse the value we passed
+					const value = parseInt(data.shift() ?? "NaN", 16);
+
+					// make sure the value was 100% sure correct or otherwise ignore this code
+					if(!isNaN(value) && value >= 0 && value <= 0xF) {
+						// load the previous value for this cell and bail if invalid
+						let number = this.index.get(this.selectedChan, this.selectedRow);
+
+						if(number === null) {
+							return false;
+						}
+
+						// remove the old pattern value if it is otherwise unused
+						this.index.trim(this.selectedChan, this.selectedRow);
+
+						// set the current digit to specific value while preserving the other digit
+						number &= 0xF << (this.editing ? 4 : 0);
+						number |= value << (this.editing ? 0 : 4);
+
+						// set the new pattern value
+						this.index.set(this.selectedChan, this.selectedRow, number);
+
+						// if this pattern didn't exist, make it anew
+						this.index.makePattern(this.selectedChan, number, false);
+
+						// render this cell
+						this.renderAt(this.selectedRow, this.selectedChan);
+
+						if(this.editing) {
+							// set to editing the left digit and move selection right
+							this.moveSelection("right", false);
+
+						} else {
+							// set to editing the right digit
+							this.setEdit(true);
+						}
+
+						return true;
+					}
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Function to move the current selection by arrow keys.
+	 *
+	 * @param direction The direction we are going to move in as a string
+	 * @param both True if moving both the start and end of selection
+	 * @returns boolean indicating whether the operation was successful
+	 */
+	private moveSelection(direction: string|undefined, both: boolean): boolean {
+		// convert direction string to x/y offsets
+		let dir: undefined | { x:number, y:number } = shortcutDirection(direction);
+
+		if(!dir) {
+			return false;
+		}
+
+		// if current selection is false, just select the first element
+		if(this.selectedRow < 0 || this.selectedChan < 0) {
+			this.select(0, 0);
+			return true;
+		}
+
+		// add selection
+		dir = this.wrapPosition({ x: dir.x + this.selectedChan, y: dir.y + this.selectedRow, });
+		this.select(dir.y, dir.x);
+		return true;
+	}
+
+	/**
+	 * Function to move the current selection by special keys.
+	 *
+	 * @param direction The direction we are going to move in as a string
+	 * @param both True if moving both the start and end of selection
+	 * @returns boolean indicating whether the operation was successful
+	 */
+	private specialSelection(direction: string|undefined, both: boolean): boolean {
+		// convert direction string to x/y offsets
+		let dir: undefined | { x:number, y:number } = shortcutDirection(direction);
+
+		if(!dir) {
+			return false;
+		}
+
+		// add selection
+		dir = this.clipPosition({ x: dir.x * Number.MAX_SAFE_INTEGER, y: dir.y * Number.MAX_SAFE_INTEGER, });
+		this.select(dir.y, dir.x);
+		return true;
+	}
+
+	/**
+	 * Helper function to wrap the position to be in bounds with the pattern matrix
+	 *
+	 * @param position The input position to be wrapped
+	 * @returns The position but wrapped to be in bounds
+	 */
+	private wrapPosition(position:{ x:number, y:number }): { x:number, y:number } {
+		// handle wrapping the position
+		return this.doPosition(position, (start:number, max:number) => {
+			let ret = start;
+
+			// if position is negative, add channels length until positive
+			while(ret < 0){
+				ret += max;
+			}
+
+			// if position is too high, subtract channels length until in range
+			while(ret >= max){
+				ret -= max;
+			}
+
+			return ret;
+		});
+	}
+
+	/**
+	 * Helper function to clip the position to be in bounds with the pattern matrix
+	 *
+	 * @param position The input position to be clipped
+	 * @returns The position but clipped to be in bounds
+	 */
+	private clipPosition(position:{ x:number, y:number }): { x:number, y:number } {
+		// handle clipping the position
+		return this.doPosition(position, (start:number, max:number) => {
+			// clip the position in range 0...max-1
+			return Math.max(0, Math.min(max - 1, start));
+		});
+	}
+
+	/**
+	 * Helper function to wrap the position to be in bounds with the pattern matrix
+	 *
+	 * @param position The input position to be wrapped
+	 * @returns The position but wrapped to be in bounds
+	 */
+	private doPosition(position:{ x:number, y:number }, func:(start:number, max:number) => number): { x:number, y:number } {
+		// wrap the positions
+		position.x = func(position.x, this.index.channels.length);
+		position.y = func(position.y, this.index.matrixlen);
+
+		// return the new data
+		return position;
+	}
+
+	/**
 	 * Function to set the channels this editor recognizes
 	 *
 	 * @param list List of channel names as string array
@@ -254,6 +470,9 @@ export class PatternIndexEditor {
 	 * Clear the user selection
 	 */
 	private clearSelect() {
+		// clear editing setting too
+		this.setEdit(false);
+
 		// remove class from all rows
 		for(const row of this.elrows.children){
 			row.classList.remove(PatternIndexEditor.SELECT_CLASS);
@@ -381,7 +600,7 @@ export class PatternIndexEditor {
 
 			// ignore the row index number
 			if(channel !== 0){
-				cell.innerText = data[channel - 1].toByte();
+				this.byteToHTML(cell, data[channel - 1]);
 
 				// when clicked, select the item
 				cell.onmouseup = (event:MouseEvent) => {
@@ -403,13 +622,46 @@ export class PatternIndexEditor {
 	}
 
 	/**
+	 * Helper function to convert the byte value to 2 div elements
+	 *
+	 * @param element The element to apply style to
+	 * @param byte The value to apply here
+	 */
+	private byteToHTML(element:Element, byte:number) {
+		const text = byte.toByte();
+		element.innerHTML = /*html*/`<div>${text[0]}</div><div>${text[1]}</div>`;
+	}
+
+	/**
 	 * Function to fix the row indices, so they always are based on the position
 	 */
 	private fixRowIndices() {
 		for(let i = this.index.matrixlen - 1; i >= 0;i --) {
 			// fix the innertext of the first child of each row to be position
-			(this.elrows.children[i + PatternIndexEditor.FILLER_ROWS].children[0] as HTMLDivElement).innerText = i.toByte();
+			this.byteToHTML((this.elrows.children[i + PatternIndexEditor.FILLER_ROWS].children[0] as HTMLDivElement), i);
 		}
+	}
+
+	/**
+	 * Helper function to re-render a single element
+	 *
+	 * @param row The row the element is in
+	 * @param channel The channel the element is in
+	 */
+	private renderAt(row:number, channel:number) {
+		// get the actual value from the index and check if invalid
+		const byte = this.index.get(channel, row);
+
+		if(byte === null) {
+			return;
+		}
+
+		// get the target element
+		const erow = this.elrows.children[row + PatternIndexEditor.FILLER_ROWS] as HTMLDivElement;
+		const echan = erow.children[channel + 1] as HTMLDivElement;
+
+		// edit its display value
+		this.byteToHTML(echan, byte);
 	}
 
 	/**

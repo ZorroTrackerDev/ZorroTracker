@@ -30,7 +30,7 @@
 		"no-extra-boolean-cast": "warn",
 		"no-unreachable": "warn",
 		"no-unreachable-loop": 1,
-		"class-methods-use-this": "warn",
+		"class-methods-use-this": "off",
 		"curly": "error",
 		"default-case-last": 2,
 		"eqeqeq": "error",

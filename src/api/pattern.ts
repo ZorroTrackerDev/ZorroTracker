@@ -56,6 +56,42 @@ export class PatternIndex {
 	}
 
 	/**
+	 * Function to get the pattern index for a specified row and column.
+	 *
+	 * @param channel The channel to generate a row for
+	 * @param index The index to use for generating a row
+	 * @returns Null if failed, or the index if successful
+	 */
+	public get(channel:number, index:number):number|null {
+		// check that index and channel are valid
+		if(index < 0 || index > 0xFF || channel < 0 || channel >= this.channels.length) {
+			return null;
+		}
+
+		// return the value at channel and index
+		return this.matrix[channel][index];
+	}
+
+	/**
+	 * Function to set the pattern index for a specified row and column.
+	 *
+	 * @param channel The channel to generate a row for
+	 * @param index The index to use for generating a row
+	 * @param value The value to put into that index
+	 * @returns Null if failed, or the index if successful
+	 */
+	public set(channel:number, index:number, value:number):boolean {
+		// check that index and channel are valid
+		if(value < 0 || value > 0xFF || index < 0 || index > 0xFF || channel < 0 || channel >= this.channels.length) {
+			return false;
+		}
+
+		// set the value at channel and index and indicate success
+		this.matrix[channel][index] = value;
+		return true;
+	}
+
+	/**
 	 * Function to get the pattern indices for a specified row.
 	 *
 	 * @param index Index of the row to get
@@ -101,6 +137,13 @@ export class PatternIndex {
 		return true;
 	}
 
+	/**
+	 * Function to swap the places of 2 rows.
+	 *
+	 * @param row1 The row to switch `row2` with
+	 * @param row2 The row to switch `row1` with
+	 * @returns boolean indicating whether it was successful or not.
+	 */
 	public swapRows(row1:number, row2:number):boolean {
 		// if we're trying to use the same row, bail out
 		if(row1 === row2) {
@@ -239,8 +282,8 @@ export class PatternIndex {
 	 * @returns Whether every operation succeeded
 	 */
 	public makePattern(channel:number, index:number, replace:boolean):boolean {
-		// check that index is valid
-		if(index < 0 || index > 0xFF) {
+		// check that index and channel are valid
+		if(index < 0 || index > 0xFF || channel < 0 || channel >= this.channels.length) {
 			return false;
 		}
 
@@ -261,7 +304,7 @@ export class PatternIndex {
 	 * @param index Index to find references to and delete
 	 * @returns boolean indicating whether it was trimmed or not
 	 */
-	private trim(channel:number, index:number) {
+	public trim(channel:number, index:number):boolean {
 		// get the pattern index to check for
 		const check = this.matrix[channel][index];
 

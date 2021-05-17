@@ -22,6 +22,9 @@
 
 // pattern editor wrapper. This will attempt to be at most 50% wide, and 100% high. Scrollbar on the left will always appear, but on the bottom only when too wide.
 .patterneditor {
+	--pattern_edit_left: infinite;
+	--pattern_edit_right: infinite;
+	outline: 0;
 	scroll-snap-type: y mandatory;
 	height: 100%;
 	width: max-content;
@@ -48,6 +51,7 @@
 	@butwidth: 60px;
 	@butwidths: 25px;
 	@butheight: 23px;
+	@flashpad: 2px;
 
 	.__item {
 		border-radius: 4px;
@@ -93,6 +97,25 @@
 		}
 	}
 
+	// only ever animate the selection when in focus
+	&:focus-within > .patterneditor_rows > .selected > .selected > div {
+		border-radius: 3px;
+		box-sizing: border-box;
+		padding: 0 @flashpad;
+		border: 2px solid transparent;
+		border-top: none;
+		border-bottom: none;
+		animation: patterneditor_text_flicker .85s alternate cubic-bezier(.70,.1,.4,.9);
+
+		&:first-child {
+			animation-iteration-count: var(--pattern_edit_left);
+		}
+
+		&:last-child {
+			animation-iteration-count: var(--pattern_edit_right);
+		}
+	}
+
 	// vertical row wrapper
 	&> .patterneditor_rows {
 		.__scrollbar();
@@ -100,7 +123,7 @@
 		width: 100%;
 		min-height: calc(100% - @rowheight - @butheight - 6px);
 
-		&> p, div {
+		&> p, > div {
 			scroll-snap-align: start;
 			margin: 1px 0;
 			display: block;
@@ -112,6 +135,11 @@
 
 			// both channel header and channel tracker elements
 			&> div {
+				&> div {
+					display: inline-block;
+					margin: 0;
+				}
+
 				.__item();
 				margin: 1px;
 				width: @otherrows;
@@ -119,7 +147,7 @@
 				color: #b7b7b7;
 				background: #28282b;
 				cursor: pointer;
-				transition: background-color .3s ease;
+				transition: background-color .15s ease;
 
 				// the first row is special, as it shows the song position
 				&:first-child {
@@ -149,18 +177,18 @@
 
 			// handling for selected columns and elements
 			&.selected > div {
-				background: #6f3f3f !important;
+				background: #573333;
 				color: #c9c6ce;
 
 				&:not(:first-child):hover {
-					background: #6e5454 !important;
+					background: #6e5454;
 				}
 
 				&.selected {
-					background: #6b4264 !important;
+					background: #6b4264;
 
 					&:hover {
-						background: #6e566a !important;
+						background: #6e566a;
 					}
 				}
 			}
@@ -205,5 +233,16 @@
 				width: @butwidths;
 			}
 		}
+	}
+}
+
+// animation for text flicker effect
+@keyframes patterneditor_text_flicker {
+	to {
+		border-color: transparent;
+	}
+
+	from {
+		border-color: white;
 	}
 }

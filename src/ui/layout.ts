@@ -1,6 +1,23 @@
 import { PatternIndex } from "../api/pattern";
+import { UIShortcutHandler } from "../api/ui";
 import { PatternIndexEditor } from "./elements/patterneditor/main";
-import { volumeSlider, simpleSlider, SliderEnum } from "./elements/slider/slider";
+import { volumeSlider, SliderEnum } from "./elements/slider/slider";
+import { addShortcutReceiver } from "./misc/shortcuts";
+
+export class _Temp implements UIShortcutHandler {
+	public patternIndex:PatternIndexEditor|undefined;
+
+	public receiveShortcut(data: string[]): boolean {
+		switch(data.shift()) {
+			case "patternindex":
+				return this.patternIndex?.receiveShortcut(data) ?? false;
+		}
+
+		return false;
+	}
+}
+
+export const _temp = new _Temp();
 
 export async function editorLayout():Promise<void> {
 	const body = document.getElementById("main_content");
@@ -23,12 +40,12 @@ export async function editorLayout():Promise<void> {
 
 	// initialize the pattern index. TODO: Driver-dependant behavior
 	const index = new PatternIndex([ "FM1", "FM2", "FM3", "FM4", "FM5", "FM6", "PCM", "PSG1", "PSG2", "PSG3", "PSG4", ]);
-	_top.appendChild(new PatternIndexEditor(index).element)
+	_top.appendChild((_temp.patternIndex = new PatternIndexEditor(index)).element);
+	addShortcutReceiver("layout", (data) => _temp.receiveShortcut(data));
 
 	const _bot = document.createElement("div");
 	_bot.id = "editor_bottom";
 	body.appendChild(_bot);
-
 
 	const getspace = () => {
 		const space = document.createElement("div");

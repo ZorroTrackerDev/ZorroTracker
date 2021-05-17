@@ -1,4 +1,9 @@
 /**
+ * A common UI type for positional data
+ */
+export type Position = { x:number, y:number };
+
+/**
  * A common interface for handling UI shortcuts for this element. This helps make development easier
  */
 export type receiveShortcutFunc = (data:string[], event:KeyboardEvent) => boolean;
@@ -13,7 +18,7 @@ export interface UIShortcutHandler {
  * @param direction The direction string to convert
  * @returns object representing the movement direction
  */
-export function shortcutDirection(direction:string|undefined): undefined|{ x:-1|0|1, y:-1|0|1 } {
+export function shortcutDirection(direction:string|undefined): undefined|Position {
 	switch((direction ?? "").toLowerCase()) {
 		case "up":		return { x: 0, y: -1, };
 		case "down":	return { x: 0, y: 1, };

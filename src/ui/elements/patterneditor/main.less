@@ -97,22 +97,33 @@
 		}
 	}
 
-	// only ever animate the selection when in focus
-	&:focus-within > .patterneditor_rows > .selected > .selected > div {
-		border-radius: 3px;
-		box-sizing: border-box;
-		padding: 0 @flashpad;
-		border: 2px solid transparent;
-		border-top: none;
-		border-bottom: none;
-		animation: patterneditor_text_flicker .85s alternate cubic-bezier(.70,.1,.4,.9);
+	// handle nice graaphics for the edit style
+	&> .patterneditor_rows > div > .editing {
+		background: #426b4c !important;
 
-		&:first-child {
-			animation-iteration-count: var(--pattern_edit_left);
+		&:hover {
+			background: #606e56 !important;
 		}
+	}
 
-		&:last-child {
-			animation-iteration-count: var(--pattern_edit_right);
+	// only ever animate the selection when in focus
+	&:focus-within > .patterneditor_rows > div > .editing {
+		&> div {
+			border-radius: 3px;
+			box-sizing: border-box;
+			padding: 0 @flashpad;
+			border: 2px solid transparent;
+			border-top: none;
+			border-bottom: none;
+			animation: infinite .85s alternate cubic-bezier(.70,.1,.4,.9);
+
+			&:first-child {
+				animation-name: var(--pattern_edit_left);
+			}
+
+			&:last-child {
+				animation-name: var(--pattern_edit_right);
+			}
 		}
 	}
 

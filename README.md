@@ -1,4 +1,8 @@
-### ZorroTracker
+# ZorroTracker
+Sega Mega Drive / Genesis Music Tracker created in Electron.
+
+
+
 [Join the Discord Server!](https://discord.gg/VhR3kwtZ5r)
 
 ## A JavaScript error occurred in the main process

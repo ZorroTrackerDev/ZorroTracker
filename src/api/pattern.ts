@@ -73,25 +73,6 @@ export class PatternIndex {
 	}
 
 	/**
-	 * Function to set the pattern index for a specified row and column.
-	 *
-	 * @param channel The channel to generate a row for
-	 * @param index The index to use for generating a row
-	 * @param value The value to put into that index
-	 * @returns Null if failed, or the index if successful
-	 */
-	public set(channel:number, index:number, value:number):boolean {
-		// check that index and channel are valid
-		if(value < 0 || value > 0xFF || index < 0 || index > 0xFF || channel < 0 || channel >= this.channels.length) {
-			return false;
-		}
-
-		// set the value at channel and index and indicate success
-		this.matrix[channel][index] = value;
-		return true;
-	}
-
-	/**
 	 * Function to get the pattern indices for a specified row.
 	 *
 	 * @param index Index of the row to get
@@ -116,6 +97,57 @@ export class PatternIndex {
 	}
 
 	/**
+	 * Function to get a region of matrix elements into a flat array
+	 *
+	 * @param rows The list of rows to return. Will be reformatted in order
+	 * @param columns The list of columns to retrurn. Will be reformatted in order
+	 * @returns null if we failed, or the full list of elements as flat array
+	 */
+	public getRegion(rows:number[], columns:number[]):number[]|null {
+		// generate a new array of values
+		const ret:number[] = Array(rows.length * columns.length);
+		let index = 0;
+
+		for(const c of columns) {
+			// run for each channel, and makre sure the channel is valid
+			if(c < 0 || c >= this.channels.length){
+				return null;
+			}
+
+			for(const r of rows) {
+				// run for each row, and makre sure the row is valid
+				if(r < 0 || r >= this.matrixlen){
+					return null;
+				}
+
+				// copy the value from matrix
+				ret[index++] = this.matrix[c][r];
+			}
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Function to set the pattern index for a specified row and column.
+	 *
+	 * @param channel The channel to generate a row for
+	 * @param index The index to use for generating a row
+	 * @param value The value to put into that index
+	 * @returns Null if failed, or the index if successful
+	 */
+	public set(channel:number, index:number, value:number):boolean {
+		// check that index and channel are valid
+		if(value < 0 || value > 0xFF || index < 0 || index > 0xFF || channel < 0 || channel >= this.channels.length) {
+			return false;
+		}
+
+		// set the value at channel and index and indicate success
+		this.matrix[channel][index] = value;
+		return true;
+	}
+
+	/**
 	 * Function to override an entire row with data. This is an unsafe operation.
 	 *
 	 * @param index Index of the row to change
@@ -134,6 +166,42 @@ export class PatternIndex {
 		}
 
 		// return the entire data array
+		return true;
+	}
+
+	/**
+	 * Function to set a region of matrix elements from a flat array
+	 *
+	 * @param rows The list of rows to return. Will be reformatted in order
+	 * @param columns The list of columns to retrurn. Will be reformatted in order
+	 * @param values The flat array of values to set
+	 * @returns boolean indicating whether the entire operation succeeded
+	 */
+	public setRegion(rows:number[], columns:number[], values:number[]):boolean {
+		// make sure the array is the right length
+		if(values.length !== rows.length * columns.length) {
+			return false;
+		}
+
+		let index = 0;
+
+		for(const c of columns) {
+			// run for each channel, and makre sure the channel is valid
+			if(c < 0 || c >= this.channels.length){
+				return false;
+			}
+
+			for(const r of rows) {
+				// run for each row, and makre sure the row is valid
+				if(r < 0 || r >= this.matrixlen){
+					return false;
+				}
+
+				// copy the value from matrix
+				this.matrix[c][r] = values[index++];
+			}
+		}
+
 		return true;
 	}
 

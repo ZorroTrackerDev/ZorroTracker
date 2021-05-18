@@ -197,6 +197,9 @@ export class PatternIndex {
 					return false;
 				}
 
+				// make the pattern if it doesnt exist
+				this.makePattern(c, values[index], false);
+
 				// copy the value from matrix
 				this.matrix[c][r] = values[index++];
 			}
@@ -363,6 +366,35 @@ export class PatternIndex {
 		// create a new pattern here and indicate success
 		this.patterns[channel][index] = new PatternData(this.channels[channel]);
 		return true;
+	}
+
+	/**
+	 * Function to trim all the unused patterns that are not edited
+	 */
+	public trimAll(): void {
+		// run through every channel in backwards order
+		for(let c = this.channels.length - 1;c >= 0;c --) {
+			for(let x = 0xFF;x >= 0; x--){
+				// check if the pattern can be deleted
+				if(this.patterns[c][x]?.edited === false){
+					let remove = true;
+
+					// check if this is used anywhere
+					for(let i = this.matrixlen - 1;i >= 0;i--) {
+						if(this.matrix[c][i] === x){
+							// is used, no remove
+							remove = false;
+							break;
+						}
+					}
+
+					// if the pattern can be removed, then do so here.
+					if(remove) {
+						this.patterns[c][x] = null;
+					}
+				}
+			}
+		}
 	}
 
 	/**

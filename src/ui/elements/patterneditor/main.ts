@@ -1,6 +1,10 @@
 import { PatternIndex } from "../../../api/pattern";
 import { Position, shortcutDirection, UIElement } from "../../../api/ui";
 
+enum editMode {
+	Normal, Write, Paste,
+}
+
 /**
  * Class to interact between the UI and the PatternIndex entry. Helps manage UI integration and intercommunication
  */
@@ -90,7 +94,26 @@ export class PatternIndexEditor implements UIElement {
 	private editing = false;
 
 	// if we are editing a single row currently. Multirow editing will be enabled even when this is false
-	private isEdit = false;
+	private mode = editMode.Normal;
+
+	/**
+	 * Helper function to handle mode toggling (usually with the enter button)
+	 *
+	 * @returns boolean indicating success
+	 */
+	private editToggle() {
+		switch(this.mode) {
+			case editMode.Normal: this.mode = editMode.Write; return true;
+			case editMode.Write: this.mode = editMode.Normal; return true;
+			case editMode.Paste:{
+				// todo: code for handling paste
+				this.mode = editMode.Write;
+				return true;
+			}
+		}
+
+		return false;
+	}
 
 	// the array containing the strings for animation iteration count depending on the editing mode
 	private static EDIT_STYLE = (state:boolean) => state ? "patterneditor_text_flicker" : "";
@@ -268,6 +291,7 @@ export class PatternIndexEditor implements UIElement {
 		if(document.querySelector(":focus") === this.element) {
 			// has focus, process the shortcut
 			switch(data.shift()) {
+				case "edit":		return this.editToggle() && this.reselect(null);
 				case "shiftdown":	return this.shiftUp();
 				case "shiftup":		return this.shiftDown();
 				case "insert":		return this.insert();
@@ -301,64 +325,132 @@ export class PatternIndexEditor implements UIElement {
 					});
 
 				case "scroll": {
-						// convert direction string to x/y offsets
-						const dir = shortcutDirection(data.shift());
+					// convert direction string to x/y offsets
+					const dir = shortcutDirection(data.shift());
 
-						if(!dir || !dir.y) {
-							return false;
-						}
-
-						// apply scrolling
-						this.scroll(dir.y * PatternIndexEditor.SCROLL_STEP);
-						return true;
-					}
-
-				case "hex":/*{
-					// check that there is a valid selection active
-					if(this.selectedRow < 0 || this.selectedChan < 0) {
+					if(!dir || !dir.y) {
 						return false;
 					}
 
+					// apply scrolling
+					this.scroll(dir.y * PatternIndexEditor.SCROLL_STEP);
+					return true;
+				}
+
+				case "hex": {
 					// parse the value we passed
 					const value = parseInt(data.shift() ?? "NaN", 16);
 
 					// make sure the value was 100% sure correct or otherwise ignore this code
-					if(!isNaN(value) && value >= 0 && value <= 0xF) {
-						// load the previous value for this cell and bail if invalid
-						let number = this.index.get(this.selectedChan, this.selectedRow);
+					if(isNaN(value) || value < 0 || value > 0xF) {
+						return false;
+					}
 
-						if(number === null) {
+					// load the selection and prepare the values
+					const { rows, columns, single, } = this.getSelection();
+					const and = 0xF << (this.editing ? 4 : 0);
+					const or = value << (this.editing ? 0 : 4);
+
+					// do not edit in single mode without isEdit
+					if(single && this.mode !== editMode.Write) {
+						return false;
+					}
+
+					// load the region values and check if its valid
+					const values = this.index.getRegion(rows, columns);
+
+					if(!values) {
+						return false;
+					}
+
+					// loop for all elements to change values
+					for(let i = values.length - 1;i >= 0;i--) {
+						values[i] = values[i] & and | or;
+					}
+
+					// save the region and check if succeeded
+					if(!this.index.setRegion(rows, columns, values)){
+						return false;
+					}
+
+					// make sure to trim all the unused patterns
+					this.index.trimAll();
+
+					// re-render rows and fix indices
+					for(const r of rows) {
+						if(!this.renderRow(r)) {
 							return false;
 						}
 
-						// remove the old pattern value if it is otherwise unused
-						this.index.trim(this.selectedChan, this.selectedRow);
+						this.fixRowIndex(r);
+					}
 
-						// set the current digit to specific value while preserving the other digit
-						number &= 0xF << (this.editing ? 4 : 0);
-						number |= value << (this.editing ? 0 : 4);
-
-						// set the new pattern value
-						this.index.set(this.selectedChan, this.selectedRow, number);
-
-						// if this pattern didn't exist, make it anew
-						this.index.makePattern(this.selectedChan, number, false);
-
-						// render this cell
-						this.renderAt(this.selectedRow, this.selectedChan);
-
-						if(this.editing) {
-							// set to editing the left digit and move selection right
-							this.moveSelection("right", false);
-
-						} else {
-							// set to editing the right digit
-							this.setEdit(true);
+					if(this.editing) {
+						// if was editing the low nybble, move the selection forward also
+						if(!this.select(null, { start: { x: this.selectStart.x + this.selectOff.x + 1, y: this.selectStart.y, }, })){
+							return false;
 						}
 
-						return true;
+					} else if(!this.reselect(null)){
+						// if editing high nybble failed, return
+						return false;
 					}
-				}*/
+
+					// swap editing position
+					this.setEdit(!this.editing);
+					return true;
+				}
+
+				case "change": {
+					// convert direction string to x/y offsets
+					const dir = shortcutDirection(data.shift());
+
+					if(!dir || !dir.y) {
+						return false;
+					}
+
+					// load the selection and prepare the values
+					const { rows, columns, single, } = this.getSelection();
+					const amount = dir.y * (this.editing ? 1 : 0x10);
+
+					// do not edit in single mode without isEdit
+					if(single && this.mode !== editMode.Write) {
+						return false;
+					}
+
+					// load the region values and check if its valid
+					const values = this.index.getRegion(rows, columns);
+
+					if(!values) {
+						return false;
+					}
+
+					// loop for all elements to modify values
+					for(let i = values.length - 1;i >= 0;i--) {
+						values[i] += amount;
+						values[i] &= 0xFF;
+					}
+
+					// save the region and check if succeeded
+					if(!this.index.setRegion(rows, columns, values)){
+						return false;
+					}
+
+					// make sure to trim all the unused patterns
+					this.index.trimAll();
+
+					// re-render rows and fix indices
+					for(const r of rows) {
+						if(!this.renderRow(r)) {
+							return false;
+						}
+
+						this.fixRowIndex(r);
+					}
+
+					// re-render selection
+					return this.reselect(null);
+				}
 			}
 		}
 
@@ -547,7 +639,7 @@ export class PatternIndexEditor implements UIElement {
 		}
 
 		// if we are editing
-		if(both && (this.isEdit || !this.getSelection().single)) {
+		if(both && (this.mode === editMode.Write || !this.getSelection().single)) {
 			if(dir.x < 0) {
 				// check for edit mode when moving left
 				if(this.editing) {
@@ -668,15 +760,24 @@ export class PatternIndexEditor implements UIElement {
 	 */
 	private setChannels() {
 		// helper function to add a new element with text
-		const _add = (text:string) => {
+		const _add = (text:string, index:number) => {
 			const z = document.createElement("div");
 			z.innerText = text;
 			this.elchans.appendChild(z);
+
+			// when you click on a channel, select that column
+			if(index >= 0) {
+				z.onmouseup = (event:MouseEvent) => {
+					// select the entire index
+					this.select(null, { start: { x: index, y: 0, }, offset: { x: 0, y: this.index.matrixlen - 1, }, });
+					event.preventDefault();
+				}
+			}
 			return z;
 		}
 
 		// add each channel into the mix along with the insert button
-		const insert = _add("​");
+		const insert = _add("​", -1);
 		this.index.channels.forEach(_add);
 
 		// add class and title for the insert button
@@ -768,12 +869,21 @@ export class PatternIndexEditor implements UIElement {
 			return false;
 		}
 
+		return this.reselect(offset);
+	}
+
+	/**
+	 * Helper function to re-enable selection area
+	 *
+	 * @returns boolean indicating success
+	 */
+	private reselect(offset:boolean|null) {
 		// clear any previous selections
 		this.clearSelect();
 
 		// organize the selection boundaries
 		const { rows, columns, single, } = this.getSelection();
-		const edit = !single || this.isEdit;
+		const edit = !single || this.mode === editMode.Write;
 
 		// loop for every row
 		rows.forEach((y) => {
@@ -962,9 +1072,19 @@ export class PatternIndexEditor implements UIElement {
 				cell.onmouseup = (event:MouseEvent) => {
 					switch(event.button) {
 						case 0:	{	// left button
-								// select this item only
+							const sel = this.findMe(event.currentTarget as HTMLDivElement);
+
+							// check if the current selection is on the item
+							if(this.selectOff.x === 0 && this.selectOff.y === 0 && this.selectStart.x === sel.x && this.selectStart.y === sel.y){
+								// switch editing mode depending on current mode
+								this.editToggle();
+								this.reselect(null);
+
+							} else {
+								// initial selection
 								this.select(false, { start: this.findMe(event.currentTarget as HTMLDivElement), offset: { x: 0, y: 0, }, });
 							}
+						}
 					}
 				}
 			}

@@ -31,13 +31,13 @@
 	"layout.patternindex.scroll.up":	[ "PageUp" ],				/* shortcut for scrolling upwards */
 	"layout.patternindex.scroll.down":	[ "PageDown" ],				/* shortcut for scrolling downwards */
 	"layout.patternindex.insert":		[ "Insert" ],				/* shortcut for inserting a new row */
-	"layout.patternindex.insert":		[ "Delete" ],				/* shortcut for deleting rows */
+	"layout.patternindex.delete":		[ "Delete" ],				/* shortcut for deleting rows */
 	"layout.patternindex.copy":			[ "ctrl+C" ],				/* shortcut for deleting copying data or a row */
 	"layout.patternindex.paste.enter":	[ "ctrl+V" ],				/* shortcut for entering paste mode */
 	"layout.patternindex.paste.exit":	[ "Escape" ],				/* shortcut for exiting paste mode */
-	"layout.patternindex.paste.apply":	[ "Enter" ],				/* shortcut for applying a pasted value */
-	"layout.patternindex.change.up":	[ "shift+ArrowUp" ],		/* shortcut for changing the selected digits up by 1 */
-	"layout.patternindex.change.down":	[ "shift+ArrowDown" ],		/* shortcut for changing the selected digits down by 1  */
+	"layout.patternindex.change.up":	[ "ctrl+ArrowUp" ],			/* shortcut for changing the selected digits up by 1 */
+	"layout.patternindex.change.down":	[ "ctrl+ArrowDown" ],		/* shortcut for changing the selected digits down by 1  */
+	"layout.patternindex.edit":			[ "Enter" ],				/* shortcut for toggling edit mode and applying pasted values */
 	"layout.patternindex.hex.0":		[ "0" ],					/* shortcut for the hexadecimal value 0 */
 	"layout.patternindex.hex.1":		[ "1" ],					/* shortcut for the hexadecimal value 1 */
 	"layout.patternindex.hex.2":		[ "2" ],					/* shortcut for the hexadecimal value 2 */

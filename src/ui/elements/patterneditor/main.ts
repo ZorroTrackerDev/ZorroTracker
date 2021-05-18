@@ -321,7 +321,7 @@ export class PatternIndexEditor implements UIElement {
 					// select the entire column
 					return this.select(false, {
 						start: { x: this.selectStart.x, y: 0, },
-						offset: { x: this.selectStart.x, y: this.index.matrixlen - 1, },
+						offset: { x: this.selectOff.x, y: this.index.matrixlen - 1, },
 					});
 
 				case "scroll": {
@@ -386,8 +386,25 @@ export class PatternIndexEditor implements UIElement {
 					}
 
 					if(this.editing) {
+						// check the next column
+						let col = this.selectStart.x + Math.abs(this.selectOff.x) + 1, row = this.selectStart.y, mv = null;
+
+						if(col >= this.index.channels.length) {
+							// need to wrap back to the beginning (go to the row below)
+							col -= this.index.channels.length;
+							row = this.selectStart.y + Math.abs(this.selectOff.y) + 1;
+
+							// wrap row address
+							if(row >= this.index.matrixlen) {
+								row -= this.index.matrixlen;
+							}
+
+							// focus on the end
+							mv = false;
+						}
+
 						// if was editing the low nybble, move the selection forward also
-						if(!this.select(null, { start: { x: this.selectStart.x + this.selectOff.x + 1, y: this.selectStart.y, }, })){
+						if(!this.select(mv, { start: { x: col, y: row, }, })){
 							return false;
 						}
 
@@ -411,7 +428,7 @@ export class PatternIndexEditor implements UIElement {
 
 					// load the selection and prepare the values
 					const { rows, columns, single, } = this.getSelection();
-					const amount = dir.y * (this.editing ? 1 : 0x10);
+					const amount = dir.y * -1 * (this.editing ? 1 : 0x10);
 
 					// do not edit in single mode without isEdit
 					if(single && this.mode !== editMode.Write) {
@@ -896,7 +913,8 @@ export class PatternIndexEditor implements UIElement {
 
 			// loop for every channel giving it the selected or editing class
 			columns.forEach((x) => {
-				erow.children[x + 1].classList.add(!edit ? PatternIndexEditor.SELECT_CLASS : PatternIndexEditor.EDIT_CLASS);
+				erow.children[x + 1].classList.add(!edit || this.selecting !== null ?
+					PatternIndexEditor.SELECT_CLASS : PatternIndexEditor.EDIT_CLASS);
 			});
 		});
 
@@ -1068,30 +1086,126 @@ export class PatternIndexEditor implements UIElement {
 			if(channel !== 0){
 				this.byteToHTML(cell, data[channel - 1]);
 
-				// when clicked, select the item
-				cell.onmouseup = (event:MouseEvent) => {
-					switch(event.button) {
-						case 0:	{	// left button
-							const sel = this.findMe(event.currentTarget as HTMLDivElement);
+				// when mousedown, handle drag starting
+				cell.onmousedown = (event:MouseEvent) => {
+					if(event.button === 0) {
+						// check if we're selecting the same item as before
+						const sel = this.findMe(event.currentTarget as HTMLDivElement);
 
-							// check if the current selection is on the item
-							if(this.selectOff.x === 0 && this.selectOff.y === 0 && this.selectStart.x === sel.x && this.selectStart.y === sel.y){
-								// switch editing mode depending on current mode
-								this.editToggle();
-								this.reselect(null);
+						if(this.mode === editMode.Normal) {
+							// if selecting the same cell, enable special flag
+							this.sameselect = this.selectOff.x === 0 && this.selectOff.y === 0 &&
+								this.selectStart.x === sel.x && this.selectStart.y === sel.y;
 
-							} else {
-								// initial selection
-								this.select(false, { start: this.findMe(event.currentTarget as HTMLDivElement), offset: { x: 0, y: 0, }, });
+						} else {
+							// disable special flag and write mode
+							this.sameselect = false;
+							if(this.mode === editMode.Write) {
+								this.mode = editMode.Normal;
 							}
 						}
+
+						// enable selection mode and select the current node
+						this.selecting = true;
+						this.select(null, { start: sel, offset: { x: 0, y: 0, }, });
+
+						// when we release the button, just stop selecting
+						this.documentDragFinish();
 					}
 				}
+
+				// when dragging on the channel
+				this.doDrag(cell, position);
+
+			} else {
+				// handle dragging on the indices row
+				cell.onmousedown = (event:MouseEvent) => {
+					if(event.button === 0) {
+						// disable write mode
+						if(this.mode === editMode.Write) {
+							this.mode = editMode.Normal;
+						}
+
+						// enable selection mode and select the current node
+						this.selecting = false;
+						this.select(null, { start: { x: 0,  y: position, }, offset: { x: this.index.channels.length - 1, y: 0, }, });
+
+						// when we release the button, just stop selecting
+						this.documentDragFinish();
+					}
+				}
+
+				// when dragging on the channel
+				this.doDrag(cell, position);
 			}
 		}
 
 		return true;
 	}
+
+	/**
+	 * Helper event function to do dragging on the matrix
+	 *
+	 * @param event the mouse event
+	 */
+	private doDrag(el:HTMLDivElement, extra?:number) {
+		el.onmousemove = (event:MouseEvent) => {
+			if(this.selecting === true) {
+				// handle selecting matrix
+				const sel = this.findMe(event.currentTarget as HTMLDivElement);
+
+				// check for invalid selection
+				if(sel.y < 0) {
+					return;
+				}
+
+				// move selection over
+				this.select(null, { offset: { x: sel.x - this.selectStart.x, y: sel.y - this.selectStart.y, }, });
+
+			} else if(this.selecting === false) {
+				// handle selecting rows
+				this.select(null, { offset: { x: this.index.channels.length - 1, y: extra as number - this.selectStart.y, }, });
+			}
+		}
+	}
+
+	/**
+	 * Helper event function to finish the dragging on document
+	 *
+	 * @param event the mouse event
+	 */
+	private documentDragFinish() {
+		document.onmouseup = (event:MouseEvent) => {
+			// check if selecting matrix
+			if(this.selecting === true) {
+				// check if sameselect = true and only selecting a single cell
+				if(this.selectOff.x === 0 && this.selectOff.y === 0 && this.sameselect) {
+					// check to enable write mode
+					if(this.mode === editMode.Normal) {
+						this.mode = editMode.Write;
+					}
+				}
+
+				// release selection
+				this.sameselect = false;
+			}
+
+
+			// release selection
+			this.selecting = null;
+			this.reselect(false);
+
+			// disable event
+			event.preventDefault();
+			document.onmouseup = null;
+		}
+	}
+
+	// if true, curently selecting pattern matrix. If false, selecting rows. If null, not selecting
+	private selecting:boolean|null = null;
+
+	// if true, selecting the same cell that was already selected
+	private sameselect = false;
 
 	/**
 	 * Helper function to convert the byte value to 2 div elements
@@ -1204,6 +1318,11 @@ export class PatternIndexEditor implements UIElement {
 			if(!this.insertRow(0)){
 				return false;
 			}
+		}
+
+		// reset edit mode
+		if(this.mode === editMode.Write){
+			this.mode = editMode.Normal;
 		}
 
 		// force selection to the next rows

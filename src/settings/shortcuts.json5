@@ -25,9 +25,9 @@
 	"layout.patternindex.select.right":	[ "shift+Arrowright" ],		/* shortcut for moving the selection to right */
 	"layout.patternindex.selmax.up":	[ "shift+Home" ],			/* shortcut for moving the selection to top */
 	"layout.patternindex.selmax.down":	[ "shift+End" ],			/* shortcut for moving the selection to bottom */
-	"layout.patternindex.selall":		[ "ctrl+A" ],				/* shortcut for selecting entire matrix */
+	"layout.patternindex.selall":		[ "alt+A" ],				/* shortcut for selecting entire matrix */
 	"layout.patternindex.selrow":		[ "shift+A" ],				/* shortcut for selecting entire row */
-	"layout.patternindex.selcolumn":	[ "alt+A" ],				/* shortcut for selecting entire column */
+	"layout.patternindex.selcolumn":	[ "ctrl+A" ],				/* shortcut for selecting entire column */
 	"layout.patternindex.scroll.up":	[ "PageUp" ],				/* shortcut for scrolling upwards */
 	"layout.patternindex.scroll.down":	[ "PageDown" ],				/* shortcut for scrolling downwards */
 	"layout.patternindex.insert":		[ "Insert" ],				/* shortcut for inserting a new row */

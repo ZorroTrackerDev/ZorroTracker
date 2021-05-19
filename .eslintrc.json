@@ -18,8 +18,8 @@
 		"@typescript-eslint"
 	],
 	"rules": {
-		"@typescript-eslint/no-floating-promises": 1,
-		"@typescript-eslint/no-unused-expressions": 1,
+		"@typescript-eslint/no-floating-promises": "error",
+		"@typescript-eslint/no-unused-expressions": "warn",
 		"no-empty-function": 0,
 		"no-constant-condition": 1,
 		"no-debugger": 2,

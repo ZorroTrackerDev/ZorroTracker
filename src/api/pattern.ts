@@ -172,14 +172,14 @@ export class PatternIndex {
 	 * @param value The value to put into that index
 	 * @returns Null if failed, or the index if successful
 	 */
-	public set(channel:number, index:number, value:number):boolean {
+	public async set(channel:number, index:number, value:number):Promise<boolean> {
 		// check that index and channel are valid
 		if(value < 0 || value > 0xFF || index < 0 || index > 0xFF || channel < 0 || channel >= this.channels.length) {
 			return false;
 		}
 
 		// send the set event for this cell and see if we succeeded
-		if(this.eventSet(this, channel, index, value)) {
+		if(await this.eventSet(this, channel, index, value)) {
 			// set the value at channel and index and indicate success
 			this.matrix[channel][index] = value;
 			return true;
@@ -195,22 +195,25 @@ export class PatternIndex {
 	 * @param data The row data to change to
 	 * @returns boolean indicating whether it was successful or not.
 	 */
-	public setRow(index:number, data:Uint8Array):boolean {
+	public async setRow(index:number, data:Uint8Array):Promise<boolean> {
 		// check that the index is valid
 		if(index < 0 || index > 0xFF) {
 			return false;
 		}
 
+		let ret = false;
+
 		// run through every channel in backwards order, replacing the row data
 		for(let c = this.channels.length - 1;c >= 0;c --) {
 			// call the event and apply only if allowed
-			if(this.eventSet(this, c, index, data[c])) {
+			if(await this.eventSet(this, c, index, data[c])) {
 				this.matrix[c][index] = data[c];
+				ret = true;
 			}
 		}
 
-		// return the entire data array
-		return true;
+		// return whether we edited any value
+		return ret;
 	}
 
 	/**
@@ -221,7 +224,7 @@ export class PatternIndex {
 	 * @param values The flat array of values to set
 	 * @returns boolean indicating whether the entire operation succeeded
 	 */
-	public setRegion(rows:number[], columns:number[], values:number[]):boolean {
+	public async setRegion(rows:number[], columns:number[], values:number[]):Promise<boolean> {
 		// make sure the array is the right length
 		if(values.length !== rows.length * columns.length) {
 			return false;
@@ -241,11 +244,13 @@ export class PatternIndex {
 					return false;
 				}
 
-				// make the pattern if it doesnt exist
-				this.makePattern(c, values[index], false);
+				if(await this.eventSet(this, c, index, values[index])) {
+					// make the pattern if it doesnt exist
+					this.makePattern(c, values[index], false);
 
-				// copy the value from matrix
-				this.matrix[c][r] = values[index++];
+					// copy the value from matrix
+					this.matrix[c][r] = values[index++];
+				}
 			}
 		}
 
@@ -259,7 +264,7 @@ export class PatternIndex {
 	 * @param row2 The row to switch `row1` with
 	 * @returns boolean indicating whether it was successful or not.
 	 */
-	public swapRows(row1:number, row2:number):boolean {
+	public async swapRows(row1:number, row2:number):Promise<boolean> {
 		// if we're trying to use the same row, bail out
 		if(row1 === row2) {
 			return false;
@@ -276,8 +281,8 @@ export class PatternIndex {
 
 		// copy row data over and return the resulting boolean
 		let ret = true;
-		ret &&= this.setRow(row1, rd2);
-		ret &&= this.setRow(row2, rd1);
+		ret &&= await this.setRow(row1, rd2);
+		ret &&= await this.setRow(row2, rd1);
 		return ret;
 	}
 

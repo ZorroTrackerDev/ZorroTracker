@@ -228,7 +228,7 @@ export class PatternIndexEditor implements UIElement {
 			title: "move selection up",
 			click: (edit:PatternIndexEditor, event:MouseEvent) => {
 				if(event.button === 0 && edit.mode !== editMode.Paste) {
-					edit.shiftUp();
+					edit.shiftUp().catch(console.error);
 				}
 			},
 		},
@@ -273,7 +273,7 @@ export class PatternIndexEditor implements UIElement {
 			title: "move selection down",
 			click: (edit:PatternIndexEditor, event:MouseEvent) => {
 				if(event.button === 0 && edit.mode !== editMode.Paste) {
-					edit.shiftDown();
+					edit.shiftDown().catch(console.error);
 				}
 			},
 		},
@@ -302,7 +302,7 @@ export class PatternIndexEditor implements UIElement {
 			title: "apply the paste area",
 			click: (edit:PatternIndexEditor, event:MouseEvent) => {
 				if(event.button === 0 && edit.mode === editMode.Paste) {
-					edit.pasteApply();
+					edit.pasteApply().catch(console.error);
 				}
 			},
 		},
@@ -355,8 +355,8 @@ export class PatternIndexEditor implements UIElement {
 			// has focus, process the shortcut
 			switch(data.shift()) {
 				case "edit":		return this.editToggle();
-				case "shiftdown":	return this.mode !== editMode.Paste && this.shiftUp();
-				case "shiftup":		return this.mode !== editMode.Paste && this.shiftDown();
+				case "shiftdown":	return this.mode !== editMode.Paste && this.shiftDown();
+				case "shiftup":		return this.mode !== editMode.Paste && this.shiftUp();
 				case "insert":		return this.mode !== editMode.Paste && this.insert();
 				case "delete":		return this.mode !== editMode.Paste && this.delete();
 				case "copy":		return this.mode !== editMode.Paste && this.copy();
@@ -438,7 +438,7 @@ export class PatternIndexEditor implements UIElement {
 					}
 
 					// save the region and check if succeeded
-					if(!this.index.setRegion(rows, columns, values)){
+					if(!await this.index.setRegion(rows, columns, values)){
 						return false;
 					}
 
@@ -525,7 +525,7 @@ export class PatternIndexEditor implements UIElement {
 					}
 
 					// save the region and check if succeeded
-					if(!this.index.setRegion(rows, columns, values)){
+					if(!await this.index.setRegion(rows, columns, values)){
 						return false;
 					}
 
@@ -555,7 +555,7 @@ export class PatternIndexEditor implements UIElement {
 	 *
 	 * @returns boolean indicating if the operation was successful
 	 */
-	private shiftUp() {
+	private async shiftUp() {
 		// load the selection
 		const { startY, offY, single, rows, columns, } = this.getSelection();
 
@@ -604,7 +604,7 @@ export class PatternIndexEditor implements UIElement {
 			}
 
 			// add the swap row data in already
-			if(!this.index.setRegion([ firstcol, ], columns, swap)){
+			if(!await this.index.setRegion([ firstcol, ], columns, swap)){
 				return false;
 			}
 
@@ -613,7 +613,7 @@ export class PatternIndexEditor implements UIElement {
 			_rows[_rowmd](swapcol);
 
 			// add the region and check for failure
-			if(!this.index.setRegion(_rows, columns, main)){
+			if(!await this.index.setRegion(_rows, columns, main)){
 				return false;
 			}
 
@@ -638,7 +638,7 @@ export class PatternIndexEditor implements UIElement {
 	 *
 	 * @returns boolean indicating if the operation was successful
 	 */
-	private shiftDown() {
+	private async shiftDown() {
 		// load the selection
 		const { startY, offY, single, rows, columns, } = this.getSelection();
 
@@ -687,7 +687,7 @@ export class PatternIndexEditor implements UIElement {
 			}
 
 			// add the swap row data in already
-			if(!this.index.setRegion([ lastcol, ], columns, swap)){
+			if(!await this.index.setRegion([ lastcol, ], columns, swap)){
 				return false;
 			}
 
@@ -696,7 +696,7 @@ export class PatternIndexEditor implements UIElement {
 			_rows[_rowmd](swapcol);
 
 			// add the region and check for failure
-			if(!this.index.setRegion(_rows, columns, main)){
+			if(!await this.index.setRegion(_rows, columns, main)){
 				return false;
 			}
 
@@ -1683,7 +1683,7 @@ export class PatternIndexEditor implements UIElement {
 	 *
 	 * @returns whether the operation was successful
 	 */
-	private pasteApply() {
+	private async pasteApply() {
 		// check even if in paste mode
 		if(this.mode !== editMode.Paste) {
 			return false;
@@ -1710,7 +1710,7 @@ export class PatternIndexEditor implements UIElement {
 			}
 
 			// save the new row data
-			if(!this.index.setRow((size.y + psy + y) % size.y, row)) {
+			if(!await this.index.setRow((size.y + psy + y) % size.y, row)) {
 				return false;
 			}
 		}

@@ -88,11 +88,11 @@ export class ZorroEvent {
 	 * @param name The name of the ZorroEvent
 	 * @returns true if event was not cancelled, false if it was
 	 */
-	private send(args:any[]) {
+	private async send(args:any[]) {
 		// run through all the listeners
 		for(const fn of this.listeners){
 			// run the next function.
-			if(!fn(...args)) {
+			if(!await fn(...args)) {
 				// event was cancelled by function, return immediately
 				return false;
 			}
@@ -109,7 +109,7 @@ export class ZorroEvent {
 /**
  * The function type for ZorroTracker listeners
  */
-export type ZorroListener = (...args:any[]) => boolean|undefined;
+export type ZorroListener = (...args:any[]) => Promise<boolean|undefined>;
 
 /**
  * Enum that holds all the names for the events
@@ -120,6 +120,6 @@ export enum ZorroEventEnum {
 }
 
 export interface ZorroListenerTypes {
-	[ZorroEventEnum.PatternMatrixSet]: (index:PatternIndex, channel:number, row:number, value:number) => boolean|undefined,
-	[ZorroEventEnum.PatternMatrixGet]: (index:PatternIndex, channel:number, row:number, value:number) => boolean|undefined,
+	[ZorroEventEnum.PatternMatrixSet]: (index:PatternIndex, channel:number, row:number, value:number) => Promise<boolean|undefined>,
+	[ZorroEventEnum.PatternMatrixGet]: (index:PatternIndex, channel:number, row:number, value:number) => Promise<boolean|undefined>,
 }

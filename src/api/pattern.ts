@@ -1,4 +1,6 @@
 import { Position } from "./ui";
+import { ZorroEvent, ZorroEventEnum, ZorroListenerTypes } from "../api/events";
+
 
 /**
  * Class for a single pattern cell, which can only be used to store its immediate values.
@@ -55,7 +57,12 @@ export class PatternIndex {
 			this.patterns.push(new Array(256));
 			this.matrix.push(new Uint8Array(256));
 		}
+
+		// create the set event
+		this.eventSet = ZorroEvent.createEvent(ZorroEventEnum.PatternMatrixSet).send;
 	}
+
+	private eventSet:ZorroListenerTypes[ZorroEventEnum.PatternMatrixSet]
 
 	/**
 	 * Function to get the size of the matrix
@@ -171,9 +178,14 @@ export class PatternIndex {
 			return false;
 		}
 
-		// set the value at channel and index and indicate success
-		this.matrix[channel][index] = value;
-		return true;
+		// send the set event for this cell and see if we succeeded
+		if(this.eventSet(this, channel, index, value)) {
+			// set the value at channel and index and indicate success
+			this.matrix[channel][index] = value;
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
@@ -191,7 +203,10 @@ export class PatternIndex {
 
 		// run through every channel in backwards order, replacing the row data
 		for(let c = this.channels.length - 1;c >= 0;c --) {
-			this.matrix[c][index] = data[c];
+			// call the event and apply only if allowed
+			if(this.eventSet(this, c, index, data[c])) {
+				this.matrix[c][index] = data[c];
+			}
 		}
 
 		// return the entire data array

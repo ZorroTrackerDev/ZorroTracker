@@ -1,3 +1,5 @@
+import { Position } from "./ui";
+
 /**
  * Class for a single pattern cell, which can only be used to store its immediate values.
  */
@@ -53,6 +55,33 @@ export class PatternIndex {
 			this.patterns.push(new Array(256));
 			this.matrix.push(new Uint8Array(256));
 		}
+	}
+
+	/**
+	 * Function to get the size of the matrix
+	 *
+	 * @returns The size of the matrix
+	 */
+	public getSize():Position {
+		return { x: this.getWidth(), y : this.getHeight(), };
+	}
+
+	/**
+	 * Function to get the height of the matrix
+	 *
+	 * @returns The height of the matrix
+	 */
+	public getHeight():number {
+		return this.matrixlen;
+	}
+
+	/**
+	 * Function to get the width of the matrix
+	 *
+	 * @returns The width of the matrix
+	 */
+	public getWidth():number {
+		return this.channels.length;
 	}
 
 	/**

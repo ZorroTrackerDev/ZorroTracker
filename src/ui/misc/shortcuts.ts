@@ -87,7 +87,7 @@ document.addEventListener("keydown", (event) => {
 	}
 
 	// the function exists, execute it with the current event.
-	shortcutReceivers[comkey](comarr, event);
+	shortcutReceivers[comkey](comarr, event).catch(console.error);
 	event.preventDefault();
 });
 
@@ -152,7 +152,8 @@ export function loadDefaultShortcuts(): void {
 	files.forEach(addShortcuts);
 
 	// add default UI shortcuts handler
-	addShortcutReceiver("ui", (data) => {
+	// eslint-disable-next-line require-await
+	addShortcutReceiver("ui", async(data) => {
 		switch(data.shift()) {
 			/* shortcut for opening chrome dev tools */
 			case "opendevtools":

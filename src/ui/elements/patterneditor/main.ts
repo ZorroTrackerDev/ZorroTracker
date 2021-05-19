@@ -39,6 +39,14 @@ export class PatternIndexEditor implements UIElement {
 	private static FILLER_ROWS = 2;
 
 	private setLayout() {
+		// clear some flags
+		this.mode = editMode.Normal;
+		this.editing = false;
+		this.altSelect = false;
+		this.selecting = null;
+		this.sameselect = false;
+		this.pasteData = null;
+
 		// generate the main element for this editor
 		this.element = document.createElement("div");
 		this.element.classList.add("patterneditor");
@@ -65,7 +73,7 @@ export class PatternIndexEditor implements UIElement {
 		this.element.appendChild(this.elbtns);
 
 		// enable all the standard buttons
-		this.standardButtons.forEach((button) => this.appendButton(button.text, button.title, button.click));
+		this.setButtons(this.standardButtons);
 
 		// set editing left column
 		this.setEdit(false);
@@ -103,13 +111,9 @@ export class PatternIndexEditor implements UIElement {
 	 */
 	private editToggle() {
 		switch(this.mode) {
-			case editMode.Normal: this.mode = editMode.Write; return true;
-			case editMode.Write: this.mode = editMode.Normal; return true;
-			case editMode.Paste:{
-				// todo: code for handling paste
-				this.mode = editMode.Write;
-				return true;
-			}
+			case editMode.Normal: this.mode = editMode.Write; return this.reselect(null);
+			case editMode.Write: this.mode = editMode.Normal; return this.reselect(null);
+			case editMode.Paste: return this.pasteApply();
 		}
 
 		return false;
@@ -185,7 +189,7 @@ export class PatternIndexEditor implements UIElement {
 		// herlp function to grab the position of the row we're requesting
 		const getPos = (r:number, position:"top"|"bottom") => {
 			// check that the row is valid
-			if(r >= -1 && this.index.matrixlen >= r){
+			if(r >= -1 && this.index.getHeight() >= r){
 				// get the row bounding box
 				return this.element.scrollTop - chan.height - butt.height +
 					this.elrows.children[r + PatternIndexEditor.FILLER_ROWS].getBoundingClientRect()[position];
@@ -223,7 +227,7 @@ export class PatternIndexEditor implements UIElement {
 			text: "↑",
 			title: "move selection up",
 			click: (edit:PatternIndexEditor, event:MouseEvent) => {
-				if(event.button === 0) {
+				if(event.button === 0 && edit.mode !== editMode.Paste) {
 					edit.shiftUp();
 				}
 			},
@@ -232,7 +236,7 @@ export class PatternIndexEditor implements UIElement {
 			text: "insert",
 			title: "insert at selection",
 			click: (edit:PatternIndexEditor, event:MouseEvent) => {
-				if(event.button === 0) {
+				if(event.button === 0 && edit.mode !== editMode.Paste) {
 					edit.insert();
 				}
 			},
@@ -241,17 +245,26 @@ export class PatternIndexEditor implements UIElement {
 			text: "delete",
 			title: "delete at selection",
 			click: (edit:PatternIndexEditor, event:MouseEvent) => {
-				if(event.button === 0) {
+				if(event.button === 0 && edit.mode !== editMode.Paste) {
 					edit.delete();
 				}
 			},
 		},
 		{
 			text: "copy",
-			title: "duplicate selection",
+			title: "duplicate or copy selection",
 			click: (edit:PatternIndexEditor, event:MouseEvent) => {
-				if(event.button === 0) {
+				if(event.button === 0 && edit.mode !== editMode.Paste) {
 					edit.copy();
+				}
+			},
+		},
+		{
+			text: "paste",
+			title: "paste pattern data",
+			click: (edit:PatternIndexEditor, event:MouseEvent) => {
+				if(event.button === 0 && edit.mode !== editMode.Paste) {
+					edit.pasteInit().catch(console.error);
 				}
 			},
 		},
@@ -259,12 +272,61 @@ export class PatternIndexEditor implements UIElement {
 			text: "↓",
 			title: "move selection down",
 			click: (edit:PatternIndexEditor, event:MouseEvent) => {
-				if(event.button === 0) {
+				if(event.button === 0 && edit.mode !== editMode.Paste) {
 					edit.shiftDown();
 				}
 			},
 		},
 	];
+
+	/**
+	 * All the different paste buttons for controlling the pattern editor. This also has the functionality of these buttons.
+	 */
+	private pasteButtons = [
+		{
+			text: "​",
+			title: "does nothing :)",
+			click: () => { },
+		},
+		{
+			text: "cancel",
+			title: "cancel the paste action",
+			click: (edit:PatternIndexEditor, event:MouseEvent) => {
+				if(event.button === 0 && edit.mode === editMode.Paste) {
+					edit.pasteExit();
+				}
+			},
+		},
+		{
+			text: "apply",
+			title: "apply the paste area",
+			click: (edit:PatternIndexEditor, event:MouseEvent) => {
+				if(event.button === 0 && edit.mode === editMode.Paste) {
+					edit.pasteApply();
+				}
+			},
+		},
+		{
+			text: "​",
+			title: "does nothing :(",
+			click: () => { },
+		},
+	];
+
+	/**
+	 * Set the bottom row buttons layout. Will clear the previous layout out first.
+	 *
+	 * @param buttons The list of buttons to apply
+	 */
+	private setButtons(buttons:{ text:string, title:string, click:(edit:PatternIndexEditor, event:MouseEvent) => void, }[]) {
+		// remove all existing children!
+		while(this.elbtns.children.length > 0) {
+			this.elbtns.removeChild(this.elbtns.children[0]);
+		}
+
+		// apply the buttons
+		buttons.forEach((button) => this.appendButton(button.text, button.title, button.click));
+	}
 
 	/**
 	 * Helper function to create a new button at the bottom row
@@ -287,41 +349,43 @@ export class PatternIndexEditor implements UIElement {
 	 * @param shortcut Array of strings representing the shotcut data
 	 * @returns Whether the shortcut was executed
 	 */
-	public receiveShortcut(data:string[]):boolean {
+	// eslint-disable-next-line require-await
+	public async receiveShortcut(data:string[]):Promise<boolean> {
 		if(document.querySelector(":focus") === this.element) {
 			// has focus, process the shortcut
 			switch(data.shift()) {
-				case "edit":		return this.editToggle() && this.reselect(null);
-				case "shiftdown":	return this.shiftUp();
-				case "shiftup":		return this.shiftDown();
-				case "insert":		return this.insert();
-				case "delete":		return this.delete();
-				case "copy":		return this.copy();
-				case "paste":		return false;
+				case "edit":		return this.editToggle();
+				case "shiftdown":	return this.mode !== editMode.Paste && this.shiftUp();
+				case "shiftup":		return this.mode !== editMode.Paste && this.shiftDown();
+				case "insert":		return this.mode !== editMode.Paste && this.insert();
+				case "delete":		return this.mode !== editMode.Paste && this.delete();
+				case "copy":		return this.mode !== editMode.Paste && this.copy();
 				case "move":		return this.moveSelection(data.shift(), true);
 				case "movemax":		return this.specialSelection(data.shift(), true);
 				case "select":		return this.moveSelection(data.shift(), false);
 				case "selmax":		return this.specialSelection(data.shift(), false);
+				case "pasteenter":	return this.mode !== editMode.Paste && this.pasteInit();
+				case "pasteexit":	return this.pasteExit();
 
 				case "selall":
 					// select the entire matrix
 					return this.select(false, {
 						start: { x: 0, y: 0, },
-						offset: { x: this.index.channels.length - 1, y: this.index.matrixlen - 1, },
+						offset: { x: this.index.getWidth() - 1, y: this.index.getHeight() - 1, },
 					});
 
 				case "selrow":
 					// select the entire row
 					return this.select(false, {
 						start: { x: 0, y: this.selectStart.y, },
-						offset: { x: this.index.channels.length - 1, y: this.selectOff.y, },
+						offset: { x: this.index.getWidth() - 1, y: this.selectOff.y, },
 					});
 
 				case "selcolumn":
 					// select the entire column
 					return this.select(false, {
 						start: { x: this.selectStart.x, y: 0, },
-						offset: { x: this.selectOff.x, y: this.index.matrixlen - 1, },
+						offset: { x: this.selectOff.x, y: this.index.getHeight() - 1, },
 					});
 
 				case "scroll": {
@@ -338,6 +402,11 @@ export class PatternIndexEditor implements UIElement {
 				}
 
 				case "hex": {
+					// disable in paste mode
+					if(this.mode === editMode.Paste) {
+						return false;
+					}
+
 					// parse the value we passed
 					const value = parseInt(data.shift() ?? "NaN", 16);
 
@@ -389,14 +458,16 @@ export class PatternIndexEditor implements UIElement {
 						// check the next column
 						let col = this.selectStart.x + Math.abs(this.selectOff.x) + 1, row = this.selectStart.y, mv = null;
 
-						if(col >= this.index.channels.length) {
+						const h = this.index.getWidth();
+						if(col >= h) {
 							// need to wrap back to the beginning (go to the row below)
-							col -= this.index.channels.length;
+							col -= h;
 							row = this.selectStart.y + Math.abs(this.selectOff.y) + 1;
 
 							// wrap row address
-							if(row >= this.index.matrixlen) {
-								row -= this.index.matrixlen;
+							const w = this.index.getHeight();
+							if(row >= w) {
+								row -= w;
 							}
 
 							// focus on the end
@@ -419,6 +490,11 @@ export class PatternIndexEditor implements UIElement {
 				}
 
 				case "change": {
+					// disable in paste mode
+					if(this.mode === editMode.Paste) {
+						return false;
+					}
+
 					// convert direction string to x/y offsets
 					const dir = shortcutDirection(data.shift());
 
@@ -497,7 +573,7 @@ export class PatternIndexEditor implements UIElement {
 
 		} else {
 			// gather some basic variables to reference later
-			const size = this.index.matrixlen;
+			const size = this.index.getHeight();
 			let swapcol = (size - 1 + startY + (offY < 0 ? offY : 0)) % size;
 			let firstcol = (size + startY + (offY > 0 ? offY : 0)) % size;
 
@@ -580,7 +656,7 @@ export class PatternIndexEditor implements UIElement {
 
 		} else {
 			// gather some basic variables to reference later
-			const size = this.index.matrixlen;
+			const size = this.index.getHeight();
 			let swapcol = (size + 1 + startY + (offY > 0 ? offY : 0)) % size;
 			let lastcol = (size + startY + (offY < 0 ? offY : 0)) % size;
 
@@ -656,7 +732,7 @@ export class PatternIndexEditor implements UIElement {
 		}
 
 		// if we are editing
-		if(both && (this.mode === editMode.Write || !this.getSelection().single)) {
+		if(this.mode !== editMode.Paste && both && (this.mode === editMode.Write || !this.getSelection().single)) {
 			if(dir.x < 0) {
 				// check for edit mode when moving left
 				if(this.editing) {
@@ -735,14 +811,14 @@ export class PatternIndexEditor implements UIElement {
 		if(both) {
 			// handle moving selection
 			return this.select(false, {
-				start: { x: this.selectStart.x, y: dir.y > 0 ? this.index.matrixlen - 1 : 0, },
+				start: { x: this.selectStart.x, y: dir.y > 0 ? this.index.getHeight() - 1 : 0, },
 				offset: { x: this.selectOff.x, y: 0, },
 			});
 
 		} else {
 			// handle extending selection
 			return this.select(false, {
-				offset: { x: this.selectOff.x, y: (dir.y > 0 ? this.index.matrixlen - 1 : 0) - this.selectStart.y, },
+				offset: { x: this.selectOff.x, y: (dir.y > 0 ? this.index.getHeight() - 1 : 0) - this.selectStart.y, },
 			});
 		}
 	}
@@ -759,13 +835,13 @@ export class PatternIndexEditor implements UIElement {
 		return {
 			// apply start only if both = true
 			start: !both ? undefined : {
-				x: f1(this.selectStart.x + position.x, this.index.channels.length),
-				y: f1(this.selectStart.y + position.y, this.index.matrixlen),
+				x: f1(this.selectStart.x + position.x, this.index.getWidth()),
+				y: f1(this.selectStart.y + position.y, this.index.getHeight()),
 			},
 			// apply the offset position if both = false
 			offset: both ? undefined :  {
-				x: f2(this.selectOff.x + position.x, this.index.channels.length),
-				y: f2(this.selectOff.y + position.y, this.index.matrixlen),
+				x: f2(this.selectOff.x + position.x, this.index.getWidth()),
+				y: f2(this.selectOff.y + position.y, this.index.getHeight()),
 			},
 		};
 	}
@@ -786,7 +862,7 @@ export class PatternIndexEditor implements UIElement {
 			if(index >= 0) {
 				z.onmouseup = (event:MouseEvent) => {
 					// select the entire index
-					this.select(null, { start: { x: index, y: 0, }, offset: { x: 0, y: this.index.matrixlen - 1, }, });
+					this.select(null, { start: { x: index, y: 0, }, offset: { x: 0, y: this.index.getHeight() - 1, }, });
 					event.preventDefault();
 				}
 			}
@@ -804,10 +880,12 @@ export class PatternIndexEditor implements UIElement {
 		// handle clicking the insert button
 		insert.onmouseup = (event:MouseEvent) => {
 			switch(event.button) {
-				case 0:		// left button, generate a new row at the very bottom and scroll down to it
-					this.insertRow(this.index.matrixlen);
-					this.scrollTo(this.index.matrixlen - 1, this.index.matrixlen - 1, true);
+				case 0:	{	// left button, generate a new row at the very bottom and scroll down to it
+					const h = this.index.getHeight();
+					this.insertRow(h);
+					this.scrollTo(h - 1, h - 1, true);
 					break;
+				}
 
 				case 2:		// right button, generate a new row at the very top and scroll up to it
 					this.insertRow(0);
@@ -823,6 +901,12 @@ export class PatternIndexEditor implements UIElement {
 	// the classname that is used for a editing an item. Make sure LESS files also use the same name.
 	private static EDIT_CLASS = "editing";
 
+	// the classname that is used for a pasting an item. Make sure LESS files also use the same name.
+	private static PASTE_CLASS = "pasting";
+
+	// whether to use an alternate select class
+	private altSelect = false;
+
 	/**
 	 * Clear the user selection
 	 */
@@ -835,6 +919,7 @@ export class PatternIndexEditor implements UIElement {
 			for(const e of row.children){
 				e.classList.remove(PatternIndexEditor.SELECT_CLASS);
 				e.classList.remove(PatternIndexEditor.EDIT_CLASS);
+				e.classList.remove(PatternIndexEditor.PASTE_CLASS);
 			}
 		}
 	}
@@ -861,21 +946,30 @@ export class PatternIndexEditor implements UIElement {
 			}
 
 			// validate x-position
-			const xmx = this.index.channels.length;
-			if(pos.x < (negative ? -xmx : 0) || pos.x >= xmx){
+			const xmx = this.index.getWidth();
+			if(pos.x < (negative ? -(xmx - 1) : 0) || pos.x >= xmx){
 				return;
 			}
 
 			// validate y-position
-			const ymx = this.index.matrixlen;
-			if(pos.y < (negative ? -ymx : 0) || pos.y >= ymx){
+			const ymx = this.index.getHeight();
+			if(pos.y < (negative ? -(ymx - 1) : 0) || pos.y >= ymx){
 				return;
+			}
+
+			// if in paste mode, limit the size
+			if(negative && this.mode === editMode.Paste) {
+				pos.x = Math.min(this.pasteSize.x - 1, Math.max(-this.pasteSize.x + 1, pos.x));
+				pos.y = Math.min(this.pasteSize.y - 1, Math.max(-this.pasteSize.y + 1, pos.y));
 			}
 
 			// completely fine, change the position
 			change(pos);
 			changed = true;
 		};
+
+		// copy old rows selection
+		const oldrows = this.getSelection().rows;
 
 		// validate start and end positions
 		setPos(false, target.start, (pos:Position) => this.selectStart = pos);
@@ -884,6 +978,17 @@ export class PatternIndexEditor implements UIElement {
 		// if nothing was changed, return
 		if(!changed){
 			return false;
+		}
+
+		if(this.mode === editMode.Paste) {
+			// get the new rows selection
+			const newrows = this.getSelection().rows;
+
+			// combine oldrows and newrows into one
+			oldrows.forEach((row) => !newrows.includes(row) && newrows.push(row));
+
+			// re-render all of the rows
+			newrows.forEach((row) => this.renderRow(row) && this.fixRowIndex(row));
 		}
 
 		return this.reselect(offset);
@@ -907,14 +1012,15 @@ export class PatternIndexEditor implements UIElement {
 			// get the row element and give it the selected class (only in single mode!)
 			const erow = this.elrows.children[y + PatternIndexEditor.FILLER_ROWS];
 
-			if(!edit) {
+			if(!this.altSelect && !edit) {
 				erow.classList.add(PatternIndexEditor.SELECT_CLASS);
 			}
 
 			// loop for every channel giving it the selected or editing class
 			columns.forEach((x) => {
-				erow.children[x + 1].classList.add(!edit || this.selecting !== null ?
-					PatternIndexEditor.SELECT_CLASS : PatternIndexEditor.EDIT_CLASS);
+				erow.children[x + 1].classList.add(this.altSelect ? PatternIndexEditor.PASTE_CLASS :
+					!edit || this.selecting !== null ? PatternIndexEditor.SELECT_CLASS :
+					PatternIndexEditor.EDIT_CLASS);
 			});
 		});
 
@@ -936,7 +1042,7 @@ export class PatternIndexEditor implements UIElement {
 	 */
 	private getSelection() {
 		// get the height and width of the area
-		const w = this.index.channels.length, h = this.index.matrixlen;
+		const w = this.index.getWidth(), h = this.index.getHeight();
 
 		// helper function for wrapping offsets
 		const wrapOff = (size:number, off:number) => {
@@ -1042,7 +1148,7 @@ export class PatternIndexEditor implements UIElement {
 	private insertRowUI(position:number):boolean {
 		// insert a new row element based on the position
 		const row = document.createElement("div");
-		this.elrows.insertBefore(row, this.index.matrixlen <= position ? null : this.elrows.children[position + PatternIndexEditor.FILLER_ROWS]);
+		this.elrows.insertBefore(row, this.index.getHeight() <= position ? null : this.elrows.children[position + PatternIndexEditor.FILLER_ROWS]);
 
 		// render the row at position
 		if(!this.renderRow(position)){
@@ -1061,11 +1167,28 @@ export class PatternIndexEditor implements UIElement {
 	 * @returns boolean indicating success
 	 */
 	private renderRow(position:number) {
+		const size = this.index.getSize();
+		let rows:null|number[] = null, columns:null|number[] = null;
+		let psx = 0, psy = 0;
+
 		// get the row data and check if it's null (invalid row)
 		const data = this.index.getRow(position);
 
 		if(data === null) {
 			return false;
+		}
+
+		// if in paste mode, get selection
+		if(this.mode === editMode.Paste) {
+			const sel = this.getSelection();
+
+			// copy variables
+			rows = sel.rows;
+			columns = sel.columns;
+
+			// find the start row and column
+			psx = sel.startX + (sel.offX < 0 ? sel.offX : 0);
+			psy = sel.startY + (sel.offY < 0 ? sel.offY : 0);
 		}
 
 		// get the row element
@@ -1084,7 +1207,20 @@ export class PatternIndexEditor implements UIElement {
 
 			// ignore the row index number
 			if(channel !== 0){
-				this.byteToHTML(cell, data[channel - 1]);
+				let byte = data[channel - 1];
+
+				if(this.mode === editMode.Paste) {
+					// if in paste mode, check if this cell is overridden
+					if((rows as number[]).includes(position) && (columns as number[]).includes(channel - 1)) {
+						// get the actual byte now
+						byte = (this.pasteData as number[])[
+							(((size.x + channel - 1 - psx) % size.x) +
+							(((size.y + position - psy) % size.y)) * this.pasteSize.x)] ?? 0;
+					}
+				}
+
+				// render this cell
+				this.byteToHTML(cell, byte);
 
 				// when mousedown, handle drag starting
 				cell.onmousedown = (event:MouseEvent) => {
@@ -1128,7 +1264,7 @@ export class PatternIndexEditor implements UIElement {
 
 						// enable selection mode and select the current node
 						this.selecting = false;
-						this.select(null, { start: { x: 0,  y: position, }, offset: { x: this.index.channels.length - 1, y: 0, }, });
+						this.select(null, { start: { x: 0,  y: position, }, offset: { x: this.index.getWidth() - 1, y: 0, }, });
 
 						// when we release the button, just stop selecting
 						this.documentDragFinish();
@@ -1164,7 +1300,7 @@ export class PatternIndexEditor implements UIElement {
 
 			} else if(this.selecting === false) {
 				// handle selecting rows
-				this.select(null, { offset: { x: this.index.channels.length - 1, y: extra as number - this.selectStart.y, }, });
+				this.select(null, { offset: { x: this.index.getWidth() - 1, y: extra as number - this.selectStart.y, }, });
 			}
 		}
 	}
@@ -1222,7 +1358,7 @@ export class PatternIndexEditor implements UIElement {
 	 * Function to fix the row indices, so they always are based on the position
 	 */
 	private fixRowIndices() {
-		for(let i = this.index.matrixlen - 1; i >= 0;i --) {
+		for(let i = this.index.getHeight() - 1; i >= 0;i --) {
 			// fix the innertext of the first child of each row to be position
 			this.fixRowIndex(i);
 		}
@@ -1234,7 +1370,7 @@ export class PatternIndexEditor implements UIElement {
 	 * @param row The row index to update
 	 */
 	private fixRowIndex(row:number) {
-		if(row >= 0 && row < this.index.matrixlen) {
+		if(row >= 0 && row < this.index.getHeight()) {
 			// fix the innerText of this row
 			this.byteToHTML((this.elrows.children[row + PatternIndexEditor.FILLER_ROWS].children[0] as HTMLDivElement), row);
 		}
@@ -1313,7 +1449,7 @@ export class PatternIndexEditor implements UIElement {
 		}
 
 		// check if there are no rows anymore
-		if(this.index.matrixlen === 0){
+		if(this.index.getHeight() === 0){
 			// insert a new row then
 			if(!this.insertRow(0)){
 				return false;
@@ -1357,7 +1493,7 @@ export class PatternIndexEditor implements UIElement {
 	 */
 	private copy() {
 		// load the selection
-		const { startY, offY, single, rows, columns, } = this.getSelection();
+		const { startY, single, } = this.getSelection();
 
 		if(single) {
 			// single mode: this is a special case
@@ -1371,7 +1507,22 @@ export class PatternIndexEditor implements UIElement {
 		}
 
 		// multi mode, copy to copy buffer: TODO: <- this feature
-		return true;
+		const pos = this.selectStart, size = this.selectOff;
+
+		// make sure x-position is the right way round
+		if(size.x < 0) {
+			pos.x += size.x;
+			size.x = -size.x;
+		}
+
+		// make sure x-position is the right way round
+		if(size.y < 0) {
+			pos.y += size.y;
+			size.y = -size.y;
+		}
+
+		// copy this region
+		return this.copyRegion(pos, size) !== null;
 	}
 
 	/**
@@ -1392,5 +1543,208 @@ export class PatternIndexEditor implements UIElement {
 
 		// add the row to the UI now
 		return this.insertRowUI(destination);
+	}
+
+	/**
+	 * Function to copy a region into the clipboard
+	 *
+	 * @param position The position of the start row to start copying from
+	 * @param size The size of the selection to copy
+	 * @returns null if failed or string that is also sent to the clipboard
+	 */
+	private copyRegion(position:Position, size:Position) {
+		const str:string[] = [];
+
+		// get matrix size so we can wrap things properly
+		const msz = this.index.getSize();
+
+		// loop for all rows
+		for(let y = position.y;y <= position.y + size.y;y++) {
+			const s:string[] = [];
+
+			// load the row data and check if its valid
+			const row = this.index.getRow(y % msz.y);
+
+			if(!row) {
+				return null;
+			}
+
+			// loop for all channels copying the values
+			for(let x = position.x;x <= position.x + size.x;x++) {
+				s.push(row[x % msz.x].toByte());
+			}
+
+			// join via pipe symbols
+			str.push(s.join(" | "));
+		}
+
+		// show a little animation for selection
+		this.altSelect = true;
+		this.reselect(null);
+
+		setTimeout(() => {
+			this.altSelect = false;
+			this.reselect(null);
+		}, 250);
+
+		// copy text to clipboard
+		const ret = str.join("\n");
+		navigator.clipboard.writeText(ret).catch(console.error);
+		return ret;
+	}
+
+	// paste size object
+	private pasteSize:Position = { x: 0, y: 0, };
+
+	// paste data object
+	private pasteData:number[]|null = null;
+
+	/**
+	 * Function to start paste mode
+	 *
+	 * @returns boolean indicating whether the operation was successful
+	 */
+	private async pasteInit() {
+		try {
+			// load the clipboard data as a string
+			const str = await navigator.clipboard.readText();
+			const rows = str.trim().split("\n");
+
+			// if there are no rows, return
+			if(rows.length === 0 || rows.length > this.index.getHeight()){
+				return false;
+			}
+
+			// prepare some values here... This code won't be too nice
+			let rowlen = -1;
+			this.pasteData = [];
+
+			// convert each row into the temp array
+			for(let r = 0;r < rows.length; r++){
+				if(rows[r].trim().length === 0){
+					continue;
+				}
+
+				const cols = rows[r].split("|");
+
+				// check if we need to update the row length
+				if(rowlen < 0){
+					// check if there are no columns, bail
+					if(cols.length === 0 || rowlen > this.index.getWidth()){
+						return false;
+					}
+
+					// update row length
+					rowlen = cols.length;
+
+				} else if(rowlen !== cols.length) {
+					// if row length does not match, bail
+					return false;
+				}
+
+				// convert the input
+				const cc = cols.map((s) => parseInt(s.trim(), 16));
+
+				// validate the input, and if invalid, bail
+				if(!cc.reduce((acc, cur) => acc && (!isNaN(cur) && cur >= 0 && cur <= 0xFF), true)){
+					return false;
+				}
+
+				// plop the input into the paste array
+				for(let c = 0;c < rowlen;c ++){
+					// copy single cell
+					this.pasteData[(r * rowlen) + c] = cc[c];
+				}
+			}
+
+			// enable paste mode
+			this.mode = editMode.Paste;
+			this.altSelect = true;
+
+			// set size of the selection
+			this.pasteSize = { x: rowlen, y: rows.length, };
+			this.select(null, { offset: { x: rowlen - 1, y: rows.length - 1, }, });
+
+			// enable all the paste buttons
+			this.setButtons(this.pasteButtons);
+			return true;
+
+		} catch(ex){
+			console.error(ex);
+		}
+
+		// try to get to a regular working state!
+		this.mode = editMode.Paste;
+		return this.pasteExit();
+	}
+
+	/**
+	 * Function to apply paste data at selection
+	 *
+	 * @returns whether the operation was successful
+	 */
+	private pasteApply() {
+		// check even if in paste mode
+		if(this.mode !== editMode.Paste) {
+			return false;
+		}
+
+		// load selection bounds
+		const size = this.index.getSize();
+		const { startX, startY, offX, offY, } = this.getSelection();
+		const psx = startX + (offX < 0 ? offX : 0);
+		const psy = startY + (offY < 0 ? offY : 0);
+
+		// run through each row
+		for(let i = 0, y = 0;y <= Math.abs(offY);y ++){
+			// load the row data and check if valid
+			const row = this.index.getRow((size.y + psy + y) % size.y);
+
+			if(!row) {
+				return false;
+			}
+
+			// apply the new row data
+			for(let x = 0;x <= Math.abs(offX);x ++) {
+				row[(size.x + psx + x) % size.x] = (this.pasteData as number[])[i++];
+			}
+
+			// save the new row data
+			if(!this.index.setRow((size.y + psy + y) % size.y, row)) {
+				return false;
+			}
+		}
+
+		// trim all unused indices
+		this.index.trimAll();
+
+		// re-render selection and exit paste mode
+		return this.pasteExit();
+	}
+
+	/**
+	 * Function to exit paste mode
+	 *
+	 * @returns whether the operation was successful
+	 */
+	private pasteExit() {
+		// check even if in paste mode
+		if(this.mode !== editMode.Paste) {
+			// if not, just set selection size
+			return this.select(null, { offset: { x: 0, y: 0, }, });
+		}
+
+		// enable all the standard buttons
+		this.setButtons(this.standardButtons);
+
+		// reset to normal mod
+		this.mode = editMode.Normal;
+		this.pasteData = null;
+		this.altSelect = false;
+
+		// re-render selection
+		const { rows, } = this.getSelection();
+		rows.forEach((row) => this.renderRow(row) && this.fixRowIndex(row));
+		return this.reselect(null);
 	}
 }

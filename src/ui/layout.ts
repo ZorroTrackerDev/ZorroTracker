@@ -7,7 +7,8 @@ import { addShortcutReceiver } from "./misc/shortcuts";
 export class _Temp implements UIShortcutHandler {
 	public patternIndex:PatternIndexEditor|undefined;
 
-	public receiveShortcut(data: string[]): boolean {
+	// eslint-disable-next-line require-await
+	public async receiveShortcut(data: string[]): Promise<boolean> {
 		switch(data.shift()) {
 			case "patternindex":
 				return this.patternIndex?.receiveShortcut(data) ?? false;

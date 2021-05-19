@@ -33,8 +33,8 @@
 	"layout.patternindex.insert":		[ "Insert" ],				/* shortcut for inserting a new row */
 	"layout.patternindex.delete":		[ "Delete" ],				/* shortcut for deleting rows */
 	"layout.patternindex.copy":			[ "ctrl+C" ],				/* shortcut for deleting copying data or a row */
-	"layout.patternindex.paste.enter":	[ "ctrl+V" ],				/* shortcut for entering paste mode */
-	"layout.patternindex.paste.exit":	[ "Escape" ],				/* shortcut for exiting paste mode */
+	"layout.patternindex.pasteenter":	[ "ctrl+V" ],				/* shortcut for entering paste mode */
+	"layout.patternindex.pasteexit":	[ "Escape" ],				/* shortcut for exiting paste mode */
 	"layout.patternindex.change.up":	[ "ctrl+ArrowUp" ],			/* shortcut for changing the selected digits up by 1 */
 	"layout.patternindex.change.down":	[ "ctrl+ArrowDown" ],		/* shortcut for changing the selected digits down by 1  */
 	"layout.patternindex.edit":			[ "Enter" ],				/* shortcut for toggling edit mode and applying pasted values */

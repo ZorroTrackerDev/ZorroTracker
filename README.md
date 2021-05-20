@@ -1,5 +1,7 @@
 # ZorroTracker
-Sega Mega Drive / Genesis Music Tracker created in Electron.
+Work in Progress Sega Mega Drive / Genesis Music Tracker created in Electron.
+
+
 
 
 

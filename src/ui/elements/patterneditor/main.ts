@@ -14,6 +14,7 @@ export class PatternIndexEditor implements UIElement {
 	private elchans!:HTMLElement;
 	private elrows!:HTMLElement;
 	private elbtns!:HTMLElement;
+	private elscroll!:HTMLElement;
 
 	// the pattern index this editor is affecting
 	public index:PatternIndex;
@@ -58,9 +59,12 @@ export class PatternIndexEditor implements UIElement {
 		this.element.appendChild(this.elchans);
 
 		// generate the pattern display for this editor
+		this.elscroll = document.createElement("div")
+		this.elscroll.classList.add("patterneditor_rows");
+		this.element.appendChild(this.elscroll);
+
 		this.elrows = document.createElement("div");
-		this.elrows.classList.add("patterneditor_rows");
-		this.element.appendChild(this.elrows);
+		this.elscroll.appendChild(this.elrows);
 
 		// add the filler rows
 		for(let x = PatternIndexEditor.FILLER_ROWS * 2;x > 0;x --){
@@ -154,7 +158,7 @@ export class PatternIndexEditor implements UIElement {
 		const height = 1 + ((this.elrows.children[PatternIndexEditor.FILLER_ROWS] as HTMLDivElement|undefined)?.offsetHeight ?? 0);
 
 		// apply scrolling here
-		this.element.scrollTop += speed * height;
+		this.elscroll.scrollTop += speed * height;
 	}
 
 	// the last "second" value for the scrollTo function
@@ -173,7 +177,7 @@ export class PatternIndexEditor implements UIElement {
 
 		// get all the relevant bounding boxes for later
 		const chan = this.elchans.getBoundingClientRect();
-		const elm = this.element.getBoundingClientRect();
+		const elm = this.elscroll.getBoundingClientRect();
 		const butt = this.elbtns.getBoundingClientRect();
 
 		// herlp function to grab the position of the row we're requesting
@@ -181,7 +185,7 @@ export class PatternIndexEditor implements UIElement {
 			// check that the row is valid
 			if(r >= -1 && this.index.getHeight() >= r){
 				// get the row bounding box
-				return this.element.scrollTop - chan.height - butt.height +
+				return this.elscroll.scrollTop - chan.height - butt.height +
 					this.elrows.children[r + PatternIndexEditor.FILLER_ROWS].getBoundingClientRect()[position];
 			}
 
@@ -197,15 +201,15 @@ export class PatternIndexEditor implements UIElement {
 		if(rbot - rtop > _h){
 			// too much space, just focus on one of the nodes
 			const target = getPos(sec ? row1 : row2, "top");
-			this.element.scrollTop = target - (_h / 2);
+			this.elscroll.scrollTop = target - (_h / 2);
 
-		} else if(this.element.scrollTop > rtop){
+		} else if(this.elscroll.scrollTop > rtop){
 			// average the position, enough space
-			this.element.scrollTop -= (this.element.scrollTop - rtop);
+			this.elscroll.scrollTop -= (this.elscroll.scrollTop - rtop);
 
-		} else if(this.element.scrollTop + _h <= rbot){
+		} else if(this.elscroll.scrollTop + _h <= rbot){
 			// average the position, enough space
-			this.element.scrollTop += rbot - (this.element.scrollTop + _h);
+			this.elscroll.scrollTop += rbot - (this.elscroll.scrollTop + _h);
 		}
 	}
 

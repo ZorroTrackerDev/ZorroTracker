@@ -25,13 +25,10 @@
 	--pattern_edit_left: infinite;
 	--pattern_edit_right: infinite;
 	outline: 0;
-	scroll-snap-type: y mandatory;
 	height: 100%;
 	width: max-content;
 	max-width: 50%;
 	background: black;
-	overflow-y: scroll;
-	overflow-x: auto;
 	white-space: nowrap;
 
 	float: left;
@@ -41,8 +38,6 @@
 	font-family: 'Noto Sans', sans-serif;
 	font-size: 9.5pt;
 	font-weight: bold;
-
-	.__scrollbar();
 
 	// width of the first row
 	@firstrow: 20px;
@@ -100,7 +95,7 @@
 	}
 
 	// handle nice graaphics for the edit style
-	&> .patterneditor_rows > div > .editing {
+	&> .patterneditor_rows > div > div > .editing {
 		background: #426b4c !important;
 
 		&:hover {
@@ -109,7 +104,7 @@
 	}
 
 	// only ever animate the selection when in focus
-	&:focus-within > .patterneditor_rows > div > .editing {
+	&:focus-within > .patterneditor_rows > div > div > .editing {
 		position: relative;
 
 		&::first-letter {
@@ -135,85 +130,96 @@
 
 	// vertical row wrapper
 	&> .patterneditor_rows {
-		.__scrollbar();
-		text-align: center;
+		-webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,.7) 0%, rgba(0,0,0,1) 20%, rgba(0,0,0,1) 75%, rgba(0,0,0,.7) 85%, rgba(0,0,0,.35) 100%);
+		height: calc(100% - @firstrow);
 		width: 100%;
-		min-height: calc(100% - @rowheight - @butheight - 6px);
+		scroll-snap-type: y mandatory;
+		overflow-y: scroll;
+		overflow-x: auto;
+		.__scrollbar();
 
-		&> p, > div {
-			scroll-snap-align: start;
-			margin: 1px 0;
-			display: block;
-			height: @rowheight;
-		}
+		& > div {
+			padding-top: @firstrow;
+			padding-bottom: @butheight;
+			text-align: center;
+			width: 100%;
+			min-height: calc(100% - @rowheight - @butheight - 6px);
 
-		&> div {
-			width: max-content;
+			&> p, > div {
+				scroll-snap-align: start;
+				margin: 1px 0;
+				display: block;
+				height: @rowheight;
+			}
 
-			// both channel header and channel tracker elements
 			&> div {
+				width: max-content;
+
+				// both channel header and channel tracker elements
 				&> div {
-					display: inline-block;
-					margin: 0;
-				}
+					&> div {
+						display: inline-block;
+						margin: 0;
+					}
 
-				.__item();
-				margin: 1px;
-				width: @otherrows;
-				height: 100%;
-				color: #b7b7b7;
-				background: #28282b;
-				cursor: pointer;
-				transition: background-color .05s linear;
-
-				// the first row is special, as it shows the song position
-				&:first-child {
-					font-weight: normal;
-					width: @firstrow;
-					color: #f5c6c6;
+					.__item();
+					margin: 1px;
+					width: @otherrows;
+					height: 100%;
+					color: #b7b7b7;
 					background: #28282b;
+					cursor: pointer;
+					transition: background-color .05s linear;
 
-					border-top-left-radius: 0;
-					border-bottom-left-radius: 0;
-				}
+					// the first row is special, as it shows the song position
+					&:first-child {
+						font-weight: normal;
+						width: @firstrow;
+						color: #f5c6c6;
+						background: #28282b;
 
-				&:hover {
-					background: #474752;
-				}
-
-				// special case to make every other channel slightly different color
-				&:nth-child(even) {
-					background: #3a3636;
+						border-top-left-radius: 0;
+						border-bottom-left-radius: 0;
+					}
 
 					&:hover {
-						background: #5a4c4c;
+						background: #474752;
+					}
+
+					// special case to make every other channel slightly different color
+					&:nth-child(even) {
+						background: #3a3636;
+
+						&:hover {
+							background: #5a4c4c;
+						}
 					}
 				}
-			}
 
-			// handling for selected columns and elements
-			&.selected > div {
-				background: #573333;
-				color: #c9c6ce;
+				// handling for selected columns and elements
+				&.selected > div {
+					background: #573333;
+					color: #c9c6ce;
 
-				&:hover {
-					background: #6e5454;
+					&:hover {
+						background: #6e5454;
+					}
 				}
-			}
 
-			&> .selected {
-				background: #6b4264 !important;
+				&> .selected {
+					background: #6b4264 !important;
 
-				&:hover {
-					background: #6e566a !important;
+					&:hover {
+						background: #6e566a !important;
+					}
 				}
-			}
 
-			&> .pasting {
-				background: #69633d !important;
+				&> .pasting {
+					background: #69633d !important;
 
-				&:hover {
-					background: #6e6a56 !important;
+					&:hover {
+						background: #6e6a56 !important;
+					}
 				}
 			}
 		}
@@ -226,6 +232,7 @@
 		left: 0;
 		pointer-events: none;
 		text-align: center;
+		margin-right: 10px;
 
 		&> div {
 			pointer-events: initial;

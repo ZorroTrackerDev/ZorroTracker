@@ -120,7 +120,7 @@ export class PatternIndexEditor implements UIElement {
 	}
 
 	// the array containing the strings for animation iteration count depending on the editing mode
-	private static EDIT_STYLE = (state:boolean) => state ? "47%" : "12%";
+	private static EDIT_STYLE = (state:boolean) => state ? "49%" : "16%";
 
 	/**
 	 * Set the current editing column for text
@@ -216,23 +216,7 @@ export class PatternIndexEditor implements UIElement {
 		{
 			svg: /*html*/`
 				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-					<path stroke="#fff" stroke-width="10" d="
-						M 12 50
-						H 88
-					"/>
-				</svg>
-			`,
-			title: "decrement digit",
-			click: (edit:PatternIndexEditor, event:MouseEvent) => {
-				if(event.button === 0 && edit.mode !== editMode.Paste) {
-					edit.change(-1).catch(console.error);
-				}
-			},
-		},
-		{
-			svg: /*html*/`
-				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-					<path stroke="#fff" stroke-width="10" d="
+					<path stroke="#000" stroke-width="10" d="
 						M 50 8
 						V 92
 						M 8 50
@@ -241,6 +225,7 @@ export class PatternIndexEditor implements UIElement {
 				</svg>
 			`,
 			title: "increment digit",
+			class: [ "left", ],
 			click: (edit:PatternIndexEditor, event:MouseEvent) => {
 				if(event.button === 0 && edit.mode !== editMode.Paste) {
 					edit.change(1).catch(console.error);
@@ -250,7 +235,24 @@ export class PatternIndexEditor implements UIElement {
 		{
 			svg: /*html*/`
 				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-					<path stroke="#fff" fill="none" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" d="
+					<path stroke="#000" stroke-width="10" d="
+						M 12 50
+						H 88
+					"/>
+				</svg>
+			`,
+			title: "decrement digit",
+			class: [ "last", "left", ],
+			click: (edit:PatternIndexEditor, event:MouseEvent) => {
+				if(event.button === 0 && edit.mode !== editMode.Paste) {
+					edit.change(-1).catch(console.error);
+				}
+			},
+		},
+		{
+			svg: /*html*/`
+				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+					<path stroke="#000" fill="none" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" d="
 						M 50 92
 						H 12
 						V 8
@@ -267,6 +269,7 @@ export class PatternIndexEditor implements UIElement {
 				</svg>
 			`,
 			title: "insert at selection",
+			class: [ "first", ],
 			click: (edit:PatternIndexEditor, event:MouseEvent) => {
 				if(event.button === 0 && edit.mode !== editMode.Paste) {
 					edit.insert();
@@ -276,8 +279,8 @@ export class PatternIndexEditor implements UIElement {
 		{
 			svg: /*html*/`
 				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-					<path stroke="#fff" fill="none" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" d="
-						M 30 6
+					<path stroke="#000" fill="none" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" d="
+						M 30 8
 						H 88
 						V 80
 
@@ -293,6 +296,7 @@ export class PatternIndexEditor implements UIElement {
 				</svg>
 			`,
 			title: "copy selection into clipboard",
+			class: [],
 			click: (edit:PatternIndexEditor, event:MouseEvent) => {
 				if(event.button === 0 && edit.mode !== editMode.Paste) {
 					edit.copy();
@@ -302,7 +306,7 @@ export class PatternIndexEditor implements UIElement {
 		{
 			svg: /*html*/`
 				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-					<path stroke="#fff" fill="none" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" d="
+					<path stroke="#000" fill="none" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" d="
 						M 27 20
 						H 17
 						V 92
@@ -330,6 +334,7 @@ export class PatternIndexEditor implements UIElement {
 				</svg>
 			`,
 			title: "paste pattern data from clipboard",
+			class: [],
 			click: (edit:PatternIndexEditor, event:MouseEvent) => {
 				if(event.button === 0 && edit.mode !== editMode.Paste) {
 					edit.pasteInit().catch(console.error);
@@ -339,7 +344,7 @@ export class PatternIndexEditor implements UIElement {
 		{
 			svg: /*html*/`
 				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-					<path stroke="#fff" fill="none" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" d="
+					<path stroke="#000" fill="none" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" d="
 						M 20 25
 						V 82
 						Q 20,92 30,92
@@ -367,6 +372,7 @@ export class PatternIndexEditor implements UIElement {
 				</svg>
 			`,
 			title: "delete at selection",
+			class: [ "last", ],
 			click: (edit:PatternIndexEditor, event:MouseEvent) => {
 				if(event.button === 0 && edit.mode !== editMode.Paste) {
 					edit.delete();
@@ -376,30 +382,7 @@ export class PatternIndexEditor implements UIElement {
 		{
 			svg: /*html*/`
 				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-					<path stroke="#fff" fill="none" stroke-width="8" stroke-linejoin="round" d="
-						M 35 78
-						V 45
-						H 12
-						L 50 8
-						L 88 45
-						H 65
-						V 78
-						Z
-					"/>
-					<line x1="20" y1="92" x2="80" y2="92" stroke="#fff" fill="none" stroke-width="6" stroke-linecap="round" />
-				</svg>
-			`,
-			title: "move selection up",
-			click: (edit:PatternIndexEditor, event:MouseEvent) => {
-				if(event.button === 0 && edit.mode !== editMode.Paste) {
-					edit.shiftUp().catch(console.error);
-				}
-			},
-		},
-		{
-			svg: /*html*/`
-				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-					<path stroke="#fff" fill="none" stroke-width="8" stroke-linejoin="round" d="
+					<path stroke="#000" fill="none" stroke-width="8" stroke-linejoin="round" d="
 						M 35 22
 						V 55
 						H 12
@@ -408,14 +391,43 @@ export class PatternIndexEditor implements UIElement {
 						H 65
 						V 22
 						Z
+
+						M 20 8
+						H 80
 					"/>
-					<line x1="20" y1="8" x2="80" y2="8" stroke="#fff" fill="none" stroke-width="6" stroke-linecap="round" />
 				</svg>
 			`,
 			title: "move selection down",
+			class: [ "right", ],
 			click: (edit:PatternIndexEditor, event:MouseEvent) => {
 				if(event.button === 0 && edit.mode !== editMode.Paste) {
 					edit.shiftDown().catch(console.error);
+				}
+			},
+		},
+		{
+			svg: /*html*/`
+				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+					<path stroke="#000" fill="none" stroke-width="8" stroke-linejoin="round" d="
+						M 35 78
+						V 45
+						H 12
+						L 50 8
+						L 88 45
+						H 65
+						V 78
+						Z
+
+						M 20 92
+						H 80
+					"/>
+				</svg>
+			`,
+			title: "move selection up",
+			class: [ "first", "right", ],
+			click: (edit:PatternIndexEditor, event:MouseEvent) => {
+				if(event.button === 0 && edit.mode !== editMode.Paste) {
+					edit.shiftUp().catch(console.error);
 				}
 			},
 		},
@@ -428,7 +440,7 @@ export class PatternIndexEditor implements UIElement {
 		{
 			svg: /*html*/`
 				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-					<path stroke="#fff" fill="none" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" d="
+					<path stroke="#000" fill="none" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" d="
 						M 15 15
 						L 85 85
 
@@ -438,6 +450,7 @@ export class PatternIndexEditor implements UIElement {
 				</svg>
 			`,
 			title: "cancel the paste action",
+			class: [ "first", ],
 			click: (edit:PatternIndexEditor, event:MouseEvent) => {
 				if(event.button === 0 && edit.mode === editMode.Paste) {
 					edit.pasteExit();
@@ -447,7 +460,7 @@ export class PatternIndexEditor implements UIElement {
 		{
 			svg: /*html*/`
 				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-					<path stroke="#fff" fill="none" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" d="
+					<path stroke="#000" fill="none" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" d="
 						M 80 25
 						L 45 80
 						L 20 60
@@ -455,6 +468,7 @@ export class PatternIndexEditor implements UIElement {
 				</svg>
 			`,
 			title: "apply the paste area",
+			class: [ "last", ],
 			click: (edit:PatternIndexEditor, event:MouseEvent) => {
 				if(event.button === 0 && edit.mode === editMode.Paste) {
 					edit.pasteApply().catch(console.error);
@@ -468,14 +482,14 @@ export class PatternIndexEditor implements UIElement {
 	 *
 	 * @param buttons The list of buttons to apply
 	 */
-	private setButtons(buttons:{ svg:string, title:string, click:(edit:PatternIndexEditor, event:MouseEvent) => void, }[]) {
+	private setButtons(buttons:{ svg:string, title:string, class:string[], click:(edit:PatternIndexEditor, event:MouseEvent) => void, }[]) {
 		// remove all existing children!
 		while(this.elbtns.children.length > 0) {
 			this.elbtns.removeChild(this.elbtns.children[0]);
 		}
 
 		// apply the buttons
-		buttons.forEach((button) => this.appendButton(button.svg, button.title, button.click));
+		buttons.forEach((button) => this.appendButton(button.svg, button.title, button.class, button.click));
 	}
 
 	/**
@@ -483,12 +497,14 @@ export class PatternIndexEditor implements UIElement {
 	 *
 	 * @param svg The button inner svg
 	 * @param title The tooltip to display when hovering with a mouse
+	 * @param classes The list of classes to apply
 	 * @param mouseup The event to run when the user clicks on the button
 	 */
-	private appendButton(svg:string, title:string, click:(edit:PatternIndexEditor, event:MouseEvent) => unknown) {
+	private appendButton(svg:string, title:string, classes:string[], click:(edit:PatternIndexEditor, event:MouseEvent) => unknown) {
 		const button = document.createElement("div");
 		button.innerHTML = svg;
 		button.title = title;
+		classes.forEach((name) => button.classList.add(name));
 		button.onmouseup = (event:MouseEvent) => click(this, event);
 		this.elbtns.appendChild(button);
 	}

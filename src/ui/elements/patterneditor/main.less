@@ -48,9 +48,8 @@
 	@firstrow: 20px;
 	@otherrows: 36px;
 	@rowheight: 18px;
-	@butwidth: 60px;
 	@butwidths: 25px;
-	@butheight: 23px;
+	@butheight: 25px;
 	@flashpad: 2px;
 
 	.__item {
@@ -63,6 +62,7 @@
 		font-weight: normal;
 		font-size: 9pt;
 		position: sticky;
+		z-index: 10;
 		top: 0;
 
 		&> div {
@@ -110,6 +110,8 @@
 
 	// only ever animate the selection when in focus
 	&:focus-within > .patterneditor_rows > div > .editing {
+		position: relative;
+
 		&::first-letter {
 			padding-right: 5px;
 		}
@@ -121,7 +123,7 @@
 			left: var(--pattern_edit_pos);
 			content: "";
 
-			width: 40%;
+			width: 37%;
 			border-radius: 3px;
 			box-sizing: border-box;
 			border: 2px solid transparent;
@@ -162,7 +164,6 @@
 				color: #b7b7b7;
 				background: #28282b;
 				cursor: pointer;
-				position: relative;
 				transition: background-color .05s linear;
 
 				// the first row is special, as it shows the song position
@@ -223,10 +224,8 @@
 		position: sticky;
 		bottom: 0;
 		left: 0;
-		text-align: center;
-		color: #d6d6d6;
-		font: 11.5pt "Noto Sans", sans-serif;
 		pointer-events: none;
+		text-align: center;
 
 		&> div {
 			pointer-events: initial;
@@ -236,33 +235,46 @@
 			display: inline-block;
 			width: @butwidths;
 			height: @butheight;
-			background: #37373e;
+			background: #adadad;
+			transition: background-color .2s ease-in-out;
 
 			&:hover {
-				background: #474752;
+				background: #a6a3b4;
 
-				&> * {
-					transform: scale(1);
+				&> svg > path {
+					stroke: #000;
 				}
 			}
 
-			&:first-child {
-				border-top-left-radius: 8px;
+			// various classes for styling
+			&.left {
+				float: left;
 			}
 
-			&:not(:first-child) {
+			&.right {
+				float: right;
+			}
+
+			&.first {
+				border-top-left-radius: 5px;
+			}
+
+			&:not(.first) {
 				border-left: none;
 			}
 
-			&:last-child {
-				border-top-right-radius: 8px;
+			&.last {
+				border-top-right-radius: 5px;
 			}
 
-			&> * {
+			&> svg {
 				width: 100%;
 				height: 100%;
-				transform: scale(0.85);
-				transition: transform .33s ease-in-out;
+
+				&> path {
+					transition: stroke .2s ease-in-out;
+					stroke: #333454;
+				};
 			}
 		}
 	}

@@ -58,11 +58,13 @@ export class PatternIndex {
 			this.matrix.push(new Uint8Array(256));
 		}
 
-		// create the set event
-		this.eventSet = ZorroEvent.createEvent(ZorroEventEnum.PatternMatrixSet).send;
+		// create events
+		this.eventSet = ZorroEvent.createEvent(ZorroEventEnum.PatternMatrixSet);
+		this.eventResize = ZorroEvent.createEvent(ZorroEventEnum.PatternMatrixResize);
 	}
 
-	private eventSet:ZorroListenerTypes[ZorroEventEnum.PatternMatrixSet]
+	private eventSet:ZorroListenerTypes[ZorroEventEnum.PatternMatrixSet];
+	private eventResize:ZorroListenerTypes[ZorroEventEnum.PatternMatrixResize];
 
 	/**
 	 * Function to get the size of the matrix
@@ -317,9 +319,14 @@ export class PatternIndex {
 	 *
 	 * @returns boolean indicating whether it was successful or not.
 	 */
-	public insertRow(index:number, data:Uint8Array):boolean {
+	public async insertRow(index:number, data:Uint8Array):Promise<boolean> {
 		// check that the index is valid, matrix can fit data, and the input data is the right size
 		if(index < 0 || index > this.matrixlen || this.matrixlen > 0xFF || data.length !== this.channels.length) {
+			return false;
+		}
+
+		// check if we're allowed to resize
+		if(!await this.eventResize(this, this.matrixlen + 1, this.channels.length)) {
 			return false;
 		}
 
@@ -345,9 +352,14 @@ export class PatternIndex {
 	 * @param index Index of the row to delete
 	 * @returns boolean indicating success
 	 */
-	public deleteRow(index:number):boolean {
+	public async deleteRow(index:number):Promise<boolean> {
 		// check that the index is valid
 		if(index < 0 || index >= this.matrixlen) {
+			return false;
+		}
+
+		// check if we're allowed to resize
+		if(!await this.eventResize(this, this.matrixlen - 1, this.channels.length)) {
 			return false;
 		}
 

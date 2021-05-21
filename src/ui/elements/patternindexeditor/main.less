@@ -30,6 +30,7 @@
 	max-width: 50%;
 	background: black;
 	white-space: nowrap;
+	position: relative;
 
 	float: left;
 	border-top-right-radius: 8px;
@@ -47,55 +48,26 @@
 	@butheight: 25px;
 	@flashpad: 2px;
 
+	// add gradients to top of the row data
+	&::before {
+		content: "";
+		position: absolute;
+		height: @rowheight;
+		left: 0;
+		right: 10px;
+		z-index: 10;
+		top: @rowheight;
+		pointer-events: none;
+		background: linear-gradient(to top, transparent, rgba(0,0,0,.25) 90%);
+	}
+
 	.__item {
 		border-radius: 4px;
 		display: inline-block;
 	}
 
-	// channel elements
-	&> .patterneditor_channels {
-		font-weight: normal;
-		font-size: 9pt;
-		position: sticky;
-		z-index: 10;
-		top: 0;
-
-		&> div {
-			.__item();
-			cursor: pointer;
-			border: 1px solid black;
-			text-align: center;
-			width: @otherrows;
-			height: @rowheight;
-			background: #3b3c46;
-			color: white;
-			border-top-left-radius: 0;
-			border-top-right-radius: 0;
-			transition: background-color .2s ease-in-out;
-
-			&:not(:first-child):hover {
-				background: #5b5b6e;
-			}
-
-			&.patterneditor_insert {
-				width: @firstrow;
-				border-bottom-left-radius: 0;
-				transition: background-color .3s ease, background-image .25s ease-in-out;
-				background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='%23fff' stroke-width='9' d='M50 10v80M10 50h80'/%3E%3C/svg%3E");
-				background-size: 70%;
-				background-position: center;
-				background-repeat: no-repeat;
-
-				&:hover {
-					background-color: #494a5a;
-					background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='%23fff' stroke-width='16' d='M50 10v80M10 50h80'/%3E%3C/svg%3E");
-				}
-			}
-		}
-	}
-
 	// handle nice graaphics for the edit style
-	&> .patterneditor_rows > div > div > .editing {
+	&> .patterneditor_wrap > .patterneditor_rows > div > .editing {
 		background: #426b4c !important;
 
 		&:hover {
@@ -104,7 +76,7 @@
 	}
 
 	// only ever animate the selection when in focus
-	&:focus-within > .patterneditor_rows > div > div > .editing {
+	&:focus-within > .patterneditor_wrap > .patterneditor_rows > div > .editing {
 		position: relative;
 
 		&::first-letter {
@@ -129,21 +101,61 @@
 	}
 
 	// vertical row wrapper
-	&> .patterneditor_rows {
-		-webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,.7) 0%, rgba(0,0,0,1) 20%, rgba(0,0,0,1) 75%, rgba(0,0,0,.7) 85%, rgba(0,0,0,.35) 100%);
-		height: calc(100% - @firstrow);
+	&> .patterneditor_wrap {
+		height: calc(100% - @butheight - 3px);
 		width: 100%;
 		scroll-snap-type: y mandatory;
 		overflow-y: scroll;
 		overflow-x: auto;
 		.__scrollbar();
 
-		& > div {
+		// channel elements
+		&> .patterneditor_channels {
+			font-weight: normal;
+			font-size: 9pt;
+			position: sticky;
+			z-index: 10;
+			top: 0;
+
+			&> div {
+				.__item();
+				cursor: pointer;
+				border: 1px solid black;
+				text-align: center;
+				width: @otherrows;
+				height: @rowheight;
+				background: #3b3c46;
+				color: white;
+				border-top-left-radius: 0;
+				border-top-right-radius: 0;
+				transition: background-color .2s ease-in-out;
+
+				&:not(:first-child):hover {
+					background: #5b5b6e;
+				}
+
+				&.patterneditor_insert {
+					width: @firstrow;
+					border-bottom-left-radius: 0;
+					transition: background-color .3s ease, background-image .25s ease-in-out;
+					background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='%23fff' stroke-width='9' d='M50 10v80M10 50h80'/%3E%3C/svg%3E");
+					background-size: 70%;
+					background-position: center;
+					background-repeat: no-repeat;
+
+					&:hover {
+						background-color: #494a5a;
+						background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='%23fff' stroke-width='16' d='M50 10v80M10 50h80'/%3E%3C/svg%3E");
+					}
+				}
+			}
+		}
+
+		// actual rows
+		& > .patterneditor_rows {
 			padding-top: @firstrow;
-			padding-bottom: @butheight;
 			text-align: center;
 			width: 100%;
-			min-height: calc(100% - @rowheight - @butheight - 6px);
 
 			&> p, > div {
 				scroll-snap-align: start;
@@ -227,62 +239,114 @@
 
 	// all the functional buttons in the pattern editor
 	&> .patterneditor_buttons {
-		position: sticky;
+		// add gradients to bottom of the row data
+		&::after {
+			content: "";
+			position: absolute;
+			height: @rowheight;
+			left: 0;
+			right: 0;
+			top: -@rowheight;
+			pointer-events: none;
+			background: linear-gradient(to bottom, transparent, rgba(0,0,0,.25) 90%);
+		}
+
+		position: relative;
+		height: @butheight;
 		bottom: 0;
 		left: 0;
 		pointer-events: none;
 		text-align: center;
 		margin-right: 10px;
+		white-space: nowrap;
+		display: flex;
+		flex-wrap: nowrap;
+		flex-basis: 100%;
+		justify-content: space-between;
 
+		// various classes for styling
 		&> div {
-			pointer-events: initial;
-			cursor: pointer;
-			border: 3px solid black;
-			border-bottom: none;
-			display: inline-block;
-			width: @butwidths;
-			height: @butheight;
-			background: #adadad;
-			transition: background-color .2s ease-in-out;
+			flex-grow: 0;
+			flex-shrink: 1;
+			min-width: 0;
 
-			&:hover {
-				background: #a6a3b4;
-
-				&> svg > path {
-					stroke: #000;
-				}
-			}
-
-			// various classes for styling
-			&.left {
-				float: left;
-			}
-
-			&.right {
-				float: right;
-			}
-
-			&.first {
-				border-top-left-radius: 5px;
-			}
-
-			&:not(.first) {
-				border-left: none;
-			}
-
-			&.last {
-				border-top-right-radius: 5px;
-			}
-
-			&> svg {
-				width: 100%;
-				height: 100%;
-
-				&> path {
-					transition: stroke .2s ease-in-out;
-					stroke: #333454;
-				};
+			&.center {
+				margin: 0px auto;
 			}
 		}
+
+		// normal buttons
+		&> .button {
+			display: flex;
+
+			& > div {
+				min-width: 0;
+				flex-grow: 0;
+
+				pointer-events: initial;
+				cursor: pointer;
+				margin: 0 2px;
+				display: inline-block;
+				width: @butwidths;
+				height: 100%;
+				background: #44454b;
+				transition: background-color .2s ease-in-out;
+
+				&:hover {
+					background: #4f5363;
+
+					&> svg > path {
+						stroke: #9ba4fa;
+					}
+				}
+
+				&> svg {
+					width: 100%;
+					height: 100%;
+
+					&> path {
+						transition: stroke .2s ease-in-out;
+						stroke: #adadad;
+					};
+				}
+			}
+		}
+
+		// text nodes
+		.text {
+			min-width: 0;
+			flex-shrink: 0;
+			flex-grow: 1;
+			font-size: 11pt;
+
+			&> div {
+				margin: 2px;
+				height: 100%;
+				display: inline-block;
+			}
+
+			&.matrixsize {
+				&.transparent {
+					opacity: 0;
+				}
+
+				&> div > div {
+					display: inline-block;
+					padding-right: 3px;
+				}
+			}
+		}
+	}
+}
+
+@media only screen and (max-width: 800px) {
+	.matrixsize > div > div {
+		display: none !important;
+	}
+}
+
+@media only screen and (max-width: 550px) {
+	.matrixsize.transparent > div {
+		display: none !important;
 	}
 }

@@ -13,21 +13,19 @@ export class ZorroEvent {
 	 * @param name The enum representing the event we're about to register
 	 * @returns Functions for firing events that validate who is the owner
 	 */
-	public static createEvent(name:ZorroEventEnum): { send: ZorroListenerTypes[ZorroEventEnum] }{
+	public static createEvent<E extends ZorroEventHelper>(name: E): ZorroListenerTypes[E] {
 		// if event didn't exist before, create it
 		if(!ZorroEvent.events[name]){
 			ZorroEvent.events[name] = new ZorroEvent(name);
 		}
 
-		return {
-			/**
-			 * Function to call the event handlers and return a boolean on whether the event was cancelled
-			 *
-			 * @param args The arguments for the event call
-			 */
-			send: (...args:any[]) => {
-				return ZorroEvent.events[name].send(args);
-			},
+		/**
+		 * Function to call the event handlers and return a boolean on whether the event was cancelled
+		 *
+		 * @param args The arguments for the event call
+		 */
+		return (...args:unknown[]) => {
+			return ZorroEvent.events[name].send(args);
 		}
 	}
 
@@ -44,8 +42,8 @@ export class ZorroEvent {
 		}
 
 		// if the listener was not found, add it to the list
-		if(!ZorroEvent.events[name].listeners.includes(func)){
-			ZorroEvent.events[name].listeners.push(func);
+		if(!ZorroEvent.events[name].listeners.includes(func as ZorroListener)){
+			ZorroEvent.events[name].listeners.push(func as ZorroListener);
 		}
 	}
 
@@ -88,7 +86,7 @@ export class ZorroEvent {
 	 * @param name The name of the ZorroEvent
 	 * @returns true if event was not cancelled, false if it was
 	 */
-	private async send(args:any[]) {
+	private async send(args:unknown[]) {
 		// run through all the listeners
 		for(const fn of this.listeners){
 			// run the next function.
@@ -109,7 +107,7 @@ export class ZorroEvent {
 /**
  * The function type for ZorroTracker listeners
  */
-export type ZorroListener = (...args:any[]) => Promise<boolean|undefined>;
+export type ZorroListener = (...args:unknown[]) => Promise<boolean|undefined>;
 
 /**
  * Enum that holds all the names for the events
@@ -117,9 +115,16 @@ export type ZorroListener = (...args:any[]) => Promise<boolean|undefined>;
 export enum ZorroEventEnum {
 	PatternMatrixSet,
 	PatternMatrixGet,
+	PatternMatrixResize,
 }
+
+/**
+ * Helper for function calls
+ */
+type ZorroEventHelper = keyof ZorroListenerTypes;
 
 export interface ZorroListenerTypes {
 	[ZorroEventEnum.PatternMatrixSet]: (index:PatternIndex, channel:number, row:number, value:number) => Promise<boolean|undefined>,
 	[ZorroEventEnum.PatternMatrixGet]: (index:PatternIndex, channel:number, row:number, value:number) => Promise<boolean|undefined>,
+	[ZorroEventEnum.PatternMatrixResize]: (index:PatternIndex, height:number, width:number) => Promise<boolean|undefined>,
 }

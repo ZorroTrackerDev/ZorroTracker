@@ -1,7 +1,9 @@
 import { PatternIndex } from "../../../api/pattern";
 import { Position, shortcutDirection, UIElement } from "../../../api/ui";
+import { standardButtons, pasteButtons, PatternIndexEditorButtonList, PatternIndexEditorButton, } from "./buttons";
 
-enum editMode {
+// the editing mode enum
+export enum editMode {
 	Normal, Write, Paste,
 }
 
@@ -25,15 +27,11 @@ export class PatternIndexEditor implements UIElement {
 		this.setLayout();
 
 		// generate the first row
-		this.insertRow(0);
+		this.insertRow(0).then(() => {
+			// select the first row first channel
+			this.select(false, { start: { x: 0, y: 0, }, offset: { x: 0, y: 0, }, });
 
-		// select the first row first channel
-		this.select(false, { start: { x: 0, y: 0, }, offset: { x: 0, y: 0, }, });
-
-		// generate fake rows
-		for(let i = 1;i < 20; i++){
-			this.insertRow(i);
-		}
+		}).catch(console.error);
 	}
 
 	// scroll by 3 elements per step
@@ -53,17 +51,19 @@ export class PatternIndexEditor implements UIElement {
 		this.element.classList.add("patterneditor");
 		this.element.tabIndex = 0;						// cool so this whole element will break without this line here!
 
+		// generate the pattern display for this editor
+		this.elscroll = document.createElement("div")
+		this.elscroll.classList.add("patterneditor_wrap");
+		this.element.appendChild(this.elscroll);
+
 		// generate the channel display for this editor
 		this.elchans = document.createElement("div");
 		this.elchans.classList.add("patterneditor_channels");
-		this.element.appendChild(this.elchans);
+		this.elscroll.appendChild(this.elchans);
 
-		// generate the pattern display for this editor
-		this.elscroll = document.createElement("div")
-		this.elscroll.classList.add("patterneditor_rows");
-		this.element.appendChild(this.elscroll);
-
+		// add the pattern rows itself
 		this.elrows = document.createElement("div");
+		this.elrows.classList.add("patterneditor_rows");
 		this.elscroll.appendChild(this.elrows);
 
 		// add the filler rows
@@ -77,7 +77,7 @@ export class PatternIndexEditor implements UIElement {
 		this.element.appendChild(this.elbtns);
 
 		// enable all the standard buttons
-		this.setButtons(this.standardButtons);
+		this.setButtons(standardButtons);
 
 		// set editing left column
 		this.setEdit(false);
@@ -106,7 +106,7 @@ export class PatternIndexEditor implements UIElement {
 	private editing = false;
 
 	// if we are editing a single row currently. Multirow editing will be enabled even when this is false
-	private mode = editMode.Normal;
+	mode = editMode.Normal;
 
 	/**
 	 * Helper function to handle mode toggling (usually with the enter button)
@@ -176,16 +176,15 @@ export class PatternIndexEditor implements UIElement {
 		this.lastScrollPref = sec;
 
 		// get all the relevant bounding boxes for later
-		const chan = this.elchans.getBoundingClientRect();
+		const chanh = this.elchans.getBoundingClientRect().height * 2;
 		const elm = this.elscroll.getBoundingClientRect();
-		const butt = this.elbtns.getBoundingClientRect();
 
 		// herlp function to grab the position of the row we're requesting
 		const getPos = (r:number, position:"top"|"bottom") => {
 			// check that the row is valid
 			if(r >= -1 && this.index.getHeight() >= r){
 				// get the row bounding box
-				return this.elscroll.scrollTop - chan.height - butt.height +
+				return this.elscroll.scrollTop - chanh +
 					this.elrows.children[r + PatternIndexEditor.FILLER_ROWS].getBoundingClientRect()[position];
 			}
 
@@ -196,7 +195,7 @@ export class PatternIndexEditor implements UIElement {
 		// get row scroll positions
 		const rtop = getPos(row1 < row2 ? row1 - 1 : row2 - 1, "top");
 		const rbot = getPos(row1 > row2 ? row1 + 0 : row2 + 0, "bottom");
-		const _h = elm.height - butt.height - butt.height;
+		const _h = elm.height - chanh;
 
 		if(rbot - rtop > _h){
 			// too much space, just focus on one of the nodes
@@ -214,286 +213,18 @@ export class PatternIndexEditor implements UIElement {
 	}
 
 	/**
-	 * All the different standard buttons for controlling the pattern editor. This also has the functionality of these buttons.
-	 */
-	private standardButtons = [
-		{
-			svg: /*html*/`
-				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-					<path stroke="#000" stroke-width="10" d="
-						M 50 8
-						V 92
-						M 8 50
-						H 92
-					"/>
-				</svg>
-			`,
-			title: "increment digit",
-			class: [ "left", ],
-			click: (edit:PatternIndexEditor, event:MouseEvent) => {
-				if(event.button === 0 && edit.mode !== editMode.Paste) {
-					edit.change(1).catch(console.error);
-				}
-			},
-		},
-		{
-			svg: /*html*/`
-				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-					<path stroke="#000" stroke-width="10" d="
-						M 12 50
-						H 88
-					"/>
-				</svg>
-			`,
-			title: "decrement digit",
-			class: [ "last", "left", ],
-			click: (edit:PatternIndexEditor, event:MouseEvent) => {
-				if(event.button === 0 && edit.mode !== editMode.Paste) {
-					edit.change(-1).catch(console.error);
-				}
-			},
-		},
-		{
-			svg: /*html*/`
-				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-					<path stroke="#000" fill="none" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" d="
-						M 50 92
-						H 12
-						V 8
-						H 88
-						V 55
-
-						M 50 72
-						L 69 92
-						L 88 72
-
-						M 69 92
-						V 50
-					"/>
-				</svg>
-			`,
-			title: "insert at selection",
-			class: [ "first", ],
-			click: (edit:PatternIndexEditor, event:MouseEvent) => {
-				if(event.button === 0 && edit.mode !== editMode.Paste) {
-					edit.insert();
-				}
-			},
-		},
-		{
-			svg: /*html*/`
-				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-					<path stroke="#000" fill="none" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" d="
-						M 30 8
-						H 88
-						V 80
-
-						M 50 20
-						H 15
-						V 92
-						H 75
-						V 45
-						L 50 20
-						V 45
-						H 75
-					"/>
-				</svg>
-			`,
-			title: "copy selection into clipboard",
-			class: [],
-			click: (edit:PatternIndexEditor, event:MouseEvent) => {
-				if(event.button === 0 && edit.mode !== editMode.Paste) {
-					edit.copy();
-				}
-			},
-		},
-		{
-			svg: /*html*/`
-				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-					<path stroke="#000" fill="none" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" d="
-						M 27 20
-						H 17
-						V 92
-						H 83
-						V 20
-						H 73
-
-						M 67 32
-						H 33
-						V 16
-						H 40
-						Q 50,3 60,16
-						H 67
-						V 32
-
-						M 32 45
-						H 68
-
-						M 32 60
-						H 68
-
-						M 32 75
-						H 68
-					"/>
-				</svg>
-			`,
-			title: "paste pattern data from clipboard",
-			class: [],
-			click: (edit:PatternIndexEditor, event:MouseEvent) => {
-				if(event.button === 0 && edit.mode !== editMode.Paste) {
-					edit.pasteInit().catch(console.error);
-				}
-			},
-		},
-		{
-			svg: /*html*/`
-				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-					<path stroke="#000" fill="none" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" d="
-						M 20 25
-						V 82
-						Q 20,92 30,92
-						H 70
-						Q 80,92 80,82
-						V 25
-
-						M 90 25
-						H 10
-
-						M 30 25
-						L 38 8
-						H 62
-						L 70 25
-
-						M 37 40
-						V 75
-
-						M 50 40
-						V 75
-
-						M 63 40
-						V 75
-					"/>
-				</svg>
-			`,
-			title: "delete at selection",
-			class: [ "last", ],
-			click: (edit:PatternIndexEditor, event:MouseEvent) => {
-				if(event.button === 0 && edit.mode !== editMode.Paste) {
-					edit.delete();
-				}
-			},
-		},
-		{
-			svg: /*html*/`
-				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-					<path stroke="#000" fill="none" stroke-width="8" stroke-linejoin="round" d="
-						M 35 22
-						V 55
-						H 12
-						L 50 92
-						L 88 55
-						H 65
-						V 22
-						Z
-
-						M 20 8
-						H 80
-					"/>
-				</svg>
-			`,
-			title: "move selection down",
-			class: [ "right", ],
-			click: (edit:PatternIndexEditor, event:MouseEvent) => {
-				if(event.button === 0 && edit.mode !== editMode.Paste) {
-					edit.shiftDown().catch(console.error);
-				}
-			},
-		},
-		{
-			svg: /*html*/`
-				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-					<path stroke="#000" fill="none" stroke-width="8" stroke-linejoin="round" d="
-						M 35 78
-						V 45
-						H 12
-						L 50 8
-						L 88 45
-						H 65
-						V 78
-						Z
-
-						M 20 92
-						H 80
-					"/>
-				</svg>
-			`,
-			title: "move selection up",
-			class: [ "first", "right", ],
-			click: (edit:PatternIndexEditor, event:MouseEvent) => {
-				if(event.button === 0 && edit.mode !== editMode.Paste) {
-					edit.shiftUp().catch(console.error);
-				}
-			},
-		},
-	];
-
-	/**
-	 * All the different paste buttons for controlling the pattern editor. This also has the functionality of these buttons.
-	 */
-	private pasteButtons = [
-		{
-			svg: /*html*/`
-				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-					<path stroke="#000" fill="none" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" d="
-						M 15 15
-						L 85 85
-
-						M 85 15
-						L 15 85
-					"/>
-				</svg>
-			`,
-			title: "cancel the paste action",
-			class: [ "first", ],
-			click: (edit:PatternIndexEditor, event:MouseEvent) => {
-				if(event.button === 0 && edit.mode === editMode.Paste) {
-					edit.pasteExit();
-				}
-			},
-		},
-		{
-			svg: /*html*/`
-				<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-					<path stroke="#000" fill="none" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" d="
-						M 80 25
-						L 45 80
-						L 20 60
-					"/>
-				</svg>
-			`,
-			title: "apply the paste area",
-			class: [ "last", ],
-			click: (edit:PatternIndexEditor, event:MouseEvent) => {
-				if(event.button === 0 && edit.mode === editMode.Paste) {
-					edit.pasteApply().catch(console.error);
-				}
-			},
-		},
-	];
-
-	/**
 	 * Set the bottom row buttons layout. Will clear the previous layout out first.
 	 *
 	 * @param buttons The list of buttons to apply
 	 */
-	private setButtons(buttons:{ svg:string, title:string, class:string[], click:(edit:PatternIndexEditor, event:MouseEvent) => void, }[]) {
+	private setButtons(buttons:PatternIndexEditorButtonList[]) {
 		// remove all existing children!
 		while(this.elbtns.children.length > 0) {
 			this.elbtns.removeChild(this.elbtns.children[0]);
 		}
 
 		// apply the buttons
-		buttons.forEach((button) => this.appendButton(button.svg, button.title, button.class, button.click));
+		buttons.forEach((button) => this.appendButton(button));
 	}
 
 	/**
@@ -504,12 +235,30 @@ export class PatternIndexEditor implements UIElement {
 	 * @param classes The list of classes to apply
 	 * @param mouseup The event to run when the user clicks on the button
 	 */
-	private appendButton(svg:string, title:string, classes:string[], click:(edit:PatternIndexEditor, event:MouseEvent) => unknown) {
+	private appendButton(data:PatternIndexEditorButtonList) {
 		const button = document.createElement("div");
-		button.innerHTML = svg;
-		button.title = title;
-		classes.forEach((name) => button.classList.add(name));
-		button.onmouseup = (event:MouseEvent) => click(this, event);
+		data.class.forEach((name) => button.classList.add(name));
+
+		data.items.forEach((d) => {
+			const b = document.createElement("div");
+			b.innerHTML = d.svg;
+			b.title = d.title;
+
+			// if there is a click event, add it
+			if(d.click) {
+				b.onmouseup = (event:MouseEvent) => d.click?.(this, event);
+			}
+
+			// if there is a load event, run it
+			if(d.load) {
+				d.load(b, this);
+			}
+
+			// add to the main button
+			button.appendChild(b);
+		});
+
+		// add to the button list
 		this.elbtns.appendChild(button);
 	}
 
@@ -687,7 +436,7 @@ export class PatternIndexEditor implements UIElement {
 	 * @param amount The amount to change by. This is affected by the digit
 	 * @returns boolean on whether or not the change was applied
 	 */
-	private async change(amount:number) {
+	async change(amount:number):Promise<boolean> {
 		// load the selection and prepare the values
 		const { rows, columns, single, } = this.getSelection();
 		const realamt = amount * (this.editing ? 1 : 0x10);
@@ -736,7 +485,7 @@ export class PatternIndexEditor implements UIElement {
 	 *
 	 * @returns boolean indicating if the operation was successful
 	 */
-	private async shiftUp() {
+	async shiftUp():Promise<boolean> {
 		// load the selection
 		const { startY, offY, single, rows, columns, } = this.getSelection();
 
@@ -819,7 +568,7 @@ export class PatternIndexEditor implements UIElement {
 	 *
 	 * @returns boolean indicating if the operation was successful
 	 */
-	private async shiftDown() {
+	async shiftDown():Promise<boolean> {
 		// load the selection
 		const { startY, offY, single, rows, columns, } = this.getSelection();
 
@@ -1059,17 +808,17 @@ export class PatternIndexEditor implements UIElement {
 		insert.title = "left click: Insert below\nright click: Insert above";
 
 		// handle clicking the insert button
-		insert.onmouseup = (event:MouseEvent) => {
+		insert.onmouseup = async (event:MouseEvent) => {
 			switch(event.button) {
 				case 0:	{	// left button, generate a new row at the very bottom and scroll down to it
 					const h = this.index.getHeight();
-					this.insertRow(h);
+					await this.insertRow(h);
 					this.scrollTo(h - 1, h - 1, true);
 					break;
 				}
 
 				case 2:		// right button, generate a new row at the very top and scroll up to it
-					this.insertRow(0);
+					await this.insertRow(0);
 					this.scrollTo(0, 0, true);
 					break;
 			}
@@ -1285,10 +1034,10 @@ export class PatternIndexEditor implements UIElement {
 	 *
 	 * @returns boolean indicating if the operation was successful
 	 */
-	private insert() {
+	async insert():Promise<boolean> {
 		// insert below selection
 		const { startY, offY, } = this.getSelection();
-		if(!this.insertRow(startY + offY + 1)){
+		if(!await this.insertRow(startY + offY + 1)){
 			return false;
 		}
 
@@ -1303,7 +1052,7 @@ export class PatternIndexEditor implements UIElement {
 	 * @param position position to insert a new row into
 	 * @returns boolean indicating if the operation was successful
 	 */
-	public insertRow(position:number):boolean {
+	public async insertRow(position:number):Promise<boolean> {
 		// generate a new row in the pattern index object
 		const ixrow = this.index.generateRow();
 
@@ -1311,7 +1060,7 @@ export class PatternIndexEditor implements UIElement {
 		this.index.makePatternsRow(ixrow, false);
 
 		// attempt to insert this new row at position. If it fails, return
-		if(!this.index.insertRow(position, ixrow)){
+		if(!await this.index.insertRow(position, ixrow)){
 			return false;
 		}
 
@@ -1609,7 +1358,7 @@ export class PatternIndexEditor implements UIElement {
 	 *
 	 * @returns boolean indicating whether the operation was successful
 	 */
-	private delete() {
+	async delete():Promise<boolean> {
 		// grab the selection
 		const { rows, startX, offX, startY, offY, } = this.getSelection();
 
@@ -1618,7 +1367,7 @@ export class PatternIndexEditor implements UIElement {
 			const r = rows.shift() as number;
 
 			// check if row can safely be deleted
-			if(!this.deleteRow(r)) {
+			if(!await this.deleteRow(r)) {
 				return false;
 			}
 
@@ -1634,7 +1383,7 @@ export class PatternIndexEditor implements UIElement {
 		// check if there are no rows anymore
 		if(this.index.getHeight() === 0){
 			// insert a new row then
-			if(!this.insertRow(0)){
+			if(!await this.insertRow(0)){
 				return false;
 			}
 		}
@@ -1655,9 +1404,9 @@ export class PatternIndexEditor implements UIElement {
 	 * @param position the position of the row to delete
 	 * @returns boolean indicating whether the operation was successful
 	 */
-	public deleteRow(position:number):boolean {
+	public async deleteRow(position:number):Promise<boolean> {
 		// delete the row data from index, and bail if failed
-		if(!this.index.deleteRow(position)) {
+		if(!await this.index.deleteRow(position)) {
 			return false;
 		}
 
@@ -1674,7 +1423,7 @@ export class PatternIndexEditor implements UIElement {
 	 *
 	 * @returns boolean indicating whether the operation was successful
 	 */
-	private copy() {
+	async copy():Promise<boolean> {
 		// multi mode, copy to copy buffer: TODO: <- this feature
 		const pos = this.selectStart, size = this.selectOff;
 
@@ -1701,12 +1450,12 @@ export class PatternIndexEditor implements UIElement {
 	 * @param destination The position of the destination row to insert and copy data to
 	 * @returns boolean indicating whether the operation was successful
 	 */
-	public copyRow(source:number, destination:number):boolean {
+	public async copyRow(source:number, destination:number):Promise<boolean> {
 		// get the source row from index
 		const ixrow = this.index.getRow(source);
 
 		// attempt to insert this new row at destination. If it fails, return
-		if(!ixrow || !this.index.insertRow(destination, ixrow)){
+		if(!ixrow || !await this.index.insertRow(destination, ixrow)){
 			return false;
 		}
 
@@ -1773,7 +1522,7 @@ export class PatternIndexEditor implements UIElement {
 	 *
 	 * @returns boolean indicating whether the operation was successful
 	 */
-	private async pasteInit() {
+	async pasteInit():Promise<boolean> {
 		try {
 			// load the clipboard data as a string
 			const str = await navigator.clipboard.readText();
@@ -1835,7 +1584,7 @@ export class PatternIndexEditor implements UIElement {
 			this.select(null, { offset: { x: rowlen - 1, y: rows.length - 1, }, });
 
 			// enable all the paste buttons
-			this.setButtons(this.pasteButtons);
+			this.setButtons(pasteButtons);
 			return true;
 
 		} catch(ex){
@@ -1852,7 +1601,7 @@ export class PatternIndexEditor implements UIElement {
 	 *
 	 * @returns whether the operation was successful
 	 */
-	private async pasteApply() {
+	async pasteApply():Promise<boolean> {
 		// check even if in paste mode
 		if(this.mode !== editMode.Paste) {
 			return false;
@@ -1896,7 +1645,7 @@ export class PatternIndexEditor implements UIElement {
 	 *
 	 * @returns whether the operation was successful
 	 */
-	private pasteExit() {
+	async pasteExit():Promise<boolean> {
 		// check even if in paste mode
 		if(this.mode !== editMode.Paste) {
 			// if not, just set selection size
@@ -1904,7 +1653,7 @@ export class PatternIndexEditor implements UIElement {
 		}
 
 		// enable all the standard buttons
-		this.setButtons(this.standardButtons);
+		this.setButtons(standardButtons);
 
 		// reset to normal mod
 		this.mode = editMode.Normal;

@@ -826,6 +826,12 @@ export class PatternIndexEditor implements UIElement {
 		}
 	}
 
+	// the classname that is used for the currently active row is the beginning of the loop point.
+	private static LOOP_CLASS = "loop";
+
+	// the classname that is used for the currently active row/column. Used for the pattern editor display.
+	private static ACTIVE_CLASS = "active";
+
 	// the classname that is used for a selected item. Make sure LESS files also use the same name.
 	private static SELECT_CLASS = "selected";
 
@@ -844,8 +850,6 @@ export class PatternIndexEditor implements UIElement {
 	private clearSelect() {
 		// remove class from all rows
 		for(const row of this.elrows.children){
-			row.classList.remove(PatternIndexEditor.SELECT_CLASS);
-
 			// remove class from all elements
 			for(const e of row.children){
 				e.classList.remove(PatternIndexEditor.SELECT_CLASS);
@@ -942,10 +946,6 @@ export class PatternIndexEditor implements UIElement {
 		rows.forEach((y) => {
 			// get the row element and give it the selected class (only in single mode!)
 			const erow = this.elrows.children[y + PatternIndexEditor.FILLER_ROWS];
-
-			if(!this.altSelect && !edit) {
-				erow.classList.add(PatternIndexEditor.SELECT_CLASS);
-			}
 
 			// loop for every channel giving it the selected or editing class
 			columns.forEach((x) => {

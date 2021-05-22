@@ -208,8 +208,8 @@
 					}
 				}
 
-				// handling for selected columns and elements
-				&.selected > div {
+				// handling for active columns and elements
+				&.active > div {
 					background: #573333;
 					color: #c9c6ce;
 
@@ -231,6 +231,21 @@
 
 					&:hover {
 						background: #6e6a56 !important;
+					}
+				}
+
+				// handling for the loop point
+				&.loop {
+					margin-top: 4px;
+					position: relative;
+
+					&::before {
+						content: "";
+						position: absolute;
+						left: 0; right: 0;
+						top: -2px;
+						height: 2px;
+						background: #9e0d0d;
 					}
 				}
 			}

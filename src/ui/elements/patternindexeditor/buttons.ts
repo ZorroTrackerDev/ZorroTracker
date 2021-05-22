@@ -207,11 +207,8 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 				svg: "",
 				title: "the song length",
 				load: (element:HTMLDivElement, edit:PatternIndexEditor):void => {
-					// add listener for pattern matrix resize event
-					// eslint-disable-next-line require-await
-					ZorroEvent.addListener(ZorroEventEnum.MatrixResize, async(event:ZorroEventObject, index:PatternIndex, size:number) => {
-						element.innerHTML = "<div>Matrix: </div>"+ size.toByte();
-					});
+					// update the matrix resize element
+					_matrixResize = element;
 
 					// apply the text first time
 					element.innerHTML = "<div>Matrix: </div>"+ edit.index.getHeight().toByte();
@@ -322,3 +319,15 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 		],
 	},
 ];
+
+let _matrixResize:HTMLDivElement|undefined;
+
+/**
+ * Helper event listener for the MatrixResize event, so that the text element can be updated with correct number
+ */
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.MatrixResize, async(event:ZorroEventObject, index:PatternIndex, size:number) => {
+	if(_matrixResize) {
+		_matrixResize.innerHTML = "<div>Matrix: </div>"+ size.toByte();
+	}
+});

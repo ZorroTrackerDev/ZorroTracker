@@ -442,8 +442,8 @@ export class PatternIndexEditor implements UIElement {
 		const { rows, columns, single, } = this.getSelection();
 		const realamt = amount * ((digit ?? this.editing) ? 1 : 0x10);
 
-		// do not edit in single mode without isEdit
-		if(single && this.mode !== editMode.Write) {
+		// do not edit in single mode without write mode and no digit set
+		if(!digit && single && this.mode !== editMode.Write) {
 			return false;
 		}
 
@@ -1159,15 +1159,19 @@ export class PatternIndexEditor implements UIElement {
 						// check if we're selecting the same item as before
 						const sel = this.findMe(event.currentTarget as HTMLDivElement);
 
+						// check if selecting the same cell as previously
+						const same = this.selectOff.x === 0 && this.selectOff.y === 0 &&
+							this.selectStart.x === sel.x && this.selectStart.y === sel.y;
+
 						if(this.mode === editMode.Normal) {
 							// if selecting the same cell, enable special flag
-							this.sameselect = this.selectOff.x === 0 && this.selectOff.y === 0 &&
-								this.selectStart.x === sel.x && this.selectStart.y === sel.y;
+							this.sameselect = same;
 
 						} else {
-							// disable special flag and write mode
+							// disable special flag and write mode (but only if selecting the same cell)
 							this.sameselect = false;
-							if(this.mode === editMode.Write) {
+
+							if(same && this.mode === editMode.Write) {
 								this.mode = editMode.Normal;
 							}
 						}

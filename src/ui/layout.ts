@@ -1,6 +1,6 @@
 import { PatternIndex } from "../api/pattern";
 import { UIShortcutHandler } from "../api/ui";
-import { PatternIndexEditor } from "./elements/patternindexeditor/main";
+import { PatternIndexEditor } from "./elements/matrixeditor/main";
 import { volumeSlider, SliderEnum } from "./elements/slider/slider";
 import { addShortcutReceiver } from "./misc/shortcuts";
 

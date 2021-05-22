@@ -443,7 +443,7 @@ export class PatternIndexEditor implements UIElement {
 		const realamt = amount * ((digit ?? this.editing) ? 1 : 0x10);
 
 		// do not edit in single mode without write mode and no digit set
-		if(!digit && single && this.mode !== editMode.Write) {
+		if(digit !== undefined && single && this.mode !== editMode.Write) {
 			return false;
 		}
 

@@ -1,5 +1,5 @@
 import { PatternIndex } from "../../../api/pattern";
-import { Position, shortcutDirection, UIElement } from "../../../api/ui";
+import { clipboard, ClipboardType, Position, shortcutDirection, UIElement } from "../../../api/ui";
 import { standardButtons, pasteButtons, PatternIndexEditorButtonList, PatternIndexEditorButton, } from "./buttons";
 
 // the editing mode enum
@@ -434,12 +434,13 @@ export class PatternIndexEditor implements UIElement {
 	 * Function to change digits by an amount.
 	 *
 	 * @param amount The amount to change by. This is affected by the digit
+	 * @param digit The digit to affect, or `undefined` if it is to be chosen based on selection
 	 * @returns boolean on whether or not the change was applied
 	 */
-	async change(amount:number):Promise<boolean> {
+	async change(amount:number, digit?:boolean):Promise<boolean> {
 		// load the selection and prepare the values
 		const { rows, columns, single, } = this.getSelection();
-		const realamt = amount * (this.editing ? 1 : 0x10);
+		const realamt = amount * ((digit ?? this.editing) ? 1 : 0x10);
 
 		// do not edit in single mode without isEdit
 		if(single && this.mode !== editMode.Write) {
@@ -1440,7 +1441,7 @@ export class PatternIndexEditor implements UIElement {
 		}
 
 		// copy this region
-		return this.copyRegion(pos, size) !== null;
+		return await this.copyRegion(pos, size) !== null;
 	}
 
 	/**
@@ -1470,7 +1471,7 @@ export class PatternIndexEditor implements UIElement {
 	 * @param size The size of the selection to copy
 	 * @returns null if failed or string that is also sent to the clipboard
 	 */
-	private copyRegion(position:Position, size:Position) {
+	private async copyRegion(position:Position, size:Position) {
 		const str:string[] = [];
 
 		// get matrix size so we can wrap things properly
@@ -1507,7 +1508,11 @@ export class PatternIndexEditor implements UIElement {
 
 		// copy text to clipboard
 		const ret = str.join("\n");
-		navigator.clipboard.writeText(ret).catch(console.error);
+
+		if(!await clipboard.set(ClipboardType.Matrix, ret)) {
+			return null;
+		}
+
 		return ret;
 	}
 
@@ -1525,11 +1530,11 @@ export class PatternIndexEditor implements UIElement {
 	async pasteInit():Promise<boolean> {
 		try {
 			// load the clipboard data as a string
-			const str = await navigator.clipboard.readText();
-			const rows = str.trim().split("\n");
+			const str = await clipboard.get(ClipboardType.Matrix);
+			const rows = str?.trim().split("\n");
 
 			// if there are no rows, return
-			if(rows.length === 0 || rows.length > this.index.getHeight()){
+			if(!rows || rows.length === 0 || rows.length > this.index.getHeight()){
 				return false;
 			}
 

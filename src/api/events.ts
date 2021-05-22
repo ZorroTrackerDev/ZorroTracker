@@ -1,4 +1,5 @@
 import { PatternIndex } from "./pattern";
+import { ClipboardType } from "./ui";
 
 /**
  * Class that holds all the events and their listeners
@@ -13,7 +14,7 @@ export class ZorroEvent {
 	 * @param name The enum representing the event we're about to register
 	 * @returns Functions for firing events that validate who is the owner
 	 */
-	public static createEvent<E extends ZorroEventHelper>(name: E): ZorroListenerTypes[E] {
+	public static createEvent<E extends ZorroEventListenerHelper>(name: E): ZorroSenderTypes[E] {
 		// if event didn't exist before, create it
 		if(!ZorroEvent.events[name]){
 			ZorroEvent.events[name] = new ZorroEvent(name);
@@ -25,7 +26,7 @@ export class ZorroEvent {
 		 * @param args The arguments for the event call
 		 */
 		return (...args:unknown[]) => {
-			return ZorroEvent.events[name].send(args);
+			return ZorroEvent.events[name].send(args) as any;
 		}
 	}
 
@@ -35,7 +36,7 @@ export class ZorroEvent {
 	 * @param name name of the event
 	 * @param func The function to execute for the event
 	 */
-	public static addListener(name:ZorroEventEnum, func:ZorroListenerTypes[ZorroEventEnum]):void {
+	public static addListener<E extends ZorroEventSenderHelper>(name:E, func:ZorroListenerTypes[E]):void {
 		// if event didn't exist before, create it
 		if(!ZorroEvent.events[name]){
 			ZorroEvent.events[name] = new ZorroEvent(name);
@@ -53,16 +54,17 @@ export class ZorroEvent {
 	 * @param name name of the event
 	 * @param func The function to remove from the event
 	 */
-	public static removeListener(name:ZorroEventEnum, func:ZorroListener):void {
+	public static removeListener<E extends ZorroEventSenderHelper>(name:E, func:ZorroListenerTypes[E]):void {
 		// if event didn't exist before, create it
 		if(!ZorroEvent.events[name]){
-			ZorroEvent.events[name] = new ZorroEvent(name);
+			return;
 		}
 
-		// if the listener was not found, add it to the list
-		const index = ZorroEvent.events[name].listeners.indexOf(func);
+		// check if the listener is in the list
+		const index = ZorroEvent.events[name].listeners.indexOf(func as ZorroListener);
 
 		if(index >= 0){
+			// remove it from the list
 			ZorroEvent.events[name].listeners.splice(index);
 		}
 	}
@@ -87,17 +89,27 @@ export class ZorroEvent {
 	 * @returns true if event was not cancelled, false if it was
 	 */
 	private async send(args:unknown[]) {
+		const _event = new ZorroEventObject();
+		let _value = undefined;
+
 		// run through all the listeners
 		for(const fn of this.listeners){
+			const r = await fn(_event, ...args);
+
+			// if value was set, update _value
+			if(r !== undefined) {
+				_value = r;
+			}
+
 			// run the next function.
-			if(!await fn(...args)) {
+			if(_event.canceled) {
 				// event was cancelled by function, return immediately
-				return false;
+				return { event: _event, value: _value, };
 			}
 		}
 
 		// was not cancelled
-		return true;
+		return { event: _event, value: _value, };
 	}
 
 	// list of all the event listeners
@@ -107,24 +119,69 @@ export class ZorroEvent {
 /**
  * The function type for ZorroTracker listeners
  */
-export type ZorroListener = (...args:unknown[]) => Promise<boolean|undefined>;
+export type ZorroListener = (event:ZorroEventObject, ...args:unknown[]) => Promise<unknown>;
 
 /**
  * Enum that holds all the names for the events
  */
 export enum ZorroEventEnum {
-	PatternMatrixSet,
-	PatternMatrixGet,
-	PatternMatrixResize,
+	ClipboardSet,
+	ClipboardGet,
+
+	MatrixSet,
+	MatrixGet,
+	MatrixResize,
 }
 
 /**
  * Helper for function calls
  */
-type ZorroEventHelper = keyof ZorroListenerTypes;
+type ZorroEventListenerHelper = keyof ZorroListenerTypes;
+type ZorroEventSenderHelper = keyof ZorroSenderTypes;
 
+/**
+ * Helper object to allow various acitons on events, cancellation for example
+ */
+ export class ZorroEventObject {
+	private _canceled = false;
+
+	/**
+	 * Cancel the events, the caller will not execute the code that was requested, other events will not run.
+	 */
+	public cancel():void {
+		this._canceled = true;
+	}
+
+	/** If true, the event was canceled */
+	public get canceled():boolean {
+		return this._canceled;
+	}
+}
+
+/**
+ * Different listener function types. Event listeners expects to use the following functions
+ */
 export interface ZorroListenerTypes {
-	[ZorroEventEnum.PatternMatrixSet]: (index:PatternIndex, channel:number, row:number, value:number) => Promise<boolean|undefined>,
-	[ZorroEventEnum.PatternMatrixGet]: (index:PatternIndex, channel:number, row:number, value:number) => Promise<boolean|undefined>,
-	[ZorroEventEnum.PatternMatrixResize]: (index:PatternIndex, height:number, width:number) => Promise<boolean|undefined>,
+	[ZorroEventEnum.ClipboardGet]: (event:ZorroEventObject, type:ClipboardType) => Promise<string|undefined|void>,
+	[ZorroEventEnum.ClipboardSet]: (event:ZorroEventObject, type:ClipboardType, data:string) => Promise<string|undefined|void>,
+
+	// eslint-disable-next-line max-len
+	[ZorroEventEnum.MatrixSet]: (event:ZorroEventObject, index:PatternIndex, channel:number, row:number, value:number) => Promise<number|undefined|void>,
+	// eslint-disable-next-line max-len
+	[ZorroEventEnum.MatrixGet]: (event:ZorroEventObject, index:PatternIndex, channel:number, row:number, value:number) => Promise<number|undefined|void>,
+	[ZorroEventEnum.MatrixResize]: (event:ZorroEventObject, index:PatternIndex, height:number, width:number) => Promise<undefined|void>,
+}
+
+/**
+ * Different sender function types. Each emitter expects to use the following functions
+ */
+export interface ZorroSenderTypes {
+	[ZorroEventEnum.ClipboardGet]: (type:ClipboardType) => Promise<{ event: ZorroEventObject, value: string|undefined }>,
+	[ZorroEventEnum.ClipboardSet]: (type:ClipboardType, data:string) => Promise<{ event: ZorroEventObject, value: string|undefined }>,
+
+	// eslint-disable-next-line max-len
+	[ZorroEventEnum.MatrixSet]: (index:PatternIndex, channel:number, row:number, value:number) => Promise<{ event: ZorroEventObject, value: number|undefined }>,
+	// eslint-disable-next-line max-len
+	[ZorroEventEnum.MatrixGet]: (index:PatternIndex, channel:number, row:number, value:number) => Promise<{ event: ZorroEventObject, value: number|undefined }>,
+	[ZorroEventEnum.MatrixResize]: (index:PatternIndex, height:number, width:number) => Promise<{ event: ZorroEventObject, value: undefined }>,
 }

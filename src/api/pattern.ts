@@ -1,5 +1,5 @@
 import { Position } from "./ui";
-import { ZorroEvent, ZorroEventEnum, ZorroListenerTypes } from "../api/events";
+import { ZorroEvent, ZorroEventEnum, ZorroListenerTypes, ZorroSenderTypes } from "../api/events";
 
 
 /**
@@ -59,12 +59,12 @@ export class PatternIndex {
 		}
 
 		// create events
-		this.eventSet = ZorroEvent.createEvent(ZorroEventEnum.PatternMatrixSet);
-		this.eventResize = ZorroEvent.createEvent(ZorroEventEnum.PatternMatrixResize);
+		this.eventSet = ZorroEvent.createEvent(ZorroEventEnum.MatrixSet);
+		this.eventResize = ZorroEvent.createEvent(ZorroEventEnum.MatrixResize);
 	}
 
-	private eventSet:ZorroListenerTypes[ZorroEventEnum.PatternMatrixSet];
-	private eventResize:ZorroListenerTypes[ZorroEventEnum.PatternMatrixResize];
+	private eventSet:ZorroSenderTypes[ZorroEventEnum.MatrixSet];
+	private eventResize:ZorroSenderTypes[ZorroEventEnum.MatrixResize];
 
 	/**
 	 * Function to get the size of the matrix
@@ -181,9 +181,11 @@ export class PatternIndex {
 		}
 
 		// send the set event for this cell and see if we succeeded
-		if(await this.eventSet(this, channel, index, value)) {
+		const _e = await this.eventSet(this, channel, index, value);
+
+		if(!_e.event.canceled) {
 			// set the value at channel and index and indicate success
-			this.matrix[channel][index] = value;
+			this.matrix[channel][index] = _e.value ?? value;
 			return true;
 		}
 
@@ -207,9 +209,11 @@ export class PatternIndex {
 
 		// run through every channel in backwards order, replacing the row data
 		for(let c = this.channels.length - 1;c >= 0;c --) {
+			const _e = await this.eventSet(this, c, index, data[c]);
+
 			// call the event and apply only if allowed
-			if(await this.eventSet(this, c, index, data[c])) {
-				this.matrix[c][index] = data[c];
+			if(!_e.event.canceled) {
+				this.matrix[c][index] = _e.value ?? data[c];
 				ret = true;
 			}
 		}
@@ -246,12 +250,19 @@ export class PatternIndex {
 					return false;
 				}
 
-				if(await this.eventSet(this, c, index, values[index])) {
+				// check if we can set the value
+				const _e = await this.eventSet(this, c, index, values[index]);
+				index++;
+
+				if(!_e.event.canceled) {
+					// get the appropriate value
+					const _v = _e.value ?? values[index - 1];
+
 					// make the pattern if it doesnt exist
-					this.makePattern(c, values[index], false);
+					this.makePattern(c, _v, false);
 
 					// copy the value from matrix
-					this.matrix[c][r] = values[index++];
+					this.matrix[c][r] = _v;
 				}
 			}
 		}
@@ -326,7 +337,9 @@ export class PatternIndex {
 		}
 
 		// check if we're allowed to resize
-		if(!await this.eventResize(this, this.matrixlen + 1, this.channels.length)) {
+		const _e = await this.eventResize(this, this.matrixlen + 1, this.channels.length);
+
+		if(_e.event.canceled) {
 			return false;
 		}
 
@@ -359,7 +372,9 @@ export class PatternIndex {
 		}
 
 		// check if we're allowed to resize
-		if(!await this.eventResize(this, this.matrixlen - 1, this.channels.length)) {
+		const _e = await this.eventResize(this, this.matrixlen - 1, this.channels.length);
+
+		if(_e.event.canceled) {
 			return false;
 		}
 

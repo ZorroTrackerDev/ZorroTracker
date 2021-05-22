@@ -1,4 +1,5 @@
 import electron from "electron/main";
+import { ZorroEvent, ZorroEventEnum } from "./events";
 
 /**
  * A common UI type for positional data
@@ -145,3 +146,59 @@ export function shortcutDirection(direction:string|undefined): undefined|Positio
 export interface UIElement extends UIShortcutHandler {
 	element:HTMLElement;
 }
+
+/**
+ * Functions for handling clipboard
+ */
+export const clipboard = {
+	/**
+	 * Function to read from the clipboard
+	 *
+	 * @param type The type of the clipboard event we are using
+	 * @returns The value in the clipboard currently, or `null` if the event was cancelled
+	 */
+	get: async (type:ClipboardType):Promise<string|null> => {
+		// run the clipboard get event
+		const _e = await _clipboardGet(type);
+
+		// if it was cancelled, just return
+		if(_e.event.canceled){
+			return null;
+		}
+
+		// read clipboard or use the return value
+		return _e.value ?? navigator.clipboard.readText();
+	},
+
+	/**
+	 * Function to read from the clipboard
+	 *
+	 * @param type The type of the clipboard event we are using
+	 * @param value The value to set the clipboard to
+	 * @returns Boolean indicating whether the event was cancelled or not
+	 */
+	set: async (type:ClipboardType, value:string):Promise<boolean> => {
+		// run the clipboard set event
+		const _e = await _clipboardSet(type, value);
+
+		// if it was cancelled, just return
+		if(_e.event.canceled){
+			return false;
+		}
+
+		// write to clipboard and return
+		await navigator.clipboard.writeText(_e.value ?? value);
+		return true;
+	},
+}
+
+/**
+ * Differnt types of clipboard data events, used so that event listeners can listen to specific clipboard events.
+ */
+export enum ClipboardType {
+	Matrix,
+}
+
+// generate event emitters for clipboard events
+const _clipboardGet = ZorroEvent.createEvent(ZorroEventEnum.ClipboardGet);
+const _clipboardSet = ZorroEvent.createEvent(ZorroEventEnum.ClipboardSet);

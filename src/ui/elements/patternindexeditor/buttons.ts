@@ -1,4 +1,4 @@
-import { ZorroEvent, ZorroEventEnum } from "../../../api/events";
+import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../../api/events";
 import { PatternIndex } from "../../../api/pattern";
 import { PatternIndexEditor, editMode } from "./main";
 
@@ -37,8 +37,8 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 				`,
 				title: "increment digit",
 				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
-					if(event.button === 0 && edit.mode !== editMode.Paste) {
-						edit.change(1).catch(console.error);
+					if(edit.mode !== editMode.Paste) {
+						edit.change(1, event.button === 0).catch(console.error);
 					}
 				},
 			},
@@ -53,30 +53,19 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 				`,
 				title: "decrement digit",
 				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
-					if(event.button === 0 && edit.mode !== editMode.Paste) {
-						edit.change(-1).catch(console.error);
+					if(edit.mode !== editMode.Paste) {
+						edit.change(-1, event.button === 0).catch(console.error);
 					}
 				},
 			},
 		],
 	},
 	{
-		class: [ "text", "matrixsize", ],
+		class: [ "text", "matrixsize", "transparent", ],
 		items: [
 			{
-				svg: "",
-				title: "the song length",
-				load: (element:HTMLDivElement, edit:PatternIndexEditor):void => {
-					// add listener for pattern matrix resize event
-					// eslint-disable-next-line require-await
-					ZorroEvent.addListener(ZorroEventEnum.PatternMatrixResize, async(index:PatternIndex, size:number) => {
-						element.innerHTML = "<div>Matrix: </div>"+ size.toByte();
-						return true;
-					});
-
-					// apply the text first time
-					element.innerHTML = "<div>Matrix: </div>"+ edit.index.getHeight().toByte();
-				},
+				svg: "<div>Matrix: </div>00",
+				title: "",
 			},
 		],
 	},
@@ -212,11 +201,21 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 		],
 	},
 	{
-		class: [ "text", "matrixsize", "transparent", ],
+		class: [ "text", "matrixsize", ],
 		items: [
 			{
-				svg: "<div>Matrix: </div>00",
-				title: "",
+				svg: "",
+				title: "the song length",
+				load: (element:HTMLDivElement, edit:PatternIndexEditor):void => {
+					// add listener for pattern matrix resize event
+					// eslint-disable-next-line require-await
+					ZorroEvent.addListener(ZorroEventEnum.MatrixResize, async(event:ZorroEventObject, index:PatternIndex, size:number) => {
+						element.innerHTML = "<div>Matrix: </div>"+ size.toByte();
+					});
+
+					// apply the text first time
+					element.innerHTML = "<div>Matrix: </div>"+ edit.index.getHeight().toByte();
+				},
 			},
 		],
 	},

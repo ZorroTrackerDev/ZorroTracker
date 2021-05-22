@@ -328,6 +328,7 @@
 			&.matrixsize {
 				&.transparent {
 					opacity: 0;
+					flex-shrink: 5;
 				}
 
 				&> div > div {
@@ -339,7 +340,7 @@
 	}
 }
 
-@media only screen and (max-width: 800px) {
+@media only screen and (max-width: 700px) {
 	.matrixsize > div > div {
 		display: none !important;
 	}
@@ -348,5 +349,9 @@
 @media only screen and (max-width: 550px) {
 	.matrixsize.transparent > div {
 		display: none !important;
+	}
+
+	.patterneditor_buttons {
+		margin-right: 0px !important;
 	}
 }

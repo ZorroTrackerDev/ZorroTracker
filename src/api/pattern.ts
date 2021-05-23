@@ -1,5 +1,5 @@
 import { Position } from "./ui";
-import { ZorroEvent, ZorroEventEnum, ZorroListenerTypes, ZorroSenderTypes } from "../api/events";
+import { ZorroEvent, ZorroEventEnum, ZorroSenderTypes } from "../api/events";
 
 
 /**
@@ -59,12 +59,22 @@ export class PatternIndex {
 		}
 
 		// create events
+		this.eventMake = ZorroEvent.createEvent(ZorroEventEnum.PatternMake);
+		this.eventTrim = ZorroEvent.createEvent(ZorroEventEnum.PatternTrim);
+		this.eventGet = ZorroEvent.createEvent(ZorroEventEnum.MatrixGet);
 		this.eventSet = ZorroEvent.createEvent(ZorroEventEnum.MatrixSet);
 		this.eventResize = ZorroEvent.createEvent(ZorroEventEnum.MatrixResize);
+		this.eventInsert = ZorroEvent.createEvent(ZorroEventEnum.MatrixInsert);
+		this.eventRemove = ZorroEvent.createEvent(ZorroEventEnum.MatrixRemove);
 	}
 
+	private eventGet:ZorroSenderTypes[ZorroEventEnum.MatrixSet];
 	private eventSet:ZorroSenderTypes[ZorroEventEnum.MatrixSet];
+	private eventInsert:ZorroSenderTypes[ZorroEventEnum.MatrixInsert];
+	private eventRemove:ZorroSenderTypes[ZorroEventEnum.MatrixRemove];
 	private eventResize:ZorroSenderTypes[ZorroEventEnum.MatrixResize];
+	private eventTrim:ZorroSenderTypes[ZorroEventEnum.PatternTrim];
+	private eventMake:ZorroSenderTypes[ZorroEventEnum.PatternMake];
 
 	/**
 	 * Function to get the size of the matrix
@@ -116,7 +126,7 @@ export class PatternIndex {
 	 * @param index Index of the row to get
 	 * @returns Null if failed, or an array of pattern indices
 	 */
-	public getRow(index:number):Uint8Array|null {
+	public async getRow(index:number):Promise<Uint8Array|null> {
 		// check that the index is valid
 		if(index < 0 || index >= this.matrixlen) {
 			return null;
@@ -127,7 +137,16 @@ export class PatternIndex {
 
 		// run through every channel in backwards order, copying the row data
 		for(let c = this.channels.length - 1;c >= 0;c --) {
-			ret[c] = this.matrix[c][index];
+			// send the get event for this cell and see what should happen
+			const _e = await this.eventGet(this, c, index, this.matrix[c][index]);
+
+			// event canceled, cancel everything
+			if(_e.event.canceled){
+				return null;
+			}
+
+			// copy the value from matrix or event
+			ret[c] = _e.value ?? this.matrix[c][index];
 		}
 
 		// return the entire data array
@@ -141,7 +160,7 @@ export class PatternIndex {
 	 * @param columns The list of columns to retrurn. Will be reformatted in order
 	 * @returns null if we failed, or the full list of elements as flat array
 	 */
-	public getRegion(rows:number[], columns:number[]):number[]|null {
+	public async getRegion(rows:number[], columns:number[]):Promise<number[]|null> {
 		// generate a new array of values
 		const ret:number[] = Array(rows.length * columns.length);
 		let index = 0;
@@ -158,8 +177,16 @@ export class PatternIndex {
 					return null;
 				}
 
-				// copy the value from matrix
-				ret[index++] = this.matrix[c][r];
+				// send the get event for this cell and see what should happen
+				const _e = await this.eventGet(this, c, r, this.matrix[c][r]);
+
+				// event canceled, cancel everything
+				if(_e.event.canceled){
+					return null;
+				}
+
+				// copy the value from matrix or event
+				ret[index++] = _e.value ?? this.matrix[c][r];
 			}
 		}
 
@@ -259,7 +286,9 @@ export class PatternIndex {
 					const _v = _e.value ?? values[index - 1];
 
 					// make the pattern if it doesnt exist
-					this.makePattern(c, _v, false);
+					if(!await this.makePattern(c, _v, false)) {
+						return false;
+					}
 
 					// copy the value from matrix
 					this.matrix[c][r] = _v;
@@ -284,8 +313,8 @@ export class PatternIndex {
 		}
 
 		// copy the row1 and row2 data into buffers
-		const rd1 = this.getRow(row1);
-		const rd2 = this.getRow(row2);
+		const rd1 = await this.getRow(row1);
+		const rd2 = await this.getRow(row2);
 
 		// if either row failed, return
 		if(!rd1 || !rd2) {
@@ -336,10 +365,13 @@ export class PatternIndex {
 			return false;
 		}
 
-		// check if we're allowed to resize
-		const _e = await this.eventResize(this, this.matrixlen + 1, this.channels.length);
+		// check if we've allowed to insert
+		if((await this.eventInsert(this, index, data)).event.canceled) {
+			return false;
+		}
 
-		if(_e.event.canceled) {
+		// check if we're allowed to resize
+		if((await this.eventResize(this, this.matrixlen + 1, this.channels.length)).event.canceled) {
 			return false;
 		}
 
@@ -371,17 +403,20 @@ export class PatternIndex {
 			return false;
 		}
 
-		// check if we're allowed to resize
-		const _e = await this.eventResize(this, this.matrixlen - 1, this.channels.length);
+		// check if we've allowed to insert
+		if((await this.eventRemove(this, index)).event.canceled) {
+			return false;
+		}
 
-		if(_e.event.canceled) {
+		// check if we're allowed to resize
+		if((await this.eventResize(this, this.matrixlen - 1, this.channels.length)).event.canceled) {
 			return false;
 		}
 
 		// run through every channel in backwards order
 		for(let c = this.channels.length - 1;c >= 0;c --) {
 			// if this index was empty and not referenced elsewhere, remove it altogether
-			this.trim(c, index);
+			await this.trim(c, index);
 
 			for(let x = index;x < this.matrixlen; x++){
 				// shift entries up until we are at the end
@@ -404,7 +439,7 @@ export class PatternIndex {
 	 * @param replace Whether we can replace pre-existing patterns. VERY DANGEROUS
 	 * @returns Whether every operation succeeded
 	 */
-	public makePatternsRow(data:Uint8Array, replace:boolean):boolean {
+	public async makePatternsRow(data:Uint8Array, replace:boolean):Promise<boolean> {
 		// check that the input data is the right size
 		if(data.length !== this.channels.length){
 			return false;
@@ -414,7 +449,7 @@ export class PatternIndex {
 
 		// make each pattern for each channel, while ANDing the return value with true
 		for(let c = this.channels.length - 1;c >= 0;c --) {
-			ret = ret && this.makePattern(c, data[c], replace);
+			ret = ret && await this.makePattern(c, data[c], replace);
 		}
 
 		return ret;
@@ -428,7 +463,7 @@ export class PatternIndex {
 	 * @param replace Whether we can replace pre-existing patterns. VERY DANGEROUS
 	 * @returns Whether every operation succeeded
 	 */
-	public makePattern(channel:number, index:number, replace:boolean):boolean {
+	public async makePattern(channel:number, index:number, replace:boolean):Promise<boolean> {
 		// check that index and channel are valid
 		if(index < 0 || index > 0xFF || channel < 0 || channel >= this.channels.length) {
 			return false;
@@ -436,6 +471,11 @@ export class PatternIndex {
 
 		// check if we can't replace a pre-existing pattern should one be there.
 		if(replace && this.patterns[channel][index]){
+			return false;
+		}
+
+		// run the make event and check if we failed
+		if((await this.eventMake(this, channel, index)).event.canceled){
 			return false;
 		}
 
@@ -447,7 +487,7 @@ export class PatternIndex {
 	/**
 	 * Function to trim all the unused patterns that are not edited
 	 */
-	public trimAll(): void {
+	public async trimAll(): Promise<void> {
 		// run through every channel in backwards order
 		for(let c = this.channels.length - 1;c >= 0;c --) {
 			for(let x = 0xFF;x >= 0; x--){
@@ -465,7 +505,7 @@ export class PatternIndex {
 					}
 
 					// if the pattern can be removed, then do so here.
-					if(remove) {
+					if(remove && !(await this.eventTrim(this, c, x)).event.canceled) {
 						this.patterns[c][x] = null;
 					}
 				}
@@ -480,7 +520,7 @@ export class PatternIndex {
 	 * @param index Index to find references to and delete
 	 * @returns boolean indicating whether it was trimmed or not
 	 */
-	public trim(channel:number, index:number):boolean {
+	public async trim(channel:number, index:number):Promise<boolean> {
 		// get the pattern index to check for
 		const check = this.matrix[channel][index];
 
@@ -496,6 +536,11 @@ export class PatternIndex {
 			if(x !== index && this.matrix[channel][x] === check) {
 				return false;
 			}
+		}
+
+		// run the trim event and check if we failed
+		if((await this.eventTrim(this, channel, index)).event.canceled){
+			return false;
 		}
 
 		// set this pattern as unused and indicate success

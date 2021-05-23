@@ -1,6 +1,6 @@
 import { PatternIndex } from "../../../api/pattern";
 import { clipboard, ClipboardType, Position, shortcutDirection, UIElement } from "../../../api/ui";
-import { standardButtons, pasteButtons, PatternIndexEditorButtonList, PatternIndexEditorButton, } from "./buttons";
+import { standardButtons, pasteButtons, PatternIndexEditorButtonList } from "./buttons";
 
 // the editing mode enum
 export enum editMode {
@@ -27,15 +27,15 @@ export class PatternIndexEditor implements UIElement {
 		this.setLayout();
 
 		// generate the first row
-		this.insertRow(0).then(() => {
+		this.insertRow(0).then(async() => {
 			// select the first row first channel
-			this.select(false, { start: { x: 0, y: 0, }, offset: { x: 0, y: 0, }, });
+			await this.select(false, { start: { x: 0, y: 0, }, offset: { x: 0, y: 0, }, });
 
 		}).catch(console.error);
 	}
 
-	// scroll by 3 elements per step
-	private static FILLER_ROWS = 2;
+	// amount of filler rows at the top (fixes broken scroll behavior)
+	private static FILLER_ROWS = 1;
 
 	private setLayout() {
 		// clear some flags
@@ -67,7 +67,7 @@ export class PatternIndexEditor implements UIElement {
 		this.elscroll.appendChild(this.elrows);
 
 		// add the filler rows
-		for(let x = PatternIndexEditor.FILLER_ROWS * 2;x > 0;x --){
+		for(let x = PatternIndexEditor.FILLER_ROWS;x > 0;x --){
 			this.elrows.appendChild(document.createElement("p"));
 		}
 
@@ -345,7 +345,7 @@ export class PatternIndexEditor implements UIElement {
 					}
 
 					// load the region values and check if its valid
-					const values = this.index.getRegion(rows, columns);
+					const values = await this.index.getRegion(rows, columns);
 
 					if(!values) {
 						return false;
@@ -366,7 +366,7 @@ export class PatternIndexEditor implements UIElement {
 
 					// re-render rows and fix indices
 					for(const r of rows) {
-						if(!this.renderRow(r)) {
+						if(!await this.renderRow(r)) {
 							return false;
 						}
 
@@ -394,7 +394,7 @@ export class PatternIndexEditor implements UIElement {
 						}
 
 						// if was editing the low nybble, move the selection forward also
-						if(!this.select(mv, { start: { x: col, y: row, }, })){
+						if(!await this.select(mv, { start: { x: col, y: row, }, })){
 							return false;
 						}
 
@@ -443,12 +443,12 @@ export class PatternIndexEditor implements UIElement {
 		const realamt = amount * ((digit ?? this.editing) ? 1 : 0x10);
 
 		// do not edit in single mode without write mode and no digit set
-		if(digit !== undefined && single && this.mode !== editMode.Write) {
+		if(digit === undefined && single && this.mode !== editMode.Write) {
 			return false;
 		}
 
 		// load the region values and check if its valid
-		const values = this.index.getRegion(rows, columns);
+		const values = await this.index.getRegion(rows, columns);
 
 		if(!values) {
 			return false;
@@ -470,7 +470,7 @@ export class PatternIndexEditor implements UIElement {
 
 		// re-render rows and fix indices
 		for(const r of rows) {
-			if(!this.renderRow(r)) {
+			if(!await this.renderRow(r)) {
 				return false;
 			}
 
@@ -497,8 +497,8 @@ export class PatternIndexEditor implements UIElement {
 			}
 
 			// re-render the 2 rows
-			this.renderRow(startY);
-			this.renderRow(startY - 1);
+			await this.renderRow(startY);
+			await this.renderRow(startY - 1);
 			this.fixRowIndex(startY);
 			this.fixRowIndex(startY - 1);
 
@@ -526,8 +526,8 @@ export class PatternIndexEditor implements UIElement {
 			}
 
 			// collect the region information
-			const main = this.index.getRegion(_rows, columns);
-			const swap = this.index.getRegion([ swapcol, ], columns);
+			const main = await this.index.getRegion(_rows, columns);
+			const swap = await this.index.getRegion([ swapcol, ], columns);
 
 			// if we failed to gather the regions
 			if(!main || !swap) {
@@ -549,18 +549,18 @@ export class PatternIndexEditor implements UIElement {
 			}
 
 			// re-render all rows
-			this.renderRow(firstcol);
+			await this.renderRow(firstcol);
 
-			_rows.forEach((r) => {
-				this.renderRow(r);
-			});
+			for(const r of _rows) {
+				await this.renderRow(r);
+			}
 
 			// fix indices
 			this.fixRowIndices();
 		}
 
 		// move the selection up by 1 row
-		this.moveSelection("up", true);
+		await this.moveSelection("up", true);
 		return true;
 	}
 
@@ -580,8 +580,8 @@ export class PatternIndexEditor implements UIElement {
 			}
 
 			// re-render the 2 rows
-			this.renderRow(startY);
-			this.renderRow(startY + 1);
+			await this.renderRow(startY);
+			await this.renderRow(startY + 1);
 			this.fixRowIndex(startY);
 			this.fixRowIndex(startY + 1);
 
@@ -609,8 +609,8 @@ export class PatternIndexEditor implements UIElement {
 			}
 
 			// collect the region information
-			const main = this.index.getRegion(_rows, columns);
-			const swap = this.index.getRegion([ swapcol, ], columns);
+			const main = await this.index.getRegion(_rows, columns);
+			const swap = await this.index.getRegion([ swapcol, ], columns);
 
 			// if we failed to gather the regions
 			if(!main || !swap) {
@@ -632,18 +632,18 @@ export class PatternIndexEditor implements UIElement {
 			}
 
 			// re-render all rows
-			this.renderRow(lastcol);
+			await this.renderRow(lastcol);
 
-			_rows.forEach((r) => {
-				this.renderRow(r);
-			});
+			for(const r of _rows) {
+				await this.renderRow(r);
+			}
 
 			// fix indices
 			this.fixRowIndices();
 		}
 
 		// move the selection up by 1 row
-		this.moveSelection("down", true);
+		await this.moveSelection("down", true);
 		return true;
 	}
 
@@ -654,7 +654,7 @@ export class PatternIndexEditor implements UIElement {
 	 * @param both True if moving both the start and end of selection
 	 * @returns boolean indicating whether the operation was successful
 	 */
-	private moveSelection(direction: string|undefined, both: boolean): boolean {
+	private async moveSelection(direction: string|undefined, both: boolean): Promise<boolean> {
 		// convert direction string to x/y offsets
 		const dir: undefined | Position = shortcutDirection(direction);
 
@@ -687,7 +687,7 @@ export class PatternIndexEditor implements UIElement {
 		}
 
 		// handle normal selection
-		this.select(dir.y === 0 ? null : !both ? false : !!(+(dir.y > 0) ^ +(this.selectOff.y >= 0)),
+		await this.select(dir.y === 0 ? null : !both ? false : !!(+(dir.y > 0) ^ +(this.selectOff.y >= 0)),
 			this.doPosition(dir, both, (start:number, max:number) => {
 			// wrap position in 0 ... max-1 range
 			let ret = start;
@@ -731,7 +731,8 @@ export class PatternIndexEditor implements UIElement {
 	 * @param both True if moving both the start and end of selection
 	 * @returns boolean indicating whether the operation was successful
 	 */
-	private specialSelection(direction: string|undefined, both: boolean): boolean {
+	// eslint-disable-next-line require-await
+	private async specialSelection(direction: string|undefined, both: boolean): Promise<boolean> {
 		// convert direction string to x/y offsets
 		const dir: undefined | Position = shortcutDirection(direction);
 
@@ -791,9 +792,9 @@ export class PatternIndexEditor implements UIElement {
 
 			// when you click on a channel, select that column
 			if(index >= 0) {
-				z.onmouseup = (event:MouseEvent) => {
+				z.onmouseup = async(event:MouseEvent) => {
 					// select the entire index
-					this.select(null, { start: { x: index, y: 0, }, offset: { x: 0, y: this.index.getHeight() - 1, }, });
+					await this.select(null, { start: { x: index, y: 0, }, offset: { x: 0, y: this.index.getHeight() - 1, }, });
 					event.preventDefault();
 				}
 			}
@@ -870,7 +871,7 @@ export class PatternIndexEditor implements UIElement {
 	 * @param target An object describing the new targeted position(s) of selection.
 	 * @returns True if selection can be applied, false if not
 	 */
-	public select(offset:boolean|null, target:{ start?: Position, offset?: Position }):boolean {
+	public async select(offset:boolean|null, target:{ start?: Position, offset?: Position }):Promise<boolean> {
 		let changed = false;
 
 		// helper function to process a position
@@ -923,7 +924,10 @@ export class PatternIndexEditor implements UIElement {
 			oldrows.forEach((row) => !newrows.includes(row) && newrows.push(row));
 
 			// re-render all of the rows
-			newrows.forEach((row) => this.renderRow(row) && this.fixRowIndex(row));
+			for(const r of newrows) {
+				await this.renderRow(r);
+				this.fixRowIndex(r);
+			}
 		}
 
 		return this.reselect(offset);
@@ -1043,7 +1047,7 @@ export class PatternIndexEditor implements UIElement {
 		}
 
 		// succeeded, select next row
-		this.moveSelection("down", true);
+		await this.moveSelection("down", true);
 		return false;
 	}
 
@@ -1058,7 +1062,9 @@ export class PatternIndexEditor implements UIElement {
 		const ixrow = this.index.generateRow();
 
 		// generate new patterns at values
-		this.index.makePatternsRow(ixrow, false);
+		if(!await this.index.makePatternsRow(ixrow, false)) {
+			return false;
+		}
 
 		// attempt to insert this new row at position. If it fails, return
 		if(!await this.index.insertRow(position, ixrow)){
@@ -1076,13 +1082,13 @@ export class PatternIndexEditor implements UIElement {
 	 * @param data The data to show on the UI buttons
 	 * @returns boolean indicating if the operation was successful
 	 */
-	private insertRowUI(position:number):boolean {
+	private async insertRowUI(position:number):Promise<boolean> {
 		// insert a new row element based on the position
 		const row = document.createElement("div");
 		this.elrows.insertBefore(row, this.index.getHeight() <= position ? null : this.elrows.children[position + PatternIndexEditor.FILLER_ROWS]);
 
 		// render the row at position
-		if(!this.renderRow(position)){
+		if(!await this.renderRow(position)){
 			return false;
 		}
 
@@ -1097,13 +1103,13 @@ export class PatternIndexEditor implements UIElement {
 	 * @param position The row index to update
 	 * @returns boolean indicating success
 	 */
-	private renderRow(position:number) {
+	private async renderRow(position:number) {
 		const size = this.index.getSize();
 		let rows:null|number[] = null, columns:null|number[] = null;
 		let psx = 0, psy = 0;
 
 		// get the row data and check if it's null (invalid row)
-		const data = this.index.getRow(position);
+		const data = await this.index.getRow(position);
 
 		if(data === null) {
 			return false;
@@ -1154,7 +1160,7 @@ export class PatternIndexEditor implements UIElement {
 				this.byteToHTML(cell, byte);
 
 				// when mousedown, handle drag starting
-				cell.onmousedown = (event:MouseEvent) => {
+				cell.onmousedown = async(event:MouseEvent) => {
 					if(event.button === 0) {
 						// check if we're selecting the same item as before
 						const sel = this.findMe(event.currentTarget as HTMLDivElement);
@@ -1178,7 +1184,7 @@ export class PatternIndexEditor implements UIElement {
 
 						// enable selection mode and select the current node
 						this.selecting = true;
-						this.select(null, { start: sel, offset: { x: 0, y: 0, }, });
+						await this.select(null, { start: sel, offset: { x: 0, y: 0, }, });
 
 						// when we release the button, just stop selecting
 						this.documentDragFinish();
@@ -1190,7 +1196,7 @@ export class PatternIndexEditor implements UIElement {
 
 			} else {
 				// handle dragging on the indices row
-				cell.onmousedown = (event:MouseEvent) => {
+				cell.onmousedown = async(event:MouseEvent) => {
 					if(event.button === 0) {
 						// disable write mode
 						if(this.mode === editMode.Write) {
@@ -1199,7 +1205,7 @@ export class PatternIndexEditor implements UIElement {
 
 						// enable selection mode and select the current node
 						this.selecting = false;
-						this.select(null, { start: { x: 0,  y: position, }, offset: { x: this.index.getWidth() - 1, y: 0, }, });
+						await this.select(null, { start: { x: 0,  y: position, }, offset: { x: this.index.getWidth() - 1, y: 0, }, });
 
 						// when we release the button, just stop selecting
 						this.documentDragFinish();
@@ -1220,7 +1226,7 @@ export class PatternIndexEditor implements UIElement {
 	 * @param event the mouse event
 	 */
 	private doDrag(el:HTMLDivElement, extra?:number) {
-		el.onmousemove = (event:MouseEvent) => {
+		el.onmousemove = async(event:MouseEvent) => {
 			if(this.selecting === true) {
 				// handle selecting matrix
 				const sel = this.findMe(event.currentTarget as HTMLDivElement);
@@ -1231,11 +1237,11 @@ export class PatternIndexEditor implements UIElement {
 				}
 
 				// move selection over
-				this.select(null, { offset: { x: sel.x - this.selectStart.x, y: sel.y - this.selectStart.y, }, });
+				await this.select(null, { offset: { x: sel.x - this.selectStart.x, y: sel.y - this.selectStart.y, }, });
 
 			} else if(this.selecting === false) {
 				// handle selecting rows
-				this.select(null, { offset: { x: this.index.getWidth() - 1, y: extra as number - this.selectStart.y, }, });
+				await this.select(null, { offset: { x: this.index.getWidth() - 1, y: extra as number - this.selectStart.y, }, });
 			}
 		}
 	}
@@ -1343,7 +1349,7 @@ export class PatternIndexEditor implements UIElement {
 	 */
 	private findMe(e:HTMLDivElement): Position {
 		// loop through all rows and elements in the row
-		for(let r = this.elrows.children.length - 1 - PatternIndexEditor.FILLER_ROWS; r >= PatternIndexEditor.FILLER_ROWS;r --) {
+		for(let r = this.elrows.children.length - 1; r >= PatternIndexEditor.FILLER_ROWS;r --) {
 			for(let c = this.elrows.children[r].children.length -1;c >= 1;c --) {
 
 				// check if this is the element we are looking for
@@ -1399,7 +1405,7 @@ export class PatternIndexEditor implements UIElement {
 		}
 
 		// force selection to the next rows
-		this.select(false, { start: { x: startX, y: startY + (offY < 0 ? offY : 0), }, offset:{ x: offX, y: 0, }, });
+		await this.select(false, { start: { x: startX, y: startY + (offY < 0 ? offY : 0), }, offset:{ x: offX, y: 0, }, });
 		return true;
 	}
 
@@ -1457,7 +1463,7 @@ export class PatternIndexEditor implements UIElement {
 	 */
 	public async copyRow(source:number, destination:number):Promise<boolean> {
 		// get the source row from index
-		const ixrow = this.index.getRow(source);
+		const ixrow = await this.index.getRow(source);
 
 		// attempt to insert this new row at destination. If it fails, return
 		if(!ixrow || !await this.index.insertRow(destination, ixrow)){
@@ -1486,7 +1492,7 @@ export class PatternIndexEditor implements UIElement {
 			const s:string[] = [];
 
 			// load the row data and check if its valid
-			const row = this.index.getRow(y % msz.y);
+			const row = await this.index.getRow(y % msz.y);
 
 			if(!row) {
 				return null;
@@ -1590,7 +1596,7 @@ export class PatternIndexEditor implements UIElement {
 
 			// set size of the selection
 			this.pasteSize = { x: rowlen, y: rows.length, };
-			this.select(null, { offset: { x: rowlen - 1, y: rows.length - 1, }, });
+			await this.select(null, { offset: { x: rowlen - 1, y: rows.length - 1, }, });
 
 			// enable all the paste buttons
 			this.setButtons(pasteButtons);
@@ -1625,7 +1631,7 @@ export class PatternIndexEditor implements UIElement {
 		// run through each row
 		for(let i = 0, y = 0;y <= Math.abs(offY);y ++){
 			// load the row data and check if valid
-			const row = this.index.getRow((size.y + psy + y) % size.y);
+			const row = await this.index.getRow((size.y + psy + y) % size.y);
 
 			if(!row) {
 				return false;
@@ -1669,9 +1675,15 @@ export class PatternIndexEditor implements UIElement {
 		this.pasteData = null;
 		this.altSelect = false;
 
-		// re-render selection
+		// r-render all selected rows
 		const { rows, } = this.getSelection();
-		rows.forEach((row) => this.renderRow(row) && this.fixRowIndex(row));
+
+		for(const r of rows) {
+			await this.renderRow(r);
+			this.fixRowIndex(r);
+		}
+
+		// re-render selection
 		return this.reselect(null);
 	}
 }

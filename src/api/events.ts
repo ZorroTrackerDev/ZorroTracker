@@ -26,6 +26,7 @@ export class ZorroEvent {
 		 * @param args The arguments for the event call
 		 */
 		return (...args:unknown[]) => {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			return ZorroEvent.events[name].send(args) as any;
 		}
 	}
@@ -131,6 +132,11 @@ export enum ZorroEventEnum {
 	MatrixSet,
 	MatrixGet,
 	MatrixResize,
+	MatrixInsert,
+	MatrixRemove,
+
+	PatternTrim,
+	PatternMake,
 }
 
 /**
@@ -170,6 +176,11 @@ export interface ZorroListenerTypes {
 	// eslint-disable-next-line max-len
 	[ZorroEventEnum.MatrixGet]: (event:ZorroEventObject, index:PatternIndex, channel:number, row:number, value:number) => Promise<number|undefined|void>,
 	[ZorroEventEnum.MatrixResize]: (event:ZorroEventObject, index:PatternIndex, height:number, width:number) => Promise<undefined|void>,
+	[ZorroEventEnum.MatrixInsert]: (event:ZorroEventObject, index:PatternIndex, row:number, data:Uint8Array) => Promise<undefined|void>,
+	[ZorroEventEnum.MatrixRemove]: (event:ZorroEventObject, index:PatternIndex, row:number) => Promise<undefined|void>,
+
+	[ZorroEventEnum.PatternTrim]: (event:ZorroEventObject, index:PatternIndex, channel:number, position:number) => Promise<undefined|void>,
+	[ZorroEventEnum.PatternMake]: (event:ZorroEventObject, index:PatternIndex, channel:number, position:number) => Promise<undefined|void>,
 }
 
 /**
@@ -184,4 +195,9 @@ export interface ZorroSenderTypes {
 	// eslint-disable-next-line max-len
 	[ZorroEventEnum.MatrixGet]: (index:PatternIndex, channel:number, row:number, value:number) => Promise<{ event: ZorroEventObject, value: number|undefined }>,
 	[ZorroEventEnum.MatrixResize]: (index:PatternIndex, height:number, width:number) => Promise<{ event: ZorroEventObject, value: undefined }>,
+	[ZorroEventEnum.MatrixInsert]: (index:PatternIndex, row:number, data:Uint8Array) => Promise<{ event: ZorroEventObject, value: undefined }>,
+	[ZorroEventEnum.MatrixRemove]: (index:PatternIndex, row:number) => Promise<{ event: ZorroEventObject, value: undefined }>,
+
+	[ZorroEventEnum.PatternTrim]: (index:PatternIndex, channel:number, position:number) => Promise<{ event: ZorroEventObject, value: undefined }>,
+	[ZorroEventEnum.PatternMake]: (index:PatternIndex, channel:number, position:number) => Promise<{ event: ZorroEventObject, value: undefined }>,
 }

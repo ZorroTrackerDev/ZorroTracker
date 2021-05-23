@@ -211,7 +211,7 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 					_matrixResize = element;
 
 					// apply the text first time
-					element.innerHTML = "<div>Matrix: </div>"+ edit.index.getHeight().toByte();
+					element.innerHTML = "<div>Matrix: </div>"+ (edit.index.getHeight() - 1).toByte();
 				},
 			},
 		],
@@ -328,6 +328,6 @@ let _matrixResize:HTMLDivElement|undefined;
 // eslint-disable-next-line require-await
 ZorroEvent.addListener(ZorroEventEnum.MatrixResize, async(event:ZorroEventObject, index:PatternIndex, size:number) => {
 	if(_matrixResize) {
-		_matrixResize.innerHTML = "<div>Matrix: </div>"+ size.toByte();
+		_matrixResize.innerHTML = "<div>Matrix: </div>"+ (size - 1).toByte();
 	}
 });

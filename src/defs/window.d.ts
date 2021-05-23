@@ -12,13 +12,6 @@ declare global {
 		 */
 		path: string,
 
-		/**
-		 * A function to add a new close handler into the system, so that we can safely quit the application.
-		 *
-		 * @param func The function to call. If false is returned, the closing is cancelled
-		 */
-		addCloseHandler: (func:() => boolean) => void,
-
 		preload: {
 			/**
 			 * Helper function to update the maximize UI button depending on the window state. This info comes from the Node side using IPC.
@@ -109,6 +102,11 @@ declare global {
 				 * @param cookie The cookie name to read from
 				 */
 				dialog: (cookie:string, settings:OpenDialogOptions) => Promise<OpenDialogReturnValue>,
+
+				/**
+				 * Request system information to be logged
+				 */
+				systemInfo: () => void,
 			},
 			cookie: {
 				/**

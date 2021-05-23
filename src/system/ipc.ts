@@ -1,6 +1,8 @@
 import { ipcMain, session, shell, screen, app, dialog } from "electron";
 import { Worker } from "worker_threads";
 import path from "path";
+import os from "os";
+import process from "process"
 import { ipcEnum } from "./ipc enum";
 import * as ScriptHelper from "./script helper";
 import { Cookie, IpcMainEvent, OpenDialogOptions } from "electron/main";
@@ -322,3 +324,21 @@ export const log = {
 }
 
 worker.on("error", log.error);
+
+// handle UI requesting systeminformation
+ipcMain.on(ipcEnum.UiSystemInfo, () => {
+	const uptime = os.uptime();
+
+	// dump info
+	window?.webContents.send(ipcEnum.LogInfo, [
+		"System information:",
+		os.version() +" "+ os.arch() +" "+ os.release(),
+		"cores: "+ os.cpus().length +"x "+ os.cpus()[0].model,
+		"memory: "+ (Math.round(os.totalmem() / 1024 / 1024) / 1024) +" GB",
+		"displays: ["+ screen.getAllDisplays().map((display) => display.size.width +"x"+ display.size.height +"@"+ display.displayFrequency +" "+
+			display.colorDepth +"bpp scale="+ display.scaleFactor).join(",") +"]",
+		"uptime: "+ Math.round(uptime / 60 / 60 / 24) +"d "+ (Math.round(uptime / 60 / 60) % 24) +"h "+ (Math.round(uptime / 60) % 60) +"m ",
+		"chrome: "+ process.versions.chrome,
+		"electron: "+ process.versions.electron,
+	].join("\n"));
+});

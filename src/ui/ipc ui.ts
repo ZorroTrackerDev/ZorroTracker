@@ -3,6 +3,7 @@ import { ipcRenderer } from "electron";
 import { ChipConfig } from "../api/scripts/chip";
 import { DriverConfig } from "../api/scripts/driver";
 import { OpenDialogOptions, OpenDialogReturnValue } from "electron/main";
+import { ZorroEvent, ZorroEventEnum } from "../api/events";
 
 /**
  * Helper function to run an async IPC event, returning the async value for it.
@@ -64,6 +65,7 @@ window.ipc = {
 			ipcRenderer.send(ipcEnum.UiConsole);
 		},
 		dialog: (cookie:string, settings:OpenDialogOptions) => _async(ipcEnum.UiDialog, cookie, settings) as Promise<OpenDialogReturnValue>,
+		systemInfo: () => ipcRenderer.send(ipcEnum.UiSystemInfo),
 	},
 	cookie: {
 		set: (name:string, value:string) => {
@@ -113,30 +115,25 @@ window.ipc = {
  */
 
 ipcRenderer.on(ipcEnum.LogInfo, (event, args:unknown[]) => {
-	console.info(...args);
+	console.info(args);
 });
 
 ipcRenderer.on(ipcEnum.LogWarn, (event, args:unknown[]) => {
-	console.warn(...args);
+	console.warn(args);
 });
 
 ipcRenderer.on(ipcEnum.LogError, (event, args:unknown[]) => {
-	console.error(...args);
+	console.error(args);
 });
+
+// create the close event handler
+const _closeHandler = ZorroEvent.createEvent(ZorroEventEnum.Exit);
 
 // listen to when the UiExit event is passed from the backend, to gracefully close the program (maybe)
-ipcRenderer.on(ipcEnum.UiExit, () => {
-	let exit = true;
-
+ipcRenderer.on(ipcEnum.UiExit, async() => {
 	// run all the close handlers
-	_closeHandlers.forEach((fun) => exit = exit && fun());
+	const cancel = (await _closeHandler()).event.canceled;
 
 	// tell the backend what we decided
-	ipcRenderer.send(ipcEnum.UiExit, exit);
+	ipcRenderer.send(ipcEnum.UiExit, !cancel);
 });
-
-const _closeHandlers:(() => boolean)[] = [];
-
-window.addCloseHandler = (func:() => boolean): void => {
-	_closeHandlers.push(func);
-};

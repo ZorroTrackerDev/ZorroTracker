@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 
 let _write:(text:string) => void = () => {};
 
@@ -18,10 +19,23 @@ fs.open(path.join(window.path, "ZorroTracker.log"), "w", (err, fd) => {
 	}
 
 	// close the logging file when the program is closed
-	window.addCloseHandler(() => {
-		fs.closeSync(fd);
-		return true;
+	ZorroEvent.addListener(ZorroEventEnum.Exit, () => {
+		return new Promise((res, rej) => {
+			fs.close(fd, (err) => {
+				if(err) {
+					// failed to close, error
+					rej(err);
+
+				} else {
+					// closed
+					res();
+				}
+			});
+		});
 	});
+
+	// request info dump
+	window.ipc.ui.systemInfo();
 })
 
 /**

@@ -126,6 +126,7 @@ export type ZorroListener = (event:ZorroEventObject, ...args:unknown[]) => Promi
  * Enum that holds all the names for the events
  */
 export enum ZorroEventEnum {
+	Exit,
 	ClipboardSet,
 	ClipboardGet,
 
@@ -168,6 +169,7 @@ type ZorroEventSenderHelper = keyof ZorroSenderTypes;
  * Different listener function types. Event listeners expects to use the following functions
  */
 export interface ZorroListenerTypes {
+	[ZorroEventEnum.Exit]: (event:ZorroEventObject) => Promise<undefined|void>,
 	[ZorroEventEnum.ClipboardGet]: (event:ZorroEventObject, type:ClipboardType) => Promise<string|undefined|void>,
 	[ZorroEventEnum.ClipboardSet]: (event:ZorroEventObject, type:ClipboardType, data:string) => Promise<string|undefined|void>,
 
@@ -187,6 +189,7 @@ export interface ZorroListenerTypes {
  * Different sender function types. Each emitter expects to use the following functions
  */
 export interface ZorroSenderTypes {
+	[ZorroEventEnum.Exit]: () => Promise<{ event: ZorroEventObject, value: undefined }>,
 	[ZorroEventEnum.ClipboardGet]: (type:ClipboardType) => Promise<{ event: ZorroEventObject, value: string|undefined }>,
 	[ZorroEventEnum.ClipboardSet]: (type:ClipboardType, data:string) => Promise<{ event: ZorroEventObject, value: string|undefined }>,
 

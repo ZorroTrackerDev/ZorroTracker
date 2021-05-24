@@ -484,6 +484,11 @@ export class PatternIndexEditor implements UIElement {
 					return false;
 				}
 
+				// reset the selection before editing it
+				if(!this.select(null, clone)){
+					return false;
+				}
+
 				if(edit) {
 					// check the next column
 					let col = this.selection.x + Math.abs(this.selection.width) + 1, row = this.selection.y, mv = null;
@@ -512,7 +517,7 @@ export class PatternIndexEditor implements UIElement {
 
 				// swap editing position
 				this.setEdit(!edit);
-				return this.select(null, clone);
+				return true;
 			},
 		}) as Promise<boolean>;
 	}

@@ -313,91 +313,11 @@ export class PatternIndexEditor implements UIElement {
 				}
 
 				case "hex": {
-					// disable in paste mode
-					if(this.mode === editMode.Paste) {
-						return false;
-					}
-
 					// parse the value we passed
 					const value = parseInt(data.shift() ?? "NaN", 16);
 
-					// make sure the value was 100% sure correct or otherwise ignore this code
-					if(isNaN(value) || value < 0 || value > 0xF) {
-						return false;
-					}
-
-					// load the selection and prepare the values
-					const { rows, columns, single, } = this.getSelection();
-					const and = 0xF << (this.editing ? 4 : 0);
-					const or = value << (this.editing ? 0 : 4);
-
-					// do not edit in single mode without isEdit
-					if(single && this.mode !== editMode.Write) {
-						return false;
-					}
-
-					// load the region values and check if its valid
-					const values = await this.index.getRegion(rows, columns);
-
-					if(!values) {
-						return false;
-					}
-
-					// loop for all elements to change values
-					for(let i = values.length - 1;i >= 0;i--) {
-						values[i] = values[i] & and | or;
-					}
-
-					// save the region and check if succeeded
-					if(!await this.index.setRegion(rows, columns, values)){
-						return false;
-					}
-
-					// make sure to trim all the unused patterns
-					await this.index.trimAll();
-
-					// re-render rows and fix indices
-					for(const r of rows) {
-						if(!await this.renderRow(r)) {
-							return false;
-						}
-
-						this.fixRowIndex(r);
-					}
-
-					if(this.editing) {
-						// check the next column
-						let col = this.selection.x + Math.abs(this.selection.width) + 1, row = this.selection.y, mv = null;
-
-						const h = this.index.getWidth();
-						if(col >= h) {
-							// need to wrap back to the beginning (go to the row below)
-							col -= h;
-							row = this.selection.y + Math.abs(this.selection.height) + 1;
-
-							// wrap row address
-							const w = this.index.getHeight();
-							if(row >= w) {
-								row -= w;
-							}
-
-							// focus on the end
-							mv = false;
-						}
-
-						// if was editing the low nybble, move the selection forward also
-						if(!await this.select(mv, { x: col, y: row, })){
-							return false;
-						}
-
-					} else if(!this.reselect(null)){
-						// if editing high nybble failed, return
-						return false;
-					}
-
-					// swap editing position
-					this.setEdit(!this.editing);
-					return true;
+					// convert to hex
+					return this.setHex(value);
 				}
 
 				case "change": {
@@ -429,6 +349,7 @@ export class PatternIndexEditor implements UIElement {
 	 * @param digit The digit to affect, or `undefined` if it is to be chosen based on selection
 	 * @returns boolean on whether or not the change was applied
 	 */
+	// eslint-disable-next-line require-await
 	async change(amount:number, digit?:boolean):Promise<boolean> {
 		// load the selection and prepare the values
 		const { rows, columns, single, } = this.getSelection();
@@ -466,12 +387,8 @@ export class PatternIndexEditor implements UIElement {
 			await this.index.trimAll();
 
 			// re-render rows and fix indices
-			for(const r of rows) {
-				if(!await this.renderRow(r)) {
-					return false;
-				}
-
-				this.fixRowIndex(r);
+			if(!await this.renderRows(rows)) {
+				return false;
 			}
 
 			// re-apply selection
@@ -487,6 +404,147 @@ export class PatternIndexEditor implements UIElement {
 	}
 
 	/**
+	 * Function to change cell digits to a specific value
+	 *
+	 * @param value The value to set cells to
+	 * @returns boolean indicating whether it was successful
+	 */
+	private async setHex(value:number) {
+		// disable in paste mode
+		if(this.mode === editMode.Paste) {
+			return false;
+		}
+
+		// make sure the value was 100% sure correct or otherwise ignore this code
+		if(isNaN(value) || value < 0 || value > 0xF) {
+			return false;
+		}
+
+		// load the selection and prepare the values
+		const { rows, columns, single, } = this.getSelection();
+		const and = 0xF << (this.editing ? 4 : 0);
+		const or = value << (this.editing ? 0 : 4);
+
+		// do not edit in single mode without isEdit
+		if(single && this.mode !== editMode.Write) {
+			return false;
+		}
+
+		// load the region values and check if its valid
+		const values = await this.index.getRegion(rows, columns);
+
+		if(!values) {
+			return false;
+		}
+
+		// create copies of the array and selection
+		const _vcopy = values.slice();
+		const clone = this.selection.clone();
+		const edit = this.editing;
+
+		// loop for all elements to change values
+		for(let i = values.length - 1;i >= 0;i--) {
+			values[i] = values[i] & and | or;
+		}
+
+		// helper function for updating selection and other stuff
+		const help = async() => {
+			// make sure to trim all the unused patterns
+			await this.index.trimAll();
+
+			// re-render rows and fix indices
+			return this.renderRows(rows);
+		}
+
+		// create the undo entry for this action
+		return Undo.add({
+			source: UndoSource.Matrix,
+			undo: async() => {		// save the region and check if succeeded
+				if(!await this.index.setRegion(rows, columns, _vcopy)){
+					return false;
+				}
+
+				// re-render stuffs and things
+				if(!await help()) {
+					return false;
+				}
+
+				// re-apply selection
+				this.setEdit(edit);
+				return this.select(null, clone);
+			},
+			redo: async() => {
+				// save the region and check if succeeded
+				if(!await this.index.setRegion(rows, columns, values)){
+					return false;
+				}
+
+				// re-render stuffs and things
+				if(!await help()) {
+					return false;
+				}
+
+				if(edit) {
+					// check the next column
+					let col = this.selection.x + Math.abs(this.selection.width) + 1, row = this.selection.y, mv = null;
+
+					const h = this.index.getWidth();
+					if(col >= h) {
+						// need to wrap back to the beginning (go to the row below)
+						col -= h;
+						row = this.selection.y + Math.abs(this.selection.height) + 1;
+
+						// wrap row address
+						const w = this.index.getHeight();
+						if(row >= w) {
+							row -= w;
+						}
+
+						// focus on the end
+						mv = false;
+					}
+
+					// if was editing the low nybble, move the selection forward also
+					if(!await this.select(mv, { x: col, y: row, })){
+						return false;
+					}
+				}
+
+				// swap editing position
+				this.setEdit(!edit);
+				return this.select(null, clone);
+			},
+		}) as Promise<boolean>;
+	}
+
+	/**
+	 *
+	 * @param position Position to swap from
+	 * @param offset The offset of the row to swap with
+	 */
+	private async simpleSwap(position: number, offset:-1|1) {
+		const selClone = this.selection.clone();
+
+		const swap = async (sel:number) => {
+			// swap the actual rows
+			if(!await this.index.swapRows(position, position + offset)) {
+				return false;
+			}
+
+			// re-render the 2 rows
+			const render = await this.renderRow(position) && await this.renderRow(position + offset);
+			this.fixRowIndex(position);
+			this.fixRowIndex(position + offset);
+
+			// re-select
+			return this.select(true, { x: selClone.x, y: selClone.y + sel, w: 0, h: 0, }) && render;
+		}
+
+		// single mode has super simple method
+		return await Undo.add({ source: UndoSource.Matrix, undo: () => swap(0), redo: () => swap(offset), }) as Promise<boolean>;
+	}
+
+	/**
 	 * Function to shift the selection upwards
 	 *
 	 * @returns boolean indicating if the operation was successful
@@ -496,77 +554,108 @@ export class PatternIndexEditor implements UIElement {
 		const { startY, offY, single, rows, columns, } = this.getSelection();
 
 		if(single) {
-			// single mode is special uwu
-			if(!await this.index.swapRows(startY, startY - 1)) {
+			// check if we are selecting the first row already
+			if(startY === 0) {
 				return false;
 			}
 
-			// re-render the 2 rows
-			await this.renderRow(startY);
-			await this.renderRow(startY - 1);
-			this.fixRowIndex(startY);
-			this.fixRowIndex(startY - 1);
-
-		} else {
-			// gather some basic variables to reference later
-			const size = this.index.getHeight();
-			let swapcol = (size - 1 + startY + (offY < 0 ? offY : 0)) % size;
-			let firstcol = (size + startY + (offY > 0 ? offY : 0)) % size;
-
-			// copy to _rows variable because eslint
-			let _rows = rows;
-			let _rowmd:"push"|"unshift" = offY > 0 ? "push" : "unshift";
-
-			if(rows.length === size) {
-				// if full selection, we need to do some special shenanigans
-				swapcol = 0;
-				firstcol = size - 1;
-				_rowmd = "unshift";
-
-				// create new set of rows! yes!
-				_rows = [];
-				for(let i = 1;i < size; i ++){
-					_rows.push(i);
-				}
-			}
-
-			// collect the region information
-			const main = await this.index.getRegion(_rows, columns);
-			const swap = await this.index.getRegion([ swapcol, ], columns);
-
-			// if we failed to gather the regions
-			if(!main || !swap) {
-				return false;
-			}
-
-			// add the swap row data in already
-			if(!await this.index.setRegion([ firstcol, ], columns, swap)){
-				return false;
-			}
-
-			// set the rest of the region now. We need to be sure to insert the right way round
-			_rows = _rows.filter((value) => value !== firstcol);
-			_rows[_rowmd](swapcol);
-
-			// add the region and check for failure
-			if(!await this.index.setRegion(_rows, columns, main)){
-				return false;
-			}
-
-			// re-render all rows
-			await this.renderRow(firstcol);
-
-			for(const r of _rows) {
-				await this.renderRow(r);
-			}
-
-			// fix indices
-			this.fixRowIndices();
+			// run the swap operation
+			return this.simpleSwap(startY, -1);
 		}
 
-		// move the selection up by 1 row
-		await this.moveSelection("up", true);
-		return true;
+		// gather some basic variables to reference later
+		const size = this.index.getHeight();
+		let swapcol = (size - 1 + startY + (offY < 0 ? offY : 0)) % size;
+		let firstcol = (size + startY + (offY > 0 ? offY : 0)) % size;
+
+		// copy to _rows variable because eslint
+		let _rows = rows;
+		let urows = rows;
+		let _rowmd:"push"|"unshift" = offY > 0 ? "push" : "unshift";
+
+		if(rows.length === size) {
+			// if full selection, we need to do some special shenanigans
+			swapcol = 0;
+			firstcol = size - 1;
+			_rowmd = "unshift";
+
+			// create new set of rows! yes!
+			_rows = [];
+			urows = [];
+
+			for(let i = 1;i < size; i ++){
+				_rows.push(i);
+				urows.push(i);
+			}
+		}
+
+		// collect the region information
+		const main = await this.index.getRegion(_rows, columns);
+		const swap = await this.index.getRegion([ swapcol, ], columns);
+
+		// if we failed to gather the regions
+		if(!main || !swap) {
+			return false;
+		}
+
+		// prepare _rows data
+		_rows = _rows.filter((value) => value !== firstcol);
+		_rows[_rowmd](swapcol);
+
+		// clone the selection
+		const _sel = this.selection.clone();
+
+		// add to the undo stack
+		return await Undo.add({
+			source: UndoSource.Matrix,
+			undo: async() => {
+				// reset the first row region
+				if(!await this.index.setRegion([ swapcol, ], columns, swap)){
+					return false;
+				}
+
+				// reset the main data
+				if(!await this.index.setRegion(urows, columns, main)){
+					return false;
+				}
+
+				// re-render all rows
+				await this.renderRow(swapcol);
+				await this.renderRows(urows);
+
+				// fix indices
+				this.fixRowIndices();
+
+				// re-select rows
+				return this.select(null, _sel);
+			},
+			redo: async() => {
+				// add the swap row data in already
+				if(!await this.index.setRegion([ firstcol, ], columns, swap)){
+					return false;
+				}
+
+				// add the region and check for failure
+				if(!await this.index.setRegion(_rows, columns, main)){
+					return false;
+				}
+
+				// re-render all rows
+				await this.renderRow(firstcol);
+				await this.renderRows(_rows);
+
+				// fix indices
+				this.fixRowIndices();
+
+				// re-select rows
+				if(!await this.select(null, _sel)) {
+					return false;
+				}
+
+				// move the selection up by 1 row
+				return this.moveSelection("up", true);
+			},
+		}) as Promise<boolean>;
 	}
 
 	/**
@@ -579,77 +668,108 @@ export class PatternIndexEditor implements UIElement {
 		const { startY, offY, single, rows, columns, } = this.getSelection();
 
 		if(single) {
-			// single mode is special uwu
-			if(!await this.index.swapRows(startY, startY + 1)) {
+			// check if we are selecting the last row already
+			if(startY === this.index.getHeight() - 1) {
 				return false;
 			}
 
-			// re-render the 2 rows
-			await this.renderRow(startY);
-			await this.renderRow(startY + 1);
-			this.fixRowIndex(startY);
-			this.fixRowIndex(startY + 1);
-
-		} else {
-			// gather some basic variables to reference later
-			const size = this.index.getHeight();
-			let swapcol = (size + 1 + startY + (offY > 0 ? offY : 0)) % size;
-			let lastcol = (size + startY + (offY < 0 ? offY : 0)) % size;
-
-			// copy to _rows variable because eslint
-			let _rows = rows;
-			let _rowmd:"push"|"unshift" = offY > 0 ? "push" : "unshift";
-
-			if(rows.length === size) {
-				// if full selection, we need to do some special shenanigans
-				swapcol = size - 1;
-				lastcol = 0;
-				_rowmd = "push";
-
-				// create new set of rows! yes!
-				_rows = [];
-				for(let i = 0;i < size - 1; i ++){
-					_rows.push(i);
-				}
-			}
-
-			// collect the region information
-			const main = await this.index.getRegion(_rows, columns);
-			const swap = await this.index.getRegion([ swapcol, ], columns);
-
-			// if we failed to gather the regions
-			if(!main || !swap) {
-				return false;
-			}
-
-			// add the swap row data in already
-			if(!await this.index.setRegion([ lastcol, ], columns, swap)){
-				return false;
-			}
-
-			// set the rest of the region now. We need to be sure to insert the right way round
-			_rows = _rows.filter((value) => value !== lastcol);
-			_rows[_rowmd](swapcol);
-
-			// add the region and check for failure
-			if(!await this.index.setRegion(_rows, columns, main)){
-				return false;
-			}
-
-			// re-render all rows
-			await this.renderRow(lastcol);
-
-			for(const r of _rows) {
-				await this.renderRow(r);
-			}
-
-			// fix indices
-			this.fixRowIndices();
+			// run the swap operation
+			return this.simpleSwap(startY, 1);
 		}
 
-		// move the selection up by 1 row
-		await this.moveSelection("down", true);
-		return true;
+		// gather some basic variables to reference later
+		const size = this.index.getHeight();
+		let swapcol = (size + 1 + startY + (offY > 0 ? offY : 0)) % size;
+		let lastcol = (size + startY + (offY < 0 ? offY : 0)) % size;
+
+		// copy to _rows variable because eslint
+		let _rows = rows;
+		let urows = rows;
+		let _rowmd:"push"|"unshift" = offY > 0 ? "push" : "unshift";
+
+		if(rows.length === size) {
+			// if full selection, we need to do some special shenanigans
+			swapcol = size - 1;
+			lastcol = 0;
+			_rowmd = "push";
+
+			// create new set of rows! yes!
+			_rows = [];
+			urows = [];
+
+			for(let i = 0;i < size - 1; i ++){
+				_rows.push(i);
+				urows.push(i);
+			}
+		}
+
+		// collect the region information
+		const main = await this.index.getRegion(_rows, columns);
+		const swap = await this.index.getRegion([ swapcol, ], columns);
+
+		// if we failed to gather the regions
+		if(!main || !swap) {
+			return false;
+		}
+
+		// prepare _rows data
+		_rows = _rows.filter((value) => value !== lastcol);
+		_rows[_rowmd](swapcol);
+
+		// clone the selection
+		const _sel = this.selection.clone();
+
+		// add to the undo stack
+		return await Undo.add({
+			source: UndoSource.Matrix,
+			undo: async() => {
+				// reset the first row region
+				if(!await this.index.setRegion([ swapcol, ], columns, swap)){
+					return false;
+				}
+
+				// reset the main data
+				if(!await this.index.setRegion(urows, columns, main)){
+					return false;
+				}
+
+				// re-render all rows
+				await this.renderRow(swapcol);
+				await this.renderRows(urows);
+
+				// fix indices
+				this.fixRowIndices();
+
+				// re-select rows
+				return this.select(null, _sel);
+			},
+			redo: async() => {
+				// add the swap row data in already
+				if(!await this.index.setRegion([ lastcol, ], columns, swap)){
+					return false;
+				}
+
+				// add the region and check for failure
+				if(!await this.index.setRegion(_rows, columns, main)){
+					return false;
+				}
+
+				// re-render all rows
+				await this.renderRow(lastcol);
+				await this.renderRows(_rows);
+
+				// fix indices
+				this.fixRowIndices();
+
+				// re-select rows
+				if(!await this.select(null, _sel)) {
+					return false;
+				}
+
+				// move the selection down by 1 row
+				return this.moveSelection("down", true);
+			},
+		}) as Promise<boolean>;
 	}
 
 	/**
@@ -871,7 +991,7 @@ export class PatternIndexEditor implements UIElement {
 		let changed = false;
 
 		// helper function to process a position
-		const setPos = (negative:boolean, pos:number|undefined, max:number, change:(pos:number) => void) => {
+		const setPos = (negative:boolean, pos:number|undefined, max:number, change:(pos:number) => void, paste?:number) => {
 			// validate that we were given a valid position
 			if(pos === undefined) {
 				return;
@@ -886,7 +1006,7 @@ export class PatternIndexEditor implements UIElement {
 
 			// if in paste mode, limit the size
 			if(negative && this.mode === editMode.Paste) {
-				px = Math.min(this.pasteSize.x - 1, Math.max(-this.pasteSize.x + 1, pos));
+				px = Math.min((paste as number) - 1, Math.max(-(paste as number) + 1, pos));
 			}
 
 			// completely fine, change the position
@@ -900,8 +1020,11 @@ export class PatternIndexEditor implements UIElement {
 		// validate the positions
 		setPos(false, target.x, this.index.getWidth(), (pos:number) => this.selection.x = pos);
 		setPos(false, target.y, this.index.getHeight(), (pos:number) => this.selection.y = pos);
-		setPos(true, target instanceof Bounds ? target.width : target.w, this.index.getWidth(), (pos:number) => this.selection.width = pos);
-		setPos(true, target instanceof Bounds ? target.height : target.h, this.index.getHeight(), (pos:number) => this.selection.height = pos);
+
+		setPos(true, target instanceof Bounds ? target.width : target.w,
+			this.index.getWidth(), (pos:number) => this.selection.width = pos, this.pasteSize.x);
+		setPos(true, target instanceof Bounds ? target.height : target.h,
+			this.index.getHeight(), (pos:number) => this.selection.height = pos, this.pasteSize.y);
 
 		// if nothing was changed, return
 		if(!changed){
@@ -916,9 +1039,8 @@ export class PatternIndexEditor implements UIElement {
 			oldrows.forEach((row) => !newrows.includes(row) && newrows.push(row));
 
 			// re-render all of the rows
-			for(const r of newrows) {
-				await this.renderRow(r);
-				this.fixRowIndex(r);
+			if(!await this.renderRows(newrows)) {
+				return false;
 			}
 		}
 
@@ -1034,13 +1156,36 @@ export class PatternIndexEditor implements UIElement {
 	async insert():Promise<boolean> {
 		// insert below selection
 		const { startY, offY, } = this.getSelection();
-		if(!await this.insertRow(startY + offY + 1)){
-			return false;
-		}
 
 		// succeeded, select next row
-		await this.moveSelection("down", true);
-		return false;
+		const clone = this.selection.clone();
+
+		// add the undo action
+		return await Undo.add({
+			source: UndoSource.Matrix,
+			redo: async() => {
+				// insert a row at position
+				if(!await this.insertRow(startY + offY + 1)){
+					return false;
+				}
+
+				// set selection to what it is after
+				if(this.select(null, clone)) {
+					return this.moveSelection("down", true);
+				}
+
+				return false;
+			},
+			undo: async() => {
+				// delete a row from position
+				if(!await this.deleteRow(startY + offY + 1)){
+					return false;
+				}
+
+				// set selection to what it was before
+				return this.select(null, clone);
+			},
+		}) as Promise<boolean>;
 	}
 
 	/**
@@ -1071,7 +1216,6 @@ export class PatternIndexEditor implements UIElement {
 	 * Function to insert a new row UI into a specific position
 	 *
 	 * @param position position to insert a new row into
-	 * @param data The data to show on the UI buttons
 	 * @returns boolean indicating if the operation was successful
 	 */
 	private async insertRowUI(position:number):Promise<boolean> {
@@ -1086,6 +1230,28 @@ export class PatternIndexEditor implements UIElement {
 
 		// fix the row indices
 		this.fixRowIndices();
+		return true;
+	}
+
+	/**
+	 * Function to to re-render multiple rows in the UI.
+	 *
+	 * @param rows Array of rows to re-render
+	 * @returns boolean indicating whether it succeeded
+	 */
+	private async renderRows(rows:number[]) {
+		// re-render rows and fix indices
+		for(const r of rows) {
+			// render this row and bail if failed
+			if(!await this.renderRow(r)) {
+				return false;
+			}
+
+			// fix its index
+			this.fixRowIndex(r);
+		}
+
+		// success!
 		return true;
 	}
 
@@ -1305,7 +1471,7 @@ export class PatternIndexEditor implements UIElement {
 	 * @param row The row index to update
 	 */
 	private fixRowIndex(row:number) {
-		if(row >= 0 && row < this.index.getHeight()) {
+		if(row >= 0 && row < this.index.getHeight() && row < this.elrows.children.length - PatternIndexEditor.FILLER_ROWS) {
 			// fix the innerText of this row
 			this.byteToHTML((this.elrows.children[row + PatternIndexEditor.FILLER_ROWS].children[0] as HTMLDivElement), row);
 		}
@@ -1365,40 +1531,105 @@ export class PatternIndexEditor implements UIElement {
 		// grab the selection
 		const { rows, startX, offX, startY, offY, } = this.getSelection();
 
-		// delete the currently selected rows
-		while(rows.length > 0) {
-			const r = rows.shift() as number;
+		// generate columns
+		const cols:number[] = [];
 
-			// check if row can safely be deleted
-			if(!await this.deleteRow(r)) {
-				return false;
-			}
+		for(let x = this.index.getWidth() - 1;x >= 0;x --){
+			cols.unshift(x);
+		}
 
-			// fix all the subsequent rows
-			for(let y = 0;y < rows.length;y ++){
-				if(rows[y] >= r){
-					// fix the row index
-					rows[y]--;
+		// clone the selection
+		const clone = this.selection.clone();
+		const data = await this.index.getRegion(rows, cols);
+		let hasnullrow = false;
+
+		// if failed to fetch data, return
+		if(!data) {
+			return false;
+		}
+
+		// add the undo action
+		return await Undo.add({
+			source: UndoSource.Matrix,
+			undo: async() => {
+				// insert rows at correct positions
+				const nulldata = new Uint8Array(this.index.getWidth());
+
+				for(let i = 0;i < rows.length;i ++) {
+					// special case because we need at least 1 row
+					if(hasnullrow && i === 0) {
+						continue;
+					}
+
+					// try to add the row with some null data
+					if(!await this.index.insertRow(rows[i], nulldata)){
+						return false;
+					}
 				}
-			}
-		}
 
-		// check if there are no rows anymore
-		if(this.index.getHeight() === 0){
-			// insert a new row then
-			if(!await this.insertRow(0)){
-				return false;
-			}
-		}
+				// push the actual data into the rows
+				if(!await this.index.setRegion(rows, cols, data)){
+					return false;
+				}
 
-		// reset edit mode
-		if(this.mode === editMode.Write){
-			this.mode = editMode.Normal;
-		}
+				// re-render rows and fix indices
+				for(const r of rows) {
+					// special case because we need at least 1 row
+					if(hasnullrow) {
+						hasnullrow = false;
+						continue;
+					}
 
-		// force selection to the next rows
-		await this.select(false, { x: startX, y: startY + (offY < 0 ? offY : 0), w: offX, h: 0, });
-		return true;
+					if(!await this.insertRowUI(r)) {
+						return false;
+					}
+				}
+
+				// re-select
+				return this.select(null, clone);
+			},
+			redo: async () => {
+				const _rs = rows.slice();
+
+				// delete the currently selected rows
+				while(_rs.length > 0) {
+					const r = _rs.shift() as number;
+
+					// check if row can safely be deleted
+					if(!await this.deleteRow(r)) {
+						return false;
+					}
+
+					// fix all the subsequent rows
+					for(let y = 0;y < _rs.length;y ++){
+						if(_rs[y] >= r){
+							// fix the row index
+							_rs[y]--;
+						}
+					}
+				}
+
+				// check if there are no rows anymore
+				if(this.index.getHeight() === 0){
+					// insert a new row then
+					if(!await this.insertRow(0)){
+						return false;
+					}
+
+					// special case uh oh
+					hasnullrow = true;
+				}
+
+				// reset edit mode
+				if(this.mode === editMode.Write){
+					this.mode = editMode.Normal;
+				}
+
+				// force selection to the next rows
+				return this.select(false, { x: startX, y: startY + (offY < 0 ? offY : 0), w: offX, h: 0, });
+			},
+
+		}) as Promise<boolean>;
 	}
 
 	/**
@@ -1615,35 +1846,74 @@ export class PatternIndexEditor implements UIElement {
 
 		// load selection bounds
 		const size = this.index.getSize();
-		const { startX, startY, offX, offY, } = this.getSelection();
+		const { startX, startY, offX, offY, rows, columns, } = this.getSelection();
 		const psx = startX + (offX < 0 ? offX : 0);
 		const psy = startY + (offY < 0 ? offY : 0);
 
-		// run through each row
-		for(let i = 0, y = 0;y <= Math.abs(offY);y ++){
-			// load the row data and check if valid
-			const row = await this.index.getRow((size.y + psy + y) % size.y);
+		// clone data and selection
+		const pasteClone = this.pasteData?.slice() as number[];
+		const selClone = this.selection.clone();
 
-			if(!row) {
-				return false;
-			}
+		// load the selected area values
+		const data = await this.index.getRegion(rows, columns);
 
-			// apply the new row data
-			for(let x = 0;x <= Math.abs(offX);x ++) {
-				row[(size.x + psx + x) % size.x] = (this.pasteData as number[])[i++];
-			}
-
-			// save the new row data
-			if(!await this.index.setRow((size.y + psy + y) % size.y, row)) {
-				return false;
-			}
+		if(!data) {
+			return false;
 		}
 
-		// trim all unused indices
-		await this.index.trimAll();
+		if(!(await Undo.add({
+			source: UndoSource.Matrix,
+			undo: async() => {
+				// reset the selection data
+				if(!await this.index.setRegion(rows, columns, data)) {
+					return false;
+				}
+
+				// re-render all those rows
+				if(!await this.renderRows(rows)) {
+					return false;
+				}
+
+				// set selection
+				return this.select(null, selClone);
+			},
+			redo: async() => {
+				// run through each row
+				for(let i = 0, y = 0;y <= Math.abs(offY);y ++){
+					// load the row data and check if valid
+					const row = await this.index.getRow((size.y + psy + y) % size.y);
+
+					if(!row) {
+						return false;
+					}
+
+					// apply the new row data
+					for(let x = 0;x <= Math.abs(offX);x ++) {
+						row[(size.x + psx + x) % size.x] = pasteClone[i++];
+					}
+
+					// save the new row data
+					if(!await this.index.setRow((size.y + psy + y) % size.y, row)) {
+						return false;
+					}
+				}
+
+				// trim all unused indices
+				await this.index.trimAll();
+
+				// re-render all rows
+				if(!await this.renderRows(rows)) {
+					return false;
+				}
+
+				return this.select(null, selClone);
+			},
+		}) as Promise<boolean>)) {
+			return false;
+		}
 
 		// re-render selection and exit paste mode
-		return this.pasteExit();
+		return this.pasteExit(false);
 	}
 
 	/**
@@ -1651,7 +1921,7 @@ export class PatternIndexEditor implements UIElement {
 	 *
 	 * @returns whether the operation was successful
 	 */
-	async pasteExit():Promise<boolean> {
+	async pasteExit(render?:boolean):Promise<boolean> {
 		// check even if in paste mode
 		if(this.mode !== editMode.Paste) {
 			// if not, just set selection size
@@ -1666,12 +1936,13 @@ export class PatternIndexEditor implements UIElement {
 		this.pasteData = null;
 		this.altSelect = false;
 
-		// r-render all selected rows
-		const { rows, } = this.getSelection();
+		if(render !== false) {
+			// re-render all selected rows
+			const { rows, } = this.getSelection();
 
-		for(const r of rows) {
-			await this.renderRow(r);
-			this.fixRowIndex(r);
+			if(!await this.renderRows(rows)) {
+				return false;
+			}
 		}
 
 		// re-render selection

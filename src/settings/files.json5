@@ -6,5 +6,6 @@
 */
 
 {
-	"shortcuts": [ "shortcuts.json5" ]
+	"shortcuts": [ "shortcuts.json5" ],
+	"flags": [ "flags.json5" ],
 }

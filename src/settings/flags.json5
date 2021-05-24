@@ -1,0 +1,8 @@
+/*
+	TVarious system flags are stored here. You can edit these to change the behavior of the application more to your liking.
+	DO NOT remove any of these, instead just change them, or preferably, make your own file and link it via "files.json5"
+*/
+
+{
+	UNDO_STACK_SIZE: 100,														/* The size of the undo stack, how many steps away to remember undo data */
+}

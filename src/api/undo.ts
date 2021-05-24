@@ -1,3 +1,5 @@
+import { loadFlag } from "./files";
+
 export type UndoAction = {
 	/**
 	 * Source of the undo/redo action element
@@ -15,15 +17,20 @@ export type UndoAction = {
 	redo: () => Promise<void|unknown>,
 };
 
+/**
+ * Various undo source types. This can help with displaying undo actions
+ */
 export enum UndoSource {
 	Matrix,
 }
 
-const REDO_SIZE = 25;
-
+/**
+ * The class for handling undo's and redo's.
+ */
 export class Undo {
 	private static stack:UndoAction[] = [];
 	private static index = 0;
+	private static redoSize:number|undefined;
 
 	/**
 	 * Add a new undo/redo action to history
@@ -46,15 +53,20 @@ export class Undo {
 	 * Function to remove extra elements from the undo stack
 	 */
 	public static clip():void {
+		if(this.redoSize === undefined) {
+			// load the redo size from files
+			this.redoSize = loadFlag("UNDO_STACK_SIZE") as number;
+		}
+
 		// check if any elements need to be clipped off the end of the stack
 		if(Undo.index !== Undo.stack.length) {
 			Undo.stack.splice(Undo.index);
 			Undo.index = Undo.stack.length;
 		}
 
-		if(Undo.index >= REDO_SIZE) {
+		if(Undo.index >= this.redoSize) {
 			// index is out of range, remove extra elements from the beginning
-			while(Undo.stack.length >= REDO_SIZE) {
+			while(Undo.stack.length >= this.redoSize) {
 				Undo.stack.shift();
 			}
 

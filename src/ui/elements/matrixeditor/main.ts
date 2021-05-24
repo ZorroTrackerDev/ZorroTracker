@@ -936,17 +936,49 @@ export class PatternIndexEditor implements UIElement {
 			switch(event.button) {
 				case 0:	{	// left button, generate a new row at the very bottom and scroll down to it
 					const h = this.index.getHeight();
-					await this.insertRow(h);
-					this.scrollTo(h - 1, h - 1, true);
-					break;
+					return this.insertMax(h, h - 1);
 				}
 
 				case 2:		// right button, generate a new row at the very top and scroll up to it
-					await this.insertRow(0);
-					this.scrollTo(0, 0, true);
-					break;
+				return this.insertMax(0, 0);
 			}
 		}
+	}
+
+	/**
+	 * Function to insert a row to the top or bottom of the matrix
+	 *
+	 * @param insert To which position to insert a row
+	 * @param scroll To which line to scroll to
+	 * @returns Boolean indicating whether or not it was successful
+	 */
+	private async insertMax(insert:number, scroll:number) {
+		if(await Undo.add({
+			source: UndoSource.Matrix,
+			redo: async() => {
+				// insert row to the bottom
+				if(await this.insertRow(insert)) {
+					// re-render selection
+					return this.reselect(null);
+				}
+
+				return false;
+			},
+			undo: async() => {
+				// delete the inserted row
+				if(await this.deleteRow(insert)) {
+					// re-render selection
+					return this.reselect(null);
+				}
+
+				return false;
+			},
+		}) as Promise<boolean>) {
+			this.scrollTo(scroll - 1, scroll - 1, true);
+			return true;
+		}
+
+		return false;
 	}
 
 	// the classname that is used for the currently active row is the beginning of the loop point.

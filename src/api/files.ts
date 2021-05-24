@@ -7,6 +7,7 @@ import path from "path";
  */
 export enum SettingsTypes {
 	shortcuts = "shortcuts",
+	flags = "flags",
 }
 
 /* constands for the locations of settings data files */
@@ -32,6 +33,7 @@ export function loadSettingsFiles(settingsType:SettingsTypes): unknown[] {
 
 	// check if the settings entry exists. If not, pretend we have got 0 files
 	if(!_cachedFileMappings[settingsType]){
+		console.error("files.json5 does not have key "+ settingsType + "! Please check that your settings file is valid! Program may be unstable.");
 		return [];
 	}
 
@@ -60,12 +62,58 @@ export function loadSettingsFiles(settingsType:SettingsTypes): unknown[] {
 	if(Array.isArray(_cachedFileMappings[settingsType])) {
 		// this is an array of filesnames, convert every one individually
 		(_cachedFileMappings[settingsType] as string[]).forEach(convertSingleFile);
+		console.info("files.json5 load key "+ settingsType +": [ "+ (_cachedFileMappings[settingsType] as string[]).join(", ") +" ]");
 
 	} else {
 		// this is not an array, convert the single filename
 		convertSingleFile(_cachedFileMappings[settingsType] as string);
+		console.info("files.json5 load key "+ settingsType +": [ "+ _cachedFileMappings[settingsType] +" ]");
 	}
 
 	// return all the files
 	return retFiles;
+}
+
+export function loadSettingsObject(settingsType:SettingsTypes): Record<string, unknown> {
+	const ret:Record<string, unknown> = {};
+
+	// if the flags file was not cached, cache it now.
+	const flags = loadSettingsFiles(settingsType);
+
+	for(const f of flags) {
+		try {
+			// try to handle flags now
+			if(f && typeof f === "object") {
+				for(const key in f) {
+					// add flags from f to ret
+					ret[key] = (f as Record<string, unknown>)[key];
+				}
+			}
+
+		} catch(ex){
+			/* ignore all failing files */
+		}
+	}
+
+	return ret;
+}
+
+// the cached flagss data. This is used to cache the program settings for faster access.
+let _cachedFlags: { [key: string]: unknown };
+
+export function loadFlag(name:string): unknown {
+	if(!_cachedFlags) {
+		// if the flags file was not cached, cache it now.
+		_cachedFlags = loadSettingsObject(SettingsTypes.flags);
+	}
+
+	// check if the flag even exists
+	if(!(name in _cachedFlags)) {
+		console.error("flags.json5 does not have key "+ name + "! Please check that your flags file is valid! Program may be unstable.");
+		return;
+	}
+
+	// load the flag value
+	console.info("flags.json5 load key "+ name +":", _cachedFlags[name]);
+	return _cachedFlags[name];
 }

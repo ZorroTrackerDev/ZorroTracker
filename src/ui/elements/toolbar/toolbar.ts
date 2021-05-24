@@ -1,4 +1,4 @@
-const HEIGHT = 18+4+4;		// also defined in toolbar.less. Make sure to keep these in sync!
+const HEIGHT = 20+4+4;		// also defined in toolbar.less. Make sure to keep these in sync!
 
 /*
  * this defines the window menu. Each item will be added to the top row.
@@ -24,7 +24,26 @@ const defaultMenu:ToolbarMenu = {
 	"Edit": {
 		enabled: false,
 		child: {
-
+			"Undo": {
+				enabled: true,
+				action: "window.preload.shortcut(['ui.undo'])",
+			},
+			"Redo": {
+				enabled: true,
+				action: "window.preload.shortcut(['ui.redo'])",
+			},
+			"Cut": {
+				enabled: true,
+				action: "window.preload.shortcut([])",
+			},
+			"Copy": {
+				enabled: true,
+				action: "window.preload.shortcut([])",
+			},
+			"Paste": {
+				enabled: true,
+				action: "window.preload.shortcut([])",
+			},
 		},
 	},
 	"About": {
@@ -140,7 +159,7 @@ export function makeToolbar(menu:ToolbarMenu, buttons:WindowButtons): string {
 
 	for(const name of Object.keys(menu)) {
 		// height of the dropdown menu in pixels.
-		const height = (Object.keys(menu[name]).length * HEIGHT) + 5;
+		const height = (Object.keys(menu[name].child ?? {}).length * HEIGHT);
 
 		menuHTML += /*html*/`
 			<button class='main_toolbar_dropdown' onclick='window.toolbarFunc.handleDropdown(this.children[1], event)'>

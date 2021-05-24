@@ -1,5 +1,6 @@
 import { PatternIndex } from "../../../api/pattern";
-import { clipboard, ClipboardType, Position, shortcutDirection, UIElement } from "../../../api/ui";
+import { Bounds, clipboard, ClipboardType, Position, shortcutDirection, UIElement } from "../../../api/ui";
+import { Undo, UndoSource } from "../../../api/undo";
 import { standardButtons, pasteButtons, PatternIndexEditorButtonList } from "./buttons";
 
 // the editing mode enum
@@ -29,7 +30,7 @@ export class PatternIndexEditor implements UIElement {
 		// generate the first row
 		this.insertRow(0).then(async() => {
 			// select the first row first channel
-			await this.select(false, { start: { x: 0, y: 0, }, offset: { x: 0, y: 0, }, });
+			await this.select(false, { x: 0, y: 0, w: 0, h: 0, });
 
 		}).catch(console.error);
 	}
@@ -288,24 +289,15 @@ export class PatternIndexEditor implements UIElement {
 
 				case "selall":
 					// select the entire matrix
-					return this.select(false, {
-						start: { x: 0, y: 0, },
-						offset: { x: this.index.getWidth() - 1, y: this.index.getHeight() - 1, },
-					});
+					return this.select(false, { x: 0, y: 0, w: this.index.getWidth() - 1, h: this.index.getHeight() - 1, });
 
 				case "selrow":
 					// select the entire row
-					return this.select(false, {
-						start: { x: 0, y: this.selectStart.y, },
-						offset: { x: this.index.getWidth() - 1, y: this.selectOff.y, },
-					});
+					return this.select(false, { x: 0, w: this.index.getWidth() - 1, });
 
 				case "selcolumn":
 					// select the entire column
-					return this.select(false, {
-						start: { x: this.selectStart.x, y: 0, },
-						offset: { x: this.selectOff.x, y: this.index.getHeight() - 1, },
-					});
+					return this.select(false, { y: 0, h: this.index.getHeight() - 1, });
 
 				case "scroll": {
 					// convert direction string to x/y offsets
@@ -362,7 +354,7 @@ export class PatternIndexEditor implements UIElement {
 					}
 
 					// make sure to trim all the unused patterns
-					this.index.trimAll();
+					await this.index.trimAll();
 
 					// re-render rows and fix indices
 					for(const r of rows) {
@@ -375,13 +367,13 @@ export class PatternIndexEditor implements UIElement {
 
 					if(this.editing) {
 						// check the next column
-						let col = this.selectStart.x + Math.abs(this.selectOff.x) + 1, row = this.selectStart.y, mv = null;
+						let col = this.selection.x + Math.abs(this.selection.width) + 1, row = this.selection.y, mv = null;
 
 						const h = this.index.getWidth();
 						if(col >= h) {
 							// need to wrap back to the beginning (go to the row below)
 							col -= h;
-							row = this.selectStart.y + Math.abs(this.selectOff.y) + 1;
+							row = this.selection.y + Math.abs(this.selection.height) + 1;
 
 							// wrap row address
 							const w = this.index.getHeight();
@@ -394,7 +386,7 @@ export class PatternIndexEditor implements UIElement {
 						}
 
 						// if was editing the low nybble, move the selection forward also
-						if(!await this.select(mv, { start: { x: col, y: row, }, })){
+						if(!await this.select(mv, { x: col, y: row, })){
 							return false;
 						}
 
@@ -447,38 +439,51 @@ export class PatternIndexEditor implements UIElement {
 			return false;
 		}
 
-		// load the region values and check if its valid
-		const values = await this.index.getRegion(rows, columns);
+		// make a clone of the bounds object
+		const clone = this.selection.clone();
 
-		if(!values) {
-			return false;
-		}
+		// helper function to execute the actual query
+		const _do = async(amt:number) => {
+			// load the region values and check if its valid
+			const values = await this.index.getRegion(rows, columns);
 
-		// loop for all elements to modify values
-		for(let i = values.length - 1;i >= 0;i--) {
-			values[i] += realamt;
-			values[i] &= 0xFF;
-		}
-
-		// save the region and check if succeeded
-		if(!await this.index.setRegion(rows, columns, values)){
-			return false;
-		}
-
-		// make sure to trim all the unused patterns
-		this.index.trimAll();
-
-		// re-render rows and fix indices
-		for(const r of rows) {
-			if(!await this.renderRow(r)) {
+			if(!values) {
 				return false;
 			}
 
-			this.fixRowIndex(r);
+			// loop for all elements to modify values
+			for(let i = values.length - 1;i >= 0;i--) {
+				values[i] += amt;
+				values[i] &= 0xFF;
+			}
+
+			// save the region and check if succeeded
+			if(!await this.index.setRegion(rows, columns, values)){
+				return false;
+			}
+
+			// make sure to trim all the unused patterns
+			await this.index.trimAll();
+
+			// re-render rows and fix indices
+			for(const r of rows) {
+				if(!await this.renderRow(r)) {
+					return false;
+				}
+
+				this.fixRowIndex(r);
+			}
+
+			// re-apply selection
+			return this.select(null, clone);
 		}
 
-		// re-render selection
-		return this.reselect(null);
+		// create the undo action
+		return Undo.add({
+			source: UndoSource.Matrix,
+			redo: () => _do(realamt),
+			undo: () => _do(-realamt),
+		}) as Promise<boolean>;
 	}
 
 	/**
@@ -687,7 +692,7 @@ export class PatternIndexEditor implements UIElement {
 		}
 
 		// handle normal selection
-		await this.select(dir.y === 0 ? null : !both ? false : !!(+(dir.y > 0) ^ +(this.selectOff.y >= 0)),
+		await this.select(dir.y === 0 ? null : !both ? false : !!(+(dir.y > 0) ^ +(this.selection.height >= 0)),
 			this.doPosition(dir, both, (start:number, max:number) => {
 			// wrap position in 0 ... max-1 range
 			let ret = start;
@@ -742,16 +747,11 @@ export class PatternIndexEditor implements UIElement {
 
 		if(both) {
 			// handle moving selection
-			return this.select(false, {
-				start: { x: this.selectStart.x, y: dir.y > 0 ? this.index.getHeight() - 1 : 0, },
-				offset: { x: this.selectOff.x, y: 0, },
-			});
+			return this.select(false, { y: dir.y > 0 ? this.index.getHeight() - 1 : 0, h: 0, });
 
 		} else {
 			// handle extending selection
-			return this.select(false, {
-				offset: { x: this.selectOff.x, y: (dir.y > 0 ? this.index.getHeight() - 1 : 0) - this.selectStart.y, },
-			});
+			return this.select(false, { h: (dir.y > 0 ? this.index.getHeight() - 1 : 0) - this.selection.y, });
 		}
 	}
 
@@ -762,19 +762,16 @@ export class PatternIndexEditor implements UIElement {
 	 * @returns The object for this.select call
 	 */
 	private doPosition(position:Position, both:boolean,
-		f1:(start:number, max:number) => number, f2:(start:number, max:number) => number): { start?:Position, offset?: Position } {
+		f1:(start:number, max:number) => number, f2:(start:number, max:number) => number): { x?:number, y?:number, w?:number, h?:number } {
 
 		return {
-			// apply start only if both = true
-			start: !both ? undefined : {
-				x: f1(this.selectStart.x + position.x, this.index.getWidth()),
-				y: f1(this.selectStart.y + position.y, this.index.getHeight()),
-			},
-			// apply the offset position if both = false
-			offset: both ? undefined :  {
-				x: f2(this.selectOff.x + position.x, this.index.getWidth()),
-				y: f2(this.selectOff.y + position.y, this.index.getHeight()),
-			},
+			// apply x/y only if both = true
+			x: !both ? undefined : f1(this.selection.x + position.x, this.index.getWidth()),
+			y: !both ? undefined : f1(this.selection.y + position.y, this.index.getHeight()),
+
+			// apply w/h only if both = false
+			w: both ? undefined : f2(this.selection.width + position.x, this.index.getWidth()),
+			h: both ? undefined : f2(this.selection.height + position.y, this.index.getHeight()),
 		};
 	}
 
@@ -794,7 +791,7 @@ export class PatternIndexEditor implements UIElement {
 			if(index >= 0) {
 				z.onmouseup = async(event:MouseEvent) => {
 					// select the entire index
-					await this.select(null, { start: { x: index, y: 0, }, offset: { x: 0, y: this.index.getHeight() - 1, }, });
+					await this.select(null, { x: index, y: 0, w: 0, h: this.index.getHeight() - 1, });
 					event.preventDefault();
 				}
 			}
@@ -860,9 +857,8 @@ export class PatternIndexEditor implements UIElement {
 		}
 	}
 
-	// the currently selected row and channel. Use -1 for invalid values
-	private selectStart:Position = { x: -1, y: -1, };
-	private selectOff:Position = { x: -1, y: -1, };
+	// the currently selected area
+	private selection:Bounds = new Bounds();
 
 	/**
 	 * Function to set the current selection of the pattern editor
@@ -871,45 +867,41 @@ export class PatternIndexEditor implements UIElement {
 	 * @param target An object describing the new targeted position(s) of selection.
 	 * @returns True if selection can be applied, false if not
 	 */
-	public async select(offset:boolean|null, target:{ start?: Position, offset?: Position }):Promise<boolean> {
+	public async select(offset:boolean|null, target:Bounds|{ x?:number, y?:number, w?:number, h?:number }):Promise<boolean> {
 		let changed = false;
 
 		// helper function to process a position
-		const setPos = (negative:boolean, pos:Position|undefined, change:(pos:Position) => void) => {
+		const setPos = (negative:boolean, pos:number|undefined, max:number, change:(pos:number) => void) => {
 			// validate that we were given a valid position
-			if(!pos) {
+			if(pos === undefined) {
 				return;
 			}
 
-			// validate x-position
-			const xmx = this.index.getWidth();
-			if(pos.x < (negative ? -(xmx - 1) : 0) || pos.x >= xmx){
+			// validate position
+			if(pos < (negative ? -(max - 1) : 0) || pos >= max){
 				return;
 			}
 
-			// validate y-position
-			const ymx = this.index.getHeight();
-			if(pos.y < (negative ? -(ymx - 1) : 0) || pos.y >= ymx){
-				return;
-			}
+			let px = pos;
 
 			// if in paste mode, limit the size
 			if(negative && this.mode === editMode.Paste) {
-				pos.x = Math.min(this.pasteSize.x - 1, Math.max(-this.pasteSize.x + 1, pos.x));
-				pos.y = Math.min(this.pasteSize.y - 1, Math.max(-this.pasteSize.y + 1, pos.y));
+				px = Math.min(this.pasteSize.x - 1, Math.max(-this.pasteSize.x + 1, pos));
 			}
 
 			// completely fine, change the position
-			change(pos);
+			change(px);
 			changed = true;
 		};
 
 		// copy old rows selection
 		const oldrows = this.getSelection().rows;
 
-		// validate start and end positions
-		setPos(false, target.start, (pos:Position) => this.selectStart = pos);
-		setPos(true, target.offset, (pos:Position) => this.selectOff = pos);
+		// validate the positions
+		setPos(false, target.x, this.index.getWidth(), (pos:number) => this.selection.x = pos);
+		setPos(false, target.y, this.index.getHeight(), (pos:number) => this.selection.y = pos);
+		setPos(true, target instanceof Bounds ? target.width : target.w, this.index.getWidth(), (pos:number) => this.selection.width = pos);
+		setPos(true, target instanceof Bounds ? target.height : target.h, this.index.getHeight(), (pos:number) => this.selection.height = pos);
 
 		// if nothing was changed, return
 		if(!changed){
@@ -995,10 +987,10 @@ export class PatternIndexEditor implements UIElement {
 		}
 
 		// calculate the positions
-		const sy = Math.max(0, Math.min(h - 1, this.selectStart.y));
-		const sx = Math.max(0, Math.min(w - 1, this.selectStart.x));
-		const oy = wrapOff(h, this.selectOff.y);
-		const ox = wrapOff(w, this.selectOff.x);
+		const sy = Math.max(0, Math.min(h - 1, this.selection.y));
+		const sx = Math.max(0, Math.min(w - 1, this.selection.x));
+		const oy = wrapOff(h, this.selection.height);
+		const ox = wrapOff(w, this.selection.width);
 
 		// check if in single mode
 		const single = ox === 0 && oy === 0;
@@ -1166,8 +1158,8 @@ export class PatternIndexEditor implements UIElement {
 						const sel = this.findMe(event.currentTarget as HTMLDivElement);
 
 						// check if selecting the same cell as previously
-						const same = this.selectOff.x === 0 && this.selectOff.y === 0 &&
-							this.selectStart.x === sel.x && this.selectStart.y === sel.y;
+						const same = this.selection.width === 0 && this.selection.height === 0 &&
+							this.selection.x === sel.x && this.selection.y === sel.y;
 
 						if(this.mode === editMode.Normal) {
 							// if selecting the same cell, enable special flag
@@ -1184,7 +1176,7 @@ export class PatternIndexEditor implements UIElement {
 
 						// enable selection mode and select the current node
 						this.selecting = true;
-						await this.select(null, { start: sel, offset: { x: 0, y: 0, }, });
+						await this.select(null, { x: sel.x, y: sel.y, w: 0, h: 0, });
 
 						// when we release the button, just stop selecting
 						this.documentDragFinish();
@@ -1205,7 +1197,7 @@ export class PatternIndexEditor implements UIElement {
 
 						// enable selection mode and select the current node
 						this.selecting = false;
-						await this.select(null, { start: { x: 0,  y: position, }, offset: { x: this.index.getWidth() - 1, y: 0, }, });
+						await this.select(null, { x: 0,  y: position, w: this.index.getWidth() - 1, h: 0, });
 
 						// when we release the button, just stop selecting
 						this.documentDragFinish();
@@ -1237,11 +1229,11 @@ export class PatternIndexEditor implements UIElement {
 				}
 
 				// move selection over
-				await this.select(null, { offset: { x: sel.x - this.selectStart.x, y: sel.y - this.selectStart.y, }, });
+				await this.select(null, { w: sel.x - this.selection.x, h: sel.y - this.selection.y, });
 
 			} else if(this.selecting === false) {
 				// handle selecting rows
-				await this.select(null, { offset: { x: this.index.getWidth() - 1, y: extra as number - this.selectStart.y, }, });
+				await this.select(null, { w: this.index.getWidth() - 1, h: extra as number - this.selection.y, });
 			}
 		}
 	}
@@ -1256,7 +1248,7 @@ export class PatternIndexEditor implements UIElement {
 			// check if selecting matrix
 			if(this.selecting === true) {
 				// check if sameselect = true and only selecting a single cell
-				if(this.selectOff.x === 0 && this.selectOff.y === 0 && this.sameselect) {
+				if(this.selection.width === 0 && this.selection.height === 0 && this.sameselect) {
 					// check to enable write mode
 					if(this.mode === editMode.Normal) {
 						this.mode = editMode.Write;
@@ -1405,7 +1397,7 @@ export class PatternIndexEditor implements UIElement {
 		}
 
 		// force selection to the next rows
-		await this.select(false, { start: { x: startX, y: startY + (offY < 0 ? offY : 0), }, offset:{ x: offX, y: 0, }, });
+		await this.select(false, { x: startX, y: startY + (offY < 0 ? offY : 0), w: offX, h: 0, });
 		return true;
 	}
 
@@ -1436,22 +1428,22 @@ export class PatternIndexEditor implements UIElement {
 	 */
 	async copy():Promise<boolean> {
 		// multi mode, copy to copy buffer: TODO: <- this feature
-		const pos = this.selectStart, size = this.selectOff;
+		const pos = this.selection;
 
 		// make sure x-position is the right way round
-		if(size.x < 0) {
-			pos.x += size.x;
-			size.x = -size.x;
+		if(pos.width < 0) {
+			pos.x += pos.width;
+			pos.width = -pos.width;
 		}
 
 		// make sure x-position is the right way round
-		if(size.y < 0) {
-			pos.y += size.y;
-			size.y = -size.y;
+		if(pos.height < 0) {
+			pos.y += pos.height;
+			pos.height = -pos.height;
 		}
 
 		// copy this region
-		return await this.copyRegion(pos, size) !== null;
+		return await this.copyRegion(pos) !== null;
 	}
 
 	/**
@@ -1477,18 +1469,17 @@ export class PatternIndexEditor implements UIElement {
 	/**
 	 * Function to copy a region into the clipboard
 	 *
-	 * @param position The position of the start row to start copying from
-	 * @param size The size of the selection to copy
+	 * @param pos The boundaries of the copy
 	 * @returns null if failed or string that is also sent to the clipboard
 	 */
-	private async copyRegion(position:Position, size:Position) {
+	private async copyRegion(pos:Bounds) {
 		const str:string[] = [];
 
 		// get matrix size so we can wrap things properly
 		const msz = this.index.getSize();
 
 		// loop for all rows
-		for(let y = position.y;y <= position.y + size.y;y++) {
+		for(let y = pos.y;y <= pos.y + pos.height;y++) {
 			const s:string[] = [];
 
 			// load the row data and check if its valid
@@ -1499,7 +1490,7 @@ export class PatternIndexEditor implements UIElement {
 			}
 
 			// loop for all channels copying the values
-			for(let x = position.x;x <= position.x + size.x;x++) {
+			for(let x = pos.x;x <= pos.x + pos.width;x++) {
 				s.push(row[x % msz.x].toByte());
 			}
 
@@ -1596,7 +1587,7 @@ export class PatternIndexEditor implements UIElement {
 
 			// set size of the selection
 			this.pasteSize = { x: rowlen, y: rows.length, };
-			await this.select(null, { offset: { x: rowlen - 1, y: rows.length - 1, }, });
+			await this.select(null, { w: rowlen - 1, h: rows.length - 1, });
 
 			// enable all the paste buttons
 			this.setButtons(pasteButtons);
@@ -1649,7 +1640,7 @@ export class PatternIndexEditor implements UIElement {
 		}
 
 		// trim all unused indices
-		this.index.trimAll();
+		await this.index.trimAll();
 
 		// re-render selection and exit paste mode
 		return this.pasteExit();
@@ -1664,7 +1655,7 @@ export class PatternIndexEditor implements UIElement {
 		// check even if in paste mode
 		if(this.mode !== editMode.Paste) {
 			// if not, just set selection size
-			return this.select(null, { offset: { x: 0, y: 0, }, });
+			return this.select(null, { w: 0, h: 0, });
 		}
 
 		// enable all the standard buttons

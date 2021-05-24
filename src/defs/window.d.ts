@@ -24,6 +24,13 @@ declare global {
 			 * Helper function to handle the `open` UI function (for example with CTRL+O)
 			 */
 			open: () => void,
+
+			/**
+			 * Execute a shortcut action. This is usually done within UI, such as toolbar
+			 *
+			 * @param name The name of the shortcut to execute
+			 */
+			shortcut: (name:string[]) => void,
 		},
 		toolbarFunc: {
 			/**

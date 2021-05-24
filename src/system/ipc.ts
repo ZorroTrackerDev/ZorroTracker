@@ -336,7 +336,7 @@ ipcMain.on(ipcEnum.UiSystemInfo, () => {
 		"cores: "+ os.cpus().length +"x "+ os.cpus()[0].model,
 		"memory: "+ (Math.round(os.totalmem() / 1024 / 1024) / 1024) +" GB",
 		"displays: ["+ screen.getAllDisplays().map((display) => display.size.width +"x"+ display.size.height +"@"+ display.displayFrequency +" "+
-			display.colorDepth +"bpp scale="+ display.scaleFactor).join(",") +"]",
+			display.colorDepth +"bpp scale="+ display.scaleFactor).join(", ") +"]",
 		"uptime: "+ Math.round(uptime / 60 / 60 / 24) +"d "+ (Math.round(uptime / 60 / 60) % 24) +"h "+ (Math.round(uptime / 60) % 60) +"m ",
 		"chrome: "+ process.versions.chrome,
 		"electron: "+ process.versions.electron,

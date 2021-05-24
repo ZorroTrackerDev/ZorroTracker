@@ -14,6 +14,7 @@ import "./extensions";
 
 /* ipc communication */
 import "./ipc ui";
+import { doShortcut } from "./misc/shortcuts";
 
 window.preload = {
 	/**
@@ -56,6 +57,15 @@ window.preload = {
 		// stop the audio playback and restart it with the new file opened. TODO: This is only test code!
 		window.ipc.audio.stop();
 		setTimeout(() => window.ipc.audio.play(result.filePaths[0]), 50);
+	},
+
+	/**
+	 * Execute a shortcut action. This is usually done within UI, such as toolbar
+	 *
+	 * @param name The name of the shortcut to execute
+	 */
+	shortcut: (name:string[]) => {
+		doShortcut(name);
 	},
 }
 

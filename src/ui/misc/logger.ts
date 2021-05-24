@@ -64,6 +64,7 @@ function intercept(method:string, func:(...args:unknown[]) => void){
  */
 function _log(prefix:string, ...args:unknown[]) {
 	// convert arguments to string and then join them together
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const _out = args.map((v:Error|any) =>
 		v === null ? "<null>" :					// special case for nulls
 		v === undefined ? "<undefined>" :		// special case for undefined

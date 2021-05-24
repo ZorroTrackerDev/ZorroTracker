@@ -60,6 +60,15 @@ export class Bounds {
 	}
 
 	/**
+	 * Clone a Bounds object.
+	 *
+	 * @returns A clone of the Bounds object
+	 */
+	public clone():Bounds {
+		return new Bounds(this.x, this.y, this.width, this.height);
+	}
+
+	/**
 	 * Create a Bounds object from rectangle object
 	 *
 	 * @param rectangle The Rectangle object that represents a Bounds object
@@ -116,7 +125,7 @@ export class Bounds {
 /**
  * A common interface for handling UI shortcuts for this element. This helps make development easier
  */
-export type receiveShortcutFunc = (data:string[], event:KeyboardEvent) => Promise<boolean>;
+export type receiveShortcutFunc = (data:string[], event:KeyboardEvent|undefined) => Promise<boolean>;
 
 export interface UIShortcutHandler {
 	receiveShortcut: receiveShortcutFunc;

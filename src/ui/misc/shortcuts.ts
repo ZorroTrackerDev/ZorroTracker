@@ -1,5 +1,6 @@
 import { loadSettingsFiles, SettingsTypes } from "../../api/files";
 import { receiveShortcutFunc } from "../../api/ui";
+import { Undo } from "../../api/undo";
 
 /**
  * add a class for various shortcut errors
@@ -75,21 +76,34 @@ document.addEventListener("keydown", (event) => {
 		return;
 	}
 
-	// split into an array based on dots and get the first element of the array
-	const comarr = com.toLowerCase().split(".");
-	const comkey = comarr.shift() ?? "<null>";
-
-	// check if there is a shortcut function defined here
-	if(!shortcutReceivers[comkey]){
-		// there is not, log it. TODO: handle this better.
-		console.error("!!! Invalid command!!!\nShortcut had an invalid command "+ comkey);
-		return;
-	}
-
-	// the function exists, execute it with the current event.
-	shortcutReceivers[comkey](comarr, event).catch(console.error);
+	// do shortcut and prevent default event
+	doShortcut([ com, ], event);
 	event.preventDefault();
 });
+
+export function doShortcut(name:string[], event?:KeyboardEvent):void {
+	(async() => {
+		// do each shortcut separately
+		for(const com of name) {
+			// split into an array based on dots and get the first element of the array
+			const comarr = com.toLowerCase().split(".");
+			const comkey = comarr.shift() ?? "<null>";
+
+			// check if there is a shortcut function defined here
+			if(!shortcutReceivers[comkey]){
+				// there is not, log it. TODO: handle this better.
+				console.error("!!! Invalid command!!!\nShortcut had an invalid command "+ comkey);
+				return;
+			}
+
+			// the function exists, execute it with the current event.
+			if(await shortcutReceivers[comkey](comarr, event)) {
+				// event was accepted, return away
+				return;
+			}
+		}
+	})().catch(console.error);
+}
 
 /**
  * Add shortcuts to the program. Duplicated shortcuts will override previous ones.
@@ -174,6 +188,14 @@ export function loadDefaultShortcuts(): void {
 			case "open":
 				window.preload.open();
 				return true;
+
+			/* shortcut for doing a redo action */
+			case "redo":
+				return Undo.redo();
+
+			/* shortcut for doing a undo action */
+			case "undo":
+				return Undo.undo();
 		}
 
 		// shortcut was not handled

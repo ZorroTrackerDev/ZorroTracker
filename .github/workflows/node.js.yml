@@ -33,12 +33,6 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
 
-    - name: Install dependencies [Linux]
-      if: runner.os == 'Linux'
-      run: |
-        npm install node-gyp prebuild
-        npm install alsa
-
     - name: Install dependencies
       run: npm install
 

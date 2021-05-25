@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": [ "tests", "src/scripts" ],
+  "exclude": [ "tests", "src/scripts/chips", "src/scripts/drivers" ],
   "include": [ "src" ],
   "rootDir": "./src",
 }

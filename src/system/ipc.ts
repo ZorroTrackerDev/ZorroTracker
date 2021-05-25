@@ -258,7 +258,7 @@ function _findall(folder:ScriptFolders, eventName:ipcEnum, event:IpcMainEvent) {
 /**
  * Various handlers for dealing with the audio adapter instance.
  */
-const worker = new Worker(path.join(__dirname, "audio.js"));
+const worker = new Worker(path.join(dataPath, "scripts", "audio.js"));
 
 worker.on("message", (data:{ code:string, data:unknown }) => {
 	switch(data.code) {

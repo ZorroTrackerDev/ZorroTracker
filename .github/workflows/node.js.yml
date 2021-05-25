@@ -27,6 +27,10 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo apt update
+        sudo apt install \
+          libasound2-dev \
+          libpulse-dev \
+          libjack-jackd2-dev
 
     - name: Install Node.js
       uses: actions/setup-node@v2

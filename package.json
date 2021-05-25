@@ -52,9 +52,10 @@
 		"typescript": "^4.2.4"
 	},
 	"dependencies": {
-		"audify": "^1.5.7",
+		"audify": "^1.6.0",
 		"json5": "^2.2.0",
-		"nuked-opn2-node": "file:./vendor/Nuked-OPN2.rs/nuked-opn2-node"
+		"nuked-opn2-node": "file:./vendor/Nuked-OPN2.rs/nuked-opn2-node",
+		"nuked-psg-node": "file:./vendor/Nuked-PSG.rs/nuked-psg-node"
 	},
 	"jest": {
 		"verbose": true,

@@ -27,11 +27,6 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo apt update
-        sudo apt install \
-          alsa-base \
-          libasound2-dev \
-          libpulse-dev \
-          libjack-jackd2-dev
 
     - name: Install Node.js
       uses: actions/setup-node@v2
@@ -40,6 +35,12 @@ jobs:
 
     - name: Install dependencies
       run: npm install
+
+    - name: Install dependencies [Linux]
+      if: runner.os == 'Linux'
+      run: |
+        npm install node-gyp prebuild
+        npm install alsa
 
     - name: Build
       run: npm run ci_init

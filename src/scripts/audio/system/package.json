@@ -1,0 +1,21 @@
+{
+  "name": "system",
+  "version": "0.0.0",
+  "description": "",
+  "scripts": {
+    "build": "webpack"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "audify": "^1.6.0",
+    "node-loader": "*",
+    "ts-loader": "*",
+    "typescript": "*",
+    "webpack": "*",
+    "webpack-cli": "*"
+  },
+  "devDependencies": {
+    "@types/node": "*"
+  }
+}

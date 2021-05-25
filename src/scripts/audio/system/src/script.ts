@@ -1,9 +1,8 @@
-import { ConfigVersion } from "../api/scripts/config";
-import { ChipConfig, Chip } from "../api/scripts/chip";
-import { Driver, DriverConfig } from "../api/scripts/driver";
 import { RtAudio, RtAudioApi, RtAudioFormat } from "audify";
 import { parentPort } from "worker_threads";
 import path from "path";
+import { Chip, ChipConfig } from "../../../../api/scripts/chip";
+import { Driver, DriverConfig } from "../../../../api/scripts/driver";
 
 // the output sample rate of the program. TODO: Not hardcode.
 const RATE = 44100;

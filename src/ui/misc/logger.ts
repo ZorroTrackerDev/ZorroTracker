@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 
+// helper function to write strings to the output file
 let _write:(text:string) => void = () => {};
 
 fs.open(path.join(window.path, "ZorroTracker.log"), "w", (err, fd) => {
@@ -20,17 +21,9 @@ fs.open(path.join(window.path, "ZorroTracker.log"), "w", (err, fd) => {
 
 	// close the logging file when the program is closed
 	ZorroEvent.addListener(ZorroEventEnum.Exit, () => {
-		return new Promise((res, rej) => {
-			fs.close(fd, (err) => {
-				if(err) {
-					// failed to close, error
-					rej(err);
-
-				} else {
-					// closed
-					res();
-				}
-			});
+		return new Promise((res) => {
+			// maybe probably closes the file
+			fs.close(fd, () => res());
 		});
 	});
 

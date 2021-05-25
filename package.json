@@ -122,9 +122,9 @@
 			{
 				"from": "./build/scripts/",
 				"filter": [
-					"audio.js",
 					"chips/*/dist/**/*",
 					"drivers/*/dist/**/*",
+					"audio/*/dist/**/*",
 					"**/*.json5"
 				],
 				"to": "./scripts"

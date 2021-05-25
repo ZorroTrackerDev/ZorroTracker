@@ -4,7 +4,7 @@ const join = require("path").join;
 const cp = require("child_process");
 const os = require("os");
 
-const paths = ["../src/scripts/chips", "../src/scripts/drivers", ];
+const paths = ["../src/scripts/chips", "../src/scripts/drivers", "../src/scripts/audio", ];
 
 for (const path of paths) {
     const dir = resolve(__dirname, path);

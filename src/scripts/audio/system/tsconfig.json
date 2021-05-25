@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "moduleResolution": "node",
+        "target": "es2020",
+        "module": "commonjs",
+		"esModuleInterop": true,
+		"alwaysStrict": true,
+        "lib": ["es2020"],
+        "types": ["node"]
+      },
+      "include": ["src/**/*"],
+      "exclude": ["node_modules", "**/*.spec.ts"]
+}

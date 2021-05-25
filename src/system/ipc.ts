@@ -83,11 +83,11 @@ export function close(): Promise<number> {
 			}
 
 			// will be closed, tell the worker about it and terminate it
-			worker.postMessage({ code: "quit", });
+			worker?.postMessage({ code: "quit", });
 
-			worker.once("message", (data:{ code:string, data:unknown }) => {
+			worker?.once("message", (data:{ code:string, data:unknown }) => {
 				if(data.code === "quit"){
-					worker.terminate().then(res).catch(rej);
+					worker?.terminate().then(res).catch(rej);
 				}
 			});
 		});
@@ -258,44 +258,55 @@ function _findall(folder:ScriptFolders, eventName:ipcEnum, event:IpcMainEvent) {
 /**
  * Various handlers for dealing with the audio adapter instance.
  */
-const worker = new Worker(path.join(dataPath, "scripts", "audio.js"));
+let worker:Worker|undefined;
 
-worker.on("message", (data:{ code:string, data:unknown }) => {
-	switch(data.code) {
-		case "error": log.error(...(data.data as unknown[]));
+ScriptHelper.findAll("audio").then((cfg) => {
+	if(cfg["audio"]){
+		// found the audio script, load it as a worker
+		worker = new Worker(cfg["audio"].entry);
+
+		// enable messages
+		worker.on("message", (data:{ code:string, data:unknown }) => {
+			switch(data.code) {
+				case "error": log.error(...(data.data as unknown[]));
+			}
+		});
+
+		// enable error logs
+		worker.on("error", log.error);
 	}
-});
+}).catch(console.error)
 
 // handle changing the volume of the audio adapter instance.
 ipcMain.on(ipcEnum.AudioVolume, (event, volume:number) => {
-	worker.postMessage({ code: "volume", data: volume, });
+	worker?.postMessage({ code: "volume", data: volume, });
 });
 
 // handle creating the audio adapter instance.
 ipcMain.on(ipcEnum.AudioCreate, (event, chip:ChipConfig, driver:DriverConfig) => {
 	// post the ChipConfig
-	worker.postMessage({ code: "chip", data: chip, });
+	worker?.postMessage({ code: "chip", data: chip, });
 
 	// post the DriverConfig
-	worker.postMessage({ code: "driver", data: driver, });
+	worker?.postMessage({ code: "driver", data: driver, });
 
 	// post the finally initialize the audio adapter instance
-	worker.postMessage({ code: "load", data: undefined, });
+	worker?.postMessage({ code: "load", data: undefined, });
 });
 
 // handle closing the audio adapter instance.
 ipcMain.on(ipcEnum.AudioClose, () => {
-	worker.postMessage({ code: "close", data: undefined, });
+	worker?.postMessage({ code: "close", data: undefined, });
 });
 
 // handle telling the audio adapter instance to play audio.
 ipcMain.on(ipcEnum.AudioPlay, (event, special?:string) => {
-	worker.postMessage({ code: "play", data: special, });
+	worker?.postMessage({ code: "play", data: special, });
 });
 
 // handle telling the audio adapter instance to stop playing audio.
 ipcMain.on(ipcEnum.AudioStop, () => {
-	worker.postMessage({ code: "stop", });
+	worker?.postMessage({ code: "stop", });
 });
 
 /**
@@ -304,12 +315,12 @@ ipcMain.on(ipcEnum.AudioStop, () => {
 
 // handle FM mute command
 ipcMain.on(ipcEnum.ChipMuteFM, (event, channel:number, state:boolean) => {
-	worker.postMessage({ code: "mutefm", data: [ channel, state, ], });
+	worker?.postMessage({ code: "mutefm", data: [ channel, state, ], });
 });
 
 // handle PSG mute command
 ipcMain.on(ipcEnum.ChipMuteFM, (event, channel:number, state:boolean) => {
-	worker.postMessage({ code: "mutepsg", data: [ channel, state, ], });
+	worker?.postMessage({ code: "mutepsg", data: [ channel, state, ], });
 });
 
 /**
@@ -322,8 +333,6 @@ export const log = {
 	warn: (...args:unknown[]):void => window?.webContents.send(ipcEnum.LogWarn, args),
 	error:(...args:unknown[]):void => window?.webContents.send(ipcEnum.LogError, args),
 }
-
-worker.on("error", log.error);
 
 // handle UI requesting systeminformation
 ipcMain.on(ipcEnum.UiSystemInfo, () => {

@@ -4,6 +4,8 @@ import path from "path";
 import { Chip, ChipConfig } from "../../../../api/scripts/chip";
 import { Driver, DriverConfig } from "../../../../api/scripts/driver";
 
+require("audify/build/Release/audify.node")
+
 // the output sample rate of the program. TODO: Not hardcode.
 const RATE = 44100;
 

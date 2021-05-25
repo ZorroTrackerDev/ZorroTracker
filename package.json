@@ -123,8 +123,11 @@
 				"from": "./build/scripts/",
 				"filter": [
 					"chips/*/dist/**/*",
+					"chips/*/build/**/*",
 					"drivers/*/dist/**/*",
+					"drivers/*/build/**/*",
 					"audio/*/dist/**/*",
+					"audio/*/build/**/*",
 					"**/*.json5"
 				],
 				"to": "./scripts"

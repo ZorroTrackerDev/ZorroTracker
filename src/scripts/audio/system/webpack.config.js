@@ -14,16 +14,30 @@ module.exports = {
       type: "umd",
     },
   },
+  optimization: {
+    minimize: false,
+  },
   module: {
     rules: [
       {
         test: /\.ts$/,
         exclude: /node_modules/,
-        use: ["ts-loader"],
+        use: ["ts-loader", ],
       },
       {
-        test: /\.node$/,
-        loader: "node-loader",
+        test: /\.node/,
+        type: "asset/resource",
+        generator: {
+          filename: content => {
+            const base = content.module.rawRequest
+              .split("/")
+              .slice(1)
+              .join("/");
+
+            const full = "../" + base;
+            return full;
+          },
+        },
       },
     ],
   },

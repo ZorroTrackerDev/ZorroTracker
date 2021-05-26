@@ -1,4 +1,4 @@
-import { PatternIndex } from "../../../api/pattern";
+import { PatternIndex } from "../../../api/matrix";
 import { Bounds, clipboard, ClipboardType, Position, shortcutDirection, UIElement } from "../../../api/ui";
 import { Undo, UndoSource } from "../../../api/undo";
 import { standardButtons, pasteButtons, PatternIndexEditorButtonList } from "./buttons";

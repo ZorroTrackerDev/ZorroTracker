@@ -1,8 +1,8 @@
-import { PatternIndex } from "../api/pattern";
-import { UIShortcutHandler } from "../api/ui";
-import { PatternIndexEditor } from "./elements/matrixeditor/main";
-import { volumeSlider, SliderEnum } from "./elements/slider/slider";
-import { addShortcutReceiver } from "./misc/shortcuts";
+import { UIShortcutHandler } from "../../api/ui";
+import { PatternIndexEditor } from "../elements/matrixeditor/main";
+import { volumeSlider, SliderEnum } from "../elements/slider/slider";
+import { Project } from "./project";
+import { addShortcutReceiver } from "./shortcuts";
 
 export class _Temp implements UIShortcutHandler {
 	public patternIndex:PatternIndexEditor|undefined;
@@ -39,9 +39,17 @@ export async function editorLayout():Promise<void> {
 	_top.id = "editor_top";
 	body.appendChild(_top);
 
-	// initialize the pattern index. TODO: Driver-dependant behavior
-	const index = new PatternIndex([ "FM1", "FM2", "FM3", "FM4", "FM5", "FM6", "PCM", "PSG1", "PSG2", "PSG3", "PSG4", ]);
-	_top.appendChild((_temp.patternIndex = new PatternIndexEditor(index)).element);
+	// initialize a new project. TODO: Driver-dependant behavior
+	const p = await Project.createProject("temp.zip");
+
+	if(!p) {
+		throw new Error("Failed to initialize Project");
+	}
+
+	Project.current = p;
+	setTimeout(() => p.save(false).catch(console.error), 100);
+
+	_top.appendChild((_temp.patternIndex = new PatternIndexEditor(Project.current.index)).element);
 	addShortcutReceiver("layout", (data) => _temp.receiveShortcut(data));
 
 	const _bot = document.createElement("div");

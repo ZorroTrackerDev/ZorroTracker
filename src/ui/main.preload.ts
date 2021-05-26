@@ -80,7 +80,7 @@ window.ipc.ui.path().then(() => {
 	}).catch(console.error);
 
 	// load the editor layout
-	import("./layout").then((module) => {
+	import("./misc/layout").then((module) => {
 		return module.editorLayout();
 	}).catch(console.error);
 

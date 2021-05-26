@@ -1,5 +1,5 @@
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../../api/events";
-import { PatternIndex } from "../../../api/pattern";
+import { PatternIndex } from "../../../api/matrix";
 import { PatternIndexEditor, editMode } from "./main";
 
 /**

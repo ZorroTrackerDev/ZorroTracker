@@ -1,6 +1,5 @@
 import { Position } from "./ui";
-import { ZorroEvent, ZorroEventEnum, ZorroSenderTypes } from "../api/events";
-
+import { ZorroEvent, ZorroEventEnum, ZorroSenderTypes } from "./events";
 
 /**
  * Class for a single pattern cell, which can only be used to store its immediate values.
@@ -13,7 +12,27 @@ import { ZorroEvent, ZorroEventEnum, ZorroSenderTypes } from "../api/events";
 	constructor(){
 		this.note = 0;
 		this.volume = 0;
-		this.commands = [];
+		this.commands = [ 0, ];
+	}
+
+	/**
+	 * Method to convert this pattern cell  into data
+	 */
+	public save():number[] {
+		const ret = [];
+
+		// convert the note to bytes
+		ret.push(this.note as number);
+
+		// convert the volume to bytes
+		ret.push(this.volume as number);
+
+		// push each command to res
+		for(const c of this.commands) {
+			ret.push(0, 0, 0, 0);
+		}
+
+		return ret;
 	}
 }
 
@@ -24,10 +43,29 @@ export class PatternData {
 	public cells:PatternCell[];
 	public owner:string;
 	public edited = false;
+	public width = 1;		// TODO: Get from channel itself
 
 	constructor(owner:string){
 		this.owner = owner;
 		this.cells = [];
+
+		for(let i = 64;i > 0; --i){
+			this.cells.push(new PatternCell());
+		}
+	}
+
+	/**
+	 * Method to convert this pattern into data
+	 */
+	public save():number[] {
+		const ret = [ this.width, ];
+
+		// push each cell data to ret
+		for(const c of this.cells) {
+			ret.push(...c.save());
+		}
+
+		return ret;
 	}
 }
 
@@ -36,18 +74,34 @@ export class PatternData {
  */
 export class PatternIndex {
 	// Stores the list of channels this pattern index stores
-	public channels:string[];
+	public channels!:string[];
 
 	// Stores a list of patterns per channel. Usage: patterns[channel][index]. Null/undefined means the value is unused
-	public patterns:(PatternData | null)[][];
+	public patterns!:(PatternData | null)[][];
 
 	// Stores the pattern matrix, where the mappings from song order to pattern index are stored. Usage: matrix[channel][index].
-	public matrix:Uint8Array[];
+	public matrix!:Uint8Array[];
 
 	// Stores the length of the matrix. Values at greater offsets should always be set to 0. Allows to easily determine long the pattern matrix is.
 	public matrixlen = 0;
 
-	constructor(channels:string[]) {
+	constructor() {
+		// create events
+		this.eventMake = ZorroEvent.createEvent(ZorroEventEnum.PatternMake);
+		this.eventTrim = ZorroEvent.createEvent(ZorroEventEnum.PatternTrim);
+		this.eventGet = ZorroEvent.createEvent(ZorroEventEnum.MatrixGet);
+		this.eventSet = ZorroEvent.createEvent(ZorroEventEnum.MatrixSet);
+		this.eventResize = ZorroEvent.createEvent(ZorroEventEnum.MatrixResize);
+		this.eventInsert = ZorroEvent.createEvent(ZorroEventEnum.MatrixInsert);
+		this.eventRemove = ZorroEvent.createEvent(ZorroEventEnum.MatrixRemove);
+	}
+
+	/**
+	 * Function to set the channels for this matrix
+	 *
+	 * @param channels The list of channels to set
+	 */
+	public setChannels(channels:string[]):void {
 		this.channels = channels;
 		this.patterns = [];
 		this.matrix = [];
@@ -57,15 +111,6 @@ export class PatternIndex {
 			this.patterns.push(new Array(256));
 			this.matrix.push(new Uint8Array(256));
 		}
-
-		// create events
-		this.eventMake = ZorroEvent.createEvent(ZorroEventEnum.PatternMake);
-		this.eventTrim = ZorroEvent.createEvent(ZorroEventEnum.PatternTrim);
-		this.eventGet = ZorroEvent.createEvent(ZorroEventEnum.MatrixGet);
-		this.eventSet = ZorroEvent.createEvent(ZorroEventEnum.MatrixSet);
-		this.eventResize = ZorroEvent.createEvent(ZorroEventEnum.MatrixResize);
-		this.eventInsert = ZorroEvent.createEvent(ZorroEventEnum.MatrixInsert);
-		this.eventRemove = ZorroEvent.createEvent(ZorroEventEnum.MatrixRemove);
 	}
 
 	private eventGet:ZorroSenderTypes[ZorroEventEnum.MatrixSet];
@@ -546,5 +591,67 @@ export class PatternIndex {
 		// set this pattern as unused and indicate success
 		this.patterns[channel][check] = null;
 		return true;
+	}
+
+	/**
+	 * Function to return the current matrix data
+	 *
+	 * @returns The data representing the current matrix
+	 */
+	public saveMatrix():Uint8Array {
+		// prepare the output buffer
+		const h = this.getHeight();
+		const ret = new Uint8Array(h * this.getWidth());
+
+		// loop for each channel and each position
+		for(let c = 0;c < this.channels.length;c ++){
+			for(let i = 0;i < this.matrixlen;i ++) {
+				// copy the byte at this cell
+				ret[(c * h) + i] = this.matrix[c][i];
+			}
+		}
+
+		// return the array back
+		return ret;
+	}
+
+	/**
+	 * Function to return the current patterns data
+	 *
+	 * @returns The data representing the current list of patterns
+	 */
+	public savePatterns():Uint8Array {
+		// accumulator of channel datas
+		const chans:number[] = [];
+
+		// load each channel
+		for(let c = 0;c < this.channels.length;c ++){
+			const ixs:number[] = [];
+
+			// loop for each index collecting its data
+			for(let i = 0;i < 256;i ++){
+				if(this.patterns[c][i]) {
+					// load the data from within the pattern
+					ixs.push(...(this.patterns[c][i] as PatternData).save());
+
+				} else {
+					// the pattern is null, just say it has -1 commands
+					ixs.push(0xFF);
+				}
+			}
+
+			// push each byte to the chans array
+			chans.push(...ixs);
+		}
+
+		// convert `chans` to Uint8Array
+		const array = new Uint8Array(chans.length);
+
+		for(let a = 0;a < chans.length;a ++) {
+			array[a] = chans[a];
+		}
+
+		// return the array back
+		return array;
 	}
 }

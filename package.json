@@ -33,6 +33,7 @@
 	},
 	"homepage": "https://github.com/ZorroTrackerDev/ZorroTracker#readme",
 	"devDependencies": {
+		"@types/adm-zip": "^0.4.34",
 		"@types/jest": "^26.0.22",
 		"@types/jsdom": "^16.2.10",
 		"@typescript-eslint/eslint-plugin": "^4.22.0",
@@ -52,7 +53,7 @@
 		"typescript": "^4.2.4"
 	},
 	"dependencies": {
-		"audify": "^1.6.0",
+		"adm-zip": "^0.5.5",
 		"json5": "^2.2.0",
 		"nuked-opn2-node": "file:./vendor/Nuked-OPN2.rs/nuked-opn2-node",
 		"nuked-psg-node": "file:./vendor/Nuked-PSG.rs/nuked-psg-node"

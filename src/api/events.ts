@@ -1,4 +1,4 @@
-import { PatternIndex } from "./pattern";
+import { PatternIndex } from "./matrix";
 import { ClipboardType } from "./ui";
 
 /**

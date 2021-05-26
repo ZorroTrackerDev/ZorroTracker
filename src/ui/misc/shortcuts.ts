@@ -1,6 +1,7 @@
 import { loadSettingsFiles, SettingsTypes } from "../../api/files";
 import { receiveShortcutFunc } from "../../api/ui";
 import { Undo } from "../../api/undo";
+import { Project } from "./project";
 
 /**
  * add a class for various shortcut errors
@@ -196,6 +197,18 @@ export function loadDefaultShortcuts(): void {
 			/* shortcut for doing a undo action */
 			case "undo":
 				return Undo.undo();
+
+			/* shortcut for doing a save action */
+			case "save":
+				try {
+					await Project.current?.save(false);
+					return true;
+
+				} catch(ex)  {
+					console.error(ex);
+				}
+
+				return false;
 		}
 
 		// shortcut was not handled

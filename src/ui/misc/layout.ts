@@ -47,7 +47,6 @@ export async function editorLayout():Promise<void> {
 	}
 
 	Project.current = p;
-	setTimeout(() => p.save(false).catch(console.error), 100);
 
 	_top.appendChild((_temp.patternIndex = new PatternIndexEditor(Project.current.index)).element);
 	addShortcutReceiver("layout", (data) => _temp.receiveShortcut(data));

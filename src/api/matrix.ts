@@ -1,18 +1,19 @@
 import { Position } from "./ui";
 import { ZorroEvent, ZorroEventEnum, ZorroSenderTypes } from "./events";
+import { TrackerCommands } from "./commands";
 
 /**
  * Class for a single pattern cell, which can only be used to store its immediate values.
  */
  export class PatternCell {
-	public note:unknown;
-	public volume:unknown;
-	public commands:unknown[];
+	public note:number;
+	public volume:number;
+	public commands:{ id: TrackerCommands|number, value: number, }[];
 
 	constructor(){
 		this.note = 0;
 		this.volume = 0;
-		this.commands = [ 0, ];
+		this.commands = [ { id: TrackerCommands.Empty, value: 0, }, ];
 	}
 
 	/**
@@ -29,7 +30,43 @@ import { ZorroEvent, ZorroEventEnum, ZorroSenderTypes } from "./events";
 
 		// push each command to res
 		for(const c of this.commands) {
-			ret.push(0, 0, 0, 0);
+			// push the command ID
+			ret.push(c.id >> 8, c.id & 0xFF);
+
+			if(c.id === 0) {
+				// no command!
+				continue;
+
+			} else if(c.id < 0x8000) {
+				// 1 byte
+				ret.push(c.value & 0xFF);
+
+			} else if(c.id < 0xC000) {
+				// 2 bytes
+				ret.push((c.value >> 8) & 0xFF);
+				ret.push(c.value & 0xFF);
+
+			} else if(c.id < 0xD000) {
+				// 3 bytes
+				ret.push((c.value >> 16) & 0xFF);
+				ret.push((c.value >> 8) & 0xFF);
+				ret.push(c.value & 0xFF);
+
+			} else if(c.id < 0xE000) {
+				// 4 bytes
+				ret.push((c.value >> 24) & 0xFF);
+				ret.push((c.value >> 16) & 0xFF);
+				ret.push((c.value >> 8) & 0xFF);
+				ret.push(c.value & 0xFF);
+
+			} else if(c.id < 0xF000) {
+				// 5 bytes
+				ret.push((c.value >> 32) & 0xFF);
+				ret.push((c.value >> 24) & 0xFF);
+				ret.push((c.value >> 16) & 0xFF);
+				ret.push((c.value >> 8) & 0xFF);
+				ret.push(c.value & 0xFF);
+			}
 		}
 
 		return ret;

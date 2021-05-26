@@ -932,7 +932,7 @@ export class PatternIndexEditor implements UIElement {
 		insert.title = "left click: Insert below\nright click: Insert above";
 
 		// handle clicking the insert button
-		insert.onmouseup = async (event:MouseEvent) => {
+		insert.onmouseup = (event:MouseEvent) => {
 			switch(event.button) {
 				case 0:	{	// left button, generate a new row at the very bottom and scroll down to it
 					const h = this.index.getHeight();

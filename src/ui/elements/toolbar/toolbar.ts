@@ -11,9 +11,13 @@ const defaultMenu:ToolbarMenu = {
 	"File": {
 		enabled: true,
 		child: {
+			"VGM TEST": {
+				enabled: true,
+				action: "window.preload.vgm()",
+			},
 			"Open": {
 				enabled: true,
-				action: "window.preload.open()",
+				action: "window.preload.shortcut(['ui.open'])",
 			},
 			"Save": {
 				enabled: true,

@@ -23,7 +23,7 @@ declare global {
 			/**
 			 * Helper function to handle the `open` UI function (for example with CTRL+O)
 			 */
-			open: () => void,
+			vgm: () => void,
 
 			/**
 			 * Execute a shortcut action. This is usually done within UI, such as toolbar

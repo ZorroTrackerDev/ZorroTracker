@@ -20,12 +20,42 @@ export class _Temp implements UIShortcutHandler {
 
 export const _temp = new _Temp();
 
-export async function editorLayout():Promise<void> {
+/**
+ * Types of different standard layouts
+ */
+export enum LayoutType {
+	Loading = "load",				// loading bar animation, also handles the animation that fades out/in the new layout
+	NoProjects = "noproject",		// this is the layout for when no editor is open at this moment
+	ProjectInfo = "projectinfo",	// project information editor and module chooser
+	Editor = "editor",				// the standard editor layout
+}
+
+/**
+ * Function to load a layout of a specific type
+ *
+ * @param type Type of the layout to load
+ * @returns A promise for the completion of the load
+ */
+export async function loadLayout(type:LayoutType):Promise<unknown> {
+	// load the editor parent element as `body`
 	const body = document.getElementById("main_content");
 
-	if(!body){
-		throw new Error("Failed to initialize editorLayout");
+	// check if it was found and is a div
+	if(!body || !(body instanceof HTMLDivElement)){
+		throw new Error("Unable to load layout "+ type +": parent element main_content not found!");
 	}
+
+	console.info("load layout "+ type);
+
+	// huge switch case for the layout type
+	switch(type) {
+		case LayoutType.Editor: return editorLayout(body);
+	}
+
+	throw new Error("Unable to load layout "+ type +": Not defined!");
+}
+
+export async function editorLayout(body:HTMLDivElement):Promise<void> {
 
 	/**
 	 * -------------------------------------

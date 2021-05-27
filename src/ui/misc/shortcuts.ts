@@ -186,9 +186,32 @@ export function loadDefaultShortcuts(): void {
 				return true;
 
 			/* shortcut for opening a file or a project */
-			case "open":
-				window.preload.open();
+			case "open":{
+				const result = await window.ipc.ui.dialog("openfolder", {
+					properties: [ "openFile", ],
+					filters: [
+						{ name: "ZorroTracker Module Files", extensions: [ "ztm", ], },
+						{ name: "ZorroTracker Files", extensions: [ "zip", ], },
+						{ name: "All Files", extensions: [ "*", ], },
+					],
+				});
+
+				// if invalid file was applied or operation was cancelled, abort
+				if(!result || result.filePaths.length !== 1) {
+					return false;
+				}
+
+				// try to load the project
+				const p = await Project.loadProject(result.filePaths[0]);
+
+				if(!p){
+					return false;
+				}
+
+				// save project as current
+				Project.current = p;
 				return true;
+			}
 
 			/* shortcut for doing a redo action */
 			case "redo":

@@ -14,6 +14,7 @@ import "./extensions";
 
 /* ipc communication */
 import "./ipc ui";
+import { LayoutType } from "./misc/layout";
 import { doShortcut } from "./misc/shortcuts";
 
 window.preload = {
@@ -39,8 +40,8 @@ window.preload = {
 		update(document.getElementById("main_toolbar_maximize"));
 	},
 
-	/* open a file or a project and handle response. */
-	open: async function() {
+	/* open a VGM file */
+	vgm: async function() {
 		const result = await window.ipc.ui.dialog("openfolder", {
 			properties: [ "openFile", ],
 			filters: [
@@ -81,7 +82,7 @@ window.ipc.ui.path().then(() => {
 
 	// load the editor layout
 	import("./misc/layout").then((module) => {
-		return module.editorLayout();
+		return module.loadLayout(LayoutType.Editor);
 	}).catch(console.error);
 
 	return window.ipc.chip.findAll();

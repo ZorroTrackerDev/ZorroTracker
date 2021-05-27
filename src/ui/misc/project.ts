@@ -3,7 +3,7 @@ import { PatternIndex } from "../../api/matrix";
 import { ConfigVersion } from "../../api/scripts/config";
 
 /**
- * FILE STRUCTURE FOR .ZORRO FILES
+ * FILE STRUCTURE FOR .ztm FILES
  *
  * <aything>.zorro
  *		.zorro -> (json) ProjectConfig
@@ -24,6 +24,8 @@ export class Project {
 	 * @returns null if failed to create the project correctly, or the project data
 	 */
 	public static async createProject(file:string):Promise<Project|null> {
+		console.info("Create new project: "+ file);
+
 		const project = new Project(file);
 		project.config = Project.createTestConfig();
 		project.modules = [];
@@ -62,6 +64,7 @@ export class Project {
 	 * @returns null if failed to load the project, or the project data
 	 */
 	public static async loadProject(file:string):Promise<Project|null> {
+		console.info("Load project: "+ file);
 		const project = new Project(file);
 		return project;
 	}
@@ -89,6 +92,8 @@ export class Project {
 	 */
 	public async save(autosave:boolean):Promise<void> {
 		return new Promise((res, rej) => {
+			console.info("Save project: "+ this.file);
+
 			// create a new zip file
 			const zip = new admZip();
 

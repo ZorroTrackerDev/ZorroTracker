@@ -1,6 +1,7 @@
 import admZip from "adm-zip";
 import { PatternIndex } from "../../api/matrix";
 import { ConfigVersion } from "../../api/scripts/config";
+import { fadeToLayout, LayoutType, loadLayout } from "./layout";
 
 /**
  * FILE STRUCTURE FOR .ztm FILES
@@ -67,6 +68,25 @@ export class Project {
 		console.info("Load project: "+ file);
 		const project = new Project(file);
 		return project;
+	}
+
+	public static async loadProjectInfo(file:string): Promise<boolean> {
+		// open loading animation
+		await loadLayout(LayoutType.Loading);
+
+		// try to load the project
+		const p = await Project.loadProject(file);
+
+		if(!p){
+			await loadLayout(LayoutType.NoLoading);
+			return false;
+		}
+
+		// save project as current
+		Project.current = p;
+		await fadeToLayout(LayoutType.Editor);
+		await loadLayout(LayoutType.NoLoading);
+		return true;
 	}
 
 	/**

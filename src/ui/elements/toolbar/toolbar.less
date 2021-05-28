@@ -6,6 +6,11 @@ html {
 	overflow: hidden;
 }
 
+body {
+	margin: 0;
+	margin-top: @height;
+}
+
 input {
 	user-select: text;
 }
@@ -16,14 +21,29 @@ input {
 	position: absolute;
 }
 
+/* loading icon position */
+#loading {
+	.__main__();
+	top: @height;
+	bottom: 0;
+	z-index: 1000;
+	pointer-events: none;
+}
+
 /* content wrapper */
 #main_content {
+	&.fadeout {
+		opacity: 0;
+	}
+
+	opacity: 1;
+	transition: opacity .5s ease-in-out;
+
 	.__main__();
 	-webkit-app-region: no-drag;
 	overflow: hidden;
 	top: @height;
 	bottom: 0;
-	background: #4b4b4b;
 	overflow: hidden;
 }
 
@@ -39,7 +59,7 @@ input {
 #main_toolbar {
 	.__main__();
 	top: 0;
-	bottom: @height - @dragh;
+	bottom: calc(100% - @height);
 	background: @toolbarbg;
 	-webkit-app-region: drag;
 	margin-top: @dragh;		// hack! this allows dragging on the sides of the content, because apparently making something -webkit-app-region: drag; borks that! great.

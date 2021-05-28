@@ -1,6 +1,7 @@
 import { loadSettingsFiles, SettingsTypes } from "../../api/files";
 import { receiveShortcutFunc } from "../../api/ui";
 import { Undo } from "../../api/undo";
+import { fadeToLayout, LayoutType, loadLayout } from "./layout";
 import { Project } from "./project";
 
 /**
@@ -201,16 +202,7 @@ export function loadDefaultShortcuts(): void {
 					return false;
 				}
 
-				// try to load the project
-				const p = await Project.loadProject(result.filePaths[0]);
-
-				if(!p){
-					return false;
-				}
-
-				// save project as current
-				Project.current = p;
-				return true;
+				return Project.loadProjectInfo(result.filePaths[0]);
 			}
 
 			/* shortcut for doing a redo action */

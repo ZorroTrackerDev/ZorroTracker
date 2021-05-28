@@ -2,22 +2,22 @@ import electron, { BrowserWindow } from "electron";
 import path from "path";
 
 // add the IPC handlers here
-import { log, getCookie, setCookie, updateMaximized, close as IpcClose } from "./system/ipc";
+import { getCookie, setCookie, updateMaximized, close as IpcClose } from "./system/ipc";
 
 // static reference to the main window
-export let window:electron.BrowserWindow|null = null;
+export let window:BrowserWindow|null = null;
 
 // function that creates a new window and loads ui/main.html.
 async function createWindow () {
 	const settings = await loadWindowSettings("main");
 	console.log("spawn-main-window", settings);
 
-	window = new electron.BrowserWindow({
+	window = new BrowserWindow({
 		width: settings.w, height: settings.h,
 		minWidth: 400, minHeight: 400,
 		x: settings.x, y: settings.y,
 		frame: process.env.NODE_ENV === "test",
-		show: true, backgroundColor: "#222222",
+		show: true, backgroundColor: "#111",
 
 		webPreferences: {
 			preload: path.join(__dirname, "ui", "main.preload.js"),
@@ -103,7 +103,7 @@ electron.app.whenReady().then(async() => {
 	// on Mac OS, we want to be able to respawn the app without fully closing it apparently
 	electron.app.on("activate", async() => {
 		try {
-			if (electron.BrowserWindow.getAllWindows().length === 0) {
+			if (BrowserWindow.getAllWindows().length === 0) {
 				await createWindow();
 			}
 

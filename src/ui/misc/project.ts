@@ -112,6 +112,7 @@ export class Project {
 	 */
 	public async save(autosave:boolean):Promise<void> {
 		return new Promise((res, rej) => {
+			window.isLoading = true;
 			console.info("Save project: "+ this.file);
 
 			// create a new zip file
@@ -147,6 +148,10 @@ export class Project {
 
 				// success, resolve the promise
 				res();
+
+				// if not autosaving, then clear the dirty flag
+				this.dirty = this.dirty && autosave;
+				window.isLoading = false;
 			});
 		})
 	}
@@ -168,12 +173,13 @@ export class Project {
 		// set new module data
 		this.data[data.file] = {
 			// create an empty patternIndex
-			index: new PatternIndex(),
+			index: new PatternIndex(this),
 		};
 	}
 
 	/* The name of the currently active module */
 	private _current = "";
+	public dirty = false;
 
 	/**
 	 * Function to set the active module by its name.

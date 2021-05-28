@@ -1,6 +1,7 @@
 import { Position } from "./ui";
 import { ZorroEvent, ZorroEventEnum, ZorroSenderTypes } from "./events";
 import { TrackerCommands } from "./commands";
+import { Project } from "../ui/misc/project";
 
 /**
  * Class for a single pattern cell, which can only be used to store its immediate values.
@@ -110,6 +111,9 @@ export class PatternData {
  * Class to hold the pattern index of the song. Will be managed by both the PatternEditor instance and the wider program.
  */
 export class PatternIndex {
+	// the project this PatternIndex is apart of
+	private project:Project;
+
 	// Stores the list of channels this pattern index stores
 	public channels!:string[];
 
@@ -122,7 +126,9 @@ export class PatternIndex {
 	// Stores the length of the matrix. Values at greater offsets should always be set to 0. Allows to easily determine long the pattern matrix is.
 	public matrixlen = 0;
 
-	constructor() {
+	constructor(project:Project) {
+		this.project = project;
+
 		// create events
 		this.eventMake = ZorroEvent.createEvent(ZorroEventEnum.PatternMake);
 		this.eventTrim = ZorroEvent.createEvent(ZorroEventEnum.PatternTrim);
@@ -295,7 +301,7 @@ export class PatternIndex {
 		if(!_e.event.canceled) {
 			// set the value at channel and index and indicate success
 			this.matrix[channel][index] = _e.value ?? value;
-			return true;
+			return this.project.dirty = true;
 		}
 
 		return false;
@@ -323,7 +329,7 @@ export class PatternIndex {
 			// call the event and apply only if allowed
 			if(!_e.event.canceled) {
 				this.matrix[c][index] = _e.value ?? data[c];
-				ret = true;
+				ret = this.project.dirty = true;
 			}
 		}
 
@@ -374,6 +380,7 @@ export class PatternIndex {
 
 					// copy the value from matrix
 					this.matrix[c][r] = _v;
+					this.project.dirty = true;
 				}
 			}
 		}
@@ -511,7 +518,7 @@ export class PatternIndex {
 
 		// indicate there is 1 less entry in the matrix now and return success
 		this.matrixlen--;
-		return true;
+		return this.project.dirty = true;
 	}
 
 	/**
@@ -563,7 +570,7 @@ export class PatternIndex {
 
 		// create a new pattern here and indicate success
 		this.patterns[channel][index] = new PatternData(this.channels[channel]);
-		return true;
+		return this.project.dirty = true;
 	}
 
 	/**
@@ -589,6 +596,7 @@ export class PatternIndex {
 					// if the pattern can be removed, then do so here.
 					if(remove && !(await this.eventTrim(this, c, x)).event.canceled) {
 						this.patterns[c][x] = null;
+						this.project.dirty = true;
 					}
 				}
 			}
@@ -627,7 +635,7 @@ export class PatternIndex {
 
 		// set this pattern as unused and indicate success
 		this.patterns[channel][check] = null;
-		return true;
+		return this.project.dirty = true;
 	}
 
 	/**

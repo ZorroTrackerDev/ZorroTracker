@@ -17,6 +17,8 @@ import "./ipc ui";
 import { LayoutType } from "./misc/layout";
 import { doShortcut } from "./misc/shortcuts";
 
+window.isLoading = false;
+
 window.preload = {
 	/**
 	 * Helper function to update the maximize UI button depending on the window state. This info comes from the Node side using IPC.

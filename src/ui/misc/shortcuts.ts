@@ -1,7 +1,6 @@
 import { loadSettingsFiles, SettingsTypes } from "../../api/files";
 import { receiveShortcutFunc } from "../../api/ui";
 import { Undo } from "../../api/undo";
-import { fadeToLayout, LayoutType, loadLayout } from "./layout";
 import { Project } from "./project";
 
 /**
@@ -84,6 +83,11 @@ document.addEventListener("keydown", (event) => {
 });
 
 export function doShortcut(name:string[], event?:KeyboardEvent):void {
+	// if loading currently, disable all shortcuts
+	if(window.isLoading) {
+		return;
+	}
+
 	(async() => {
 		// do each shortcut separately
 		for(const com of name) {
@@ -204,6 +208,14 @@ export function loadDefaultShortcuts(): void {
 
 				return Project.loadProjectInfo(result.filePaths[0]);
 			}
+
+			/* shortcut for creating a new project */
+			case "new":
+				return Project.loadProjectInfo("temp.ztm");
+
+			/* shortcut for closing a project */
+			case "close":
+				return false;
 
 			/* shortcut for doing a redo action */
 			case "redo":

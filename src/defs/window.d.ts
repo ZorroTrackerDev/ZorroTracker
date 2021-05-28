@@ -8,6 +8,11 @@ declare global {
 		exports: unknown,
 
 		/**
+		 * Set to `true` when loading icon is active or otherwise important tasks are being done. If `true`, things like shortcuts are not allowed.
+		 */
+		isLoading: boolean,
+
+		/**
 		 * The absolute path for the program data directory. This is where the exe file is in production, or the build directory in development.
 		 */
 		path: string,

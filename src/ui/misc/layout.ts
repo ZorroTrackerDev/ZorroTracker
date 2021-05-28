@@ -45,6 +45,7 @@ async function removeTransition() {
 
 	setTimeout(() => {
 		clearChildren(body);
+		window.isLoading = false;
 	}, 510);
 	return;
 }
@@ -53,6 +54,7 @@ async function removeTransition() {
  * Create a loading transition
  */
 async function loadTransition() {
+	window.isLoading = true;
 	// load the editor parent element as `body`
 	const body = document.getElementById("loading");
 
@@ -184,7 +186,7 @@ async function noProjectLayout(body:HTMLDivElement):Promise<void> {
 
 	// create new text
 	const crt = document.createElement("div");
-	crt.innerText = "Create a Project";
+	crt.innerText = "New Project";
 	contain.appendChild(crt);
 
 	// add the onclick handler

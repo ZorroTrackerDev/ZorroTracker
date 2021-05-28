@@ -15,6 +15,10 @@ const defaultMenu:ToolbarMenu = {
 				enabled: true,
 				action: "window.preload.vgm()",
 			},
+			"New": {
+				enabled: true,
+				action: "window.preload.shortcut(['ui.new'])",
+			},
 			"Open": {
 				enabled: true,
 				action: "window.preload.shortcut(['ui.open'])",

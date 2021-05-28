@@ -145,7 +145,7 @@ ipcMain.on(ipcEnum.UiInspectElement, () => {
 
 // handle the UI requesting Console to be opened
 ipcMain.on(ipcEnum.UiConsole, () => {
-	window?.webContents.openDevTools({ mode: "bottom", activate: false, });
+	window?.webContents.openDevTools({ mode: "right", activate: false, });
 });
 
 // handle the UI requesting a dialog box be opened

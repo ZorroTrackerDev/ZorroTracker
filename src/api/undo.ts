@@ -76,6 +76,14 @@ export class Undo {
 	}
 
 	/**
+	 * Function to remove every element from the undo stack
+	 */
+	public static clear():void {
+		Undo.index = 0;
+		Undo.stack = [];
+	}
+
+	/**
 	 * Execute the previous undo action
 	 *
 	 * @returns Boolean on whether there was an undo action to execute

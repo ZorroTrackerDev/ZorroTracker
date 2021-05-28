@@ -196,11 +196,15 @@ async function noProjectLayout(body:HTMLDivElement):Promise<void> {
 
 	// add the onclick handler
 	crt.onclick = () => {
-		Project.loadProjectInfo("temp.ztm").catch(console.error);
+		window.preload.shortcut([ "ui.new", ]);
 	};
 }
 
 export async function editorLayout(body:HTMLDivElement):Promise<void> {
+	if(!Project.current) {
+		throw new Error("Failed to load editorLayout: No project loaded.");
+	}
+
 	clearChildren(body);
 	/**
 	 * -------------------------------------
@@ -213,15 +217,6 @@ export async function editorLayout(body:HTMLDivElement):Promise<void> {
 	const _top = document.createElement("div");
 	_top.id = "editor_top";
 	body.appendChild(_top);
-
-	// initialize a new project. TODO: Driver-dependant behavior
-	const p = await Project.createProject("temp.zip");
-
-	if(!p) {
-		throw new Error("Failed to initialize Project");
-	}
-
-	Project.current = p;
 
 	_top.appendChild((_temp.patternIndex = new PatternIndexEditor(Project.current.index)).element);
 	addShortcutReceiver("layout", (data) => _temp.receiveShortcut(data));

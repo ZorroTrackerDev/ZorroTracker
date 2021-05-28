@@ -34,43 +34,85 @@ import { Project } from "../ui/misc/project";
 			// push the command ID
 			ret.push(c.id >> 8, c.id & 0xFF);
 
-			if(c.id === 0) {
-				// no command!
-				continue;
-
-			} else if(c.id < 0x8000) {
-				// 1 byte
+			if(c.id > 0) {
 				ret.push(c.value & 0xFF);
+			}
 
-			} else if(c.id < 0xC000) {
-				// 2 bytes
+			if(c.id >= 0x8000) {
 				ret.push((c.value >> 8) & 0xFF);
-				ret.push(c.value & 0xFF);
+			}
 
-			} else if(c.id < 0xD000) {
-				// 3 bytes
+			if(c.id >= 0xC000) {
 				ret.push((c.value >> 16) & 0xFF);
-				ret.push((c.value >> 8) & 0xFF);
-				ret.push(c.value & 0xFF);
+			}
 
-			} else if(c.id < 0xE000) {
-				// 4 bytes
+			if(c.id >= 0xD000) {
 				ret.push((c.value >> 24) & 0xFF);
-				ret.push((c.value >> 16) & 0xFF);
-				ret.push((c.value >> 8) & 0xFF);
-				ret.push(c.value & 0xFF);
+			}
 
-			} else if(c.id < 0xF000) {
-				// 5 bytes
+			if(c.id >= 0xE000) {
 				ret.push((c.value >> 32) & 0xFF);
-				ret.push((c.value >> 24) & 0xFF);
-				ret.push((c.value >> 16) & 0xFF);
-				ret.push((c.value >> 8) & 0xFF);
-				ret.push(c.value & 0xFF);
+			}
+
+			if(c.id >= 0xF000) {
+				ret.push((c.value >> 40) & 0xFF);
 			}
 		}
 
 		return ret;
+	}
+
+	/**
+	 * Function to convert a Buffer to PatternCell instance
+	 *
+	 * @param data The data `Buffer` to read from
+	 * @param idx The starting position of the data to read
+	 * @returns The new position
+	 */
+	public load(data:Buffer, idx:number, width:number):number {
+		let index = idx;
+
+		// load the note and the volume
+		this.note = data[index++];
+		this.volume = data[index++];
+
+		// loop for each command
+		for(let i = width;i > 0; --i) {
+			// load the command ID
+			const id = (data[index++] << 8) | data[index++];
+			let value = 0;
+
+			// get the value byte by byte, depending on the ID
+			if(id > 0) {
+				value |= data[index++];
+			}
+
+			if(id >= 0x8000) {
+				value |= data[index++] << 8;
+			}
+
+			if(id >= 0xC000) {
+				value |= data[index++] << 16;
+			}
+
+			if(id >= 0xD000) {
+				value |= data[index++] << 24;
+			}
+
+			if(id >= 0xE000) {
+				value |= data[index++] << 32;
+			}
+
+			if(id >= 0xF000) {
+				value |= data[index++] << 40;
+			}
+
+			// finally, put dat command in
+			this.commands.push({ id: id, value: value, });
+		}
+
+		// return the new position
+		return index;
 	}
 }
 
@@ -96,7 +138,8 @@ export class PatternData {
 	 * Method to convert this pattern into data
 	 */
 	public save():number[] {
-		const ret = [ this.width, ];
+		// save the command width of this pattern
+		const ret = [ this.cells.length, this.width, ];
 
 		// push each cell data to ret
 		for(const c of this.cells) {
@@ -104,6 +147,35 @@ export class PatternData {
 		}
 
 		return ret;
+	}
+
+	/**
+	 * Function to convert a Buffer to PatternData instance
+	 *
+	 * @param data The data `Buffer` to read from
+	 * @param idx The starting position of the data to read
+	 * @returns The new position
+	 */
+	public load(data:Buffer, idx:number):number {
+		// load the number of cells for this pattern
+		let index = idx;
+		const cells = data[index++];
+
+		// load the command width of this pattern
+		this.width = data[index++];
+
+		// process every cells one at a time
+		for(let i = cells;i > 0; --i) {
+			// generate a new cell
+			const cd = new PatternCell();
+			this.cells.push(cd);
+
+			// load cell data
+			cd.load(data, index, this.width);
+		}
+
+		// return the new position
+		return index;
 	}
 }
 
@@ -661,6 +733,35 @@ export class PatternIndex {
 	}
 
 	/**
+	 * Function to load matrix state from a `Buffer`
+	 *
+	 * @returns Boolean indicating whether it was successful or not
+	 */
+	public loadMatrix(data:Buffer): boolean {
+		// get the data height for this matrix
+		const height = data.length / this.channels.length;
+
+		// if the data is not divisibly by channel count, then it is invalid!
+		if(height !== Math.round(height)) {
+			return false;
+		}
+
+		// set matrix height
+		this.matrixlen = height;
+
+		// loop for each channel and each position
+		for(let c = 0;c < this.channels.length;c ++){
+			for(let i = 0;i < height;i ++) {
+				// copy the byte at this cell
+				this.matrix[c][i] = data[(c * height) + i];
+			}
+		}
+
+		// success!
+		return true;
+	}
+
+	/**
 	 * Function to return the current patterns data
 	 *
 	 * @returns The data representing the current list of patterns
@@ -698,5 +799,33 @@ export class PatternIndex {
 
 		// return the array back
 		return array;
+	}
+
+	/**
+	 * Function to load patterns state from a `Buffer`
+	 *
+	 * @returns Boolean indicating whether it was successful or not
+	 */
+	public loadPatterns(data:Buffer): boolean {
+		let index = 0;
+
+		// load each channel
+		for(let c = 0;c < this.channels.length;c ++){
+			// loop for each index
+			for(let i = 0;i < 256;i ++){
+				if(data[index] === 0xFF) {
+					// empty element!
+					index++;
+					this.patterns[c][i] = null;
+
+				} else {
+					// there is data here
+					this.patterns[c][i] = new PatternData(this.channels[c]);
+					index = (this.patterns[c][i] as PatternData).load(data, index);
+				}
+			}
+		}
+
+		return true;
 	}
 }

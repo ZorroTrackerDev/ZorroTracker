@@ -26,13 +26,6 @@ export class PatternIndexEditor implements UIElement {
 		// initialize the pattern index. TODO: Driver-dependant behavior
 		this.index = index;
 		this.setLayout();
-
-		// generate the first row
-		this.insertRow(0).then(async() => {
-			// select the first row first channel
-			await this.select(false, { x: 0, y: 0, w: 0, h: 0, });
-
-		}).catch(console.error);
 	}
 
 	// amount of filler rows at the top (fixes broken scroll behavior)
@@ -67,11 +60,6 @@ export class PatternIndexEditor implements UIElement {
 		this.elrows.classList.add("patterneditor_rows");
 		this.elscroll.appendChild(this.elrows);
 
-		// add the filler rows
-		for(let x = PatternIndexEditor.FILLER_ROWS;x > 0;x --){
-			this.elrows.appendChild(document.createElement("p"));
-		}
-
 		// generate the buttons for this editor
 		this.elbtns = document.createElement("div");
 		this.elbtns.classList.add("patterneditor_buttons");
@@ -101,6 +89,39 @@ export class PatternIndexEditor implements UIElement {
 
 		// DO NOT register button presses
 		this.element.onkeydown = (e) => e.preventDefault();
+
+		// update the layout to comply with index
+		this.resetMatrixDisplay().catch(console.error);
+	}
+
+	/**
+	 * Function to fully reset and update matrix view depending on the index
+	 */
+	private async resetMatrixDisplay() {
+		// remove all existing children!
+		while(this.elrows.children.length > 0) {
+			this.elrows.removeChild(this.elrows.children[0]);
+		}
+
+		// add the filler rows
+		for(let x = PatternIndexEditor.FILLER_ROWS;x > 0;x --){
+			this.elrows.appendChild(document.createElement("p"));
+		}
+
+		// fill in rows
+		for(let r = 0; r < this.index.matrixlen;r ++) {
+			if(await this.insertRowUI(r)) {
+				this.fixRowIndex(r);
+			}
+		}
+
+		// if the matrix is completely empty, insert a row here
+		if(this.index.matrixlen === 0) {
+			await this.insertRow(0);
+		}
+
+		// select the first element
+		await this.select(null, { x: 0, y: 0, h: 0, w: 0, });
 	}
 
 	// the current text editing mode: false = left, true = right

@@ -1,7 +1,6 @@
 import admZip from "adm-zip";
 import { PatternIndex } from "../../api/matrix";
 import { ConfigVersion } from "../../api/scripts/config";
-import { fadeToLayout, LayoutType, loadLayout } from "./layout";
 
 /**
  * FILE STRUCTURE FOR .ztm FILES
@@ -38,6 +37,7 @@ export class Project {
 		return {
 			name: "Test Project",
 			version: ConfigVersion.b0,
+			type: ZorroConfigType.Project,
 			autosave: null,
 			chip: "9d8d2954-ad94-11eb-8529-0242ac130003",	// Nuked
 			driver: "9d8d267a-ad94-11eb-8529-0242ac130003",	// VGM
@@ -65,28 +65,122 @@ export class Project {
 	 * @returns null if failed to load the project, or the project data
 	 */
 	public static async loadProject(file:string):Promise<Project|null> {
-		console.info("Load project: "+ file);
-		const project = new Project(file);
-		return project;
-	}
+		console.info("Load project:", file);
 
-	public static async loadProjectInfo(file:string): Promise<boolean> {
-		// open loading animation
-		await loadLayout(LayoutType.Loading);
+		try {
+			// create a new project
+			const project = new Project(file);
 
-		// try to load the project
-		const p = await Project.loadProject(file);
+			// create a new zip file
+			const zip = new admZip(file);
 
-		if(!p){
-			await loadLayout(LayoutType.NoLoading);
-			return false;
+			/**
+			 * Safe function to read file contents as JSON
+			 *
+			 * @param f The filename
+			 * @param error The string to create an error with if the file was not found
+			 * @returns the JSON object
+			 */
+			const _readSafe = (f:string, error:string) => {
+				// try to get the file, but if failed, return a null
+				const dat = zip.getEntry(f);
+
+				if(!dat){
+					throw new Error(error);
+				}
+
+				// read the file as UTF8
+				return JSON.parse(zip.readAsText(dat));
+			}
+
+			{	// try to read the zorro file
+				const file = _readSafe(".zorro", "Expected file .zorro to exist in the project file, but was not found.");
+
+				if(!file) {
+					throw new Error("Can not read .zorro file!");
+				}
+
+				// save the project config
+				project.config = file as ProjectConfig;
+
+				// validate the project config
+				switch(project.config.version) {
+					case ConfigVersion.b0:
+						break;
+
+					default:
+						throw new Error("This project version "+ project.config.version +" is invalid.");
+				}
+
+				// validate its type
+				switch(project.config.type) {
+					case ZorroConfigType.Project:
+						break;
+
+					default:
+						throw new Error("File type "+ project.config.type +" is not supported.");
+				}
+
+				// make sure autosaves are accounted for
+				if(project.config.autosave) {
+					project.file = project.config.autosave;
+					project.config.autosave = null;
+				}
+			}
+
+			{	// read the modules file
+				const file = _readSafe(".modules", "Expected file .modules to exist in the project file, but was not found.");
+
+				if(!Array.isArray(file) && !file) {
+					throw new Error("Can not read .modules file!");
+				}
+
+				// copy modules data
+				project.modules = file as Module[];
+			}
+
+			/**
+			 * Safe function to read file contents as binary
+			 *
+			 * @param f The filename
+			 * @returns the JSON object
+			 */
+			const _dataSafe = (f:string) => {
+				// try to get the file, but if failed, return a null
+				const dat = zip.readFile(f);
+
+				if(!dat){
+					throw new Error("Expected file"+ f +" to exist, but it was not found!");
+				}
+
+				return dat;
+			}
+
+			// laod all module datas
+			for(const m of project.modules) {
+				// initialize the module data
+				const x:ModuleData = {
+					index: new PatternIndex(project),
+				};
+
+				// set channels and prepare matrix and patterns
+				x.index.setChannels([ "FM1", "FM2", "FM3", "FM4", "FM5", "FM6", "PCM", "PSG1", "PSG2", "PSG3", "PSG4", ]);
+				x.index.loadMatrix(_dataSafe("modules/"+ m.file +"/.matrix"));
+				x.index.loadPatterns(_dataSafe("modules/"+ m.file +"/.patterns"));
+
+				// save into projecct
+				project.data[m.file] = x;
+
+				//temp
+				project.setActiveModule(m.file);
+			}
+
+			return project;
+
+		} catch(ex) {
+			console.error("Failed to load project:", ex);
+			return null;
 		}
-
-		// save project as current
-		Project.current = p;
-		await fadeToLayout(LayoutType.Editor);
-		await loadLayout(LayoutType.NoLoading);
-		return true;
 	}
 
 	/**
@@ -102,7 +196,7 @@ export class Project {
 	private file:string;
 	public config!:ProjectConfig;
 	public modules!:Module[];
-	public data: { [key:string]: ModuleData };
+	public data:{ [key:string]: ModuleData };
 
 	/**
 	 * Function to save the project to disk
@@ -214,17 +308,28 @@ export class Project {
 	}
 }
 
-export interface ProjectConfig {
+export interface ZorroConfig {
 	/**
-	 * Name of the project. This is separate from the names of individual modules!
+	 * Name of the file. This is separate from the names of individual modules!
 	 */
 	name: string,
+
+	/**
+	 * Type of the file. This will determine what fields are expected to exist.
+	 */
+	type: ZorroConfigType,
 
 	/**
 	 * Version of the API the project was created under. This is so that newer versions of ZorroTracker can correctly convert project versions.
 	 */
 	version: ConfigVersion,
+}
 
+export enum ZorroConfigType {
+	Project,
+}
+
+export interface ProjectConfig extends ZorroConfig {
 	/**
 	 * UUID of the chip we are using currently for the project
 	 */

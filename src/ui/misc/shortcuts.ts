@@ -1,6 +1,7 @@
 import { loadSettingsFiles, SettingsTypes } from "../../api/files";
 import { receiveShortcutFunc } from "../../api/ui";
 import { Undo } from "../../api/undo";
+import { fadeToLayout, LayoutType, loadLayout } from "./layout";
 import { Project } from "./project";
 
 /**
@@ -206,12 +207,45 @@ export function loadDefaultShortcuts(): void {
 					return false;
 				}
 
-				return Project.loadProjectInfo(result.filePaths[0]);
+				// open loading animation
+				await loadLayout(LayoutType.Loading);
+				Undo.clear();
+
+				// try to load the project
+				const p = await Project.loadProject(result.filePaths[0]);
+
+				if(!p){
+					await loadLayout(LayoutType.NoLoading);
+					return false;
+				}
+
+				// save project as current
+				Project.current = p;
+				await fadeToLayout(LayoutType.Editor);
+				await loadLayout(LayoutType.NoLoading);
+				return true;
 			}
 
 			/* shortcut for creating a new project */
-			case "new":
-				return Project.loadProjectInfo("temp.ztm");
+			case "new": {
+				// open loading animation
+				await loadLayout(LayoutType.Loading);
+				Undo.clear();
+
+				// try to load the project
+				const p = await Project.createProject("temp.ztm");
+
+				if(!p){
+					await loadLayout(LayoutType.NoLoading);
+					return false;
+				}
+
+				// save project as current
+				Project.current = p;
+				await fadeToLayout(LayoutType.Editor);
+				await loadLayout(LayoutType.NoLoading);
+				return true;
+			}
 
 			/* shortcut for closing a project */
 			case "close":

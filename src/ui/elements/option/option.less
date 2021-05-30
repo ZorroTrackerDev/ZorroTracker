@@ -1,0 +1,79 @@
+.option {
+	display: flex;
+	font-family: sans-serif;
+	background: #27272b;
+	width: fit-content;
+	border-radius: 4px;
+
+	&> * {
+		display: inline-block;
+		color: #d6d6d6;
+		overflow: hidden;
+	}
+
+	&> .option_value {
+		cursor: pointer;
+		outline: none;
+		background: #131315;
+		border: 2px solid #585858;
+		transition: background-color ease .2s, border-color ease .2s;
+
+		&:hover {
+			background: #1e1d21;
+			border-color: #67676b;
+		}
+
+		&:focus {
+			background: #25242b;
+			border-color: #6d6a75;
+		}
+	}
+}
+
+/**
+ * Font sizes for all option size variants
+ */
+.option.small {
+	& > * {
+		padding: 1px 4px;
+		font-size: 10pt;
+	}
+
+	&> .option_value {
+		border-radius: 3px;
+	}
+
+	& > .option_label {
+		padding-top: 3px;
+	}
+}
+
+.option.medium {
+	& > * {
+		padding: 2px 6px;
+		font-size: 13pt;
+	}
+
+	&> .option_value {
+		border-radius: 4px;
+	}
+
+	& > .option_label {
+		padding-top: 4px;
+	}
+}
+
+.option.large {
+	& > * {
+		padding: 3px 8px;
+		font-size: 18pt;
+	}
+
+	&> .option_value {
+		border-radius: 5px;
+	}
+
+	& > .option_label {
+		padding-top: 5px;
+	}
+}

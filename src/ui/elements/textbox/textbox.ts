@@ -1,3 +1,5 @@
+import { getUniqueID } from "../../../api/dom";
+
 /**
  * The enum bitfield that defines the type of the textbox
  */
@@ -7,6 +9,11 @@ export enum TextboxEnum {
 }
 
 type TextboxAttributes = {
+	/**
+	 * Type of the textbox to use.
+	 */
+	type:TextboxEnum,
+
 	/**
 	 * If set, controls the initial textbox text. This can be anything and will show it to the user.
 	 */
@@ -64,7 +71,7 @@ type TextboxReturn = {
 	element: HTMLDivElement,
 
 	/**
-	 * The label element that should be controlled by the calling code.
+	 * The label element that can be controlled by the calling code.
 	 */
 	label: HTMLDivElement,
 
@@ -84,14 +91,18 @@ type TextboxReturn = {
  * @param attributes Various attributes and functions related to the creation of the textbox
  * @returns An object containing the element, the label, and a function to set the value from code into the slider
  */
-export function makeTextbox(type:TextboxEnum, attributes:TextboxAttributes):TextboxReturn {
+export function makeTextbox(attributes:TextboxAttributes):TextboxReturn {
 	// destructure the attributes object for easier access
-	const { getValue, hint, style, width, lines, length, initial, label, labelWidth, } = attributes;
+	const { type, getValue, hint, style, width, lines, length, initial, label, labelWidth, } = attributes;
+
+	// get an unique ID for the textarea element
+	const id = getUniqueID();
 
 	// create a div with class textbox that will be our main element
 	const e = document.createElement("div");
 	e.classList.add("textbox");
 
+	// add the style if requested
 	if(style) {
 		e.setAttribute("style", style);
 	}
@@ -109,8 +120,8 @@ export function makeTextbox(type:TextboxEnum, attributes:TextboxAttributes):Text
 
 	// set up the innerHTML of the element, containing all the sub-elements we are going to need
 	e.innerHTML = /*html*/`
-		<div class="textbox_label" ${ labelWidth === undefined ? "" : "style='width: "+ labelWidth +"'" }>${ label ?? "" }</div>
-		<textarea class="textbox_value" ${ tba.join(" ") }></textarea>
+		<label for="${ id }" class="textbox_label" ${ labelWidth === undefined ? "" : "style='width: "+ labelWidth +"'" }>${ label ?? "" }</label>
+		<textarea id="${ id }" class="textbox_value" ${ tba.join(" ") }></textarea>
 	`;
 
 	// add the size class into the div

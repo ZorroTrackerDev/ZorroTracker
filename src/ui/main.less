@@ -167,6 +167,13 @@ body {
 
 // stuff for project config
 #projectinfo {
-	width: 100%;
-	padding: 30px 50px;
+	margin: 30px 50px;
+	position: relative;
+	height: -webkit-fill-available;
+
+	&> .line {
+		display: block;
+		width: fit-content;
+		margin: 0 auto;
+	}
 }

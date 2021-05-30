@@ -22,7 +22,7 @@ export type PatternIndexEditorButton = {
  */
 export const standardButtons:PatternIndexEditorButtonList[] = [
 	{
-		class: [ "button", ],
+		class: [ "matrixbutton", ],
 		items: [
 			{
 				svg: /*html*/`
@@ -70,7 +70,7 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 		],
 	},
 	{
-		class: [ "button", ],
+		class: [ "matrixbutton", ],
 		items: [
 			{
 				svg: /*html*/`
@@ -217,7 +217,7 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 		],
 	},
 	{
-		class: [ "button", ],
+		class: [ "matrixbutton", ],
 		items: [
 			{
 				svg: /*html*/`
@@ -278,7 +278,7 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
  */
  export const pasteButtons:PatternIndexEditorButtonList[] = [
 	{
-		class: [ "button", "center", ],
+		class: [ "matrixbutton", "center", ],
 		items: [
 			{
 				svg: /*html*/`

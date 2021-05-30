@@ -1,5 +1,8 @@
 import { UIShortcutHandler } from "../../api/ui";
+import { Undo } from "../../api/undo";
+import { ButtonEnum, makeButton } from "../elements/button/button";
 import { PatternIndexEditor } from "../elements/matrixeditor/main";
+import { makeOption, OptionEnum } from "../elements/option/option";
 import { volumeSlider, SliderEnum } from "../elements/slider/slider";
 import { makeTextbox, TextboxEnum } from "../elements/textbox/textbox";
 import { Project } from "./project";
@@ -215,9 +218,9 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 	body.appendChild(contain);
 
 	// load the project name textbox
-	const name = makeTextbox(TextboxEnum.Large, {
-		label: "Project name", lines: 1, length: 100, hint: "For example: \"My new mixtape\"",
-		style: "width: fit-content; margin: 0 auto; margin-bottom: 50px;", width: "50vw",
+	const name = makeTextbox({
+		type: TextboxEnum.Large, label: "Project name", lines: 1, length: 100, hint: "For example: \"My new mixtape\"",
+		style: "width: fit-content; margin: 0 auto; margin-bottom: 40px;", width: "50vw",
 		getValue: (value:string) => {
 			// set the project name
 			if(Project.current) {
@@ -230,6 +233,112 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 
 	name.setValue(Project.current?.config.name ?? "<invalid>");
 	contain.appendChild(name.element);
+
+	// create a line
+	const line0 = document.createElement("div");
+	line0.classList.add("line");
+	contain.appendChild(line0);
+
+	// load the driver selection option
+	const drivers = await window.ipc.driver.findAll();
+
+	const driver = makeOption({
+		type: OptionEnum.Medium, label: "Project sound driver", width: "200px", style: "display: inline-flex; margin-right: 20px;", items:
+		Object.entries(drivers).map(item => { return { text: item[1].name, value: item[1].uuid, } }),
+	});
+
+	line0.appendChild(driver.element);
+
+	// load the chip selection option
+	const chips = await window.ipc.chip.findAll();
+
+	const chip = makeOption({
+		type: OptionEnum.Medium, label: "Chip emulator", width: "200px", style: "display: inline-flex; margin-top: 10px;", items:
+		Object.entries(chips).map(item => { return { text: item[1].name, value: item[1].uuid, } }),
+	});
+
+	line0.appendChild(chip.element);
+
+	// add the module selector
+	const butt = document.createElement("div");
+	butt.innerText = "MODULE SELECTOR HERE";
+	butt.style.color = "white";
+	butt.style.margin = "0 auto";
+	butt.style.marginTop = "5px";
+	butt.style.width = "fit-content";
+	contain.appendChild(butt);
+
+	// add the module editor
+	const line1 = document.createElement("div");
+	line1.classList.add("line");
+	line1.style.marginTop = "10px";
+	contain.appendChild(line1);
+
+	// load the module name textbox
+	const mname = makeTextbox({
+		type: TextboxEnum.Medium, label: "Module name", lines: 1, length: 100, hint: "For example: \"Fox in a box\"",
+		style: "display: inline-flex; width: fit-content; margin: 0 auto; margin-right: 25px;", width: "25vw",
+		getValue: (value:string) => {
+			// set the project name
+			if(Project.current) {
+				Project.current.modules[0].name = value;
+			}
+
+			return value;
+		},
+	});
+
+	mname.setValue(Project.current?.modules[0].name ?? "<invalid>");
+	line1.appendChild(mname.element);
+
+	// load the module author textbox
+	const mauth = makeTextbox({
+		type: TextboxEnum.Medium, label: "Authors", lines: 1, length: 100, hint: "For example: \"Rosy, Nicole and Elise\"",
+		style: "display: inline-flex; width: fit-content; margin: 0 auto; margin-top: 10px;", width: "25vw",
+		getValue: (value:string) => {
+			// set the project name
+			if(Project.current) {
+				Project.current.modules[0].name = value;
+			}
+
+			return value;
+		},
+	});
+
+	mauth.setValue(Project.current?.modules[0].author ?? "<invalid>");
+	line1.appendChild(mauth.element);
+
+	// load the editor button
+	contain.appendChild(makeButton({
+		type: ButtonEnum.Large, html: "Edit module", style: "position: absolute; right: 0; bottom: 0;",
+	}, async(e) => {
+		// if right clicked, go to the editor
+		if(e.button === 0){
+			// open loading animation
+			await loadLayout(LayoutType.Loading);
+			Undo.clear();
+
+			// save project as current
+			await fadeToLayout(LayoutType.Editor);
+			await loadLayout(LayoutType.NoLoading);
+		}
+	}).element);
+
+	// load the cancel button
+	contain.appendChild(makeButton({
+		type: ButtonEnum.Large, html: "Exit", style: "position: absolute; left: 0; bottom: 0;",
+	}, async(e) => {
+		// if right clicked, go to the editor
+		if(e.button === 0){
+			// open loading animation
+			await loadLayout(LayoutType.Loading);
+			Undo.clear();
+
+			// save project as current
+			await fadeToLayout(LayoutType.NoProjects);
+			await loadLayout(LayoutType.NoLoading);
+		}
+	}).element);
 }
 
 export async function editorLayout(body:HTMLDivElement):Promise<void> {

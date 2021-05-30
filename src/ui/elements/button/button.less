@@ -1,0 +1,42 @@
+.button {
+	font-family: sans-serif;
+	outline: none;
+	cursor: pointer;
+	background: #131315;
+	color: #bdbdbd;
+	border: 2px solid #585858;
+	transition: background-color ease .2s, border-color ease .2s, color ease .2s;
+
+	&:hover {
+		color: #d6d6d6;
+		background: #27262b;
+		border-color: #66666d;
+	}
+
+	&:active {
+		transition: none;
+		background: #32313f;
+		border-color: #746f81;
+	}
+}
+
+/**
+ * Font sizes for all button size variants
+ */
+.button.small {
+	padding: 3px 6px;
+	font-size: 10pt;
+	border-radius: 4px;
+}
+
+.button.medium {
+	padding: 4px 8px;
+	font-size: 13pt;
+	border-radius: 6px;
+}
+
+.button.large {
+	padding: 5px 11px;
+	font-size: 18pt;
+	border-radius: 8px;
+}

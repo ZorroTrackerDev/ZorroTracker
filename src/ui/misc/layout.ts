@@ -1,6 +1,7 @@
 import { UIShortcutHandler } from "../../api/ui";
 import { PatternIndexEditor } from "../elements/matrixeditor/main";
 import { volumeSlider, SliderEnum } from "../elements/slider/slider";
+import { makeTextbox, TextboxEnum } from "../elements/textbox/textbox";
 import { Project } from "./project";
 import { addShortcutReceiver } from "./shortcuts";
 
@@ -19,6 +20,7 @@ export class _Temp implements UIShortcutHandler {
 }
 
 export const _temp = new _Temp();
+addShortcutReceiver("layout", (data) => _temp.receiveShortcut(data));
 
 /**
  * Types of different standard layouts
@@ -156,6 +158,7 @@ export function loadLayout(type:LayoutType):Promise<unknown> {
 		case LayoutType.NoLoading: return removeTransition();
 		case LayoutType.Editor: return editorLayout(body);
 		case LayoutType.NoProjects: return noProjectLayout(body);
+		case LayoutType.ProjectInfo: return projectInfoLayout(body);
 	}
 
 	throw new Error("Unable to load layout "+ type +": Not defined!");
@@ -176,17 +179,17 @@ async function noProjectLayout(body:HTMLDivElement):Promise<void> {
 
 	// create the no project text
 	const text = document.createElement("div");
-	text.innerText = "No Project Opened";
+	text.innerText = "No project opened";
 	contain.appendChild(text);
 
 	// create open text
 	const sho = document.createElement("div");
-	sho.innerText = "Open a Project";
+	sho.innerText = "Open a project";
 	contain.appendChild(sho);
 
 	// create new text
 	const crt = document.createElement("div");
-	crt.innerText = "New Project";
+	crt.innerText = "New project";
 	contain.appendChild(crt);
 
 	// add the onclick handler
@@ -198,6 +201,35 @@ async function noProjectLayout(body:HTMLDivElement):Promise<void> {
 	crt.onclick = () => {
 		window.preload.shortcut([ "ui.new", ]);
 	};
+}
+
+async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
+	clearChildren(body);
+
+	// TEMP
+	Project.current = await Project.loadProject("temp.ztm");
+
+	// create a new container
+	const contain = document.createElement("div");
+	contain.id = "projectinfo";
+	body.appendChild(contain);
+
+	// load the project name textbox
+	const name = makeTextbox(TextboxEnum.Large, {
+		label: "Project name", lines: 1, length: 100, hint: "For example: \"My new mixtape\"",
+		style: "width: fit-content; margin: 0 auto; margin-bottom: 50px;", width: "50vw",
+		getValue: (value:string) => {
+			// set the project name
+			if(Project.current) {
+				Project.current.config.name = value;
+			}
+
+			return value;
+		},
+	});
+
+	name.setValue(Project.current?.config.name ?? "<invalid>");
+	contain.appendChild(name.element);
 }
 
 export async function editorLayout(body:HTMLDivElement):Promise<void> {
@@ -219,7 +251,6 @@ export async function editorLayout(body:HTMLDivElement):Promise<void> {
 	body.appendChild(_top);
 
 	_top.appendChild((_temp.patternIndex = new PatternIndexEditor(Project.current.index)).element);
-	addShortcutReceiver("layout", (data) => _temp.receiveShortcut(data));
 
 	const _bot = document.createElement("div");
 	_bot.id = "editor_bottom";

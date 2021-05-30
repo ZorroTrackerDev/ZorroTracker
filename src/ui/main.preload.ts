@@ -84,7 +84,7 @@ window.ipc.ui.path().then(() => {
 
 	// load the editor layout
 	import("./misc/layout").then((module) => {
-		return module.loadLayout(LayoutType.NoProjects);
+		return module.loadLayout(LayoutType.ProjectInfo);
 	}).catch(console.error);
 
 	return window.ipc.chip.findAll();

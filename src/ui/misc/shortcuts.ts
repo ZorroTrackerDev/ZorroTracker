@@ -192,7 +192,7 @@ export function loadDefaultShortcuts(): void {
 				return true;
 
 			/* shortcut for opening a file or a project */
-			case "open":{
+			case "open": {
 				const result = await window.ipc.ui.dialog("openfolder", {
 					properties: [ "openFile", ],
 					filters: [

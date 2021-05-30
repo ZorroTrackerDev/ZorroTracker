@@ -1,5 +1,5 @@
 /**
- * The enum bitfield that defines the type of the enum
+ * The enum bitfield that defines the type of the slider
  */
 export enum SliderEnum {
 	// slider directions
@@ -17,7 +17,7 @@ type SliderFunctions = {
 	 * @param value The input value from the slider
 	 * @returns The output value to put back into the slider
 	 */
-	getValue:(value:number) => number,
+	getValue: (value:number) => number,
 
 	/**
 	 * Function that handles when the value is given an offset.
@@ -27,7 +27,7 @@ type SliderFunctions = {
 	 * @param offset The offset to apply to the slider value. This can be transformed depending on the use-case.
 	 * @returns The value to apply for the slider. `getValue` is called first to confirm the value.
 	 */
-	getValueOffset:(value:number, offset:number) => number,
+	getValueOffset: (value:number, offset:number) => number,
 
 	/**
 	 * Convert slider value into string, to display in the edit box.
@@ -35,7 +35,7 @@ type SliderFunctions = {
 	 * @param value The current slider value
 	 * @returns The string containing the converted value
 	 */
-	toText:(value:number) => string,
+	toText: (value:number) => string,
 
 	/**
 	 * Convert string into a slider value. This function is called when the user uses the editor field (on enter or focus lost).
@@ -43,8 +43,8 @@ type SliderFunctions = {
 	 * @param value The string in the editor field
 	 * @returns The correct slider value (from 0.0 to 1.0), or null if the value could not be converted. In this case, the last value is reused.
 	 */
-	fromText:(value:string) => number|null,
-};
+	fromText: (value:string) => number|null,
+}
 
 type SliderReturn = {
 	/**
@@ -63,16 +63,16 @@ type SliderReturn = {
 	 *
 	 * @param value The value, from 0.0 to 1.0 to set the slider to.
 	 */
-	setValue:(value:number) => void,
-};
+	setValue: (value:number) => void,
+}
 
 /**
  * Function to create a slider that controls a value, inside or outside the code. This also has an editable field where the user can input text.
  * The slider has a range of 0.0 to 1.0.
  *
  * @param type The type of the slider to create. There are various standard settings for size and direction
- * @param functions List of different functions that are used by the slider to update values and pass information between the UI and code.
- * @returns And object containing the element, the label, and a function to set the value from code into the slider.
+ * @param functions List of different functions that are used by the slider to update values and pass information between the UI and code
+ * @returns An object containing the element, the label, and a function to set the value from code into the slider
  */
 export function makeSlider(type:SliderEnum, functions:SliderFunctions):SliderReturn {
 	// destructure the functions object for easier access
@@ -219,6 +219,9 @@ export function makeSlider(type:SliderEnum, functions:SliderFunctions):SliderRet
 
 	// handle special keys in the edit box
 	textNode.onkeydown = function(event:KeyboardEvent) {
+		// disable shortcuts while writing to this textarea
+		event.stopPropagation();
+
 		switch(event.keyCode) {
 			case 13:		// Enter key handler
 				event.preventDefault();

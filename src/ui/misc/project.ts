@@ -64,7 +64,7 @@ export class Project {
 	 * @throws Any exceptions when the input file can not be read or is not a zip file
 	 * @returns null if failed to load the project, or the project data
 	 */
-	public static async loadProject(file:string):Promise<Project|null> {
+	public static async loadProject(file:string):Promise<Project|undefined> {
 		console.info("Load project:", file);
 
 		try {
@@ -179,7 +179,7 @@ export class Project {
 
 		} catch(ex) {
 			console.error("Failed to load project:", ex);
-			return null;
+			return undefined;
 		}
 	}
 

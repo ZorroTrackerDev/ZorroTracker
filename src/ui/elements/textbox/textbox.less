@@ -1,0 +1,101 @@
+.textbox {
+	display: flex;
+	font-family: sans-serif;
+	background: #27272b;
+	width: fit-content;
+	border-radius: 4px;
+
+	&> * {
+		display: inline-block;
+		color: #d6d6d6;
+		overflow: hidden;
+	}
+
+	&> .textbox_value {
+		outline: none;
+		overflow-wrap: normal;
+		white-space: nowrap;
+		resize: none;
+		background: #131315;
+		border: 2px solid #585858;
+		font: inherit;
+		transition: background-color ease .2s, border-color ease .2s;
+
+		&:hover {
+			background: #1e1d21;
+			border-color: #67676b;
+		}
+
+		&:focus {
+			background: #25242b;
+			border-color: #6d6a75;
+
+			&::placeholder {
+				color: #808080;
+			}
+		}
+
+		&::placeholder {
+			transition: color ease .2s;
+			color: #696969;
+		}
+	}
+
+	&> .textbox_label {
+		text-overflow: ellipsis;
+		vertical-align: middle;
+		padding-top: 3px;
+		height: 100%;
+	}
+}
+
+/**
+ * Font sizes for all textbox size variants
+ */
+.textbox.small {
+	font-size: 12pt;
+
+	& > * {
+		padding: 1px 4px;
+	}
+
+	&> .textbox_value {
+		border-radius: 3px;
+	}
+
+	& > .textbox_label {
+		padding-top: 3px;
+	}
+}
+
+.textbox.medium {
+	font-size: 15pt;
+
+	& > * {
+		padding: 2px 6px;
+	}
+
+	&> .textbox_value {
+		border-radius: 4px;
+	}
+
+	& > .textbox_label {
+		padding-top: 4px;
+	}
+}
+
+.textbox.large {
+	font-size: 20pt;
+
+	& > * {
+		padding: 3px 8px;
+	}
+
+	&> .textbox_value {
+		border-radius: 5px;
+	}
+
+	& > .textbox_label {
+		padding-top: 5px;
+	}
+}

@@ -221,7 +221,7 @@ export function loadDefaultShortcuts(): void {
 
 				// save project as current
 				Project.current = p;
-				await fadeToLayout(LayoutType.Editor);
+				await fadeToLayout(LayoutType.ProjectInfo);
 				await loadLayout(LayoutType.NoLoading);
 				return true;
 			}
@@ -242,7 +242,7 @@ export function loadDefaultShortcuts(): void {
 
 				// save project as current
 				Project.current = p;
-				await fadeToLayout(LayoutType.Editor);
+				await fadeToLayout(LayoutType.ProjectInfo);
 				await loadLayout(LayoutType.NoLoading);
 				return true;
 			}

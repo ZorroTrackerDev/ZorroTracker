@@ -2,6 +2,7 @@ import { UIShortcutHandler } from "../../api/ui";
 import { Undo } from "../../api/undo";
 import { ButtonEnum, makeButton } from "../elements/button/button";
 import { PatternIndexEditor } from "../elements/matrixeditor/main";
+import { ModuleSelect } from "../elements/moduleselect/main";
 import { makeOption, OptionEnum } from "../elements/option/option";
 import { volumeSlider, SliderEnum } from "../elements/slider/slider";
 import { makeTextbox, TextboxEnum } from "../elements/textbox/textbox";
@@ -249,29 +250,12 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 
 	line0.appendChild(driver.element);
 
-	// load the chip selection option
-	const chips = await window.ipc.chip.findAll();
-
-	const chip = makeOption({
-		type: OptionEnum.Medium, label: "Chip emulator", width: "200px", style: "display: inline-flex; margin-top: 10px;", items:
-		Object.entries(chips).map(item => { return { text: item[1].name, value: item[1].uuid, } }),
-	});
-
-	line0.appendChild(chip.element);
-
 	// add the module selector
-	const butt = document.createElement("div");
-	butt.innerText = "MODULE SELECTOR HERE";
-	butt.style.color = "white";
-	butt.style.margin = "0 auto";
-	butt.style.marginTop = "5px";
-	butt.style.width = "fit-content";
-	contain.appendChild(butt);
+	contain.appendChild(new ModuleSelect(Project.current as Project).element);
 
 	// add the module editor
 	const line1 = document.createElement("div");
-	line1.classList.add("line");
-	line1.style.marginTop = "10px";
+	line1.classList.add("module");
 	contain.appendChild(line1);
 
 	// load the module name textbox
@@ -308,9 +292,16 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 	mauth.setValue(Project.current?.modules[0].author ?? "<invalid>");
 	line1.appendChild(mauth.element);
 
+	// create a line
+	const line2 = document.createElement("div");
+	line2.classList.add("line");
+	line2.style.width = "100%";
+	line2.style.marginTop = "15px";
+	contain.appendChild(line2);
+
 	// load the editor button
-	contain.appendChild(makeButton({
-		type: ButtonEnum.Large, html: "Edit module", style: "position: absolute; right: 0; bottom: 0;",
+	line2.appendChild(makeButton({
+		type: ButtonEnum.Large, html: "Edit module", style: "float: right;",
 	}, async(e) => {
 		// if right clicked, go to the editor
 		if(e.button === 0){
@@ -325,8 +316,8 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 	}).element);
 
 	// load the cancel button
-	contain.appendChild(makeButton({
-		type: ButtonEnum.Large, html: "Exit", style: "position: absolute; left: 0; bottom: 0;",
+	line2.appendChild(makeButton({
+		type: ButtonEnum.Large, html: "Exit", style: "float: left;",
 	}, async(e) => {
 		// if right clicked, go to the editor
 		if(e.button === 0){

@@ -170,10 +170,17 @@ body {
 	margin: 30px 50px;
 	position: relative;
 	height: -webkit-fill-available;
+	display: flex;
+	flex-direction: column;
+	flex-wrap: nowrap;
 
 	&> .line {
 		display: block;
 		width: fit-content;
 		margin: 0 auto;
+	}
+
+	&> div {
+		flex: 0 0;
 	}
 }

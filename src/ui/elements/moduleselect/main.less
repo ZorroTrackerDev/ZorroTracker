@@ -1,0 +1,148 @@
+.__columns(@borderm, @borderb, @padding) {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	position: relative;
+	padding-bottom: 2px;
+
+	&> div {
+		text-overflow: ellipsis;
+		padding: 2px 5px;
+
+		&:first-child {
+			min-width: 30px;
+			max-width: 30px;
+			flex: 0 0;
+			text-align: center;
+		}
+
+		&:nth-child(2) {
+			flex: 2 2;
+		}
+
+		&:nth-child(3) {
+			flex: 1 1;
+		}
+
+		&:not(:first-child) {
+			border-left: 2px solid @borderm;
+		}
+	}
+
+	&::after {
+		content: "";
+		position: absolute;
+		bottom: 0;
+		height: 2px;
+		left: @padding;
+		right: @padding;
+		background: @borderb;
+	}
+}
+
+.__hov {
+	background: transparent;
+	transition: background-color .25s ease, color .25s ease;
+	cursor: pointer;
+
+	&:hover {
+		background: #FFFFFF30;
+	}
+
+	&:active {
+		background: #FFFFFF60;
+		transition-duration: 0s;
+	}
+}
+
+@mainborder: #676771;
+
+.moduleselect {
+	flex: 1 1 !important;
+	font-family: 'Noto Sans', sans-serif;
+	font-size: 13pt;
+
+	border-radius: 15px;
+	border: 2px solid @mainborder;
+	background: #404040;
+	color: #cccccc;
+	margin: 20px;
+	overflow: hidden;
+
+	&> * {
+		overflow: hidden;
+	}
+
+	&> .moduleselectheader {
+		.__columns(#808090, @mainborder, 0px);
+		text-align: center;
+
+		&> div {
+			.__hov();
+		}
+	}
+
+	&> .moduleselectcontent {
+		height: calc(100% - 56px);
+		background: black;
+		overflow-x: hidden;
+		overflow-y: auto;
+
+		&> div {
+			&> div {
+				.__columns(#4c4c58, linear-gradient(90deg, #000000fd, #676769 7%, #676769 93%, #000000), 3px);
+				.__hov();
+
+				&.selected {
+					color: #d6b7b7;
+					background: #ff878720 !important;
+
+					&:hover {
+						color: #e2d5d5;
+						background: #ff878738 !important;
+					}
+
+					&:active {
+						background: #ff878768 !important;
+						transition-duration: 0s;
+					}
+				}
+			}
+		}
+	}
+
+	&> .moduleselectbuttons {
+		border-top: 2px solid @mainborder;
+		display: flex;
+		flex-direction: row;
+		flex-wrap: nowrap;
+
+		&> button {
+			font: inherit;
+			display: inline-block;
+			appearance: none;
+			outline: none;
+			border: none;
+			flex: 1 1;
+			height: 100%;
+			color: #d3d3d3;
+			background: transparent;
+			cursor: pointer;
+			transition: background-color .25s ease, color .25s ease;
+
+			&:not(:first-child) {
+				border-left: 2px solid #808090;
+			}
+
+			&:hover {
+				background: #4c4c50;
+				color: #e4e4e4;
+			}
+
+			&:active {
+				background: #68686d;
+				transition-duration: 0s;
+			}
+		}
+	}
+}

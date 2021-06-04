@@ -210,9 +210,6 @@ async function noProjectLayout(body:HTMLDivElement):Promise<void> {
 async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 	clearChildren(body);
 
-	// TEMP
-	Project.current = await Project.loadProject("temp.ztm");
-
 	// create a new container
 	const contain = document.createElement("div");
 	contain.id = "projectinfo";

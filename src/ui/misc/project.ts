@@ -1,4 +1,5 @@
 import admZip from "adm-zip";
+import { ZorroEvent, ZorroEventEnum, ZorroSenderTypes } from "../../api/events";
 import { PatternIndex } from "../../api/matrix";
 import { ConfigVersion } from "../../api/scripts/config";
 
@@ -29,7 +30,7 @@ export class Project {
 		const project = new Project(file);
 		project.config = Project.createTestConfig();
 		project.modules = [];
-		Project.createTestModule(project);
+		await Project.createTestModule(project);
 		return project;
 	}
 
@@ -44,16 +45,17 @@ export class Project {
 		};
 	}
 
-	private static createTestModule(p:Project): void {
+	private static async createTestModule(p:Project): Promise<void> {
 		p.addModule({
 			name: "Test Module",
 			author: "User",
 			lastDate: new Date(),
 			index: 0,
 			file: "!test",
+			type: ZorroModuleType.Song,
 		});
 
-		p.setActiveModule("!test");
+		await p.setActiveModule("!test");
 		p.index.setChannels([ "FM1", "FM2", "FM3", "FM4", "FM5", "FM6", "PCM", "PSG1", "PSG2", "PSG3", "PSG4", ]);
 	}
 
@@ -172,7 +174,7 @@ export class Project {
 				project.data[m.file] = x;
 
 				//temp
-				project.setActiveModule(m.file);
+				await project.setActiveModule(m.file);
 			}
 
 			return project;
@@ -184,11 +186,37 @@ export class Project {
 	}
 
 	/**
+	 * Convert `ZorroModuleType` to a string, for display purposes
+	 *
+	 * @param type The type of the module to convert
+	 * @returns The converted module type string
+	 */
+	public static typeString(type:ZorroModuleType): string {
+		switch(type) {
+			case ZorroModuleType.Song:	return "song";
+			case ZorroModuleType.SFX:	return "sfx";
+			case ZorroModuleType.Patch:	return "patch";
+		}
+
+		return "unk";
+	}
+
+	private eventSelect:ZorroSenderTypes[ZorroEventEnum.SelectModule];
+	private eventCreate:ZorroSenderTypes[ZorroEventEnum.ModuleCreate];
+	private eventDelete:ZorroSenderTypes[ZorroEventEnum.ModuleDelete];
+	private eventUpdate:ZorroSenderTypes[ZorroEventEnum.ModuleUpdate];
+
+	/**
 	 * Create a new `Project` with no data
 	 *
 	 * @param file The file to use for this project
 	 */
 	constructor(file:string) {
+		this.eventSelect = ZorroEvent.createEvent(ZorroEventEnum.SelectModule);
+		this.eventCreate = ZorroEvent.createEvent(ZorroEventEnum.ModuleCreate);
+		this.eventDelete = ZorroEvent.createEvent(ZorroEventEnum.ModuleDelete);
+		this.eventUpdate = ZorroEvent.createEvent(ZorroEventEnum.ModuleUpdate);
+
 		this.file = file;
 		this.data = {};
 	}
@@ -204,7 +232,7 @@ export class Project {
 	 * @param autosave Whether to do an autosave, or if to make a normal save
 	 * @returns boolean indicating whether the save was successful
 	 */
-	public async save(autosave:boolean):Promise<void> {
+	public async save(autosave:boolean): Promise<void> {
 		return new Promise((res, rej) => {
 			window.isLoading = true;
 			console.info("Save project: "+ this.file);
@@ -255,7 +283,7 @@ export class Project {
 	 *
 	 * @param data The module data, that defines various things about the module
 	 */
-	public addModule(data:Module):void {
+	public addModule(data:Module): void {
 		// check if the data already exists. If so, this is very bad!
 		if(this.data[data.file]) {
 			throw new Error("Module "+ data.file +" already exists! Can not continue!");
@@ -276,20 +304,52 @@ export class Project {
 	public dirty = false;
 
 	/**
-	 * Function to set the active module by its name.
+	 * Function to set the active module by its filename.
 	 *
-	 * @param name The name of the module to use
+	 * @param file The filename of the module to use
 	 * @returns Boolean indicating whether it was successful
 	 */
-	public setActiveModule(name:string):boolean {
-		if(this.data[name]){
+	public async setActiveModule(file:string): Promise<boolean> {
+		if(this.data[file] && await this.setActiveCheck(file)){
 			// module found, set the active module
-			this._current = name;
+			this._current = file;
 			return true;
 		}
 
 		// failed, bail
 		return false;
+	}
+
+	/**
+	 * Helper function to check if we can set an active module, and sending the active event
+	 *
+	 * @param file The filename of the module to use
+	 * @returns Boolean indicating whether it was successful
+	 */
+	private async setActiveCheck(file:string): Promise<boolean> {
+		// find the index of this module
+		const ix = this.getModuleIndexByFile(file);
+
+		// send the select event if found, and returns its value
+		return ix >= 0 && !(await this.eventSelect(this.modules[ix], this.data[file])).event.canceled;
+	}
+
+	/**
+	 * Helper function to find the module index by name
+	 *
+	 * @param file The filename of the module to use
+	 * @returns The index of the module, or -1 if not found
+	 */
+	private getModuleIndexByFile(file:string): number|-1 {
+		// loop through all modules to find the right index
+		for(let i = 0;i < this.modules.length;i ++) {
+			if(this.modules[i].file === file) {
+				return i;
+			}
+		}
+
+		// not found½
+		return -1;
 	}
 
 	/* get the currently active module's object */
@@ -299,7 +359,7 @@ export class Project {
 			return this.data[this._current];
 		}
 
-		throw new Error("Unable to load module data: The active module does not exist.");
+		throw new Error("Unable to load module data: The active module "+ this._current +" does not exist.");
 	}
 
 	/* the PatternIndex for the current module */
@@ -346,6 +406,12 @@ export interface ProjectConfig extends ZorroConfig {
 	autosave: string|null,
 }
 
+enum ZorroModuleType {
+	Song,				// song files, this is the main music of a game for example.
+	SFX,				// sound effect files, these are additional sounds layered on top of music.
+	Patch,				// patches. Some drivers, such as GEMS, use patch banks instead of patches per file.
+}
+
 export interface Module {
 	/**
 	 * Name of the module.
@@ -371,6 +437,11 @@ export interface Module {
 	 * File name of the module. This will refer to a folder in the modules folder.
 	 */
 	file: string,
+
+	/**
+	 * Type of this module, various types are used for each module
+	 */
+	type: ZorroModuleType,
 }
 
 export interface ModuleData {

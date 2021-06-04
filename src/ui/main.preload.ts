@@ -15,6 +15,7 @@ import "./extensions";
 /* ipc communication */
 import "./ipc ui";
 import { LayoutType } from "./misc/layout";
+import { Project } from "./misc/project";
 import { doShortcut } from "./misc/shortcuts";
 
 window.isLoading = false;
@@ -83,8 +84,11 @@ window.ipc.ui.path().then(() => {
 	}).catch(console.error);
 
 	// load the editor layout
-	import("./misc/layout").then((module) => {
+	import("./misc/layout").then(async(module) => {
+		// TEMP
+		Project.current = await Project.loadProject("temp.ztm");
 		return module.loadLayout(LayoutType.ProjectInfo);
+
 	}).catch(console.error);
 
 	return window.ipc.chip.findAll();

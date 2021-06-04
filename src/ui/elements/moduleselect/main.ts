@@ -16,8 +16,9 @@ export class ModuleSelect {
 
 		for(const m of project.modules) {
 			html += /*html*/`
-				<div class="selected">
+				<div>
 					<div>${ m.index.toByte() }</div>
+					<div>${ Project.typeString(m.type) }</div>
 					<div>${ m.name }</div>
 					<div>${ m.author }</div>
 				</div>
@@ -28,6 +29,7 @@ export class ModuleSelect {
 		this.element.innerHTML = /*html*/`
 			<div class="moduleselectheader">
 				<div>#</div>
+				<div>Type</div>
 				<div>Module name</div>
 				<div>Author</div>
 			</div>

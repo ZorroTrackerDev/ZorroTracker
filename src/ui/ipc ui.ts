@@ -113,17 +113,16 @@ window.ipc = {
 /**
  * Various handlers for dealing with the console
  */
-
-ipcRenderer.on(ipcEnum.LogInfo, (event, args:unknown[]) => {
-	console.info(args);
+ipcRenderer.on(ipcEnum.LogInfo, (event, ...args:unknown[]) => {
+	console.info(...args);
 });
 
-ipcRenderer.on(ipcEnum.LogWarn, (event, args:unknown[]) => {
-	console.warn(args);
+ipcRenderer.on(ipcEnum.LogWarn, (event, ...args:unknown[]) => {
+	console.warn(...args);
 });
 
-ipcRenderer.on(ipcEnum.LogError, (event, args:unknown[]) => {
-	console.error(args);
+ipcRenderer.on(ipcEnum.LogError, (event, ...args:unknown[]) => {
+	console.error(...args);
 });
 
 // create the close event handler

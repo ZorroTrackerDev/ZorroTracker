@@ -46,17 +46,7 @@ export class Project {
 	}
 
 	private static async createTestModule(p:Project): Promise<void> {
-		p.addModule({
-			name: "Test Module",
-			author: "User",
-			lastDate: new Date(),
-			index: 0,
-			file: "!test",
-			type: ZorroModuleType.Song,
-		});
-
-		await p.setActiveModuleIndex(0);
-		p.index.setChannels([ "FM1", "FM2", "FM3", "FM4", "FM5", "FM6", "PCM", "PSG1", "PSG2", "PSG3", "PSG4", ]);
+	//	p.index.setChannels([ "FM1", "FM2", "FM3", "FM4", "FM5", "FM6", "PCM", "PSG1", "PSG2", "PSG3", "PSG4", ]);
 	}
 
 	/**
@@ -172,9 +162,6 @@ export class Project {
 
 				// save into projecct
 				project.data[m.file] = x;
-
-				//temp
-				await project.setActiveModuleFile(m.file);
 			}
 
 			return project;
@@ -279,14 +266,34 @@ export class Project {
 	}
 
 	/**
-	 * Function to add a new module to the project
-	 *
-	 * @param data The module data, that defines various things about the module
+	 * Function to generate an unique name for new modules
 	 */
-	public addModule(data:Module): void {
-		// check if the data already exists. If so, this is very bad!
-		if(this.data[data.file]) {
-			throw new Error("Module "+ data.file +" already exists! Can not continue!");
+	private static generateName() {
+		// generate a random-ish string that should get no duplicates
+		const base = "m"+ Date.now() +"z"+ Math.round(Math.random() * 256).toByte();
+
+		// convert to base64
+		return Buffer.from(base).toString("base64");
+	}
+
+	/**
+	 * Function to add a new module to the project. Default settings will be used
+	 *
+	 * @returns The filename of this new module
+	 */
+	public addModule(): string {
+		const data = {
+			file: Project.generateName(),
+			name: "",
+			author: "",
+			index: 0,		// TODO: Generate index
+			type: ZorroModuleType.Song,
+			lastDate: new Date(),
+		}
+
+		// check if the data already exists. If so, try to generate a new one
+		while(this.data[data.file]) {
+			data.file = Project.generateName();
 		}
 
 		// put it in the module data array
@@ -297,10 +304,13 @@ export class Project {
 			// create an empty patternIndex
 			index: new PatternIndex(this),
 		};
+
+		// return the module name
+		return data.file;
 	}
 
 	/* The name of the currently active module */
-	public activeModuleIndex = 0;
+	public activeModuleIndex = -1;
 	private activeModuleFile = "";
 	public dirty = false;
 
@@ -374,7 +384,7 @@ export class Project {
 	 */
 	public changeModule(): void {
 		// check if module exists
-		if(!this.data[this.activeModuleFile]) {
+		if(this.activeModuleIndex < 0 || !this.data[this.activeModuleFile]) {
 			return;
 		}
 

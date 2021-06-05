@@ -1,3 +1,4 @@
+import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../api/events";
 import { UIShortcutHandler } from "../../api/ui";
 import { Undo } from "../../api/undo";
 import { ButtonEnum, makeButton } from "../elements/button/button";
@@ -6,7 +7,7 @@ import { ModuleSelect } from "../elements/moduleselect/main";
 import { makeOption, OptionEnum } from "../elements/option/option";
 import { volumeSlider, SliderEnum } from "../elements/slider/slider";
 import { makeTextbox, TextboxEnum } from "../elements/textbox/textbox";
-import { Project } from "./project";
+import { Project, Module } from "./project";
 import { addShortcutReceiver } from "./shortcuts";
 
 export class _Temp implements UIShortcutHandler {
@@ -207,6 +208,23 @@ async function noProjectLayout(body:HTMLDivElement):Promise<void> {
 	};
 }
 
+// helper function to update selection because yes
+const selectEditFunc = (project?:Project, module?:Module) => {
+	if(_selectEdit) {
+		_selectEdit.forEach((fn) => fn(project, module));
+	}
+}
+
+let _selectEdit: ((project?:Project, module?:Module) => void)[] = [];
+
+/**
+ * Helper event listener for the SelectModule event, so that the selection can be updated
+ */
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.SelectModule, async(event:ZorroEventObject, project:Project, module:Module) => {
+	selectEditFunc(project, module);
+});
+
 async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 	clearChildren(body);
 
@@ -261,8 +279,8 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 		style: "",
 		getValue: (value:string) => {
 			// set the project name
-			if(Project.current) {
-				Project.current.modules[0].name = value;
+			if(Project.current && Project.current.activeModuleIndex >= 0) {
+				Project.current.modules[Project.current.activeModuleIndex].name = value;
 				Project.current.changeModule();
 			}
 
@@ -270,7 +288,8 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 		},
 	});
 
-	mname.setValue(Project.current?.modules[0].name ?? "<invalid>");
+	// function for updating the value
+	_selectEdit.push((p, m) => mname.setValue(m?.name ?? ""));
 	line1.appendChild(mname.element);
 
 	// load the module author textbox
@@ -279,8 +298,8 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 		style: "",
 		getValue: (value:string) => {
 			// set the project name
-			if(Project.current) {
-				Project.current.modules[0].author = value;
+			if(Project.current && Project.current.activeModuleIndex >= 0) {
+				Project.current.modules[Project.current.activeModuleIndex].author = value;
 				Project.current.changeModule();
 			}
 
@@ -288,7 +307,8 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 		},
 	});
 
-	mauth.setValue(Project.current?.modules[0].author ?? "<invalid>");
+	// function for updating the value
+	_selectEdit.push((p, m) => mauth.setValue(m?.author ?? ""));
 	line1.appendChild(mauth.element);
 
 	// load the module author textbox
@@ -305,17 +325,19 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 			}
 
 			// set the project name
-			if(Project.current) {
+			if(Project.current && Project.current.activeModuleIndex >= 0) {
 				// update value
-				Project.current.modules[0].index = v;
+				Project.current.modules[Project.current.activeModuleIndex].index = v;
 				Project.current.changeModule();
 			}
 
-			return value;
+			// convert correctly to string
+			return v.toByte();
 		},
 	});
 
-	mnum.setValue((Project.current?.modules[0].index + "") ?? "00");
+	// function for updating the value
+	_selectEdit.push((p, m) => mnum.setValue(m?.index.toByte() ?? "00"));
 	line1.appendChild(mnum.element);
 
 	// create a line
@@ -330,7 +352,7 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 		type: ButtonEnum.Large, html: "Edit module", style: "float: right;",
 	}, async(e) => {
 		// if right clicked, go to the editor
-		if(e.button === 0){
+		if(e.button === 0 && Project.current && Project.current.activeModuleIndex >= 0){
 			// open loading animation
 			await loadLayout(LayoutType.Loading);
 			Undo.clear();
@@ -338,6 +360,9 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 			// save project as current
 			await fadeToLayout(LayoutType.Editor);
 			await loadLayout(LayoutType.NoLoading);
+
+			// clear functions
+			_selectEdit = [];
 		}
 	}).element);
 
@@ -354,8 +379,14 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 			// save project as current
 			await fadeToLayout(LayoutType.NoProjects);
 			await loadLayout(LayoutType.NoLoading);
+
+			// clear functions
+			_selectEdit = [];
 		}
 	}).element);
+
+	// update textboxes
+	selectEditFunc();
 }
 
 export async function editorLayout(body:HTMLDivElement):Promise<void> {

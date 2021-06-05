@@ -330,8 +330,8 @@ ipcMain.on(ipcEnum.ChipMuteFM, (event, channel:number, state:boolean) => {
  * @param args Arguments to send to UI
  */
 export const log = {
-	info: (...args:unknown[]):void => window?.webContents.send(ipcEnum.LogInfo, ...args),
-	warn: (...args:unknown[]):void => window?.webContents.send(ipcEnum.LogWarn, ...args),
+	info: (...args:unknown[]):void => { console.info(...args); window?.webContents.send(ipcEnum.LogInfo, ...args); },
+	warn: (...args:unknown[]):void => { console.warn(...args); window?.webContents.send(ipcEnum.LogWarn, ...args); },
 	error:(...args:unknown[]):void => { console.error(...args); window?.webContents.send(ipcEnum.LogError, ...args); },
 }
 

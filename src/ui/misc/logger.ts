@@ -22,6 +22,9 @@ fs.open(path.join(window.path, "ZorroTracker.log"), "w", (err, fd) => {
 	// close the logging file when the program is closed
 	ZorroEvent.addListener(ZorroEventEnum.Exit, () => {
 		return new Promise((res) => {
+			// try to write the exit event to log
+			console.info("app-request-exit");
+
 			// maybe probably closes the file
 			fs.close(fd, () => res());
 		});

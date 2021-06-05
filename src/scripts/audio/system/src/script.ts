@@ -52,11 +52,14 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 			 * data: ChipConfig to use for loading and initializing the chip.
 			 */
 			case "chip":
+				parentPort?.postMessage({ code: "log", data: [
+					"audio-chip", (data.data as ChipConfig).name, (data.data as ChipConfig).entry,
+				], });
+
 				/* eslint-disable @typescript-eslint/no-var-requires */
 				chip = new (__non_webpack_require__(path.join((data.data as ChipConfig).entry)).default)();
 				chip?.init(RATE, data.data as ChipConfig);
 				chip?.setVolume(volume);
-				parentPort?.postMessage({ code: "log", data: [ "audio-chip", (data.data as ChipConfig).name, ], });
 				break;
 
 			/**
@@ -69,10 +72,13 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 					throw new Error("Chip is invalid");
 				}
 
+				parentPort?.postMessage({ code: "log", data: [
+					"audio-driver", (data.data as DriverConfig).name, (data.data as DriverConfig).entry,
+				], });
+
 				/* eslint-disable @typescript-eslint/no-var-requires */
 				driver = new (__non_webpack_require__((data.data as DriverConfig).entry).default)();
 				driver?.init(RATE, data.data as DriverConfig, chip);
-				parentPort?.postMessage({ code: "log", data: [ "audio-driver", (data.data as DriverConfig).name, ], });
 				break;
 
 			/**

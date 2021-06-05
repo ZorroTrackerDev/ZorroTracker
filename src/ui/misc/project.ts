@@ -55,7 +55,7 @@ export class Project {
 			type: ZorroModuleType.Song,
 		});
 
-		await p.setActiveModule("!test");
+		await p.setActiveModuleIndex(0);
 		p.index.setChannels([ "FM1", "FM2", "FM3", "FM4", "FM5", "FM6", "PCM", "PSG1", "PSG2", "PSG3", "PSG4", ]);
 	}
 
@@ -174,7 +174,7 @@ export class Project {
 				project.data[m.file] = x;
 
 				//temp
-				await project.setActiveModule(m.file);
+				await project.setActiveModuleFile(m.file);
 			}
 
 			return project;
@@ -300,7 +300,8 @@ export class Project {
 	}
 
 	/* The name of the currently active module */
-	private _current = "";
+	public activeModuleIndex = 0;
+	private activeModuleFile = "";
 	public dirty = false;
 
 	/**
@@ -309,29 +310,10 @@ export class Project {
 	 * @param file The filename of the module to use
 	 * @returns Boolean indicating whether it was successful
 	 */
-	public async setActiveModule(file:string): Promise<boolean> {
-		if(this.data[file] && await this.setActiveCheck(file)){
-			// module found, set the active module
-			this._current = file;
-			return true;
-		}
-
-		// failed, bail
-		return false;
-	}
-
-	/**
-	 * Helper function to check if we can set an active module, and sending the active event
-	 *
-	 * @param file The filename of the module to use
-	 * @returns Boolean indicating whether it was successful
-	 */
-	private async setActiveCheck(file:string): Promise<boolean> {
-		// find the index of this module
+	public setActiveModuleFile(file:string): Promise<boolean> {
+		// get the module index and then run the code
 		const ix = this.getModuleIndexByFile(file);
-
-		// send the select event if found, and returns its value
-		return ix >= 0 && !(await this.eventSelect(this.modules[ix], this.data[file])).event.canceled;
+		return this.setActiveModuleIndex(ix);
 	}
 
 	/**
@@ -340,7 +322,7 @@ export class Project {
 	 * @param file The filename of the module to use
 	 * @returns The index of the module, or -1 if not found
 	 */
-	private getModuleIndexByFile(file:string): number|-1 {
+	public getModuleIndexByFile(file:string): number|-1 {
 		// loop through all modules to find the right index
 		for(let i = 0;i < this.modules.length;i ++) {
 			if(this.modules[i].file === file) {
@@ -352,14 +334,62 @@ export class Project {
 		return -1;
 	}
 
-	/* get the currently active module's object */
-	private get _moduleData() {
-		if(this.data[this._current]) {
-			// the currently active module exists
-			return this.data[this._current];
+	/**
+	 * Function to set the active module by its module index (not index setting, actual order).
+	 *
+	 * @param index The index order of the module to check. If not set, the current index will be used.
+	 * @param check If false, DO NOT ask to change module index. This is because the event is already being ran.
+	 * @returns Boolean indicating whether it was successful
+	 */
+	public async setActiveModuleIndex(index?:number): Promise<boolean> {
+		// decide the index to use
+		const ix = index ?? this.activeModuleIndex;
+
+		if(ix >= 0 && ix < this.modules.length && await this.setActiveCheck(ix)){
+			// module found, set the active module
+			this.activeModuleFile = this.modules[ix].file;
+			this.activeModuleIndex = ix;
+			return true;
 		}
 
-		throw new Error("Unable to load module data: The active module "+ this._current +" does not exist.");
+		// failed, bail
+		return false;
+	}
+
+	/**
+	 * Helper function to check if we can set an active module, and sending the active event
+	 *
+	 * @param index The index order of the module to check
+	 * @returns The index of the module that was found
+	 */
+	private async setActiveCheck(index:number): Promise<boolean> {
+		console.info("project select module", index, "-", this.modules[index].file);
+
+		// send the select event if found, and returns its value
+		return !(await this.eventSelect(this, this.modules[index], this.data[this.modules[index].file])).event.canceled;
+	}
+
+	/**
+	 * Function to edit the module details for the selected module
+	 */
+	public changeModule(): void {
+		// check if module exists
+		if(!this.data[this.activeModuleFile]) {
+			return;
+		}
+
+		// send the update event and ignore cancellation
+		this.eventUpdate(this, this.modules[this.activeModuleIndex], this.data[this.activeModuleFile]).catch(console.error);
+	}
+
+	/* get the currently active module's object */
+	private get _moduleData() {
+		if(this.data[this.activeModuleFile]) {
+			// the currently active module exists
+			return this.data[this.activeModuleFile];
+		}
+
+		throw new Error("Unable to load module data: The active module "+ this.activeModuleFile +" does not exist.");
 	}
 
 	/* the PatternIndex for the current module */

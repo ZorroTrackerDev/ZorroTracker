@@ -1,4 +1,4 @@
-import { Module, ModuleData } from "../ui/misc/project";
+import { Module, ModuleData, Project } from "../ui/misc/project";
 import { PatternIndex } from "./matrix";
 import { ClipboardType } from "./ui";
 
@@ -179,10 +179,10 @@ export interface ZorroListenerTypes {
 	[ZorroEventEnum.ClipboardGet]: (event:ZorroEventObject, type:ClipboardType) => Promise<string|undefined|void>,
 	[ZorroEventEnum.ClipboardSet]: (event:ZorroEventObject, type:ClipboardType, data:string) => Promise<string|undefined|void>,
 
-	[ZorroEventEnum.SelectModule]: (event:ZorroEventObject, module:Module, data:ModuleData) => Promise<undefined|void>,
-	[ZorroEventEnum.ModuleUpdate]: (event:ZorroEventObject, module:Module, data:ModuleData) => Promise<undefined|void>,
-	[ZorroEventEnum.ModuleCreate]: (event:ZorroEventObject, module:Module, data:ModuleData) => Promise<undefined|void>,
-	[ZorroEventEnum.ModuleDelete]: (event:ZorroEventObject, module:Module, data:ModuleData) => Promise<undefined|void>,
+	[ZorroEventEnum.SelectModule]: (event:ZorroEventObject, project:Project, module:Module, data:ModuleData) => Promise<undefined|void>,
+	[ZorroEventEnum.ModuleUpdate]: (event:ZorroEventObject, project:Project, module:Module, data:ModuleData) => Promise<undefined|void>,
+	[ZorroEventEnum.ModuleCreate]: (event:ZorroEventObject, project:Project, module:Module, data:ModuleData) => Promise<undefined|void>,
+	[ZorroEventEnum.ModuleDelete]: (event:ZorroEventObject, project:Project, module:Module, data:ModuleData) => Promise<undefined|void>,
 
 	// eslint-disable-next-line max-len
 	[ZorroEventEnum.MatrixSet]: (event:ZorroEventObject, index:PatternIndex, channel:number, row:number, value:number) => Promise<number|undefined|void>,
@@ -204,10 +204,10 @@ export interface ZorroSenderTypes {
 	[ZorroEventEnum.ClipboardGet]: (type:ClipboardType) => Promise<{ event: ZorroEventObject, value: string|undefined }>,
 	[ZorroEventEnum.ClipboardSet]: (type:ClipboardType, data:string) => Promise<{ event: ZorroEventObject, value: string|undefined }>,
 
-	[ZorroEventEnum.SelectModule]: (module:Module, data:ModuleData) => Promise<{ event: ZorroEventObject, value: undefined }>,
-	[ZorroEventEnum.ModuleUpdate]: (module:Module, data:ModuleData) => Promise<{ event: ZorroEventObject, value: undefined }>,
-	[ZorroEventEnum.ModuleCreate]: (module:Module, data:ModuleData) => Promise<{ event: ZorroEventObject, value: undefined }>,
-	[ZorroEventEnum.ModuleDelete]: (module:Module, data:ModuleData) => Promise<{ event: ZorroEventObject, value: undefined }>,
+	[ZorroEventEnum.SelectModule]: (project:Project, module:Module, data:ModuleData) => Promise<{ event: ZorroEventObject, value: undefined }>,
+	[ZorroEventEnum.ModuleUpdate]: (project:Project, module:Module, data:ModuleData) => Promise<{ event: ZorroEventObject, value: undefined }>,
+	[ZorroEventEnum.ModuleCreate]: (project:Project, module:Module, data:ModuleData) => Promise<{ event: ZorroEventObject, value: undefined }>,
+	[ZorroEventEnum.ModuleDelete]: (project:Project, module:Module, data:ModuleData) => Promise<{ event: ZorroEventObject, value: undefined }>,
 
 	// eslint-disable-next-line max-len
 	[ZorroEventEnum.MatrixSet]: (index:PatternIndex, channel:number, row:number, value:number) => Promise<{ event: ZorroEventObject, value: number|undefined }>,

@@ -1,3 +1,6 @@
+@numcol: 35px;
+@typecol: 50px;
+
 .__columns(@borderm, @borderb) {
 	display: flex;
 	flex-direction: row;
@@ -6,29 +9,33 @@
 	padding-bottom: 2px;
 
 	&> div {
-		text-overflow: ellipsis;
 		padding: 2px 5px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 
 		&:first-child {
 			flex: 0 0;
-			min-width: 35px;
-			max-width: 35px;
+			min-width: @numcol;
+			max-width: @numcol;
 			text-align: center;
 		}
 
 		&:nth-child(2) {
 			flex: 0 0;
-			min-width: 50px;
-			max-width: 50px;
+			min-width: @typecol;
+			max-width: @typecol;
 			text-align: center;
 		}
 
 		&:nth-child(3) {
-			flex: 2 2;
+			flex: 0 2;
+			min-width: 55%;
 		}
 
 		&:nth-child(4) {
-			flex: 1 1;
+			flex: 0 1;
+			min-width: 30%;
 		}
 
 		&:not(:first-child) {

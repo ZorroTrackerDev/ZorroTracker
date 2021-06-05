@@ -8,7 +8,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "audify": "^1.6.0",
+    "audify": "^1.6.3",
     "node-loader": "*",
     "ts-loader": "*",
     "typescript": "*",

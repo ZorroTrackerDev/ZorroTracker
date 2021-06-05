@@ -258,11 +258,12 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 	// load the module name textbox
 	const mname = makeTextbox({
 		type: TextboxEnum.Medium, label: "Module name", lines: 1, length: 100, hint: "For example: \"Fox in a box\"",
-		style: "display: inline-flex; width: fit-content; margin: 0 auto; margin-right: 25px;", width: "25vw",
+		style: "",
 		getValue: (value:string) => {
 			// set the project name
 			if(Project.current) {
 				Project.current.modules[0].name = value;
+				Project.current.changeModule();
 			}
 
 			return value;
@@ -275,11 +276,12 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 	// load the module author textbox
 	const mauth = makeTextbox({
 		type: TextboxEnum.Medium, label: "Authors", lines: 1, length: 100, hint: "For example: \"Rosy, Nicole and Elise\"",
-		style: "display: inline-flex; width: fit-content; margin: 0 auto; margin-top: 10px;", width: "25vw",
+		style: "",
 		getValue: (value:string) => {
 			// set the project name
 			if(Project.current) {
-				Project.current.modules[0].name = value;
+				Project.current.modules[0].author = value;
+				Project.current.changeModule();
 			}
 
 			return value;
@@ -288,6 +290,33 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 
 	mauth.setValue(Project.current?.modules[0].author ?? "<invalid>");
 	line1.appendChild(mauth.element);
+
+	// load the module author textbox
+	const mnum = makeTextbox({
+		type: TextboxEnum.Medium, label: "Index", lines: 1, length: 2, hint: "For example: 8F",
+		style: "flex: 0 0; min-width: 105px; max-width: 105px;",
+		getValue: (value:string) => {
+			// convert value
+			const v = parseInt(value, 16);
+
+			// check if its valid
+			if(isNaN(v) || v < 0 || v > 0xFF){
+				return "00";
+			}
+
+			// set the project name
+			if(Project.current) {
+				// update value
+				Project.current.modules[0].index = v;
+				Project.current.changeModule();
+			}
+
+			return value;
+		},
+	});
+
+	mnum.setValue((Project.current?.modules[0].index + "") ?? "00");
+	line1.appendChild(mnum.element);
 
 	// create a line
 	const line2 = document.createElement("div");

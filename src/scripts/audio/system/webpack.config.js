@@ -24,21 +24,6 @@ module.exports = {
         exclude: /node_modules/,
         use: ["ts-loader", ],
       },
-      {
-        test: /\.node/,
-        type: "asset/resource",
-        generator: {
-          filename: content => {
-            const base = content.module.rawRequest
-              .split("/")
-              .slice(1)
-              .join("/");
-
-            const full = "../" + base;
-            return full;
-          },
-        },
-      },
     ],
   },
 }

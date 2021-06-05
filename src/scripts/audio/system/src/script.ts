@@ -4,8 +4,6 @@ import path from "path";
 import { Chip, ChipConfig } from "../../../../api/scripts/chip";
 import { Driver, DriverConfig } from "../../../../api/scripts/driver";
 
-require("audify/build/Release/audify.node")
-
 // the output sample rate of the program. TODO: Not hardcode.
 const RATE = 44100;
 
@@ -142,6 +140,7 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 				break;
 		}
 	} catch(ex) {
+		console.error(ex);
 		parentPort?.postMessage({ code: "error", data: [ ex, ], });
 	}
 });
@@ -170,6 +169,7 @@ function openStream() {
 
 		} catch(ex) {
 			// panic on error and close the stream.
+			console.error(ex);
 			parentPort?.postMessage({ code: "error", data: [ ex, ], });
 			rtAudio.closeStream();
 		}
@@ -185,6 +185,7 @@ function openStream() {
 
 		} catch(ex) {
 			// panic on error and close the stream.
+			console.error(ex);
 			parentPort?.postMessage({ code: "error", data: [ ex, ], });
 			rtAudio.closeStream();
 		}

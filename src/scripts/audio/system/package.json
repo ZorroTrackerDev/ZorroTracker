@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "description": "",
   "scripts": {
-    "build": "webpack"
+    "build": "webpack && copyfiles -u 4 \"node_modules/audify/build/Release/*.*\" dist"
   },
   "author": "",
   "license": "ISC",
@@ -16,6 +16,7 @@
     "webpack-cli": "*"
   },
   "devDependencies": {
-    "@types/node": "*"
+    "@types/node": "*",
+    "copyfiles": "^2.4.1"
   }
 }

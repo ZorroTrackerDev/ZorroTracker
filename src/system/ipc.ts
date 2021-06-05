@@ -82,8 +82,6 @@ export function close(): Promise<number> {
 				return;
 			}
 
-			res(0);	// TEMP
-
 			// will be closed, tell the worker about it and terminate it
 			worker?.postMessage({ code: "quit", });
 
@@ -262,7 +260,7 @@ function _findall(folder:ScriptFolders, eventName:ipcEnum, event:IpcMainEvent) {
  */
 let worker:Worker|undefined;
 
-/*ScriptHelper.findAll("audio").then((cfg) => {
+ScriptHelper.findAll("audio").then((cfg) => {
 	if(cfg["audio"]){
 		// found the audio script, load it as a worker
 		worker = new Worker(cfg["audio"].entry);
@@ -277,7 +275,7 @@ let worker:Worker|undefined;
 		// enable error logs
 		worker.on("error", log.error);
 	}
-}).catch(console.error);*/
+}).catch(console.error);
 
 // handle changing the volume of the audio adapter instance.
 ipcMain.on(ipcEnum.AudioVolume, (event, volume:number) => {
@@ -331,9 +329,9 @@ ipcMain.on(ipcEnum.ChipMuteFM, (event, channel:number, state:boolean) => {
  * @param args Arguments to send to UI
  */
 export const log = {
-	info: (...args:unknown[]):void => window?.webContents.send(ipcEnum.LogInfo, args),
-	warn: (...args:unknown[]):void => window?.webContents.send(ipcEnum.LogWarn, args),
-	error:(...args:unknown[]):void => window?.webContents.send(ipcEnum.LogError, args),
+	info: (...args:unknown[]):void => window?.webContents.send(ipcEnum.LogInfo, ...args),
+	warn: (...args:unknown[]):void => window?.webContents.send(ipcEnum.LogWarn, ...args),
+	error:(...args:unknown[]):void => { console.error(...args); window?.webContents.send(ipcEnum.LogError, ...args); },
 }
 
 // handle UI requesting systeminformation

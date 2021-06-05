@@ -7,6 +7,7 @@
 window.exports = {};
 
 import { webFrame } from "electron";
+import { volumeSlider, SliderEnum } from "./elements/slider/slider";
 webFrame.setZoomFactor(1);		// testing only
 
 /* load object extensions */
@@ -59,6 +60,7 @@ window.preload = {
 		}
 
 		// stop the audio playback and restart it with the new file opened. TODO: This is only test code!
+		console.log("VGM", result.filePaths[0]);
 		window.ipc.audio.stop();
 		setTimeout(() => window.ipc.audio.play(result.filePaths[0]), 50);
 	},
@@ -99,6 +101,11 @@ window.ipc.ui.path().then(() => {
 		if(emus["9d8d2954-ad94-11eb-8529-0242ac130003"] && drivers["9d8d267a-ad94-11eb-8529-0242ac130003"]){
 			// @ts-ignore
 			window.ipc.audio.init(emus["9d8d2954-ad94-11eb-8529-0242ac130003"], drivers["9d8d267a-ad94-11eb-8529-0242ac130003"]);
+
+			// TEMP volume hack
+			setTimeout(() => {
+				volumeSlider(SliderEnum.Small).catch(console.error);
+			}, 100);
 		}
 
 	}).catch(console.error);

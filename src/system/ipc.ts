@@ -268,7 +268,8 @@ ScriptHelper.findAll("audio").then((cfg) => {
 		// enable messages
 		worker.on("message", (data:{ code:string, data:unknown }) => {
 			switch(data.code) {
-				case "error": log.error(...(data.data as unknown[]));
+				case "error": log.error(...(data.data as unknown[])); break;
+				case "log": log.info(...(data.data as unknown[])); break;
 			}
 		});
 

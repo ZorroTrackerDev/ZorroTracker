@@ -4,6 +4,9 @@ import path from "path";
 import { Chip, ChipConfig } from "../../../../api/scripts/chip";
 import { Driver, DriverConfig } from "../../../../api/scripts/driver";
 
+// eslint-disable-next-line camelcase
+declare const __non_webpack_require__: NodeRequire;
+
 // the output sample rate of the program. TODO: Not hardcode.
 const RATE = 44100;
 
@@ -50,9 +53,10 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 			 */
 			case "chip":
 				/* eslint-disable @typescript-eslint/no-var-requires */
-				chip = new (require(path.join((data.data as ChipConfig).entry)).default)();
+				chip = new (__non_webpack_require__(path.join((data.data as ChipConfig).entry)).default)();
 				chip?.init(RATE, data.data as ChipConfig);
 				chip?.setVolume(volume);
+				parentPort?.postMessage({ code: "log", data: [ "audio-chip", (data.data as ChipConfig).name, ], });
 				break;
 
 			/**
@@ -66,8 +70,9 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 				}
 
 				/* eslint-disable @typescript-eslint/no-var-requires */
-				driver = new (require((data.data as DriverConfig).entry).default)();
+				driver = new (__non_webpack_require__((data.data as DriverConfig).entry).default)();
 				driver?.init(RATE, data.data as DriverConfig, chip);
+				parentPort?.postMessage({ code: "log", data: [ "audio-driver", (data.data as DriverConfig).name, ], });
 				break;
 
 			/**
@@ -95,6 +100,7 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 			 */
 			case "play":
 				driver?.play(data.data as string);
+				parentPort?.postMessage({ code: "log", data: [ "audio-play", data.data, ], });
 
 				if(!rtAudio.isStreamOpen()){
 					openStream();
@@ -177,6 +183,7 @@ function openStream() {
 
 	// start streaming the audio
 	rtAudio.start();
+	parentPort?.postMessage({ code: "log", data: [ "rtAudio init", ], });
 
 	// buffer ahead a little bit of audio so that we can avoid any sudden lagspikes affecting quality.
 	for(let i = 0;i < GAP;i ++) {

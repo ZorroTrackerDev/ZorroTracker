@@ -8,19 +8,18 @@ import { Driver, DriverConfig } from "../../../../api/scripts/driver";
 declare const __non_webpack_require__: NodeRequire;
 
 // the output sample rate of the program. TODO: Not hardcode.
-const RATE = 44100;
+let outputRate = 44100;
 
 // the output sample duration in milliseconds (eg how long to emulate chips before pushing the audio buffer). TODO: Not hardcode.
-const SAMPLEDURATION = 0.015;
-
-// how many samples to emulate before pushing to audio buffer. TODO: Not hardcode.
-const SAMPLES = (RATE * SAMPLEDURATION) | 0;
+let bufferLen = 0.015;
 
 // how big of a gap to leave between audio buffering and playing. This is multiplied by SAMPLEDURATION. TODO: Not hardcode.
-const GAP = 3;
+let bufferGap = 3;
+
+let streamName = "ZorroTracker";
 
 // initialize rtAudio backend. Note that on Windows, we force WASAPI because the default option sucks.
-const rtAudio = new RtAudio(process.platform === "win32" ? RtAudioApi.WINDOWS_DS : RtAudioApi.UNSPECIFIED);
+let rtAudio:RtAudio;
 
 // holds the chip we are using for audio emulation
 let chip:Chip|undefined;
@@ -35,6 +34,70 @@ let volume = 0;
 parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 	try {
 		switch(data.code) {
+			/**
+			 * Set the current configuration for this instance
+			 *
+			 * data: An object with pre-defined keys that may or may not be present
+			 */
+			case "config": {
+				const d = data.data as Record<string, unknown>;
+
+				// get the rtAudio API
+				let api = RtAudioApi.UNSPECIFIED;
+				let apistr = "undefined", apios = "unknown";
+
+				switch(process.platform) {
+					case "win32":		// windows-based api's
+						apios = "windows";
+						apistr = (d.windows as string).toUpperCase();
+
+						switch(apistr) {
+							case "DIRECTSOUND": api = RtAudioApi.WINDOWS_DS; break;
+							case "WASAPI": api = RtAudioApi.WINDOWS_WASAPI; break;
+							case "ASIO": api = RtAudioApi.WINDOWS_ASIO; break;
+							default: apistr = "unknown"; break;
+						}
+						break;
+
+					case "linux":		// linux-based api's
+						apios = "linux";
+						apistr = (d.linux as string).toUpperCase();
+
+						switch(apistr) {
+							case "PULSE": api = RtAudioApi.LINUX_PULSE; break;
+							case "ALSA": api = RtAudioApi.LINUX_ALSA; break;
+							case "JACK": api = RtAudioApi.UNIX_JACK; break;
+							case "OSS": api = RtAudioApi.LINUX_OSS; break;
+							default: apistr = "unknown"; break;
+						}
+						break;
+
+					case "darwin":		// macos-based api's
+						apios = "linux";
+						apistr = (d.macos as string).toUpperCase();
+
+						switch(apistr) {
+							case "CORE": api = RtAudioApi.MACOSX_CORE; break;
+							default: apistr = "unknown"; break;
+						}
+						break;
+				}
+
+				// log this
+				parentPort?.postMessage({ code: "log", data: [ "audio-config-api", apios, apistr, ], });
+
+				// initialize rtAudio instance
+				rtAudio = new RtAudio(api);
+
+				// update constants
+				/* eslint-disable @typescript-eslint/no-unused-expressions */
+				d.samplerate && (outputRate = d.samplerate as number);
+				d.buffersize && (bufferLen = d.buffersize as number / 1000);
+				d.buffergap && (bufferGap = d.buffergap as number);
+				d.name && (streamName = d.name as string);
+				/* eslint-enable @typescript-eslint/no-unused-expressions */
+				break;
+			}
 
 			/**
 			 * Set the current volume.
@@ -58,7 +121,7 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 
 				/* eslint-disable @typescript-eslint/no-var-requires */
 				chip = new (__non_webpack_require__(path.join((data.data as ChipConfig).entry)).default)();
-				chip?.init(RATE, data.data as ChipConfig);
+				chip?.init(outputRate, data.data as ChipConfig);
 				chip?.setVolume(volume);
 				break;
 
@@ -78,7 +141,7 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 
 				/* eslint-disable @typescript-eslint/no-var-requires */
 				driver = new (__non_webpack_require__((data.data as DriverConfig).entry).default)();
-				driver?.init(RATE, data.data as DriverConfig, chip);
+				driver?.init(outputRate, data.data as DriverConfig, chip);
 				break;
 
 			/**
@@ -119,6 +182,7 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 			 * data: Irrelevant
 			 */
 			case "stop":
+				parentPort?.postMessage({ code: "log", data: [ "audio-stop", ], });
 				driver?.stop();
 				break;
 
@@ -174,10 +238,10 @@ function openStream() {
 		deviceId: rtAudio.getDefaultOutputDevice(),
 		nChannels: 2,
 
-	}, null, RtAudioFormat.RTAUDIO_SINT32, RATE, SAMPLES /* SAMPLES * GAP of delay */, "ZorroTracker", null, () => {
+	}, null, RtAudioFormat.RTAUDIO_SINT32, outputRate, (outputRate * bufferLen) | 0, streamName, null, () => {
 		try {
 			// automagically buffer audio when the previous audio is finished playing.
-			rtAudio.write(stream(SAMPLES));
+			rtAudio.write(stream((outputRate * bufferLen) | 0));
 
 		} catch(ex) {
 			// panic on error and close the stream.
@@ -189,12 +253,12 @@ function openStream() {
 
 	// start streaming the audio
 	rtAudio.start();
-	parentPort?.postMessage({ code: "log", data: [ "rtAudio init", ], });
+	parentPort?.postMessage({ code: "log", data: [ "rtAudio", streamName, "@", outputRate, "hz", bufferLen * 1000, "ms", bufferGap, "buffers", ], });
 
 	// buffer ahead a little bit of audio so that we can avoid any sudden lagspikes affecting quality.
-	for(let i = 0;i < GAP;i ++) {
+	for(let i = 0;i < bufferGap;i ++) {
 		try {
-			rtAudio.write(stream(SAMPLES));
+			rtAudio.write(stream((outputRate * bufferLen) | 0));
 
 		} catch(ex) {
 			// panic on error and close the stream.

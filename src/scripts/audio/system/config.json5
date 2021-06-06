@@ -7,8 +7,18 @@
 	version: "b0",									// the API version identifier. ZorroTracker will support some older versions as long as the API does not have breaking changes. Do not change this by yourself!
 	entry: "dist/index.js",							// the entry point for code for this script. This should never be a .ts file, you should always compile TypeScript files down to JavaScript before using them.
 	date: "2021/5/25",								// the date the audio handler configuration was created
-	credits: [ ],									// the credits of people who contributed to this audio handler
+	credits: [										// the credits of people who contributed to this audio handler
+		{ name: "thestk", url: "https://github.com/thestk/rtaudio", info: "The audio backend used in this package" },
+		{ name: "Almog Hamdani", url: "https://github.com/almoghamdani/audify", info: "Audify, which implements rtAudio support" },
+		{ name: "Saana", url: "https://github.com/ShinySaana", info: "Help setting up Audify in a way that actually works (smh my head, bindings is baaad)" },
+		{ name: "AURORA☆FIELDS", url: "https://github.com/NatsumiFox", info: "The actual framework for implementing Audify into ZorroTracker" },
+	],
+
 	windows: "DIRECTSOUND",							// audio API on windows: DIRECTSOUND, WASAPI or ASIO
 	linux: null,									// audio API on linux: ALSA, OSS, PULSE, or JACK
 	macos: "CORE",									// audio API on macos: CORE
+
+	samplerate: 44100,								// the preferred sample rate of this program. Different audio API's might not allow all sample rates. This does *not* directly affect sound drivers or chip emulators.
+	buffersize: 15,									// the size of an audio buffer in milliseconds. The larger this value is, the more audio delay there will be, but smaller values can cause audio glitches
+	buffergap: 3,									// the number of buffers to queue ahead of time. The larger this value is, the more audio delay there will be, but smaller values can cause audio glitches
 }

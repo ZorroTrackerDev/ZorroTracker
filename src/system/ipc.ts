@@ -275,6 +275,9 @@ ScriptHelper.findAll("audio").then((cfg) => {
 
 		// enable error logs
 		worker.on("error", log.error);
+
+		// initialize the config file
+		worker.postMessage({ code: "config", data: cfg["audio"], });
 	}
 }).catch(console.error);
 
@@ -330,9 +333,33 @@ ipcMain.on(ipcEnum.ChipMuteFM, (event, channel:number, state:boolean) => {
  * @param args Arguments to send to UI
  */
 export const log = {
-	info: (...args:unknown[]):void => { console.info(...args); window?.webContents.send(ipcEnum.LogInfo, ...args); },
-	warn: (...args:unknown[]):void => { console.warn(...args); window?.webContents.send(ipcEnum.LogWarn, ...args); },
-	error:(...args:unknown[]):void => { console.error(...args); window?.webContents.send(ipcEnum.LogError, ...args); },
+	info: (...args:unknown[]):void => {
+		// send to base console
+		console.info(...args);
+
+		// if window is not destroyed yet, send it to devtools console too
+		if(window?.webContents.isDestroyed() === false) {
+			window.webContents.send(ipcEnum.LogInfo, ...args);
+		}
+	},
+	warn: (...args:unknown[]):void => {
+		// send to base console
+		console.warn(...args);
+
+		// if window is not destroyed yet, send it to devtools console too
+		if(window?.webContents.isDestroyed() === false) {
+			window.webContents.send(ipcEnum.LogWarn, ...args);
+		}
+	},
+	error:(...args:unknown[]):void => {
+		// send to base console
+		console.error(...args);
+
+		// if window is not destroyed yet, send it to devtools console too
+		if(window?.webContents.isDestroyed() === false) {
+			window.webContents.send(ipcEnum.LogError, ...args);
+		}
+	},
 }
 
 // handle UI requesting systeminformation

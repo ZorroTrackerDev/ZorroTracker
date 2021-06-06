@@ -1,5 +1,4 @@
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../api/events";
-import { UIShortcutHandler } from "../../api/ui";
 import { Undo } from "../../api/undo";
 import { ButtonEnum, makeButton } from "../elements/button/button";
 import { PatternIndexEditor } from "../elements/matrixeditor/main";
@@ -10,22 +9,20 @@ import { makeTextbox, TextboxEnum } from "../elements/textbox/textbox";
 import { Project, Module } from "./project";
 import { addShortcutReceiver } from "./shortcuts";
 
-export class _Temp implements UIShortcutHandler {
-	public patternIndex:PatternIndexEditor|undefined;
+// handler for receiving shortcuts
+let patternIndex:PatternIndexEditor|undefined;
 
-	// eslint-disable-next-line require-await
-	public async receiveShortcut(data: string[]): Promise<boolean> {
+// note, this is here just because in testing it might not actually exist!
+if(addShortcutReceiver) {
+	addShortcutReceiver("layout", async(data) => {
 		switch(data.shift()) {
 			case "patternindex":
-				return this.patternIndex?.receiveShortcut(data) ?? false;
+				return patternIndex?.receiveShortcut(data) ?? false;
 		}
 
 		return false;
-	}
+	});
 }
-
-export const _temp = new _Temp();
-addShortcutReceiver("layout", (data) => _temp.receiveShortcut(data));
 
 /**
  * Types of different standard layouts
@@ -407,7 +404,7 @@ export async function editorLayout(body:HTMLDivElement):Promise<void> {
 	_top.id = "editor_top";
 	body.appendChild(_top);
 
-	_top.appendChild((_temp.patternIndex = new PatternIndexEditor(Project.current.index)).element);
+	_top.appendChild((patternIndex = new PatternIndexEditor(Project.current.index)).element);
 
 	const _bot = document.createElement("div");
 	_bot.id = "editor_bottom";

@@ -278,14 +278,19 @@ export class Project {
 	 */
 	public async deleteModule(index:number): Promise<boolean> {
 		// check if the module index is valid
-		if(index < 0 || index >= this.modules.length || !await this.eventDelete(this, this.modules[index], this.data[this.modules[index].file])){
+		if(index < 0 || index >= this.modules.length){
 			return false;
 		}
 
-		// delete the module data and get the filename
-		const file = this.modules.splice(index, 1)[0].file;
+		// get module filename and check if the event can continue
+		const file = this.modules[index].file;
 
-		// delete its data too
+		if((await this.eventDelete(this, this.modules[index], this.data[file])).event.canceled){
+			return false;
+		}
+
+		// delete the module and its data
+		this.modules.splice(index, 1);
 		delete this.data[file];
 
 		// if this module was currently active, set active module to nothing
@@ -293,6 +298,7 @@ export class Project {
 			await this.setActiveModuleIndex(index - 1);
 		}
 
+		// success!
 		return true;
 	}
 

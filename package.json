@@ -168,17 +168,12 @@
 			"icon": "./res/icon.icns",
 			"target": [
 				{
-					"target": "dmg",
+					"target": "dir",
 					"arch": [
 						"x64"
 					]
 				}
 			]
-		},
-		"dmg": {
-		  "icon": "res/icon.icns",
-		  "backgroundColor": "#111111",
-		  "iconSize": 128
 		}
 	}
 }

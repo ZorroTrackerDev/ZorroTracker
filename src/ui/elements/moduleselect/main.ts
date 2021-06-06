@@ -6,6 +6,7 @@ export class ModuleSelect {
 	private project:Project;
 	private items:HTMLDivElement;
 	private buttons:HTMLDivElement;
+	private selection:HTMLDivElement|undefined;
 
 	constructor(project:Project) {
 		this.project = project;
@@ -83,8 +84,11 @@ export class ModuleSelect {
 				const index = m.project.activeModuleIndex;
 
 				if(await m.project.deleteModule(index)){
-					// if successful, remove the element
-					m.items.removeChild(m.items.children[index]);
+					if(m.selection) {
+						// if successful, remove the element
+						m.items.removeChild(m.selection);
+						m.selection = undefined;
+					}
 
 					// update event listeners
 					m.setEventListeners();
@@ -176,9 +180,13 @@ export class ModuleSelect {
 	private setEventListeners() {
 		// loop for each element giving them an onclick listener
 		for(let i = this.items.children.length - 1;i >= 0; --i) {
-			(this.items.children[i] as HTMLDivElement).onclick = (event:MouseEvent) => {
+			(this.items.children[i] as HTMLDivElement).onclick = async(event:MouseEvent) => {
+
 				// select this index when clicked
-				this.project.setActiveModuleIndex(i).catch(console.error);
+				if(await this.project.setActiveModuleIndex(i)) {
+					// if successful, set the selected element too
+					this.selection = (event.currentTarget as HTMLDivElement) ?? undefined;
+				}
 			}
 		}
 	}

@@ -18,6 +18,7 @@ async function createWindow () {
 		x: settings.x, y: settings.y,
 		frame: process.env.NODE_ENV === "test",
 		show: true, backgroundColor: "#111",
+		icon: path.join(__dirname, "icon.png"),
 
 		webPreferences: {
 			preload: path.join(__dirname, "ui", "main.preload.js"),

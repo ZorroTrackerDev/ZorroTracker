@@ -2,10 +2,14 @@ import fs from "fs";
 import path from "path";
 import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 
+const logPath = process.platform === "win32" ?
+	path.join(window.path, "ZorroTracker.log") :			// windows logging path
+	path.join("var", "log", "ZorroTracker.log");			// macos and linux logging path
+
 // helper function to write strings to the output file
 let _write:(text:string) => void = () => {};
 
-fs.open(path.join(window.path, "ZorroTracker.log"), "w", (err, fd) => {
+fs.open(logPath, "w", (err, fd) => {
 	if(err){
 		console.error("Can not open logging file!", err);
 	}

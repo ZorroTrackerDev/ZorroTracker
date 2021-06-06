@@ -168,7 +168,7 @@
 			"icon": "./res/icon.icns",
 			"target": [
 				{
-					"target": "zip",
+					"target": "7z",
 					"arch": [
 						"x64"
 					]

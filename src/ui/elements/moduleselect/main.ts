@@ -4,7 +4,8 @@ import { Module, ModuleData, Project } from "../../misc/project";
 export class ModuleSelect {
 	public element:HTMLDivElement;
 	private project:Project;
-	public items:HTMLDivElement;
+	private items:HTMLDivElement;
+	private buttons:HTMLDivElement;
 
 	constructor(project:Project) {
 		this.project = project;
@@ -28,7 +29,7 @@ export class ModuleSelect {
 			</div>
 
 			<div class="moduleselectbuttons">
-				<button>Add</button>
+				<button>Create</button>
 				<button>Clone</button>
 				<button>Delete</button>
 			</div>
@@ -36,14 +37,61 @@ export class ModuleSelect {
 
 		// update elements
 		this.items = (this.element.children[1] as HTMLDivElement).children[0] as HTMLDivElement;
+		this.buttons = this.element.children[2] as HTMLDivElement;
 
 		// prepare stuff
 		this.renderAllItems();
 		this.setEventListeners();
 
+		// set button event listeners for each button
+		for(let i = this.buttonFunc.length - 1;i >= 0; --i) {
+			(this.buttons.children[i] as HTMLButtonElement).onclick = (event:MouseEvent) => {
+				return this.buttonFunc[i](event, this);
+			};
+		}
+
 		// re-select the current module
 		project.setActiveModuleIndex().catch(console.error);
 	}
+
+	private buttonFunc = [
+		async(e:MouseEvent, m:ModuleSelect) => {		// create
+			// create a new module and get its index
+			const file = m.project.addModule();
+			const index = m.project.getModuleIndexByFile(file);
+
+			// render the new module
+			m.items.innerHTML += m.renderItem(index);
+
+			// set it as the active module
+			await m.project.setActiveModuleIndex(index);
+
+			// reset event listeners
+			m.setEventListeners();
+
+			// TEMP
+			m.project.index.setChannels([ "FM1", "FM2", "FM3", "FM4", "FM5", "FM6", "PCM", "PSG1", "PSG2", "PSG3", "PSG4", ]);
+		},
+		async(e:MouseEvent, m:ModuleSelect) => {		// clone
+			if(m.project.activeModuleIndex >= 0) {
+				// null
+			}
+		},
+		async(e:MouseEvent, m:ModuleSelect) => {		// delete
+			if(m.project.activeModuleIndex >= 0) {
+				// try to remove the project module
+				const index = m.project.activeModuleIndex;
+
+				if(await m.project.deleteModule(index)){
+					// if successful, remove the element
+					m.items.removeChild(m.items.children[index]);
+
+					// update event listeners
+					m.setEventListeners();
+				}
+			}
+		},
+	];
 
 	/**
 	 * Helper function to render a all items as HTML
@@ -142,8 +190,8 @@ let _moduleselect: ModuleSelect|undefined;
  * Helper event listener for the SelectModule event, so that the selection can be updated
  */
 // eslint-disable-next-line require-await
-ZorroEvent.addListener(ZorroEventEnum.SelectModule, async(event:ZorroEventObject, project:Project, module:Module) => {
-	if(_moduleselect) {
+ZorroEvent.addListener(ZorroEventEnum.SelectModule, async(event:ZorroEventObject, project:Project|undefined, module:Module|undefined) => {
+	if(_moduleselect && project && module) {
 		// load the module index that is selected
 		const ix = project.getModuleIndexByFile(module.file);
 

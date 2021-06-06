@@ -152,18 +152,6 @@
 				}
 			]
 		},
-		"mac": {
-			"category": "public.app-category.developer-tools",
-			"icon": "./res/icon.icns",
-			"target": [
-				{
-					"target": "tar.gz",
-					"arch": [
-						"x64"
-					]
-				}
-			]
-		},
 		"linux": {
 			"category": "Audio",
 			"target": [
@@ -174,6 +162,23 @@
 					]
 				}
 			]
+		},
+		"mac": {
+			"category": "public.app-category.developer-tools",
+			"icon": "./res/icon.icns",
+			"target": [
+				{
+					"target": "dmg",
+					"arch": [
+						"x64"
+					]
+				}
+			]
+		},
+		"dmg": {
+		  "icon": "res/icon.icns",
+		  "backgroundColor": "#111111",
+		  "iconSize": 128
 		}
 	}
 }

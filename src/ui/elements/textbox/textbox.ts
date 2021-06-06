@@ -59,9 +59,10 @@ type TextboxAttributes = {
 	 * This function can, for example, remove special characters.
 	 *
 	 * @param value The input value from the textbox
+	 * @param user Boolean indicating whether the user changed the value, or if the system did
 	 * @returns The output value to put back into the textbox
 	 */
-	getValue: (value:string) => string,
+	getValue: (value:string, user:boolean) => string,
 }
 
 type TextboxReturn = {
@@ -138,12 +139,12 @@ export function makeTextbox(attributes:TextboxAttributes):TextboxReturn {
 	/**
 	 * Helper function to submit textbox value
 	 */
-	const _text = () => {
-		valueEl.value = getValue(valueEl.value);
+	const _text = (user:boolean) => {
+		valueEl.value = getValue(valueEl.value, user);
 	}
 
 	// handle clicking away from the edit box as updating the text content
-	valueEl.onblur = _text;
+	valueEl.onblur = () => _text(true);
 
 	// handle special keys in the edit box
 	valueEl.onkeydown = function(event:KeyboardEvent) {
@@ -155,7 +156,7 @@ export function makeTextbox(attributes:TextboxAttributes):TextboxReturn {
 				event.preventDefault();
 
 				// update text content
-				_text();
+				_text(true);
 				return false;
 		}
 	}
@@ -166,7 +167,7 @@ export function makeTextbox(attributes:TextboxAttributes):TextboxReturn {
 		setValue: (value:string) => {
 			// set the textbox value, then run the correction function
 			valueEl.value = value;
-			_text();
+			_text(false);
 		},
 	}
 }

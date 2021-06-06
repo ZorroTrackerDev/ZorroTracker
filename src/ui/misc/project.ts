@@ -30,7 +30,6 @@ export class Project {
 		const project = new Project(file);
 		project.config = Project.createTestConfig();
 		project.modules = [];
-		await Project.createTestModule(project);
 		return project;
 	}
 
@@ -44,11 +43,6 @@ export class Project {
 			driver: "9d8d267a-ad94-11eb-8529-0242ac130003",	// VGM
 		};
 	}
-
-	private static async createTestModule(p:Project): Promise<void> {
-	//	p.index.setChannels([ "FM1", "FM2", "FM3", "FM4", "FM5", "FM6", "PCM", "PSG1", "PSG2", "PSG3", "PSG4", ]);
-	}
-
 	/**
 	 * Function to load a project from a .zorro file into memory
 	 *
@@ -277,6 +271,32 @@ export class Project {
 	}
 
 	/**
+	 * Function to delete a module and all its data
+	 *
+	 * @param index The index of the module to target
+	 * @returns Boolean indicating whether it was successful
+	 */
+	public async deleteModule(index:number): Promise<boolean> {
+		// check if the module index is valid
+		if(index < 0 || index >= this.modules.length || !await this.eventDelete(this, this.modules[index], this.data[this.modules[index].file])){
+			return false;
+		}
+
+		// delete the module data and get the filename
+		const file = this.modules.splice(index, 1)[0].file;
+
+		// delete its data too
+		delete this.data[file];
+
+		// if this module was currently active, set active module to nothing
+		if(this.activeModuleIndex === index){
+			await this.setActiveModuleIndex(index - 1);
+		}
+
+		return true;
+	}
+
+	/**
 	 * Function to add a new module to the project. Default settings will be used
 	 *
 	 * @returns The filename of this new module
@@ -355,10 +375,18 @@ export class Project {
 		// decide the index to use
 		const ix = index ?? this.activeModuleIndex;
 
-		if(ix >= 0 && ix < this.modules.length && await this.setActiveCheck(ix)){
+		if(ix >= -1 && ix < this.modules.length && await this.setActiveCheck(ix)){
+			// set module selection index
+			this.activeModuleIndex = ix;
+
+			if(ix === -1) {
+				// special case for no selection
+				this.activeModuleFile = "";
+				return true;
+			}
+
 			// module found, set the active module
 			this.activeModuleFile = this.modules[ix].file;
-			this.activeModuleIndex = ix;
 			return true;
 		}
 
@@ -373,10 +401,10 @@ export class Project {
 	 * @returns The index of the module that was found
 	 */
 	private async setActiveCheck(index:number): Promise<boolean> {
-		console.info("project select module", index, "-", this.modules[index].file);
+		console.info("project select module", index, "-", this.modules[index]?.file ?? "<null>");
 
 		// send the select event if found, and returns its value
-		return !(await this.eventSelect(this, this.modules[index], this.data[this.modules[index].file])).event.canceled;
+		return !(await this.eventSelect(this, this.modules[index], index < 0 ? undefined : this.data[this.modules[index].file])).event.canceled;
 	}
 
 	/**

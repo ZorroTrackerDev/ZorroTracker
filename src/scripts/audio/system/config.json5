@@ -14,9 +14,9 @@
 		{ name: "AURORA☆FIELDS", url: "https://github.com/NatsumiFox", info: "The actual framework for implementing Audify into ZorroTracker" },
 	],
 
-	windows: "DIRECTSOUND",							// audio API on windows: DIRECTSOUND, WASAPI or ASIO
-	linux: null,									// audio API on linux: ALSA, OSS, PULSE, or JACK
-	macos: "CORE",									// audio API on macos: CORE
+	windows: "DIRECTSOUND",							// audio API on windows: DIRECTSOUND, WASAPI, ASIO, or null to guess the best API (not recommended)
+	linux: "ALSA",									// audio API on linux: ALSA, OSS, PULSE, JACK, or null to guess the best API (not recommended)
+	macos: "CORE",									// audio API on macos: CORE, or null to guess the best API (not recommended)
 
 	samplerate: 44100,								// the preferred sample rate of this program. Different audio API's might not allow all sample rates. This does *not* directly affect sound drivers or chip emulators.
 	buffersize: 15,									// the size of an audio buffer in milliseconds. The larger this value is, the more audio delay there will be, but smaller values can cause audio glitches

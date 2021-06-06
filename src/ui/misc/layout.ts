@@ -218,7 +218,7 @@ let _selectEdit: ((project?:Project, module?:Module) => void)[] = [];
  * Helper event listener for the SelectModule event, so that the selection can be updated
  */
 // eslint-disable-next-line require-await
-ZorroEvent.addListener(ZorroEventEnum.SelectModule, async(event:ZorroEventObject, project:Project, module:Module) => {
+ZorroEvent.addListener(ZorroEventEnum.SelectModule, async(event:ZorroEventObject, project:Project|undefined, module:Module|undefined) => {
 	selectEditFunc(project, module);
 });
 
@@ -234,9 +234,9 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 	const name = makeTextbox({
 		type: TextboxEnum.Large, label: "Project name", lines: 1, length: 100, hint: "For example: \"My new mixtape\"",
 		style: "width: fit-content; margin: 0 auto; margin-bottom: 40px;", width: "50vw",
-		getValue: (value:string) => {
+		getValue: (value:string, user:boolean) => {
 			// set the project name
-			if(Project.current) {
+			if(user && Project.current) {
 				Project.current.config.name = value;
 			}
 
@@ -274,9 +274,9 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 	const mname = makeTextbox({
 		type: TextboxEnum.Medium, label: "Module name", lines: 1, length: 100, hint: "For example: \"Fox in a box\"",
 		style: "",
-		getValue: (value:string) => {
+		getValue: (value:string, user:boolean) => {
 			// set the project name
-			if(Project.current && Project.current.activeModuleIndex >= 0) {
+			if(user && Project.current && Project.current.activeModuleIndex >= 0) {
 				Project.current.modules[Project.current.activeModuleIndex].name = value;
 				Project.current.changeModule();
 			}
@@ -293,9 +293,9 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 	const mauth = makeTextbox({
 		type: TextboxEnum.Medium, label: "Authors", lines: 1, length: 100, hint: "For example: \"Rosy, Nicole and Elise\"",
 		style: "",
-		getValue: (value:string) => {
+		getValue: (value:string, user:boolean) => {
 			// set the project name
-			if(Project.current && Project.current.activeModuleIndex >= 0) {
+			if(user && Project.current && Project.current.activeModuleIndex >= 0) {
 				Project.current.modules[Project.current.activeModuleIndex].author = value;
 				Project.current.changeModule();
 			}
@@ -312,7 +312,7 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 	const mnum = makeTextbox({
 		type: TextboxEnum.Medium, label: "Index", lines: 1, length: 2, hint: "For example: 8F",
 		style: "flex: 0 0; min-width: 105px; max-width: 105px;",
-		getValue: (value:string) => {
+		getValue: (value:string, user:boolean) => {
 			// convert value
 			const v = parseInt(value, 16);
 
@@ -322,7 +322,7 @@ async function projectInfoLayout(body:HTMLDivElement):Promise<void> {
 			}
 
 			// set the project name
-			if(Project.current && Project.current.activeModuleIndex >= 0) {
+			if(user && Project.current && Project.current.activeModuleIndex >= 0) {
 				// update value
 				Project.current.modules[Project.current.activeModuleIndex].index = v;
 				Project.current.changeModule();

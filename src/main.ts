@@ -2,13 +2,17 @@ import electron, { BrowserWindow } from "electron";
 import path from "path";
 
 // add the IPC handlers here
-import { getCookie, setCookie, updateMaximized, close as IpcClose } from "./system/ipc";
+import { getCookie, setCookie, updateMaximized, close as IpcClose, create as IpcCreate } from "./system/ipc";
 
 // static reference to the main window
 export let window:BrowserWindow|null = null;
 
 // function that creates a new window and loads ui/main.html.
 async function createWindow () {
+	// attempt to create the IPC audio worker
+	IpcCreate().catch(console.error);
+
+	// load the browser settings
 	const settings = await loadWindowSettings("main");
 	console.log("spawn-main-window", settings);
 

@@ -256,11 +256,12 @@ function _findall(folder:ScriptFolders, eventName:ipcEnum, event:IpcMainEvent) {
 }
 
 /**
- * Various handlers for dealing with the audio adapter instance.
+ * Function to create ipc correctly
  */
-let worker:Worker|undefined;
+export async function create(): Promise<void> {
+	// find all the audio devices
+	const cfg = await ScriptHelper.findAll("audio");
 
-ScriptHelper.findAll("audio").then((cfg) => {
 	if(cfg["audio"]){
 		// found the audio script, load it as a worker
 		worker = new Worker(cfg["audio"].entry);
@@ -279,7 +280,13 @@ ScriptHelper.findAll("audio").then((cfg) => {
 		// initialize the config file
 		worker.postMessage({ code: "config", data: cfg["audio"], });
 	}
-}).catch(console.error);
+}
+
+/**
+ * Various handlers for dealing with the audio adapter instance.
+ */
+let worker:Worker|undefined;
+
 
 // handle changing the volume of the audio adapter instance.
 ipcMain.on(ipcEnum.AudioVolume, (event, volume:number) => {

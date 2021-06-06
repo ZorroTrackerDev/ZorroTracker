@@ -73,7 +73,7 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 						break;
 
 					case "darwin":		// macos-based api's
-						apios = "linux";
+						apios = "macos";
 						apistr = (d.macos as string|null)?.toUpperCase();
 
 						switch(apistr) {

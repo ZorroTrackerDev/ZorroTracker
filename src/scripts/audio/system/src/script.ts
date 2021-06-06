@@ -49,7 +49,7 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 				switch(process.platform) {
 					case "win32":		// windows-based api's
 						apios = "windows";
-						apistr = (d.windows as string).toUpperCase();
+						apistr = (d.windows as string|null)?.toUpperCase();
 
 						switch(apistr) {
 							case "DIRECTSOUND": api = RtAudioApi.WINDOWS_DS; break;
@@ -61,7 +61,7 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 
 					case "linux":		// linux-based api's
 						apios = "linux";
-						apistr = (d.linux as string).toUpperCase();
+						apistr = (d.linux as string|null)?.toUpperCase();
 
 						switch(apistr) {
 							case "PULSE": api = RtAudioApi.LINUX_PULSE; break;
@@ -74,7 +74,7 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 
 					case "darwin":		// macos-based api's
 						apios = "linux";
-						apistr = (d.macos as string).toUpperCase();
+						apistr = (d.macos as string|null)?.toUpperCase();
 
 						switch(apistr) {
 							case "CORE": api = RtAudioApi.MACOSX_CORE; break;

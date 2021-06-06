@@ -12,10 +12,16 @@ declare global {
 		 */
 		isLoading: boolean,
 
-		/**
-		 * The absolute path for the program data directory. This is where the exe file is in production, or the build directory in development.
-		 */
-		path: string,
+		path: {
+			/**
+			 * The absolute path for the program data directory. This is where the exe file is in production, or the build directory in development.
+			 */
+			data: string,
+			/**
+			 * The absolute path for the program home directory. This is where various files such as log files are stored
+			 */
+			home: string,
+		},
 
 		preload: {
 			/**

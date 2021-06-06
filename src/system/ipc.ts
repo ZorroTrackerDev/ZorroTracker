@@ -27,7 +27,7 @@ export const dataPath = path.join(
 
 // handle the UI requesting the application path
 ipcMain.on(ipcEnum.UiPath, (event) => {
-	event.reply(ipcEnum.UiPath, dataPath);
+	event.reply(ipcEnum.UiPath, { data: dataPath, home: app.getPath("home"), });
 });
 
 /**

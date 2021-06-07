@@ -253,7 +253,7 @@ export class Project {
 				res();
 
 				// if not autosaving, then clear the dirty flag
-				this.dirty = this.dirty && autosave;
+				this._dirty = this._dirty && autosave;
 				window.isLoading = false;
 			});
 		})
@@ -305,9 +305,9 @@ export class Project {
 	/**
 	 * Function to add a new module to the project. Default settings will be used
 	 *
-	 * @returns The filename of this new module
+	 * @returns The new module
 	 */
-	public addModule(): string {
+	public addModule(): Module {
 		const data = {
 			file: Project.generateName(),
 			name: "",
@@ -332,13 +332,20 @@ export class Project {
 		};
 
 		// return the module name
-		return data.file;
+		return data;
 	}
 
 	/* The name of the currently active module */
 	public activeModuleIndex = -1;
 	private activeModuleFile = "";
-	public dirty = false;
+	private _dirty = false;
+
+	/**
+	 * Function to mark the project as "dirty". This will cause save confirmation dialogs to appear
+	 */
+	public dirty(): void {
+		this._dirty = true;
+	}
 
 	/**
 	 * Function to set the active module by its filename.
@@ -424,6 +431,7 @@ export class Project {
 
 		// send the update event and ignore cancellation
 		this.eventUpdate(this, this.modules[this.activeModuleIndex], this.data[this.activeModuleFile]).catch(console.error);
+		this.dirty();
 	}
 
 	/* get the currently active module's object */
@@ -439,6 +447,34 @@ export class Project {
 	/* the PatternIndex for the current module */
 	public get index():PatternIndex {
 		return this._moduleData.index;
+	}
+
+	/**
+	 * Function to clone a module including its data
+	 *
+	 * @param source The source module to clone from
+	 * @param destination The destination module to clone to
+	 * @returns Boolean indicating whether it was successful or not
+	 */
+	public cloneModule(source:Module, destination:Module): boolean {
+		let ret = true;
+
+		// clone the module details
+		destination.author = source.author;
+		destination.index = source.index;
+		destination.name = "clone of "+ source.name;
+
+		// load the module datas
+		const sdata = this.data[source.file];
+		const ddata = this.data[destination.file];
+
+		// clone the all the data
+		ddata.index.setChannels(sdata.index.channels);
+		ret = ret && ddata.index.loadPatterns(Buffer.from(sdata.index.savePatterns()));
+		ret = ret && ddata.index.loadMatrix(Buffer.from(sdata.index.saveMatrix()));
+
+		// return whether everything was successful
+		return ret;
 	}
 }
 

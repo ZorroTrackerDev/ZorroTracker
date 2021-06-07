@@ -2,10 +2,9 @@ import fs from "fs";
 import path from "path";
 import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 
-const logPath =
-	process.platform === "win32" ? path.join(window.path.data, "ZorroTracker.log") :			// windows logging path
-	process.platform === "darwin" ? path.join(window.path.home, "ZorroTracker.log") :			// macos logging path
-	"/var/log/ZorroTracker.log";																// linux logging path
+const logPath = process.platform === "darwin" ?
+	path.join(window.path.home, "/Library/Logs/ZorroTracker.log") :	// macos logging path
+	path.join(window.path.data, "ZorroTracker.log");				// windows and linux logging path
 
 // helper function to write strings to the output file
 let _write:(text:string) => void = () => {};

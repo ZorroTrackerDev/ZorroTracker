@@ -373,7 +373,8 @@ export class PatternIndex {
 		if(!_e.event.canceled) {
 			// set the value at channel and index and indicate success
 			this.matrix[channel][index] = _e.value ?? value;
-			return this.project.dirty = true;
+			this.project.dirty();
+			return true;
 		}
 
 		return false;
@@ -401,7 +402,8 @@ export class PatternIndex {
 			// call the event and apply only if allowed
 			if(!_e.event.canceled) {
 				this.matrix[c][index] = _e.value ?? data[c];
-				ret = this.project.dirty = true;
+				this.project.dirty();
+				ret = true;
 			}
 		}
 
@@ -452,7 +454,7 @@ export class PatternIndex {
 
 					// copy the value from matrix
 					this.matrix[c][r] = _v;
-					this.project.dirty = true;
+					this.project.dirty();
 				}
 			}
 		}
@@ -590,7 +592,8 @@ export class PatternIndex {
 
 		// indicate there is 1 less entry in the matrix now and return success
 		this.matrixlen--;
-		return this.project.dirty = true;
+		this.project.dirty();
+		return true;
 	}
 
 	/**
@@ -642,7 +645,8 @@ export class PatternIndex {
 
 		// create a new pattern here and indicate success
 		this.patterns[channel][index] = new PatternData(this.channels[channel]);
-		return this.project.dirty = true;
+		this.project.dirty();
+		return true;
 	}
 
 	/**
@@ -668,7 +672,7 @@ export class PatternIndex {
 					// if the pattern can be removed, then do so here.
 					if(remove && !(await this.eventTrim(this, c, x)).event.canceled) {
 						this.patterns[c][x] = null;
-						this.project.dirty = true;
+						this.project.dirty();
 					}
 				}
 			}
@@ -707,7 +711,8 @@ export class PatternIndex {
 
 		// set this pattern as unused and indicate success
 		this.patterns[channel][check] = null;
-		return this.project.dirty = true;
+		this.project.dirty();
+		return true;
 	}
 
 	/**

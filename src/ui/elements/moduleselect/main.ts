@@ -58,8 +58,9 @@ export class ModuleSelect {
 	private buttonFunc = [
 		async(e:MouseEvent, m:ModuleSelect) => {		// create
 			// create a new module and get its index
-			const file = m.project.addModule();
-			const index = m.project.getModuleIndexByFile(file);
+			const mod = m.project.addModule();
+			const index = m.project.getModuleIndexByFile(mod.file);
+			m.project.dirty();
 
 			// render the new module
 			m.items.innerHTML += m.renderItem(index);
@@ -75,7 +76,24 @@ export class ModuleSelect {
 		},
 		async(e:MouseEvent, m:ModuleSelect) => {		// clone
 			if(m.project.activeModuleIndex >= 0) {
-				// null
+				const clone = m.project.modules[m.project.activeModuleIndex];
+
+				// create a new module and get its index
+				const mod = m.project.addModule();
+				const index = m.project.getModuleIndexByFile(mod.file);
+
+				// clone the module
+				m.project.cloneModule(clone, mod);
+				m.project.dirty();
+
+				// render the new module
+				m.items.innerHTML += m.renderItem(index);
+
+				// set it as the active module
+				await m.project.setActiveModuleIndex(index);
+
+				// reset event listeners
+				m.setEventListeners();
 			}
 		},
 		async(e:MouseEvent, m:ModuleSelect) => {		// delete
@@ -84,6 +102,8 @@ export class ModuleSelect {
 				const index = m.project.activeModuleIndex;
 
 				if(await m.project.deleteModule(index)){
+					m.project.dirty();
+
 					if(m.selection) {
 						// if successful, remove the element
 						m.items.removeChild(m.selection);

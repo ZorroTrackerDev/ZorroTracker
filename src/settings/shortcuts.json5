@@ -13,6 +13,7 @@
 	"ui.undo":							[ "ctrl+Z" ],							/* shortcut for undoing a change */
 	"ui.redo":							[ "ctrl+Y" ],							/* shortcut for redoing a change */
 	"ui.save":							[ "ctrl+S" ],							/* shortcut for saving the project */
+	"ui.saveas":						[ "ctrl+shift+S" ],						/* shortcut for saving the project as another file */
 	"ui.new":							[ "ctrl+N" ],							/* shortcut for creating a new project */
 	"ui.close":							[ "ctrl+W" ],							/* shortcut for closing the project */
 

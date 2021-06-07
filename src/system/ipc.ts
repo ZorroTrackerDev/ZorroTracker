@@ -5,7 +5,7 @@ import os from "os";
 import process from "process"
 import { ipcEnum } from "./ipc enum";
 import * as ScriptHelper from "./script helper";
-import { Cookie, IpcMainEvent, OpenDialogOptions } from "electron/main";
+import { Cookie, IpcMainEvent, OpenDialogOptions, SaveDialogOptions } from "electron/main";
 import { ChipConfig } from "../api/scripts/chip";
 import { DriverConfig } from "../api/scripts/driver";
 import { window } from "../main";
@@ -147,7 +147,7 @@ ipcMain.on(ipcEnum.UiConsole, () => {
 });
 
 // handle the UI requesting a dialog box be opened
-ipcMain.on(ipcEnum.UiDialog, async(event, cookie:string, settings:OpenDialogOptions) => {
+ipcMain.on(ipcEnum.UiDialog, async(event, type:string, cookie:string, settings:OpenDialogOptions|SaveDialogOptions) => {
 	if(!window) {
 		event.reply(ipcEnum.UiDialog, null);
 		return;
@@ -166,16 +166,34 @@ ipcMain.on(ipcEnum.UiDialog, async(event, cookie:string, settings:OpenDialogOpti
 	}
 
 	// show the dialog to the user
-	const result = await dialog.showOpenDialog(window, settings);
+	let result;
+
+	switch(type) {
+		case "open": {		// OpenFileDialog
+			const r = await dialog.showOpenDialog(window, settings as OpenDialogOptions);
+			result = r.filePaths.length !== 1 ? undefined : r.filePaths[0];
+			break;
+		}
+
+		case "save": {		// SaveFileDialog
+			const r = await dialog.showSaveDialog(window, settings as SaveDialogOptions);
+			result = r.filePath;
+			break;
+		}
+
+		default:		// invalid
+			throw Error("Invalid dialog type "+ type +"!");
+	}
+
 
 	// if the operation was cancelled, do not update the cookie
-	if(!result || result.filePaths.length !== 1) {
+	if(!result) {
 		event.reply(ipcEnum.UiDialog, null);
 		return;
 	}
 
 	// update the requested cookie to remember the last folder in the next run
-	setCookie(cookie, path.dirname(result.filePaths[0]));
+	setCookie(cookie, path.dirname(result));
 
 	// send the data back to UI
 	event.reply(ipcEnum.UiDialog, result);

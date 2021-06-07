@@ -193,7 +193,7 @@ export function loadDefaultShortcuts(): void {
 
 			/* shortcut for opening a file or a project */
 			case "open": {
-				const result = await window.ipc.ui.dialog("openfolder", {
+				const result = await window.ipc.ui.dialog.open("openfolder", {
 					properties: [ "openFile", ],
 					filters: [
 						{ name: "ZorroTracker Module Files", extensions: [ "ztm", ], },
@@ -203,7 +203,7 @@ export function loadDefaultShortcuts(): void {
 				});
 
 				// if invalid file was applied or operation was cancelled, abort
-				if(!result || result.filePaths.length !== 1) {
+				if(!result) {
 					return false;
 				}
 
@@ -212,7 +212,7 @@ export function loadDefaultShortcuts(): void {
 				Undo.clear();
 
 				// try to load the project
-				const p = await Project.loadProject(result.filePaths[0]);
+				const p = await Project.loadProject(result);
 
 				if(!p){
 					await loadLayout(LayoutType.NoLoading);
@@ -233,7 +233,7 @@ export function loadDefaultShortcuts(): void {
 				Undo.clear();
 
 				// try to load the project
-				const p = await Project.createProject("temp.ztm");
+				const p = await Project.createProject();
 
 				if(!p){
 					await loadLayout(LayoutType.NoLoading);
@@ -262,8 +262,18 @@ export function loadDefaultShortcuts(): void {
 			/* shortcut for doing a save action */
 			case "save":
 				try {
-					await Project.current?.save(false);
-					return true;
+					return await Project.current?.save(false) ?? false;
+
+				} catch(ex)  {
+					console.error(ex);
+				}
+
+				return false;
+
+			/* shortcut for doing a save as action */
+			case "saveas":
+				try {
+					return await Project.current?.saveAs() ?? false;
 
 				} catch(ex)  {
 					console.error(ex);

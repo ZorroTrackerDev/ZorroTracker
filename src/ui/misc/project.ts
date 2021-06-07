@@ -21,13 +21,12 @@ export class Project {
 	/**
 	 * Function to create a project from with file path
 	 *
-	 * @param file The file location to save the project file to
 	 * @returns null if failed to create the project correctly, or the project data
 	 */
-	public static async createProject(file:string):Promise<Project|null> {
-		console.info("Create new project: "+ file);
+	public static async createProject():Promise<Project|null> {
+		console.info("Create new project");
 
-		const project = new Project(file);
+		const project = new Project("");
 		project.config = Project.createTestConfig();
 		project.modules = [];
 		return project;
@@ -35,7 +34,7 @@ export class Project {
 
 	private static createTestConfig():ProjectConfig {
 		return {
-			name: "Test Project",
+			name: "",
 			version: ConfigVersion.b0,
 			type: ZorroConfigType.Project,
 			autosave: null,
@@ -208,15 +207,68 @@ export class Project {
 	public data:{ [key:string]: ModuleData };
 
 	/**
+	 * Function to save the file at somewhere else but the file location
+	 *
+	 * @returns boolean indicating whether the save was successful
+	 */
+	public async saveAs(): Promise<boolean> {
+		window.isLoading = true;
+
+		const result = await window.ipc.ui.dialog.save("openfolder", {
+			filters: [
+				{ name: "ZorroTracker Module Files", extensions: [ "ztm", ], },
+				{ name: "ZorroTracker Files", extensions: [ "zip", ], },
+				{ name: "All Files", extensions: [ "*", ], },
+			],
+		});
+
+		// check if the save was canceled
+		if(!result) {
+			return false;
+		}
+
+		// set the new file and save data
+		this.file = result;
+		await this.saveData(result);
+
+		// if not autosaving, then clear the dirty flag
+		window.isLoading = this._dirty = false;
+		return true;
+	}
+
+	/**
 	 * Function to save the project to disk
 	 *
 	 * @param autosave Whether to do an autosave, or if to make a normal save
 	 * @returns boolean indicating whether the save was successful
 	 */
-	public async save(autosave:boolean): Promise<void> {
+	public async save(autosave:boolean): Promise<boolean> {
+		window.isLoading = true;
+
+		// check if the file does not exist
+		if(!this.file) {
+			return this.saveAs();
+		}
+
+		// save the actual data
+		await this.saveData(this.file);
+
+		// if not autosaving, then clear the dirty flag
+		this._dirty = this._dirty && autosave;
+		window.isLoading = false;
+		return true;
+	}
+
+	/**
+	 * Function to save the project data to file
+	 *
+	 * @param file The output file location
+	 * @returns boolean indicating whether the save was successful
+	 */
+	private saveData(file:string): Promise<void> {
 		return new Promise((res, rej) => {
 			window.isLoading = true;
-			console.info("Save project: "+ this.file);
+			console.info("Save project: "+ file);
 
 			// create a new zip file
 			const zip = new admZip();
@@ -244,17 +296,13 @@ export class Project {
 			}
 
 			// save the zip file
-			zip.writeZip(this.file, (err) => {
+			zip.writeZip(file, (err) => {
 				if(err) {
 					rej(err);
 				}
 
 				// success, resolve the promise
 				res();
-
-				// if not autosaving, then clear the dirty flag
-				this._dirty = this._dirty && autosave;
-				window.isLoading = false;
 			});
 		})
 	}

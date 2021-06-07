@@ -27,6 +27,10 @@ const defaultMenu:ToolbarMenu = {
 				enabled: true,
 				action: "window.preload.shortcut(['ui.save'])",
 			},
+			"Save As": {
+				enabled: true,
+				action: "window.preload.shortcut(['ui.saveas'])",
+			},
 			"Exit": {
 				enabled: true,
 				action: "window.ipc.ui.close()",

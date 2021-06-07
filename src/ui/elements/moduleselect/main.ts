@@ -1,5 +1,5 @@
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../../api/events";
-import { Module, ModuleData, Project } from "../../misc/project";
+import { Module, Project } from "../../misc/project";
 
 export class ModuleSelect {
 	public element:HTMLDivElement;

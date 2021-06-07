@@ -1,6 +1,6 @@
 import { DriverConfig } from "../api/scripts/driver";
 import { ChipConfig } from "../api/scripts/chip";
-import { OpenDialogOptions, OpenDialogReturnValue } from "electron";
+import { OpenDialogOptions, SaveDialogOptions } from "electron";
 
 export {};
 declare global {
@@ -114,12 +114,22 @@ declare global {
 				 */
 				console: () => void,
 
-				/**
-				 * Helper function to open a dialog and return the result, reading the initial directory from a cookie.
-				 *
-				 * @param cookie The cookie name to read from
-				 */
-				dialog: (cookie:string, settings:OpenDialogOptions) => Promise<OpenDialogReturnValue>,
+				dialog: {
+					/**
+					 * Helper function to open a OpenFileDialog and return the result, reading the initial directory from a cookie.
+					 *
+					 * @param cookie The cookie name to read from
+					 * @returns The file that is targeted, or undefined if operation was canceled
+					 */
+					open: (cookie:string, settings:OpenDialogOptions) => Promise<string|undefined>,
+
+					/**
+					 * Helper function to open a SaveFileDialog and return the result, reading the initial directory from a cookie.
+					 *
+					 * @param cookie The cookie name to read from
+					 */
+					save: (cookie:string, settings:SaveDialogOptions) => Promise<string|undefined>,
+				}
 
 				/**
 				 * Request system information to be logged

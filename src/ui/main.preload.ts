@@ -46,7 +46,7 @@ window.preload = {
 
 	/* open a VGM file */
 	vgm: async function() {
-		const result = await window.ipc.ui.dialog("openfolder", {
+		const result = await window.ipc.ui.dialog.open("openfolder", {
 			properties: [ "openFile", ],
 			filters: [
 				{ name: "Vgm Files", extensions: [ "vgm", ], },
@@ -55,14 +55,14 @@ window.preload = {
 		});
 
 		// if invalid file was applied or operation was cancelled, abort
-		if(!result || result.filePaths.length !== 1) {
+		if(!result) {
 			return;
 		}
 
 		// stop the audio playback and restart it with the new file opened. TODO: This is only test code!
-		console.log("VGM", result.filePaths[0]);
+		console.log("VGM", result);
 		window.ipc.audio.stop();
-		setTimeout(() => window.ipc.audio.play(result.filePaths[0]), 50);
+		setTimeout(() => window.ipc.audio.play(result), 50);
 	},
 
 	/**

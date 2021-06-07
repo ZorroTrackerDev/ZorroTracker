@@ -2,7 +2,7 @@ import { ipcEnum } from "../system/ipc enum";
 import { ipcRenderer } from "electron";
 import { ChipConfig } from "../api/scripts/chip";
 import { DriverConfig } from "../api/scripts/driver";
-import { OpenDialogOptions, OpenDialogReturnValue } from "electron/main";
+import { OpenDialogOptions, SaveDialogOptions } from "electron/main";
 import { ZorroEvent, ZorroEventEnum } from "../api/events";
 
 /**
@@ -40,6 +40,10 @@ window.ipc = {
 				ipcRenderer.send(ipcEnum.UiPath);
 			});
 		},
+		dialog: {
+			open: (cookie:string, settings:OpenDialogOptions) => _async(ipcEnum.UiDialog, "open", cookie, settings) as Promise<string|undefined>,
+			save: (cookie:string, settings:SaveDialogOptions) => _async(ipcEnum.UiDialog, "save", cookie, settings) as Promise<string|undefined>,
+		},
 		updateMaximized: () => {
 			ipcRenderer.send(ipcEnum.UiGetMaximize);
 		},
@@ -64,7 +68,6 @@ window.ipc = {
 		console: () => {
 			ipcRenderer.send(ipcEnum.UiConsole);
 		},
-		dialog: (cookie:string, settings:OpenDialogOptions) => _async(ipcEnum.UiDialog, cookie, settings) as Promise<OpenDialogReturnValue>,
 		systemInfo: () => ipcRenderer.send(ipcEnum.UiSystemInfo),
 	},
 	cookie: {

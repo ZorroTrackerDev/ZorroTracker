@@ -1,0 +1,57 @@
+.popupmain {
+	transition: backdrop-filter .33s ease-in-out;
+
+	&.show > div {
+		transform: translate(-50%, -50%) scale(1);
+	}
+
+	&> div {
+		position: absolute;
+		height: fit-content;
+		top: 50%; left: 50%;
+		transform: translate(-50%, -50%) scale(0);
+		transition: transform .33s ease-in-out;
+
+		// small popups
+		&.sz-small {
+			width: 50%;
+			min-width: 250px;
+			max-width: 400px;
+			padding: 11px;
+		}
+
+		// medium popups
+		&.sz-medium {
+			width: 70%;
+			min-width: 400px;
+			max-width: 1000px;
+			padding: 18px;
+		}
+
+		// large popups
+		&.sz-large {
+			width: 95%;
+			min-width: 400px;
+			padding: 24px;
+		}
+
+		background: #131315;
+		color: #bdbdbd;
+		border: 2px solid #363636;
+		border-radius: 10px;
+		font-family: 'Noto Sans', sans-serif;
+
+		&> div:last-child {
+			display: flow-root;
+		}
+
+		& h2 {
+			margin-top: 0;
+			font-size: 15pt;
+		}
+
+		& p {
+			font-size: 12pt;
+		}
+	}
+}

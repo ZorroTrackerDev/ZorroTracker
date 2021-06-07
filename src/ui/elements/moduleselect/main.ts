@@ -1,5 +1,6 @@
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../../api/events";
 import { Module, Project } from "../../misc/project";
+import { confirmationDialog, PopupColors, PopupSizes } from "../popup/popup";
 
 export class ModuleSelect {
 	public element:HTMLDivElement;
@@ -98,9 +99,28 @@ export class ModuleSelect {
 		},
 		async(e:MouseEvent, m:ModuleSelect) => {		// delete
 			if(m.project.activeModuleIndex >= 0) {
-				// try to remove the project module
+				// get the module index
 				const index = m.project.activeModuleIndex;
 
+				// make sure the user wanted to delete this
+				if(!await confirmationDialog({
+					color: PopupColors.Normal,
+					size: PopupSizes.Small,
+					html: /*html*/`
+						<h2>Are you sure you want to permanently delete this module?</h2>
+						<p>
+							You're about to delete <q>${ m.project.modules[index].name }</q>.
+							You can not recover this module if you do. Click <u>Delete</u> to delete it permanently!
+						</p>
+					`, buttons: [
+						{ result: false, float: "left", color: PopupColors.Normal, html: "Cancel", },
+						{ result: true, float: "right", color: PopupColors.Caution, html: "Delete", },
+					],
+				})) {
+					return;
+				}
+
+				// delete the actual module
 				if(await m.project.deleteModule(index)){
 					m.project.dirty();
 

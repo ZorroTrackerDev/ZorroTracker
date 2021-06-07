@@ -49,11 +49,33 @@ input {
 
 // variables
 @menufont: 'Noto Sans', sans-serif;
-
-// height of the toolbar
 @height: 20px;
 @dragh: 6px;
 @toolbarbg: #222222;
+
+// helper for popups
+#popup {
+	position: absolute;
+	top: 20px;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	z-index: 9000;
+	pointer-events: none;
+
+	// this is the main div that will mask the UI and not allow any of the pointer events
+	&> .popupmain {
+		position: absolute;
+		top: 0; left: 0; right: 0; bottom: 0;
+		pointer-events: all;
+		backdrop-filter: blur(0px) brightness(100%);
+		transition: backdrop-filter .33s ease-in-out;
+
+		&.show {
+			backdrop-filter: blur(2px) brightness(60%);
+		}
+	}
+}
 
 /* toolbar wrapper */
 #main_toolbar {

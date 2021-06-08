@@ -84,7 +84,7 @@ export class ModuleSelect {
 				const index = m.project.getModuleIndexByFile(mod.file);
 
 				// clone the module
-				m.project.cloneModule(clone, mod);
+				await m.project.cloneModule(clone, mod);
 				m.project.dirty();
 
 				// render the new module

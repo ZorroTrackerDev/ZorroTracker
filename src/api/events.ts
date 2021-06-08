@@ -131,6 +131,7 @@ export enum ZorroEventEnum {
 	ClipboardSet,					// event that is ran when the clipboard is set to a custom value (for example, does not apply to text boxes)
 	ClipboardGet,					// event that is ran when the clipboard is being fetched for custom value (again, does not apply to text boxes)
 
+	ProjectOpen,					// event that is ran when a project is opened or created
 	SelectModule,					// event that is ran when a module is selected (as the active module)
 	ModuleUpdate,					// event that is ran when a module information is updated (such as its name)
 	ModuleCreate,					// event that is ran when a new module will be created
@@ -180,6 +181,7 @@ export interface ZorroListenerTypes {
 	[ZorroEventEnum.ClipboardGet]: (event:ZorroEventObject, type:ClipboardType) => Promise<string|undefined|void>,
 	[ZorroEventEnum.ClipboardSet]: (event:ZorroEventObject, type:ClipboardType, data:string) => Promise<string|undefined|void>,
 
+	[ZorroEventEnum.ProjectOpen]: (event:ZorroEventObject, project:Project|undefined) => Promise<undefined|void>,
 	[ZorroEventEnum.SelectModule]: (event:ZorroEventObject, project:Project, module:Module|undefined, data:ModuleData|undefined) => Promise<undefined|void>,
 	[ZorroEventEnum.ModuleUpdate]: (event:ZorroEventObject, project:Project, module:Module, data:ModuleData) => Promise<undefined|void>,
 	[ZorroEventEnum.ModuleCreate]: (event:ZorroEventObject, project:Project, module:Module, data:ModuleData) => Promise<undefined|void>,
@@ -203,6 +205,7 @@ export interface ZorroSenderTypes {
 	[ZorroEventEnum.ClipboardGet]: (type:ClipboardType) => Promise<{ event: ZorroEventObject, value: string|undefined }>,
 	[ZorroEventEnum.ClipboardSet]: (type:ClipboardType, data:string) => Promise<{ event: ZorroEventObject, value: string|undefined }>,
 
+	[ZorroEventEnum.ProjectOpen]: (project:Project|undefined) => Promise<{ event: ZorroEventObject, value: undefined }>,
 	[ZorroEventEnum.SelectModule]: (project:Project, module:Module|undefined, data:ModuleData|undefined) => Promise<{ event: ZorroEventObject, value: undefined }>,
 	[ZorroEventEnum.ModuleUpdate]: (project:Project, module:Module, data:ModuleData) => Promise<{ event: ZorroEventObject, value: undefined }>,
 	[ZorroEventEnum.ModuleCreate]: (project:Project, module:Module, data:ModuleData) => Promise<{ event: ZorroEventObject, value: undefined }>,

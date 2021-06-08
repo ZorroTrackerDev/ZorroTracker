@@ -5,4 +5,5 @@
 
 {
 	UNDO_STACK_SIZE: 100,														/* The size of the undo stack, how many steps away to remember undo data */
+	DISCORD_RPC: true,															/* If true, the program will attempt to update the Discord RPC status. */
 }

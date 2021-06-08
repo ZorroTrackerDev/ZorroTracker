@@ -9,6 +9,7 @@ import { Cookie, IpcMainEvent, OpenDialogOptions, SaveDialogOptions } from "elec
 import { ChipConfig } from "../api/scripts/chip";
 import { DriverConfig } from "../api/scripts/driver";
 import { window } from "../main";
+import createRPC from "discord-rich-presence";
 
 /**
  * The application data directory path. This is where the settings and scripts folders are found.
@@ -81,6 +82,10 @@ export function close(): Promise<number> {
 				rej();
 				return;
 			}
+
+			// quit discord RPC client
+			discordRPC?.disconnect();
+			discordRPC = undefined;
 
 			// will be closed, tell the worker about it and terminate it
 			worker?.postMessage({ code: "quit", });
@@ -403,4 +408,28 @@ ipcMain.on(ipcEnum.UiSystemInfo, () => {
 		"chrome: "+ process.versions.chrome,
 		"electron: "+ process.versions.electron,
 	].join("\n"));
+});
+
+/**
+ * Various handlers for dealing with Discord RPC
+ */
+let discordRPC: createRPC.RP|undefined;
+let dateRPC: number|undefined;
+
+// handle RPC init
+ipcMain.on(ipcEnum.RpcInit, () => {
+	discordRPC = createRPC("851541675050139698");
+	dateRPC = Date.now();
+});
+
+// handle RPC update
+ipcMain.on(ipcEnum.RpcSet, (event, details:string, state:string) => {
+	discordRPC?.updatePresence({
+		startTimestamp: dateRPC,
+		largeImageKey: "icon",
+	//	smallImageKey: "icon",
+		instance: true,
+		details: details,
+		state: state,
+	});
 });

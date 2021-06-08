@@ -171,7 +171,7 @@ export class PatternData {
 			this.cells.push(cd);
 
 			// load cell data
-			cd.load(data, index, this.width);
+			index = cd.load(data, index, this.width);
 		}
 
 		// return the new position
@@ -771,7 +771,9 @@ export class PatternIndex {
 	 *
 	 * @returns The data representing the current list of patterns
 	 */
-	public savePatterns():Uint8Array {
+	public async savePatterns():Promise<Uint8Array> {
+		await this.trimAll();
+
 		// accumulator of channel datas
 		const chans:number[] = [];
 
@@ -786,8 +788,8 @@ export class PatternIndex {
 					ixs.push(...(this.patterns[c][i] as PatternData).save());
 
 				} else {
-					// the pattern is null, just say it has -1 commands
-					ixs.push(0xFF);
+					// the pattern is null, just say it has 0 rows
+					ixs.push(0);
 				}
 			}
 
@@ -818,7 +820,7 @@ export class PatternIndex {
 		for(let c = 0;c < this.channels.length;c ++){
 			// loop for each index
 			for(let i = 0;i < 256;i ++){
-				if(data[index] === 0xFF) {
+				if(data[index] === 0) {
 					// empty element!
 					index++;
 					this.patterns[c][i] = null;

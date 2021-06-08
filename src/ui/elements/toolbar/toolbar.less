@@ -68,11 +68,12 @@ input {
 		position: absolute;
 		top: 0; left: 0; right: 0; bottom: 0;
 		pointer-events: all;
-		backdrop-filter: blur(0px) brightness(100%);
-		transition: backdrop-filter .33s ease-in-out;
+		background-color: rgba(0,0,0,0);
+		backdrop-filter: blur(0px);
 
 		&.show {
-			backdrop-filter: blur(2px) brightness(60%);
+			background-color: rgba(0,0,0,.4);
+			backdrop-filter: blur(2px);
 		}
 	}
 }

@@ -7,6 +7,7 @@
 window.exports = {};
 
 import { webFrame } from "electron";
+import { loadFlag } from "../api/files";
 import { volumeSlider, SliderEnum } from "./elements/slider/slider";
 webFrame.setZoomFactor(1);		// testing only
 
@@ -88,10 +89,16 @@ window.ipc.ui.path().then(() => {
 	// load the editor layout
 	import("./misc/layout").then(async(module) => {
 		// TEMP
-		Project.current = await Project.loadProject("temp.ztm");
+		await Project.setActiveProject(await Project.loadProject("temp.ztm"));
 		return module.loadLayout(LayoutType.ProjectInfo);
 
 	}).catch(console.error);
+
+	if(loadFlag("DISCORD_RPC")) {
+		// load Discord RPC integration
+		window.ipc.rpc.init();
+		import("./misc/rpc").catch(console.error);
+	}
 
 	return window.ipc.chip.findAll();
 

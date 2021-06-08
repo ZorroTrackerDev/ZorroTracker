@@ -101,7 +101,7 @@ export function confirmationDialog(settings:ConfirmationParams): Promise<unknown
 
 				// remove this from the popup as well
 				popup.removeChild(element);
-			}, 340)
+			}, 460)
 		};
 
 		// render every one of them

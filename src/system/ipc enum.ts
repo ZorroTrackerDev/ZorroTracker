@@ -12,6 +12,9 @@ export enum ipcEnum {
 	UiConsole = "ui-console",
 	UiDialog = "ui-dialog",
 
+	RpcInit = "rpc-init",
+	RpcSet = "rpc-set",
+
 	CookieSet = "cookie-set",
 	CookieGet = "cookie-get",
 

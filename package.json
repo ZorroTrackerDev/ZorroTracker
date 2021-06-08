@@ -34,6 +34,7 @@
 	"homepage": "https://github.com/ZorroTrackerDev/ZorroTracker#readme",
 	"devDependencies": {
 		"@types/adm-zip": "^0.4.34",
+		"@types/discord-rich-presence": "^0.0.0",
 		"@types/jest": "^26.0.22",
 		"@types/jsdom": "^16.2.10",
 		"@typescript-eslint/eslint-plugin": "^4.22.0",
@@ -54,6 +55,7 @@
 	},
 	"dependencies": {
 		"adm-zip": "^0.5.5",
+		"discord-rich-presence": "^0.0.8",
 		"json5": "^2.2.0",
 		"nuked-opn2-node": "file:./vendor/Nuked-OPN2.rs/nuked-opn2-node",
 		"nuked-psg-node": "file:./vendor/Nuked-PSG.rs/nuked-psg-node"

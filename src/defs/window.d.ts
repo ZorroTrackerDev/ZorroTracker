@@ -136,6 +136,17 @@ declare global {
 				 */
 				systemInfo: () => void,
 			},
+			rpc: {
+				/**
+				 * Funtion to initialize and enable Discord RPC integration
+				 */
+				init: () => void,
+
+				/**
+				 * Funtion to update Discord RPC status.
+				 */
+				set: (details:string, state:string) => void,
+			},
 			cookie: {
 				/**
 				 * Set a browser cookie for later. These persist across runs.

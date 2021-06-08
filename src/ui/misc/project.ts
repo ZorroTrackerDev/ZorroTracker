@@ -1,7 +1,14 @@
 import admZip from "adm-zip";
-import { ZorroEvent, ZorroEventEnum, ZorroSenderTypes } from "../../api/events";
+import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 import { PatternIndex } from "../../api/matrix";
 import { ConfigVersion } from "../../api/scripts/config";
+
+// load all the events
+const eventProject = ZorroEvent.createEvent(ZorroEventEnum.ProjectOpen);
+const eventSelect = ZorroEvent.createEvent(ZorroEventEnum.SelectModule);
+const eventCreate = ZorroEvent.createEvent(ZorroEventEnum.ModuleCreate);
+const eventDelete = ZorroEvent.createEvent(ZorroEventEnum.ModuleDelete);
+const eventUpdate = ZorroEvent.createEvent(ZorroEventEnum.ModuleUpdate);
 
 /**
  * FILE STRUCTURE FOR .ztm FILES
@@ -17,6 +24,22 @@ import { ConfigVersion } from "../../api/scripts/config";
 export class Project {
 	/* The project that is currently being edited, or undefined if no project is loaded */
 	public static current:Project|undefined;
+
+	/**
+	 * Function to create a project from with file path
+	 *
+	 * @returns null if failed to create the project correctly, or the project data
+	 */
+	public static async setActiveProject(project:Project|undefined):Promise<boolean> {
+		// run the project open event
+		if((await eventProject(project)).event.canceled){
+			return false;
+		}
+
+		// if succesful, set the current project
+		Project.current = project;
+		return true;
+	}
 
 	/**
 	 * Function to create a project from with file path
@@ -181,21 +204,12 @@ export class Project {
 		return "unk";
 	}
 
-	private eventSelect:ZorroSenderTypes[ZorroEventEnum.SelectModule];
-	private eventCreate:ZorroSenderTypes[ZorroEventEnum.ModuleCreate];
-	private eventDelete:ZorroSenderTypes[ZorroEventEnum.ModuleDelete];
-	private eventUpdate:ZorroSenderTypes[ZorroEventEnum.ModuleUpdate];
-
 	/**
 	 * Create a new `Project` with no data
 	 *
 	 * @param file The file to use for this project
 	 */
 	constructor(file:string) {
-		this.eventSelect = ZorroEvent.createEvent(ZorroEventEnum.SelectModule);
-		this.eventCreate = ZorroEvent.createEvent(ZorroEventEnum.ModuleCreate);
-		this.eventDelete = ZorroEvent.createEvent(ZorroEventEnum.ModuleDelete);
-		this.eventUpdate = ZorroEvent.createEvent(ZorroEventEnum.ModuleUpdate);
 
 		this.file = file;
 		this.data = {};
@@ -265,37 +279,37 @@ export class Project {
 	 * @param file The output file location
 	 * @returns boolean indicating whether the save was successful
 	 */
-	private saveData(file:string): Promise<void> {
-		return new Promise((res, rej) => {
-			window.isLoading = true;
-			console.info("Save project: "+ file);
+	private async saveData(file:string): Promise<void> {
+		window.isLoading = true;
+		console.info("Save project: "+ file);
 
-			// create a new zip file
-			const zip = new admZip();
+		// create a new zip file
+		const zip = new admZip();
 
-			{	// store project config to zip
-				const _json = JSON.stringify(this.config);
-				zip.addFile(".zorro", Buffer.alloc(_json.length, _json));
+		{	// store project config to zip
+			const _json = JSON.stringify(this.config);
+			zip.addFile(".zorro", Buffer.alloc(_json.length, _json));
+		}
+
+		{	// store project modules to zip
+			const _json = JSON.stringify(this.modules);
+			zip.addFile(".modules", Buffer.alloc(_json.length, _json));
+		}
+
+		{	// write all the modules
+			for (const [ key, value, ] of Object.entries(this.data)) {
+				// write this module
+				const _matrix = value.index.saveMatrix();
+				zip.addFile("modules/"+ key +"/.matrix", Buffer.from(_matrix.buffer));
+
+				const _patterns = await value.index.savePatterns();
+				zip.addFile("modules/"+ key +"/.patterns", Buffer.from(_patterns.buffer));
+
 			}
+		}
 
-			{	// store project modules to zip
-				const _json = JSON.stringify(this.modules);
-				zip.addFile(".modules", Buffer.alloc(_json.length, _json));
-			}
-
-			{	// write all the modules
-				for (const [ key, value, ] of Object.entries(this.data)) {
-					// write this module
-					const _matrix = value.index.saveMatrix();
-					zip.addFile("modules/"+ key +"/.matrix", Buffer.from(_matrix.buffer));
-
-					const _patterns = value.index.savePatterns();
-					zip.addFile("modules/"+ key +"/.patterns", Buffer.from(_patterns.buffer));
-
-				}
-			}
-
-			// save the zip file
+		// save the zip file (use a promise because stupid API)
+		await new Promise<void>((res, rej) => {
 			zip.writeZip(file, (err) => {
 				if(err) {
 					rej(err);
@@ -311,11 +325,29 @@ export class Project {
 	 * Function to generate an unique name for new modules
 	 */
 	private static generateName() {
-		// generate a random-ish string that should get no duplicates
-		const base = "m"+ Date.now() +"z"+ Math.round(Math.random() * 256).toByte();
+		const name:number[] = [];
+
+		// prepare the dates
+		const date = new Date();
+		const year = date.getFullYear();
+		const mill = date.getMilliseconds();
+
+		/**
+		 * Convert the current date into the name field. Format:
+		 * xxxxxxxx yyyyoooo iiiiiiii yyyddddd iissssss yyyhhhhh xxxxxxxx yymmmmmm xxxxxxxx
+		 */
+		name.push(Math.random() * 256);
+		name.push(date.getMonth()	| ((year >> 4) & 0xF0));
+		name.push(mill & 0xFF);
+		name.push(date.getDate()	| (year & 0xE0));
+		name.push(date.getSeconds()	| ((mill >> 2) & 0xC0));
+		name.push(date.getHours()	| ((year << 3) & 0xE0));
+		name.push(Math.random() * 256);
+		name.push(date.getMinutes()	| ((year << 5) & 0xC0));
+		name.push(Math.random() * 256);
 
 		// convert to base64
-		return Buffer.from(base).toString("base64");
+		return Buffer.from(name).toString("base64");
 	}
 
 	/**
@@ -333,7 +365,7 @@ export class Project {
 		// get module filename and check if the event can continue
 		const file = this.modules[index].file;
 
-		if((await this.eventDelete(this, this.modules[index], this.data[file])).event.canceled){
+		if((await eventDelete(this, this.modules[index], this.data[file])).event.canceled){
 			return false;
 		}
 
@@ -374,10 +406,15 @@ export class Project {
 		this.modules.push(data);
 
 		// set new module data
-		this.data[data.file] = {
+		const mdata = {
 			// create an empty patternIndex
 			index: new PatternIndex(this),
 		};
+
+		this.data[data.file] = mdata;
+
+		// send the create event
+		eventCreate(this, data, mdata).catch(console.error);
 
 		// return the module name
 		return data;
@@ -465,7 +502,7 @@ export class Project {
 		console.info("project select module", index, "-", this.modules[index]?.file ?? "<null>");
 
 		// send the select event if found, and returns its value
-		return !(await this.eventSelect(this, this.modules[index], index < 0 ? undefined : this.data[this.modules[index].file])).event.canceled;
+		return !(await eventSelect(this, this.modules[index], index < 0 ? undefined : this.data[this.modules[index].file])).event.canceled;
 	}
 
 	/**
@@ -478,7 +515,7 @@ export class Project {
 		}
 
 		// send the update event and ignore cancellation
-		this.eventUpdate(this, this.modules[this.activeModuleIndex], this.data[this.activeModuleFile]).catch(console.error);
+		eventUpdate(this, this.modules[this.activeModuleIndex], this.data[this.activeModuleFile]).catch(console.error);
 		this.dirty();
 	}
 
@@ -504,7 +541,7 @@ export class Project {
 	 * @param destination The destination module to clone to
 	 * @returns Boolean indicating whether it was successful or not
 	 */
-	public cloneModule(source:Module, destination:Module): boolean {
+	public async cloneModule(source:Module, destination:Module): Promise<boolean> {
 		let ret = true;
 
 		// clone the module details
@@ -518,7 +555,7 @@ export class Project {
 
 		// clone the all the data
 		ddata.index.setChannels(sdata.index.channels);
-		ret = ret && ddata.index.loadPatterns(Buffer.from(sdata.index.savePatterns()));
+		ret = ret && ddata.index.loadPatterns(Buffer.from(await sdata.index.savePatterns()));
 		ret = ret && ddata.index.loadMatrix(Buffer.from(sdata.index.saveMatrix()));
 
 		// return whether everything was successful

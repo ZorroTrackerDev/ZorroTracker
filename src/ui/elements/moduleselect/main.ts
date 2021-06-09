@@ -120,14 +120,22 @@ export class ModuleSelect {
 					return;
 				}
 
+				// copy the selection before deletion
+				const _sel = m.selection;
+
 				// delete the actual module
 				if(await m.project.deleteModule(index)){
 					m.project.dirty();
 
-					if(m.selection) {
+					if(_sel) {
 						// if successful, remove the element
-						m.items.removeChild(m.selection);
-						m.selection = undefined;
+						m.items.removeChild(_sel);
+
+						// check if no more modules exist
+						if(m.project.modules.length === 0) {
+							// force-enable the empty tag
+							m.items.innerHTML = "";
+						}
 					}
 
 					// update event listeners
@@ -201,7 +209,11 @@ export class ModuleSelect {
 			this.clearSelection();
 
 			// select the single item that was requested
-			this.items.children[index].classList.add(ModuleSelect.SELECT_CLASS);
+			this.selection = this.items.children[index] as HTMLDivElement;
+			this.selection.classList.add(ModuleSelect.SELECT_CLASS);
+
+		} else {
+			this.selection = undefined;
 		}
 	}
 

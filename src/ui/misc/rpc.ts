@@ -54,7 +54,7 @@ ZorroEvent.addListener(ZorroEventEnum.ProjectOpen, async(event:ZorroEventObject,
 
 // eslint-disable-next-line require-await
 ZorroEvent.addListener(ZorroEventEnum.SelectModule, async(event:ZorroEventObject, project:Project|undefined, module:Module|undefined) => {
-	update(project, module, false);
+	update(project, module, project?.modules.length === 0 ?? true);
 });
 
 // eslint-disable-next-line require-await

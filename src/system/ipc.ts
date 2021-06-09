@@ -420,6 +420,8 @@ let dateRPC: number|undefined;
 ipcMain.on(ipcEnum.RpcInit, () => {
 	discordRPC = createRPC("851541675050139698");
 	dateRPC = Date.now();
+
+	discordRPC.on("error", () => { /* ignore all errors */ });
 });
 
 // handle RPC update

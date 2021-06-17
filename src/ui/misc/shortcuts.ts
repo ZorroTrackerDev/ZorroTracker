@@ -1,7 +1,7 @@
 import { loadSettingsFiles, SettingsTypes } from "../../api/files";
 import { receiveShortcutFunc } from "../../api/ui";
 import { Undo } from "../../api/undo";
-import { fadeToLayout, LayoutType, loadLayout } from "./layout";
+import { askSavePopup, fadeToLayout, LayoutType, loadLayout } from "./layout";
 import { Project } from "./project";
 
 /**
@@ -193,6 +193,12 @@ export function loadDefaultShortcuts(): void {
 
 			/* shortcut for opening a file or a project */
 			case "open": {
+				// first, ask to save the current project. If user presses cancel, then do not run the code
+				if(!await askSavePopup()) {
+					return false;
+				}
+
+				// open the openFileDialog to find the target file
 				const result = await window.ipc.ui.dialog.open("openfolder", {
 					properties: [ "openFile", ],
 					filters: [
@@ -228,6 +234,11 @@ export function loadDefaultShortcuts(): void {
 
 			/* shortcut for creating a new project */
 			case "new": {
+				// first, ask to save the current project. If user presses cancel, then do not run the code
+				if(!await askSavePopup()) {
+					return false;
+				}
+
 				// open loading animation
 				await loadLayout(LayoutType.Loading);
 				Undo.clear();

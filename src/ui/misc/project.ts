@@ -1,4 +1,5 @@
 import admZip from "adm-zip";
+import path from "path";
 import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 import { PatternIndex } from "../../api/matrix";
 import { ConfigVersion } from "../../api/scripts/config";
@@ -44,27 +45,38 @@ export class Project {
 	/**
 	 * Function to create a project from with file path
 	 *
-	 * @returns null if failed to create the project correctly, or the project data
+	 * @returns the newly created project
 	 */
-	public static async createProject():Promise<Project|null> {
+	public static async createProject():Promise<Project> {
 		console.info("Create new project");
 
+		// initiate new project without settings
 		const project = new Project("");
-		project.config = Project.createTestConfig();
 		project.modules = [];
-		return project;
-	}
 
-	private static createTestConfig():ProjectConfig {
-		return {
-			name: "",
+		// set project config to default value
+		project.config = {
+			name: "New project",
 			version: ConfigVersion.b0,
 			type: ZorroConfigType.Project,
 			autosave: null,
 			chip: "9d8d2954-ad94-11eb-8529-0242ac130003",	// Nuked
 			driver: "9d8d267a-ad94-11eb-8529-0242ac130003",	// VGM
 		};
+
+		// create a single default module
+		const m = project.addModule();
+		m.name = "New module";
+		project.data[m.file].index.setChannels([ "FM1", "FM2", "FM3", "FM4", "FM5", "FM6", "PCM", "PSG1", "PSG2", "PSG3", "PSG4", ]);
+		await project.setActiveModuleIndex(0);
+
+		// mark this project as not dirty for now
+		project._dirty = false;
+
+		// return the project itself
+		return project;
 	}
+
 	/**
 	 * Function to load a project from a .zorro file into memory
 	 *
@@ -210,7 +222,6 @@ export class Project {
 	 * @param file The file to use for this project
 	 */
 	constructor(file:string) {
-
 		this.file = file;
 		this.data = {};
 	}
@@ -219,6 +230,21 @@ export class Project {
 	public config!:ProjectConfig;
 	public modules!:Module[];
 	public data:{ [key:string]: ModuleData };
+
+	/**
+	 * Helper function to get the file name of this project
+	 *
+	 * @returns The file name as a string. If nothing is provided, invents a filename
+	 */
+	public getFilename(): string {
+		// checks when there is no filename yet, just use a default value
+		if(this.file.length === 0) {
+			return "Untitled.ztm";
+		}
+
+		// return the filename of this project
+		return path.basename(this.file);
+	}
 
 	/**
 	 * Function to save the file at somewhere else but the file location
@@ -238,6 +264,7 @@ export class Project {
 
 		// check if the save was canceled
 		if(!result) {
+			window.isLoading = false;
 			return false;
 		}
 
@@ -245,7 +272,7 @@ export class Project {
 		this.file = result;
 		await this.saveData(result);
 
-		// if not autosaving, then clear the dirty flag
+		// clear the dirty flag
 		window.isLoading = this._dirty = false;
 		return true;
 	}
@@ -430,6 +457,22 @@ export class Project {
 	 */
 	public dirty(): void {
 		this._dirty = true;
+	}
+
+	/**
+	 * Function to mark the project as not "dirty". Only use in appropriate situations!!!
+	 */
+	public clean(): void {
+		this._dirty = false;
+	}
+
+	/**
+	 * Function to get the project dirty status.
+	 *
+	 * @returns boolean indicating whether the project is "dirty" or not.
+	 */
+	public isDirty(): boolean {
+		return this._dirty;
 	}
 
 	/**

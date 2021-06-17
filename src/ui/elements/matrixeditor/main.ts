@@ -1,6 +1,7 @@
 import { PatternIndex } from "../../../api/matrix";
 import { Bounds, clipboard, ClipboardType, Position, shortcutDirection, UIElement } from "../../../api/ui";
 import { Undo, UndoSource } from "../../../api/undo";
+import { Project } from "../../misc/project";
 import { standardButtons, pasteButtons, PatternIndexEditorButtonList } from "./buttons";
 
 // the editing mode enum
@@ -117,7 +118,13 @@ export class PatternIndexEditor implements UIElement {
 
 		// if the matrix is completely empty, insert a row here
 		if(this.index.matrixlen === 0) {
+			const dirty = Project.current?.isDirty();
 			await this.insertRow(0);
+
+			// if project was not dirty, pretend we didn't do any edits yet
+			if(!dirty) {
+				Project.current?.clean();
+			}
 		}
 
 		// select the first element

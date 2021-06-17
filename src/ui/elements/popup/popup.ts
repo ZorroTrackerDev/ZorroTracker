@@ -73,6 +73,9 @@ export function confirmationDialog(settings:ConfirmationParams): Promise<unknown
 			return rej(null);
 		}
 
+		// disable shortcuts and misc functions
+		window.isLoading = true;
+
 		// create the container div
 		const element = document.createElement("div");
 		element.classList.add("popupmain");
@@ -98,6 +101,9 @@ export function confirmationDialog(settings:ConfirmationParams): Promise<unknown
 			setTimeout(() => {
 				// resolve dis
 				res(ret);
+
+				// enable shortcuts and misc functions
+				window.isLoading = false;
 
 				// remove this from the popup as well
 				popup.removeChild(element);

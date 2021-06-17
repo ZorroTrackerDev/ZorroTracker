@@ -4,10 +4,55 @@ import { ButtonEnum, makeButton } from "../elements/button/button";
 import { PatternIndexEditor } from "../elements/matrixeditor/main";
 import { ModuleSelect } from "../elements/moduleselect/main";
 import { makeOption, OptionEnum } from "../elements/option/option";
+import { confirmationDialog, PopupColors, PopupSizes } from "../elements/popup/popup";
 import { volumeSlider, SliderEnum } from "../elements/slider/slider";
 import { makeTextbox, TextboxEnum } from "../elements/textbox/textbox";
 import { Project, Module } from "./project";
 import { addShortcutReceiver } from "./shortcuts";
+
+/**
+ * Event listener and handler for program exit, making ABSOLUTELY SURE that the user saves their progress!!!
+ */
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.Exit, async(event:ZorroEventObject) => {
+	// ask if the user wants to save, and if user cancels, then cancel the exit event too.
+	if(!await askSavePopup()) {
+		event.cancel();
+	}
+});
+
+/**
+ * Function for asking the user whether to save, not save or cancel, when project is dirty.
+ *
+ * @returns Boolean indicating whether or not user pressed the `cancel` button. `false` if the user did.
+ */
+export async function askSavePopup():Promise<boolean> {
+	if(Project.current && Project.current.isDirty()) {
+		// must ask for save
+		switch(await confirmationDialog({
+			color: PopupColors.Normal,
+			size: PopupSizes.Small,
+			html: /*html*/`
+				<h2>Do you want to save your changes to <q>${ Project.current.getFilename() }</q>?</h2>
+				<p>Your changes <u>will</u> be lost if you don't save them.</p>
+			`, buttons: [
+				{ result: 0, float: "left", color: PopupColors.Caution, html: "Don't save", },
+				{ result: 2, float: "right", color: PopupColors.Info, html: "Save", },
+				{ result: 1, float: "right", color: PopupColors.Normal, html: "Cancel", },
+			],
+		}) as number) {
+			case 1: return false;		// indicate as cancelling
+			case 0: return true;		// literally do nothing
+			case 2:						// ask the user to save.
+				// If there is a save-as dialog and user cancels, or save fails, pretend the cancel button was pressed.
+				return Project.current.save(false);
+		}
+	}
+
+	// safe to execute without saving
+	return true;
+}
+
 
 // handler for receiving shortcuts
 let patternIndex:PatternIndexEditor|undefined;

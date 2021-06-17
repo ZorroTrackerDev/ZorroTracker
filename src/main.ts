@@ -57,15 +57,16 @@ async function createWindow () {
 
 	// handle when the window is asked to be closed.
 	window.on("close", (event:Event) => {
-		// update cookies and flush stored cookies
+		// update cookies and flush cookie store
 		setCookie("main_devtools", window?.webContents.isDevToolsOpened() ? "true" : "");
+
 		electron.session.defaultSession.cookies.flushStore()
 			// make sure all IPC-related tasks are safe to close
 			.then(IpcClose)
 			// destroy the current window if successful
 			.then(() => window?.destroy())
 			// if we failed, just log it as if it's fine.
-			.catch(console.error);
+			.catch((e) => e !== undefined && console.error(e));
 
 		// prevent Electron closing our window before we can be sure its free to close
 		event.preventDefault();

@@ -88,9 +88,11 @@ window.ipc.ui.path().then(() => {
 
 	// load the editor layout
 	import("./misc/layout").then(async(module) => {
-		// TEMP
-		await Project.setActiveProject(await Project.loadProject("temp.ztm"));
-		return module.loadLayout(LayoutType.ProjectInfo);
+		// create a new project first
+		Project.current = await Project.createProject();
+
+		// load the editor
+		return module.loadLayout(LayoutType.Editor);
 
 	}).catch(console.error);
 

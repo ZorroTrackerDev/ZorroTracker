@@ -5,6 +5,7 @@ import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 import { PatternIndex } from "../../api/matrix";
 import { ConfigVersion } from "../../api/scripts/config";
 import { fserror } from "../../api/files";
+import { confirmationDialog, PopupColors, PopupSizes } from "../elements/popup/popup";
 
 // load all the events
 const eventProject = ZorroEvent.createEvent(ZorroEventEnum.ProjectOpen);
@@ -25,6 +26,8 @@ const eventUpdate = ZorroEvent.createEvent(ZorroEventEnum.ModuleUpdate);
  *				.patterns -> (binary) PatternIndex.patterns
  */
 export class Project {
+	public static readonly VERSION = ConfigVersion.b0;
+
 	/* The project that is currently being edited, or undefined if no project is loaded */
 	public static current:Project|undefined;
 
@@ -94,7 +97,15 @@ export class Project {
 			const project = new Project(file);
 
 			// create a new zip file
-			const zip = new admZip(file);
+			let zip:admZip;
+			try {
+				zip = new admZip(file);
+
+			} catch(ex) {
+				Project.projectError("Unable to open the file. This file is either not a project file, or is corrupted.");
+				console.error("Failed to load project:", ex);
+				return;
+			}
 
 			/**
 			 * Safe function to read file contents as JSON
@@ -108,7 +119,8 @@ export class Project {
 				const dat = zip.getEntry(f);
 
 				if(!dat){
-					throw new Error(error);
+					Project.projectError(error);
+					return;
 				}
 
 				// read the file as UTF8
@@ -116,10 +128,10 @@ export class Project {
 			}
 
 			{	// try to read the zorro file
-				const file = _readSafe(".zorro", "Expected file .zorro to exist in the project file, but was not found.");
+				const file = _readSafe(".zorro", "This does not appear to be a ZorroTracker file.");
 
 				if(!file) {
-					throw new Error("Can not read .zorro file!");
+					return;
 				}
 
 				// save the project config
@@ -131,7 +143,8 @@ export class Project {
 						break;
 
 					default:
-						throw new Error("This project version "+ project.config.version +" is invalid.");
+						Project.projectError("Project version is "+ project.config.version +", which is invalid or unsupported.");
+						return;
 				}
 
 				// validate its type
@@ -140,7 +153,8 @@ export class Project {
 						break;
 
 					default:
-						throw new Error("File type "+ project.config.type +" is not supported.");
+						Project.projectError("Project type is "+ Project.typeString(project.config.type) +", which is unsupported.");
+						return;
 				}
 
 				// make sure autosaves are accounted for
@@ -151,10 +165,16 @@ export class Project {
 			}
 
 			{	// read the modules file
-				const file = _readSafe(".modules", "Expected file .modules to exist in the project file, but was not found.");
+				const file = _readSafe(".modules", "Expected file .modules to exist in the project file, but it was not found.");
 
+				if(file === undefined) {
+					return;
+				}
+
+				// check if its valid
 				if(!Array.isArray(file) && !file) {
-					throw new Error("Can not read .modules file!");
+					Project.projectError("Unable to read project data. This project file might be corrupted.");
+					return;
 				}
 
 				// copy modules data
@@ -172,7 +192,8 @@ export class Project {
 				const dat = zip.readFile(f);
 
 				if(!dat){
-					throw new Error("Expected file"+ f +" to exist, but it was not found!");
+					Project.projectError("Unable to locate file "+ f +". This project file might be corrupted.");
+					return;
 				}
 
 				return dat;
@@ -185,10 +206,24 @@ export class Project {
 					index: new PatternIndex(project),
 				};
 
+				// load the matrix data
+				const _mat = _dataSafe("modules/"+ m.file +"/.matrix");
+
+				if(_mat === undefined) {
+					return;
+				}
+
+				// load the patterns data
+				const _pat = _dataSafe("modules/"+ m.file +"/.patterns");
+
+				if(_pat === undefined) {
+					return;
+				}
+
 				// set channels and prepare matrix and patterns
 				x.index.setChannels([ "FM1", "FM2", "FM3", "FM4", "FM5", "FM6", "PCM", "PSG1", "PSG2", "PSG3", "PSG4", ]);
-				x.index.loadMatrix(_dataSafe("modules/"+ m.file +"/.matrix"));
-				x.index.loadPatterns(_dataSafe("modules/"+ m.file +"/.patterns"));
+				x.index.loadMatrix(_mat);
+				x.index.loadPatterns(_pat);
 
 				// save into projecct
 				project.data[m.file] = x;
@@ -197,6 +232,8 @@ export class Project {
 			return project;
 
 		} catch(ex) {
+			// uh oh, no clue what this is about. Whoopsidaisies!
+			Project.projectError("Unable to load the project file for some reason. Open the console or the log file for more information.");
 			console.error("Failed to load project:", ex);
 			return undefined;
 		}
@@ -216,6 +253,24 @@ export class Project {
 		}
 
 		return "unk";
+	}
+
+	/**
+	 * Show an error report for the user regarding an issue with the project itself.
+	 *
+	 * @param text The description of the error.
+	 */
+	public static projectError(text:string): void {
+		confirmationDialog({
+			color: PopupColors.Normal,
+			size: PopupSizes.Small,
+			html: /*html*/`
+				<h2>Can not load the project file!</h2>
+				<p>${ text }</p>
+			`, buttons: [
+				{ result: undefined, float: "right", color: PopupColors.Normal, html: "OK", default: true, },
+			],
+		}).catch(console.error);
 	}
 
 	/**

@@ -4,7 +4,7 @@ import { ButtonEnum, makeButton } from "../elements/button/button";
 import { PatternIndexEditor } from "../elements/matrixeditor/main";
 import { ModuleSelect } from "../elements/moduleselect/main";
 import { makeOption, OptionEnum } from "../elements/option/option";
-import { confirmationDialog, createFilename, PopupColors, PopupSizes } from "../elements/popup/popup";
+import { closePopups, confirmationDialog, createFilename, PopupColors, PopupSizes } from "../elements/popup/popup";
 import { volumeSlider, SliderEnum } from "../elements/slider/slider";
 import { makeTextbox, TextboxEnum } from "../elements/textbox/textbox";
 import { Project, Module } from "./project";
@@ -54,10 +54,11 @@ export async function askSavePopup():Promise<boolean> {
 		} catch(err) {
 			return false;
 		}
-	}
 
-	// no need to save, do nothing
-	return true;
+	} else {
+		// see if we can close the active popups
+		return closePopups();
+	}
 }
 
 

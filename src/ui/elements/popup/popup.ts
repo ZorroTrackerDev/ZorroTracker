@@ -72,30 +72,10 @@ export type ConfirmationParams = {
 export function confirmationDialog(settings:ConfirmationParams): Promise<unknown> {
 	return new Promise((res, rej) => {
 		try {
-			// check if there is an already active popup
-			if(activePopup) {
-				// find the default button
-				const buttons = (activePopup.children[0] as HTMLDivElement).children[1] as HTMLDivElement;
-				let click = false;
-
-				for(let i = 0;i < buttons.childElementCount;i ++) {
-					if(buttons.children[i] instanceof HTMLButtonElement) {
-						// if this child is a button, check if it has the right attribute
-						if(buttons.children[i].hasAttribute("default")) {
-
-							// pretend this button was clicked
-							(buttons.children[i] as HTMLButtonElement).click();
-							click = true;
-							break;
-						}
-					}
-				}
-
-				// if no default button was found, reject
-				if(!click) {
-					prompt();
-					return rej();
-				}
+			// try closing popups
+			if(!closePopups()) {
+				// well that failed...
+				return rej();
 			}
 
 			// find the popup div
@@ -202,6 +182,42 @@ function prompt() {
 
 		}, 160);
 	}
+}
+
+/**
+ * Function to request closing a popup.
+ *
+ * @returns Boolean indicating whether the popup was closed or not.
+ */
+export function closePopups(): boolean {
+	// check if there is an already active popup
+	if(activePopup) {
+		// find the default button
+		const buttons = (activePopup.children[0] as HTMLDivElement).children[1] as HTMLDivElement;
+		let click = false;
+
+		for(let i = 0;i < buttons.childElementCount;i ++) {
+			if(buttons.children[i] instanceof HTMLButtonElement) {
+				// if this child is a button, check if it has the right attribute
+				if(buttons.children[i].hasAttribute("default")) {
+
+					// pretend this button was clicked
+					(buttons.children[i] as HTMLButtonElement).click();
+					click = true;
+					break;
+				}
+			}
+		}
+
+		// if no default button was found, reject
+		if(!click) {
+			prompt();
+			return false;
+		}
+	}
+
+	// all popups were closed!
+	return true;
 }
 
 /**

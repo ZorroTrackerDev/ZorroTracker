@@ -1,6 +1,7 @@
 import json5 from "json5";
 import fs from "fs";
 import path from "path";
+import { confirmationDialog, createFilename, PopupColors, PopupSizes } from "../ui/elements/popup/popup";
 
 /**
  * SettingsTypes enum is here to enforce data safety and allowing us to rename properties without breaking code that uses them.
@@ -74,6 +75,13 @@ export function loadSettingsFiles(settingsType:SettingsTypes): unknown[] {
 	return retFiles;
 }
 
+/**
+ * Load the settings type into an object. Will account for multiple user defined files, aggregating to a single object.
+ *
+ * @param settingsType Describes the type of data you are trying to load. This enum will figure out the correct filename for you.
+ * @returns An object describing the object with all defined properties, latest file taking precedent
+ * @throws anything. Invalid files will throw just about any error.
+ */
 export function loadSettingsObject(settingsType:SettingsTypes): Record<string, unknown> {
 	const ret:Record<string, unknown> = {};
 
@@ -101,7 +109,14 @@ export function loadSettingsObject(settingsType:SettingsTypes): Record<string, u
 // the cached flagss data. This is used to cache the program settings for faster access.
 let _cachedFlags: { [key: string]: unknown };
 
-export function loadFlag(name:string): unknown {
+/**
+ * Load a flag value from the flags filetype.
+ *
+ * @param name The name of the flag to find
+ * @returns Anything converted to the specified type, or undefined if not found.
+ * @throws anything. Invalid files will throw just about any error.
+ */
+export function loadFlag<type = unknown>(name:string): type|undefined {
 	if(!_cachedFlags) {
 		// if the flags file was not cached, cache it now.
 		_cachedFlags = loadSettingsObject(SettingsTypes.flags);
@@ -115,5 +130,50 @@ export function loadFlag(name:string): unknown {
 
 	// load the flag value
 	console.info("flags.json5 load key "+ name +":", _cachedFlags[name]);
-	return _cachedFlags[name];
+	return _cachedFlags[name] as type;
+}
+
+// results of an fs error popup
+enum fsResult {
+	INVALID, OK
+}
+
+/**
+ * Function to display an FS error, depending on the code
+ *
+ * @param error the string representing the error
+ * @returns The resulting button press that the user pressed. Uusually just OK
+ */
+export async function fserror(error:string|undefined, filename:string): Promise<fsResult> {
+	// default style maker
+	const defaultDialog = (p:string) => {
+		return confirmationDialog({
+			color: PopupColors.Normal,
+			size: PopupSizes.Small,
+			html: /*html*/`
+				<h2>Can not save to file ${ createFilename(path.basename(filename), "!") }</h2>
+				<p>${ p }</p>
+			`, buttons: [
+				{ result: undefined, float: "right", color: PopupColors.Normal, html: "OK", },
+			],
+		});
+	}
+
+	switch(error) {
+		case "EPERM":				// no permissions?
+			await defaultDialog("Make sure no other program is using the file currently.");
+			return fsResult.OK;
+
+		case "EACCES":				// no access?
+			await defaultDialog("Unable to access the file.");
+			return fsResult.OK;
+
+		case "ENOSPC":				// no space in fs?
+			await defaultDialog("Not enough space to save the file.");
+			return fsResult.OK;
+
+		default:				// misc error
+			await defaultDialog("An unknown exception occured. Please try again later.");
+			return fsResult.INVALID;
+	}
 }

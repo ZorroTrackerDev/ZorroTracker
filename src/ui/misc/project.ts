@@ -4,6 +4,7 @@ import fs from "fs";
 import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 import { PatternIndex } from "../../api/matrix";
 import { ConfigVersion } from "../../api/scripts/config";
+import { fserror } from "../../api/files";
 
 // load all the events
 const eventProject = ZorroEvent.createEvent(ZorroEventEnum.ProjectOpen);
@@ -349,30 +350,24 @@ export class Project {
 
 		// atomic save the zip file (use a promise because stupid API)
 		return new Promise<void>((res, rej) => {
-			// make sure we can access the file
-			fs.access(file, fs.constants.W_OK, (err) => {
+			// write the zip file into disk
+			zip.writeZip(file + ".temp", (err) => {
 				if(err) {
 					rej(err);
 				}
 
-				// write the zip file into disk
-				zip.writeZip(file + ".temp", (err) => {
+				// rename the file on success
+				fs.rename(file + ".temp", file, (err) => {
 					if(err) {
 						rej(err);
+						fserror(err.code, file).catch(console.error);
 					}
 
-					// rename the file on success
-					fs.rename(file + ".temp", file, (err) => {
-						if(err) {
-							rej(err);
-						}
-
-						// success, resolve the promise
-						res();
-					});
+					// success, resolve the promise
+					res();
 				});
 			});
-		})
+		});
 	}
 
 	/**

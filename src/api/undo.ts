@@ -55,7 +55,7 @@ export class Undo {
 	public static clip():void {
 		if(this.redoSize === undefined) {
 			// load the redo size from files
-			this.redoSize = loadFlag("UNDO_STACK_SIZE") as number;
+			this.redoSize = loadFlag<number>("UNDO_STACK_SIZE") ?? 0;
 		}
 
 		// check if any elements need to be clipped off the end of the stack

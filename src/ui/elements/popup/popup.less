@@ -68,3 +68,30 @@
 		}
 	}
 }
+
+.filename {
+	display: inline-block;
+    position: relative;
+    max-width: -webkit-fill-available;
+	vertical-align: text-top;
+
+	.yes {
+		display: inline-block;
+		max-width: 50%;
+		overflow: hidden;
+		white-space: pre
+	}
+
+	&::before {
+		.yes();
+		content: attr(data-content-start);
+		text-overflow: ellipsis;
+	}
+
+	&::after {
+		.yes();
+		content: attr(data-content-end);
+		text-overflow: '';
+		direction: rtl;
+	}
+}

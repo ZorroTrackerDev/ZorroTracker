@@ -4,7 +4,7 @@ import { ButtonEnum, makeButton } from "../elements/button/button";
 import { PatternIndexEditor } from "../elements/matrixeditor/main";
 import { ModuleSelect } from "../elements/moduleselect/main";
 import { makeOption, OptionEnum } from "../elements/option/option";
-import { confirmationDialog, PopupColors, PopupSizes } from "../elements/popup/popup";
+import { confirmationDialog, createFilename, PopupColors, PopupSizes } from "../elements/popup/popup";
 import { volumeSlider, SliderEnum } from "../elements/slider/slider";
 import { makeTextbox, TextboxEnum } from "../elements/textbox/textbox";
 import { Project, Module } from "./project";
@@ -33,7 +33,7 @@ export async function askSavePopup():Promise<boolean> {
 			color: PopupColors.Normal,
 			size: PopupSizes.Small,
 			html: /*html*/`
-				<h2>Do you want to save your changes to <q>${ Project.current.getFilename() }</q>?</h2>
+				<h2>Do you want to save your changes to ${ createFilename(Project.current.getFilename(), "?") }</h2>
 				<p>Your changes <u>will</u> be lost if you don't save them.</p>
 			`, buttons: [
 				{ result: 0, float: "left", color: PopupColors.Caution, html: "Don't save", },

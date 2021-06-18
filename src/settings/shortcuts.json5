@@ -17,6 +17,8 @@
 	"ui.new":							[ "ctrl+N" ],							/* shortcut for creating a new project */
 	"ui.close":							[ "ctrl+W" ],							/* shortcut for closing the project */
 
+	"layout.open.projectinfo":			[ "ctrl+shift+P" ],						/* shortcut for opening the project info editor */
+
 	"layout.patternindex.move.up":		[ "ArrowUp" ],							/* shortcut for moving to the pattern index above */
 	"layout.patternindex.move.down":	[ "ArrowDown" ],						/* shortcut for moving to the pattern index below */
 	"layout.patternindex.move.left":	[ "ArrowLeft" ],						/* shortcut for moving to the pattern index left */

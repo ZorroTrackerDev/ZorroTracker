@@ -31,6 +31,10 @@ const defaultMenu:ToolbarMenu = {
 				enabled: true,
 				action: "window.preload.shortcut(['ui.saveas'])",
 			},
+			"Project": {
+				enabled: true,
+				action: "window.preload.shortcut(['layout.open.projectinfo'])",
+			},
 			"Exit": {
 				enabled: true,
 				action: "window.ipc.ui.close()",

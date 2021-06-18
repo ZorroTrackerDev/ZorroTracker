@@ -61,10 +61,8 @@ async function createWindow () {
 		setCookie("main_devtools", window?.webContents.isDevToolsOpened() ? "true" : "");
 
 		electron.session.defaultSession.cookies.flushStore()
-			// make sure all IPC-related tasks are safe to close
+			// tell IPC its ok to close
 			.then(IpcClose)
-			// destroy the current window if successful
-			.then(() => window?.destroy())
 			// if we failed, just log it as if it's fine.
 			.catch((e) => e !== undefined && console.error(e));
 

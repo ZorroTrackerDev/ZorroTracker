@@ -28,28 +28,35 @@ ZorroEvent.addListener(ZorroEventEnum.Exit, async(event:ZorroEventObject) => {
  */
 export async function askSavePopup():Promise<boolean> {
 	if(Project.current && Project.current.isDirty()) {
-		// must ask for save
-		switch(await confirmationDialog({
-			color: PopupColors.Normal,
-			size: PopupSizes.Small,
-			html: /*html*/`
-				<h2>Do you want to save your changes to ${ createFilename(Project.current.getFilename(), "?") }</h2>
-				<p>Your changes <u>will</u> be lost if you don't save them.</p>
-			`, buttons: [
-				{ result: 0, float: "left", color: PopupColors.Caution, html: "Don't save", },
-				{ result: 2, float: "right", color: PopupColors.Info, html: "Save", },
-				{ result: 1, float: "right", color: PopupColors.Normal, html: "Cancel", },
-			],
-		}) as number) {
-			case 1: return false;		// indicate as cancelling
-			case 0: return true;		// literally do nothing
-			case 2:						// ask the user to save.
-				// If there is a save-as dialog and user cancels, or save fails, pretend the cancel button was pressed.
-				return Project.current.save(false);
+		try {
+			// ask the user what to do
+			switch(await confirmationDialog({
+				color: PopupColors.Normal,
+				size: PopupSizes.Small,
+				html: /*html*/`
+					<h2>Do you want to save your changes to ${ createFilename(Project.current.getFilename(), "?") }</h2>
+					<p>Your changes <u>will</u> be lost if you don't save them.</p>
+				`, buttons: [
+					{ result: 0, float: "left", color: PopupColors.Caution, html: "Don't save", },
+					{ result: 2, float: "right", color: PopupColors.Info, html: "Save", },
+					{ result: 1, float: "right", color: PopupColors.Normal, html: "Cancel", },
+				],
+			}) as number) {
+				case 2:						// ask the user to save.
+					// If there is a save-as dialog and user cancels, or save fails, pretend the cancel button was pressed.
+					return Project.current.save(false);
+
+				case 0: return true;		// literally do nothing
+				default: return false;		// indicate as cancelling
+			}
+
+		// on error cancel
+		} catch(err) {
+			return false;
 		}
 	}
 
-	// safe to execute without saving
+	// no need to save, do nothing
 	return true;
 }
 
@@ -63,6 +70,19 @@ if(addShortcutReceiver) {
 		switch(data.shift()) {
 			case "patternindex":
 				return patternIndex?.receiveShortcut(data) ?? false;
+
+				case "open":
+					switch(data.shift()) {
+						case "projectinfo":
+							// open loading animation
+							await loadLayout(LayoutType.Loading);
+							Undo.clear();
+
+							// save project as current
+							await fadeToLayout(LayoutType.ProjectInfo);
+							await loadLayout(LayoutType.NoLoading);
+							return true;
+					}
 		}
 
 		return false;

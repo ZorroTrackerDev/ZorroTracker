@@ -70,38 +70,38 @@ ipcMain.on(ipcEnum.UiMinimize, () => {
  *
  * @returns A promise that will resolve into an exit code for worker, when it is terminated.
  */
-export function close(): Promise<number> {
-	return new Promise((res, rej) => {
-		// ask the UI to exit gracefully
-		window?.webContents.send(ipcEnum.UiExit);
-
-		// listen to the UI's response
-		ipcMain.once(ipcEnum.UiExit, (event, state:boolean) => {
-			if(!state) {
-				// will not be closed
-				rej();
-				return;
-			}
-
-			// quit discord RPC client
-			discordRPC?.disconnect();
-			discordRPC = undefined;
-
-			// will be closed, tell the worker about it and terminate it
-			worker?.postMessage({ code: "quit", });
-
-			worker?.once("message", (data:{ code:string, data:unknown }) => {
-				if(data.code === "quit"){
-					worker?.terminate().then(res).catch(rej);
-				}
-			});
-		});
-	});
+export function close(): void {
+	// ask the UI to exit gracefully
+	window?.webContents.send(ipcEnum.UiExit);
 }
 
 // handle the UI requesting the current window to be closed
 ipcMain.on(ipcEnum.UiClose, () => {
 	window?.close();
+});
+
+// listen to the UI telling if its OK to close
+ipcMain.on(ipcEnum.UiExit, (event:unknown, state:boolean) => {
+	if(!state) {
+		// will not be closed
+		return;
+	}
+
+	// quit discord RPC client
+	discordRPC?.disconnect();
+	discordRPC = undefined;
+
+	// will be closed, tell the worker about it and terminate it
+	worker?.postMessage({ code: "quit", });
+
+	worker?.once("message", (data:{ code:string, data:unknown }) => {
+		if(data.code === "quit"){
+			worker?.terminate().then(() => {
+				// kill the windooooooow
+				window?.destroy();
+			}).catch(console.error);
+		}
+	});
 });
 
 // handle the UI requesting an URL be opened in an external window

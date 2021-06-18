@@ -212,12 +212,5 @@ function prompt() {
  * @returns The HTML representing this object
  */
 export function createFilename(filename:string, suffix:string): string {
-	// split filename in half
-	const index = Math.round((filename.length + suffix.length) / 2);
-	const first = filename.substring(0, index).replace(/\s/g, "&nbsp;");
-	const last = filename.substring(index).replace(/\s/g, "&nbsp;");
-
-	return /*html*/`
-		<q class="filename" data-content-start='${ "\""+ first }' data-content-end='${ "\""+ suffix + last }'></q>
-	`;
+	return /*html*/`<span class="filename">&quot;<span>${ filename }</span>&quot;${ suffix }</span>`;
 }

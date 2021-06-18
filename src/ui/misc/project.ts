@@ -1,5 +1,6 @@
 import admZip from "adm-zip";
 import path from "path";
+import fs from "fs";
 import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 import { PatternIndex } from "../../api/matrix";
 import { ConfigVersion } from "../../api/scripts/config";
@@ -268,9 +269,15 @@ export class Project {
 			return false;
 		}
 
-		// set the new file and save data
-		this.file = result;
-		await this.saveData(result);
+		try {
+			// set the new file and save data
+			this.file = result;
+			await this.saveData(result);
+
+		} catch(ex) {
+			console.error(ex);
+			return false;
+		}
 
 		// clear the dirty flag
 		window.isLoading = this._dirty = false;
@@ -291,8 +298,14 @@ export class Project {
 			return this.saveAs();
 		}
 
-		// save the actual data
-		await this.saveData(this.file);
+		try {
+			// save the actual data
+			await this.saveData(this.file);
+
+		} catch(ex) {
+			console.error(ex);
+			return false;
+		}
 
 		// if not autosaving, then clear the dirty flag
 		this._dirty = this._dirty && autosave;
@@ -304,7 +317,6 @@ export class Project {
 	 * Function to save the project data to file
 	 *
 	 * @param file The output file location
-	 * @returns boolean indicating whether the save was successful
 	 */
 	private async saveData(file:string): Promise<void> {
 		window.isLoading = true;
@@ -335,15 +347,30 @@ export class Project {
 			}
 		}
 
-		// save the zip file (use a promise because stupid API)
-		await new Promise<void>((res, rej) => {
-			zip.writeZip(file, (err) => {
+		// atomic save the zip file (use a promise because stupid API)
+		return new Promise<void>((res, rej) => {
+			// make sure we can access the file
+			fs.access(file, fs.constants.W_OK, (err) => {
 				if(err) {
 					rej(err);
 				}
 
-				// success, resolve the promise
-				res();
+				// write the zip file into disk
+				zip.writeZip(file + ".temp", (err) => {
+					if(err) {
+						rej(err);
+					}
+
+					// rename the file on success
+					fs.rename(file + ".temp", file, (err) => {
+						if(err) {
+							rej(err);
+						}
+
+						// success, resolve the promise
+						res();
+					});
+				});
 			});
 		})
 	}

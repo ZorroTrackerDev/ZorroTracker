@@ -1,5 +1,6 @@
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../api/events";
 import { Undo } from "../../api/undo";
+import { WindowType } from "../../defs/windowtype";
 import { ButtonEnum, makeButton } from "../elements/button/button";
 import { PatternIndexEditor } from "../elements/matrixeditor/main";
 import { ModuleSelect } from "../elements/moduleselect/main";
@@ -61,33 +62,32 @@ export async function askSavePopup():Promise<boolean> {
 	}
 }
 
+let _handlerInit = false;
 
 // handler for receiving shortcuts
 let patternIndex:PatternIndexEditor|undefined;
 
 // note, this is here just because in testing it might not actually exist!
-if(addShortcutReceiver) {
-	addShortcutReceiver("layout", async(data) => {
-		switch(data.shift()) {
-			case "patternindex":
-				return patternIndex?.receiveShortcut(data) ?? false;
+function initShortcutHandler() {
+	if(!_handlerInit){
+		_handlerInit = true;
 
-				case "open":
-					switch(data.shift()) {
-						case "projectinfo":
-							// open loading animation
-							await loadLayout(LayoutType.Loading);
-							Undo.clear();
+		addShortcutReceiver("layout", async(data) => {
+			switch(data.shift()) {
+				case "patternindex":
+					return patternIndex?.receiveShortcut(data) ?? false;
 
-							// save project as current
-							await fadeToLayout(LayoutType.ProjectInfo);
-							await loadLayout(LayoutType.NoLoading);
-							return true;
-					}
-		}
+					case "open":
+						switch(data.shift()) {
+							case "projectinfo":
+								window.ipc.ui.window(WindowType.ProjectInfo);
+								return true;
+						}
+			}
 
-		return false;
-	});
+			return false;
+		});
+	}
 }
 
 /**
@@ -210,6 +210,9 @@ export async function fadeToLayout(type:LayoutType):Promise<void> {
  * @returns A promise for the completion of the load
  */
 export function loadLayout(type:LayoutType):Promise<unknown> {
+	// initialize shortcut handler
+	initShortcutHandler();
+
 	// load the editor parent element as `body`
 	const body = document.getElementById("main_content");
 

@@ -4,6 +4,7 @@ import { ChipConfig } from "../api/scripts/chip";
 import { DriverConfig } from "../api/scripts/driver";
 import { OpenDialogOptions, SaveDialogOptions } from "electron/main";
 import { ZorroEvent, ZorroEventEnum } from "../api/events";
+import { WindowType } from "../defs/windowtype";
 
 /**
  * Helper function to run an async IPC event, returning the async value for it.
@@ -45,7 +46,7 @@ window.ipc = {
 			save: (cookie:string, settings:SaveDialogOptions) => _async(ipcEnum.UiDialog, "save", cookie, settings) as Promise<string|undefined>,
 		},
 		updateMaximized: () => ipcRenderer.send(ipcEnum.UiGetMaximize),
-		close: () => ipcRenderer.send(ipcEnum.UiClose),
+		close: () => ipcRenderer.send(ipcEnum.UiClose, window.type),
 		minimize: () => ipcRenderer.send(ipcEnum.UiMinimize),
 		maximize: () => ipcRenderer.send(ipcEnum.UiMaximize),
 		openInBrowser: (url:string) => ipcRenderer.send(ipcEnum.UiOpenURL, url),
@@ -53,6 +54,7 @@ window.ipc = {
 		inspectElement: () => ipcRenderer.send(ipcEnum.UiInspectElement),
 		console: () => ipcRenderer.send(ipcEnum.UiConsole),
 		systemInfo: () => ipcRenderer.send(ipcEnum.UiSystemInfo),
+		window: (type:WindowType) => ipcRenderer.send(ipcEnum.UiLoadWindow, type),
 	},
 	rpc: {
 		init: () => ipcRenderer.send(ipcEnum.RpcInit),

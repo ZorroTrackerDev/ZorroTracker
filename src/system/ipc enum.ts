@@ -11,6 +11,7 @@ export enum ipcEnum {
 	UiInspectElement = "ui-inspectelement",
 	UiConsole = "ui-console",
 	UiDialog = "ui-dialog",
+	UiLoadWindow = "ui-window",
 
 	RpcInit = "rpc-init",
 	RpcSet = "rpc-set",

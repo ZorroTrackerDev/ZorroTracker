@@ -8,6 +8,11 @@ declare global {
 		exports: unknown,
 
 		/**
+		 * The current window type. This can define how components act.
+		 */
+		type: WindowType,
+
+		/**
 		 * Set to `true` when loading icon is active or otherwise important tasks are being done. If `true`, things like shortcuts are not allowed.
 		 */
 		isLoading: boolean,
@@ -113,6 +118,11 @@ declare global {
 				 * Helper function to open the Chrome DevTools console.
 				 */
 				console: () => void,
+
+				/**
+				 * Helper function to load a new window.
+				 */
+				window: (type:WindowType) => void,
 
 				dialog: {
 					/**

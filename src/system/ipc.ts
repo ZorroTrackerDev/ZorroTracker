@@ -8,8 +8,9 @@ import * as ScriptHelper from "./script helper";
 import { Cookie, IpcMainEvent, OpenDialogOptions, SaveDialogOptions } from "electron/main";
 import { ChipConfig } from "../api/scripts/chip";
 import { DriverConfig } from "../api/scripts/driver";
-import { window } from "../main";
+import { createWindow, windows } from "../main";
 import createRPC from "discord-rich-presence";
+import { WindowType } from "../defs/windowtype";
 
 /**
  * The application data directory path. This is where the settings and scripts folders are found.
@@ -37,32 +38,32 @@ ipcMain.on(ipcEnum.UiPath, (event) => {
  * @param mode Boolean indicating whether window is currently maximized
  */
 export function updateMaximized(mode:boolean): void {
-	window?.webContents.send(ipcEnum.UiGetMaximize, mode);
+	windows.editor?.webContents.send(ipcEnum.UiGetMaximize, mode);
 }
 
 // handle the UI requesting maximized status.
 ipcMain.on(ipcEnum.UiGetMaximize, () => {
-	updateMaximized(window?.isMaximized() ?? false);
+	updateMaximized(windows.editor?.isMaximized() ?? false);
 });
 
 // handle the UI requesting the current window to maximize
 ipcMain.on(ipcEnum.UiMaximize, () => {
-	if(!window) {
+	if(!windows.editor) {
 		return;
 	}
 
 	// maximize or unmaximize depending on the current state
-	if (!window.isMaximized()) {
-		window.maximize();
+	if (!windows.editor.isMaximized()) {
+		windows.editor.maximize();
 
 	} else {
-		window.unmaximize();
+		windows.editor.unmaximize();
 	}
 });
 
 // handle the UI requesting the current window to minimize
 ipcMain.on(ipcEnum.UiMinimize, () => {
-	window?.minimize();
+	windows.editor?.minimize();
 });
 
 /**
@@ -72,12 +73,20 @@ ipcMain.on(ipcEnum.UiMinimize, () => {
  */
 export function close(): void {
 	// ask the UI to exit gracefully
-	window?.webContents.send(ipcEnum.UiExit);
+	windows.editor?.webContents.send(ipcEnum.UiExit);
 }
 
 // handle the UI requesting the current window to be closed
-ipcMain.on(ipcEnum.UiClose, () => {
-	window?.close();
+ipcMain.on(ipcEnum.UiClose, (event, type:WindowType) => {
+	if(type === WindowType.Editor) {
+		// special handling for editor
+		windows.editor?.close();
+
+	} else {
+		// destroy this specific window
+		windows[type].destroy();
+		delete windows[type];
+	}
 });
 
 // listen to the UI telling if its OK to close
@@ -97,8 +106,11 @@ ipcMain.on(ipcEnum.UiExit, (event:unknown, state:boolean) => {
 	worker?.once("message", (data:{ code:string, data:unknown }) => {
 		if(data.code === "quit"){
 			worker?.terminate().then(() => {
-				// kill the windooooooow
-				window?.destroy();
+
+				// kill all windows
+				for(const w of Object.values(windows)) {
+					w.destroy();
+				}
 			}).catch(console.error);
 		}
 	});
@@ -113,17 +125,17 @@ ipcMain.on(ipcEnum.UiOpenURL, (event, url:string) => {
 
 // handle the UI requesting Developer Tools to be opened
 ipcMain.on(ipcEnum.UiDevTools, () => {
-	if(window?.webContents.isDevToolsOpened()) {
-		window?.webContents.closeDevTools();
+	if(windows.editor?.webContents.isDevToolsOpened()) {
+		windows.editor?.webContents.closeDevTools();
 
 	} else {
-		window?.webContents.openDevTools({ mode: "right", activate: false, });
+		windows.editor?.webContents.openDevTools({ mode: "right", activate: false, });
 	}
 });
 
 // handle the UI requesting Inspect Element functionality
 ipcMain.on(ipcEnum.UiInspectElement, () => {
-	if(!window) {
+	if(!windows.editor) {
 		return;
 	}
 
@@ -131,24 +143,32 @@ ipcMain.on(ipcEnum.UiInspectElement, () => {
 	 * because Electron, we have to actually get the mouse position relative to the SCREEN rather than the current window.
 	 * I don't know why but oh well.
 	 */
-	const bounds = window.getContentBounds();
+	const bounds = windows.editor.getContentBounds();
 	const mouse = screen.getCursorScreenPoint();
 
 	// check if the mouse is inside of the browser window
 	if(mouse.x >= bounds.x && mouse.x < bounds.x + bounds.width &&
 		mouse.y >= bounds.y && mouse.y < bounds.y + bounds.height) {
 			// open dev tools at the mouse position relative the to the window
-			window.webContents.inspectElement(mouse.x - bounds.x, mouse.y - bounds.y);
+			windows.editor.webContents.inspectElement(mouse.x - bounds.x, mouse.y - bounds.y);
 			return;
 		}
 
 	// open dev tools at an arbitary position
-	window.webContents.inspectElement(-1, -1);
+	windows.editor.webContents.inspectElement(-1, -1);
 });
 
 // handle the UI requesting Console to be opened
 ipcMain.on(ipcEnum.UiConsole, () => {
-	window?.webContents.openDevTools({ mode: "right", activate: false, });
+	windows.editor?.webContents.openDevTools({ mode: "right", activate: false, });
+});
+
+// handle the UI requesting a new window being opened
+ipcMain.on(ipcEnum.UiLoadWindow, async(event, name:string) => {
+	if(!windows[name]) {
+		// if window already not open, then open it
+		await createWindow(name);
+	}
 });
 
 // handle the UI requesting a dialog box be opened
@@ -175,13 +195,13 @@ ipcMain.on(ipcEnum.UiDialog, async(event, type:string, cookie:string, settings:O
 
 	switch(type) {
 		case "open": {		// OpenFileDialog
-			const r = await dialog.showOpenDialog(window, settings as OpenDialogOptions);
+			const r = await dialog.showOpenDialog(windows.editor, settings as OpenDialogOptions);
 			result = r.filePaths.length !== 1 ? undefined : r.filePaths[0];
 			break;
 		}
 
 		case "save": {		// SaveFileDialog
-			const r = await dialog.showSaveDialog(window, settings as SaveDialogOptions);
+			const r = await dialog.showSaveDialog(windows.editor, settings as SaveDialogOptions);
 			result = r.filePath;
 			break;
 		}
@@ -368,8 +388,8 @@ export const log = {
 		console.info(...args);
 
 		// if window is not destroyed yet, send it to devtools console too
-		if(window?.webContents.isDestroyed() === false) {
-			window.webContents.send(ipcEnum.LogInfo, ...args);
+		if(windows.editor?.webContents.isDestroyed() === false) {
+			windows.editor.webContents.send(ipcEnum.LogInfo, ...args);
 		}
 	},
 	warn: (...args:unknown[]):void => {
@@ -377,8 +397,8 @@ export const log = {
 		console.warn(...args);
 
 		// if window is not destroyed yet, send it to devtools console too
-		if(window?.webContents.isDestroyed() === false) {
-			window.webContents.send(ipcEnum.LogWarn, ...args);
+		if(windows.editor?.webContents.isDestroyed() === false) {
+			windows.editor.webContents.send(ipcEnum.LogWarn, ...args);
 		}
 	},
 	error:(...args:unknown[]):void => {
@@ -386,8 +406,8 @@ export const log = {
 		console.error(...args);
 
 		// if window is not destroyed yet, send it to devtools console too
-		if(window?.webContents.isDestroyed() === false) {
-			window.webContents.send(ipcEnum.LogError, ...args);
+		if(windows.editor?.webContents.isDestroyed() === false) {
+			windows.editor.webContents.send(ipcEnum.LogError, ...args);
 		}
 	},
 }
@@ -397,7 +417,7 @@ ipcMain.on(ipcEnum.UiSystemInfo, () => {
 	const uptime = os.uptime();
 
 	// dump info
-	window?.webContents.send(ipcEnum.LogInfo, [
+	windows.editor?.webContents.send(ipcEnum.LogInfo, [
 		"System information:",
 		os.version() +" "+ os.arch() +" "+ os.release(),
 		"cores: "+ os.cpus().length +"x "+ os.cpus()[0].model,

@@ -4,19 +4,19 @@ import path from "path";
 // add the IPC handlers here
 import { getCookie, setCookie, updateMaximized, close as IpcClose, create as IpcCreate } from "./system/ipc";
 
-// static reference to the main window
-export let window:BrowserWindow|null = null;
+// static references to all loaded windows
+export const windows:{ [key:string]: BrowserWindow } = {};
 
 // function that creates a new window and loads ui/main.html.
-async function createWindow () {
+export async function createWindow(name:string): Promise<BrowserWindow> {
 	// attempt to create the IPC audio worker
 	IpcCreate().catch(console.error);
 
 	// load the browser settings
-	const settings = await loadWindowSettings("main");
-	console.log("spawn-main-window", settings);
+	const settings = await loadWindowSettings(name);
+	console.log("spawn-window", name, settings);
 
-	window = new BrowserWindow({
+	const w = new BrowserWindow({
 		width: settings.w, height: settings.h,
 		minWidth: 400, minHeight: 400,
 		x: settings.x, y: settings.y,
@@ -25,7 +25,7 @@ async function createWindow () {
 		icon: path.join(__dirname, "icon.png"),
 
 		webPreferences: {
-			preload: path.join(__dirname, "ui", "main.preload.js"),
+			preload: path.join(__dirname, "ui", "windows", name +".js"),
 			contextIsolation: false,		// TODO: possible security risk. Need to be careful about how to access anything outside the app ecosystem
 			enableRemoteModule: false,
 		},
@@ -33,32 +33,32 @@ async function createWindow () {
 
 	// TEST: remove dev tools! They're evil!
 	if (process.env.NODE_ENV === "test") {
-		window.webContents.closeDevTools();
+		w.webContents.closeDevTools();
 
-	} else if(settings.devtools) {
+	} else if(true || settings.devtools) {
 		// if not in test, open devtools if devtools flag was set
-		window.webContents.openDevTools();
+		w.webContents.openDevTools();
 	}
 
 	// maximize window if the settings tell to
 	if(settings.maximized) {
-		window.maximize();
+		w.maximize();
 		updateMaximized(true);
 	}
 
-	window.removeMenu();			// remove default shortcuts
-	window.loadFile(path.join(__dirname, "ui", "main.html")).catch(() => {
+	w.removeMenu();				// remove default shortcuts
+	w.loadFile(path.join(__dirname, "ui", "main.html")).catch(() => {
 		// TODO: should we add a logging file that will log errors?
 		electron.app.quit();
 	});
 
 	// focus the window
-	window.focus();
+	w.focus();
 
 	// handle when the window is asked to be closed.
-	window.on("close", (event:Event) => {
+	w.on("close", (event:Event) => {
 		// update cookies and flush cookie store
-		setCookie("main_devtools", window?.webContents.isDevToolsOpened() ? "true" : "");
+		setCookie(name +"_devtools", w.webContents.isDevToolsOpened() ? "true" : "");
 
 		electron.session.defaultSession.cookies.flushStore()
 			// tell IPC its ok to close
@@ -72,43 +72,46 @@ async function createWindow () {
 	});
 
 	// when window is unmaximized, update the cookie value
-	window.on("unmaximize", () => {
+	w.on("unmaximize", () => {
 		updateMaximized(false);
-		setCookie("main_maximized", "false");
+		setCookie(name +"_maximized", "false");
 	});
 
 	// when window is maximized, update the cookie value
-	window.on("maximize", () => {
+	w.on("maximize", () => {
 		updateMaximized(true);
-		setCookie("main_maximized", "true");
+		setCookie(name +"_maximized", "true");
 	});
 
 	// when window is resized and not maximized, update its coordinates
-	window.on("resize", () => {
-		if(!window?.isMaximized()) {
-			setCookie("main_w", ""+ window?.getNormalBounds().width);
-			setCookie("main_h", ""+ window?.getNormalBounds().height);
+	w.on("resize", () => {
+		if(!w.isMaximized()) {
+			setCookie(name +"_w", ""+ w.getNormalBounds().width);
+			setCookie(name +"_h", ""+ w.getNormalBounds().height);
 		}
 	});
 
 	// when window is moved and not maximized, update its coordinates
-	window.on("move", () => {
-		if(!window?.isMaximized()) {
-			setCookie("main_x", ""+ window?.getNormalBounds().x);
-			setCookie("main_y", ""+ window?.getNormalBounds().y);
+	w.on("move", () => {
+		if(!w.isMaximized()) {
+			setCookie(name +"_x", ""+ w.getNormalBounds().x);
+			setCookie(name +"_y", ""+ w.getNormalBounds().y);
 		}
 	});
+
+	// return the window
+	return windows[name] = w;
 }
 
 // this is responsible for creating the window.
 electron.app.whenReady().then(async() => {
-	await createWindow();
+	await createWindow("editor");
 
 	// on Mac OS, we want to be able to respawn the app without fully closing it apparently
 	electron.app.on("activate", async() => {
 		try {
 			if (BrowserWindow.getAllWindows().length === 0) {
-				await createWindow();
+				await createWindow("editor");
 			}
 
 		} catch(ex) {
@@ -117,12 +120,13 @@ electron.app.whenReady().then(async() => {
 		}
 	});
 }).catch(() => {
-	// TODO: should we add a logging file that will log errors?
 	electron.app.quit();
 });
 
 // when all windows are closed, exit the app.
 electron.app.on("window-all-closed", () => {
+	delete windows["editor"];
+
 	if (process.platform !== "darwin") {
 		electron.app.quit();
 	}

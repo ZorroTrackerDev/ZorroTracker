@@ -450,8 +450,8 @@ export class Project {
 		name.push(date.getMinutes()	| ((year << 5) & 0xC0));
 		name.push(Math.random() * 256);
 
-		// convert to base64
-		return Buffer.from(name).toString("base64");
+		// convert to base64, and replace a few characters
+		return Buffer.from(name).toString("base64").replace(/\//g, "-").replace(/\+/g, "_").replace(/=/g, "");
 	}
 
 	/**

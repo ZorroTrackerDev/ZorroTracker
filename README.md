@@ -14,4 +14,4 @@ Look through the issues page, or create your own, with __as much detail as possi
 ## Developer reference material
 ### [Building](https://github.com/ZorroTrackerDev/ZorroTracker/tree/main/docs/building.md)
 ### [File formats](https://github.com/ZorroTrackerDev/ZorroTracker/tree/main/docs/fileformats.md)
-### [API]()
+### [API](https://github.com/ZorroTrackerDev/ZorroTracker/tree/main/docs/api.md)

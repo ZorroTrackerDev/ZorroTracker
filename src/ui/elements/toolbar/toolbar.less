@@ -65,6 +65,7 @@ input {
 
 	// this is the main div that will mask the UI and not allow any of the pointer events
 	&> .popupmain {
+		cursor: not-allowed;
 		position: absolute;
 		top: 0; left: 0; right: 0; bottom: 0;
 		pointer-events: all;
@@ -74,6 +75,10 @@ input {
 		&.show {
 			background-color: rgba(0,0,0,.4);
 			backdrop-filter: blur(2px);
+		}
+
+		&> div {
+			cursor: initial;
 		}
 	}
 }

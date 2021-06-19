@@ -289,7 +289,7 @@ export class Project {
 	public data:{ [key:string]: ModuleData };
 
 	/**
-	 * Helper function to get the file name of this project
+	 * Helper function to get the file location of this project
 	 *
 	 * @returns The file name as a string. If nothing is provided, invents a filename
 	 */
@@ -299,8 +299,8 @@ export class Project {
 			return "Untitled.ztm";
 		}
 
-		// return the filename of this project
-		return path.basename(this.file);
+		// return the file location of this project
+		return this.file;
 	}
 
 	/**
@@ -744,7 +744,7 @@ export interface Module {
 	lastDate: Date,
 
 	/**
-	 * The index value of the module. This is basically just for expressing the order of the modules to be shown in the UI.
+	 * The index value of the module. This can be used by drivers in any way.
 	 */
 	index: number,
 

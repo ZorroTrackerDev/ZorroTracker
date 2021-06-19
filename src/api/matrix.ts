@@ -32,7 +32,7 @@ import { Project } from "../ui/misc/project";
 		// push each command to res
 		for(const c of this.commands) {
 			// push the command ID
-			ret.push(c.id >> 8, c.id & 0xFF);
+			ret.push(c.id & 0xFF, c.id >> 8);
 
 			if(c.id > 0) {
 				ret.push(c.value & 0xFF);
@@ -79,7 +79,7 @@ import { Project } from "../ui/misc/project";
 		// loop for each command
 		for(let i = width;i > 0; --i) {
 			// load the command ID
-			const id = (data[index++] << 8) | data[index++];
+			const id = data[index++] | (data[index++] << 8);
 			let value = 0;
 
 			// get the value byte by byte, depending on the ID

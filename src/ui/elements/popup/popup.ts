@@ -1,3 +1,4 @@
+import path from "path";
 import { ButtonEnum, makeButton } from "../button/button";
 
 export enum PopupColors {
@@ -228,5 +229,5 @@ export function closePopups(): boolean {
  * @returns The HTML representing this object
  */
 export function createFilename(filename:string, suffix:string): string {
-	return /*html*/`<span class="filename">&quot;<span>${ filename }</span>&quot;${ suffix }</span>`;
+	return /*html*/`<span class="filename" title="${ filename }">&quot;<span>${ path.basename(filename) }</span>&quot;${ suffix }</span>`;
 }

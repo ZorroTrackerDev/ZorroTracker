@@ -151,7 +151,7 @@ export async function fserror(error:string|undefined, filename:string): Promise<
 			color: PopupColors.Normal,
 			size: PopupSizes.Small,
 			html: /*html*/`
-				<h2>Can not save to file ${ createFilename(path.basename(filename), "!") }</h2>
+				<h2>Can not save to file ${ createFilename(filename, "!") }</h2>
 				<p>${ p }</p>
 			`, buttons: [
 				{ result: undefined, float: "right", color: PopupColors.Normal, html: "OK", },

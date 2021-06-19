@@ -108,88 +108,88 @@ Note that in the future, this list may change in the future. Block sizes reserve
 2-byte commands shared between every driver. Each driver should support all of these, if possible.
 | ID   | code | params | description |
 |:----:|:----:|:------:| ----------- |
-| 8000 | aa | xx | todo |
+| 8000 | aa | xxxx | todo |
 
 ### Block `8100`-`8FFF`
 2-byte commands shared between every driver. Drivers can indicate if they support these commands. This block is intended to standardize command ID's.
 | ID   | code | params | description |
 |:----:|:----:|:------:| ----------- |
-| 8100 | aa | xx | todo |
+| 8100 | aa | xxxx | todo |
 
 ### Block `BF00`-`BFFF`
 2-byte commands for miscellaneous things.
 | ID   | code | params | description |
 |:----:|:----:|:------:| ----------- |
-| BF00 | aa | xx | todo |
+| BF00 | aa | xxxx | todo |
 
 ### Block `C000`-`C07F`
 3-byte commands shared between every driver. Each driver should support all of these, if possible.
 | ID   | code | params | description |
 |:----:|:----:|:------:| ----------- |
-| C000 | aa | xx | todo |
+| C000 | aa | xxxxxx | todo |
 
 ### Block `C080`-`C0FF`
 3-byte commands shared between every driver. Drivers can indicate if they support these commands. This block is intended to standardize command ID's.
 | ID   | code | params | description |
 |:----:|:----:|:------:| ----------- |
-| C080 | aa | xx | todo |
+| C080 | aa | xxxxxx | todo |
 
 ### Block `C100`-`C1FF`
 3-byte commands for miscellaneous things.
 | ID   | code | params | description |
 |:----:|:----:|:------:| ----------- |
-| C100 | aa | xx | todo |
+| C100 | aa | xxxxxx | todo |
 
 ### Block `D000`-`D07F`
 4-byte commands shared between every driver. Each driver should support all of these, if possible.
 | ID   | code | params | description |
 |:----:|:----:|:------:| ----------- |
-| D000 | aa | xx | todo |
+| D000 | aa | xxxxxxxx | todo |
 
 ### Block `D080`-`D0FF`
 4-byte commands shared between every driver. Drivers can indicate if they support these commands. This block is intended to standardize command ID's.
 | ID   | code | params | description |
 |:----:|:----:|:------:| ----------- |
-| D080 | aa | xx | todo |
+| D080 | aa | xxxxxxxx | todo |
 
 ### Block `D100`-`D1FF`
 4-byte commands for miscellaneous things.
 | ID   | code | params | description |
 |:----:|:----:|:------:| ----------- |
-| D100 | aa | xx | todo |
+| D100 | aa | xxxxxxxx | todo |
 
 ### Block `E000`-`E07F`
 5-byte commands shared between every driver. Each driver should support all of these, if possible.
 | ID   | code | params | description |
 |:----:|:----:|:------:| ----------- |
-| E000 | aa | xx | todo |
+| E000 | aa | xxxxxxxxxx | todo |
 
 ### Block `E080`-`E0FF`
 5-byte commands shared between every driver. Drivers can indicate if they support these commands. This block is intended to standardize command ID's.
 | ID   | code | params | description |
 |:----:|:----:|:------:| ----------- |
-| E080 | aa | xx | todo |
+| E080 | aa | xxxxxxxxxx | todo |
 
 ### Block `E100`-`E1FF`
 5-byte commands for miscellaneous things.
 | ID   | code | params | description |
 |:----:|:----:|:------:| ----------- |
-| E100 | aa | xx | todo |
+| E100 | aa | xxxxxxxxxx | todo |
 
 ### Block `F000`-`F07F`
-5-byte commands shared between every driver. Each driver should support all of these, if possible.
+6-byte commands shared between every driver. Each driver should support all of these, if possible.
 | ID   | code | params | description |
 |:----:|:----:|:------:| ----------- |
-| F000 | aa | xx | todo |
+| F000 | aa | xxxxxxxxxxxx | todo |
 
 ### Block `F080`-`F0FF`
-5-byte commands shared between every driver. Drivers can indicate if they support these commands. This block is intended to standardize command ID's.
+6-byte commands shared between every driver. Drivers can indicate if they support these commands. This block is intended to standardize command ID's.
 | ID   | code | params | description |
 |:----:|:----:|:------:| ----------- |
-| F080 | aa | xx | todo |
+| F080 | aa | xxxxxxxxxxxx | todo |
 
 ### Block `F100`-`F1FF`
-5-byte commands for miscellaneous things.
+6-byte commands for miscellaneous things.
 | ID   | code | params | description |
 |:----:|:----:|:------:| ----------- |
-| F100 | aa | xx | todo |
+| F100 | aa | xxxxxxxxxxxx | todo |

@@ -1,8 +1,5 @@
 import { loadSettingsFiles, SettingsTypes } from "../../api/files";
 import { receiveShortcutFunc } from "../../api/ui";
-import { Undo } from "../../api/undo";
-import { askSavePopup, fadeToLayout, LayoutType, loadLayout } from "./layout";
-import { Project } from "./project";
 
 /**
  * add a class for various shortcut errors
@@ -167,133 +164,8 @@ export function addShortcuts(shortcuts:{ [key:string]: string|string[] }):void {
  *
  * @throws anything. Invalid files will throw just about any error.
  */
-export function loadDefaultShortcuts(): void {
+export function loadDefaultShortcuts(type:SettingsTypes): void {
 	// load the files we need to inspect and pass them right to "addShortcuts" function. This pretends files are in the correct format.
-	const files = loadSettingsFiles(SettingsTypes.shortcuts) as { [key: string]: string|string[]}[];
+	const files = loadSettingsFiles(type) as { [key: string]: string|string[]}[];
 	files.forEach(addShortcuts);
-
-	// add default UI shortcuts handler
-	// eslint-disable-next-line require-await
-	addShortcutReceiver("ui", async(data) => {
-		switch(data.shift()) {
-			/* shortcut for opening chrome dev tools */
-			case "opendevtools":
-				window.ipc.ui.devTools();
-				return true;
-
-			/* shortcut for inspect element */
-			case "inspectelement":
-				window.ipc.ui.inspectElement();
-				return true;
-
-			/* shortcut for fullscreen */
-			case "fullscreen":
-				window.ipc.ui.maximize();
-				return true;
-
-			/* shortcut for opening a file or a project */
-			case "open": {
-				// first, ask to save the current project. If user presses cancel, then do not run the code
-				if(!await askSavePopup()) {
-					return false;
-				}
-
-				// open the openFileDialog to find the target file
-				const result = await window.ipc.ui.dialog.open("openfolder", {
-					properties: [ "openFile", ],
-					filters: [
-						{ name: "ZorroTracker Module Files", extensions: [ "ztm", ], },
-						{ name: "ZorroTracker Files", extensions: [ "zip", ], },
-						{ name: "All Files", extensions: [ "*", ], },
-					],
-				});
-
-				// if invalid file was applied or operation was cancelled, abort
-				if(!result) {
-					return false;
-				}
-
-				// open loading animation
-				await loadLayout(LayoutType.Loading);
-				Undo.clear();
-
-				// try to load the project
-				const p = await Project.loadProject(result);
-
-				if(!p){
-					await loadLayout(LayoutType.NoLoading);
-					return false;
-				}
-
-				// save project as current
-				await Project.setActiveProject(p);
-				await fadeToLayout(LayoutType.ProjectInfo);
-				await loadLayout(LayoutType.NoLoading);
-				return true;
-			}
-
-			/* shortcut for creating a new project */
-			case "new": {
-				// first, ask to save the current project. If user presses cancel, then do not run the code
-				if(!await askSavePopup()) {
-					return false;
-				}
-
-				// open loading animation
-				await loadLayout(LayoutType.Loading);
-				Undo.clear();
-
-				// try to load the project
-				const p = await Project.createProject();
-
-				if(!p){
-					await loadLayout(LayoutType.NoLoading);
-					return false;
-				}
-
-				// save project as current
-				await Project.setActiveProject(p);
-				await fadeToLayout(LayoutType.ProjectInfo);
-				await loadLayout(LayoutType.NoLoading);
-				return true;
-			}
-
-			/* shortcut for closing a project */
-			case "close":
-				return false;
-
-			/* shortcut for doing a redo action */
-			case "redo":
-				return Undo.redo();
-
-			/* shortcut for doing a undo action */
-			case "undo":
-				return Undo.undo();
-
-			/* shortcut for doing a save action */
-			case "save":
-				try {
-					return await Project.current?.save(false) ?? false;
-
-				} catch(ex)  {
-					console.error(ex);
-				}
-
-				return false;
-
-			/* shortcut for doing a save as action */
-			case "saveas":
-				try {
-					return await Project.current?.saveAs() ?? false;
-
-				} catch(ex)  {
-					console.error(ex);
-				}
-
-				return false;
-		}
-
-		// shortcut was not handled
-		return false;
-	});
 }

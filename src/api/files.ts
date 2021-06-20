@@ -7,7 +7,8 @@ import { confirmationDialog, createFilename, PopupColors, PopupSizes } from "../
  * SettingsTypes enum is here to enforce data safety and allowing us to rename properties without breaking code that uses them.
  */
 export enum SettingsTypes {
-	shortcuts = "shortcuts",
+	globalShortcuts = "globalshortcuts",
+	editorShortcuts = "editorshortcuts",
 	flags = "flags",
 }
 

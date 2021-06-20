@@ -1,23 +1,17 @@
 /*
-	This file defines the shortcuts usable on ZorroTracker. A single shortcut can have multiple aliases, or have none at all.
+	This file defines the shortcuts usable on the main editor window in ZorroTracker. A single shortcut can have multiple aliases, or have none at all.
 	This file is checked when the program runs (so, you can not edit it as the program is running), and will allow the shortcuts
 	to be mapped to application functionality. If you use an invalid key or function name, the shortcut will be ignored,
 	but the console will contain a message showing what happened. Please proceed with care.
 */
 
 {
-	"ui.opendevtools":					[ "F12", "ctrl+shift+I" ],				/* shortcut for opening Chromium dev tools */
-	"ui.inspectelement":				[ "shift+F12" ],						/* shortcut for inspect element in Chromium dev tools */
-	"ui.fullscreen":					[ "F11" ],								/* shortcut for entering/exiting maximized mode */
 	"ui.open":							[ "ctrl+O" ],							/* shortcut for opening a file or a project */
 	"ui.undo":							[ "ctrl+Z" ],							/* shortcut for undoing a change */
 	"ui.redo":							[ "ctrl+Y" ],							/* shortcut for redoing a change */
 	"ui.save":							[ "ctrl+S" ],							/* shortcut for saving the project */
 	"ui.saveas":						[ "ctrl+shift+S" ],						/* shortcut for saving the project as another file */
 	"ui.new":							[ "ctrl+N" ],							/* shortcut for creating a new project */
-	"ui.close":							[ "ctrl+W" ],							/* shortcut for closing the project */
-
-	"layout.open.projectinfo":			[ "ctrl+shift+P" ],						/* shortcut for opening the project info editor */
 
 	"layout.patternindex.move.up":		[ "ArrowUp" ],							/* shortcut for moving to the pattern index above */
 	"layout.patternindex.move.down":	[ "ArrowDown" ],						/* shortcut for moving to the pattern index below */

@@ -397,7 +397,7 @@ export async function volumeSlider(type:SliderEnum):Promise<Element> {
 	// create a simple slider element with range from 0 to 200%.
 	const { element, setValue, label, } = simpleSlider(type, 200, 2000, 1, "%", (volume:number) => {
 		// update the volume on backend and cookies
-		window.ipc.audio.volume(volume / 100);
+		window.ipc.audio?.volume(volume / 100);
 		window.ipc.cookie.set("main_volume", volume +"");
 
 		// get the appropriate class for the volume

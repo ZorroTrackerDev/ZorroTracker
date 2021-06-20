@@ -9,9 +9,6 @@ export const windows:{ [key:string]: BrowserWindow } = {};
 
 // function that creates a new window and loads ui/main.html.
 export async function createWindow(name:string): Promise<BrowserWindow> {
-	// attempt to create the IPC audio worker
-	IpcCreate().catch(console.error);
-
 	// load the browser settings
 	const settings = await loadWindowSettings(name);
 	console.log("spawn-window", name, settings);
@@ -35,7 +32,7 @@ export async function createWindow(name:string): Promise<BrowserWindow> {
 	if (process.env.NODE_ENV === "test") {
 		w.webContents.closeDevTools();
 
-	} else if(true || settings.devtools) {
+	} else if(settings.devtools) {
 		// if not in test, open devtools if devtools flag was set
 		w.webContents.openDevTools();
 	}
@@ -43,7 +40,7 @@ export async function createWindow(name:string): Promise<BrowserWindow> {
 	// maximize window if the settings tell to
 	if(settings.maximized) {
 		w.maximize();
-		updateMaximized(true);
+		updateMaximized(name, true);
 	}
 
 	w.removeMenu();				// remove default shortcuts
@@ -62,7 +59,7 @@ export async function createWindow(name:string): Promise<BrowserWindow> {
 
 		electron.session.defaultSession.cookies.flushStore()
 			// tell IPC its ok to close
-			.then(IpcClose)
+			.then(() => IpcClose("editor"))
 			// if we failed, just log it as if it's fine.
 			.catch((e) => e !== undefined && console.error(e));
 
@@ -73,13 +70,13 @@ export async function createWindow(name:string): Promise<BrowserWindow> {
 
 	// when window is unmaximized, update the cookie value
 	w.on("unmaximize", () => {
-		updateMaximized(false);
+		updateMaximized(name, false);
 		setCookie(name +"_maximized", "false");
 	});
 
 	// when window is maximized, update the cookie value
 	w.on("maximize", () => {
-		updateMaximized(true);
+		updateMaximized(name, true);
 		setCookie(name +"_maximized", "true");
 	});
 
@@ -107,11 +104,17 @@ export async function createWindow(name:string): Promise<BrowserWindow> {
 electron.app.whenReady().then(async() => {
 	await createWindow("editor");
 
+	// attempt to create the IPC audio worker
+	IpcCreate().catch(console.error);
+
 	// on Mac OS, we want to be able to respawn the app without fully closing it apparently
 	electron.app.on("activate", async() => {
 		try {
 			if (BrowserWindow.getAllWindows().length === 0) {
 				await createWindow("editor");
+
+				// attempt to create the IPC audio worker
+				IpcCreate().catch(console.error);
 			}
 
 		} catch(ex) {

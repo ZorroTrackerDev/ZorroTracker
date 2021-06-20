@@ -229,6 +229,9 @@ export class Project {
 				project.data[m.file] = x;
 			}
 
+			// set the first module as the active module
+			await project.setActiveModuleIndex(0);
+
 			return project;
 
 		} catch(ex) {

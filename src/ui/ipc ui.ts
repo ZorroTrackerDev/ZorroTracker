@@ -42,34 +42,25 @@ window.ipc = {
 			});
 		},
 		dialog: {
-			open: (cookie:string, settings:OpenDialogOptions) => _async(ipcEnum.UiDialog, "open", cookie, settings) as Promise<string|undefined>,
-			save: (cookie:string, settings:SaveDialogOptions) => _async(ipcEnum.UiDialog, "save", cookie, settings) as Promise<string|undefined>,
+			open: (cookie:string, settings:OpenDialogOptions) =>
+				_async(ipcEnum.UiDialog, window.type, "open", cookie, settings) as Promise<string|undefined>,
+			save: (cookie:string, settings:SaveDialogOptions) =>
+				_async(ipcEnum.UiDialog, window.type, "save", cookie, settings) as Promise<string|undefined>,
 		},
-		updateMaximized: () => ipcRenderer.send(ipcEnum.UiGetMaximize),
+		updateMaximized: () => ipcRenderer.send(ipcEnum.UiGetMaximize, window.type),
 		close: () => ipcRenderer.send(ipcEnum.UiClose, window.type),
-		minimize: () => ipcRenderer.send(ipcEnum.UiMinimize),
-		maximize: () => ipcRenderer.send(ipcEnum.UiMaximize),
+		minimize: () => ipcRenderer.send(ipcEnum.UiMinimize, window.type),
+		maximize: () => ipcRenderer.send(ipcEnum.UiMaximize, window.type),
 		openInBrowser: (url:string) => ipcRenderer.send(ipcEnum.UiOpenURL, url),
 		devTools: () => ipcRenderer.send(ipcEnum.UiDevTools),
-		inspectElement: () => ipcRenderer.send(ipcEnum.UiInspectElement),
+		inspectElement: () => ipcRenderer.send(ipcEnum.UiInspectElement, window.type),
 		console: () => ipcRenderer.send(ipcEnum.UiConsole),
 		systemInfo: () => ipcRenderer.send(ipcEnum.UiSystemInfo),
 		window: (type:WindowType) => ipcRenderer.send(ipcEnum.UiLoadWindow, type),
 	},
-	rpc: {
-		init: () => ipcRenderer.send(ipcEnum.RpcInit),
-		set: (details:string, state:string) => ipcRenderer.send(ipcEnum.RpcSet, details, state),
-	},
 	cookie: {
 		set: (name:string, value:string) => ipcRenderer.send(ipcEnum.CookieSet, name, value),
 		get: (name:string) => _async(ipcEnum.CookieGet, name) as Promise<string | null>,
-	},
-	audio: {
-		init: (emu:ChipConfig, driver:DriverConfig) => ipcRenderer.send(ipcEnum.AudioCreate, emu, driver),
-		volume: (volume:number) => ipcRenderer.send(ipcEnum.AudioVolume, volume),
-		play: (special?:string) => ipcRenderer.send(ipcEnum.AudioPlay, special),
-		stop: () => ipcRenderer.send(ipcEnum.AudioStop),
-		close: () => ipcRenderer.send(ipcEnum.AudioClose),
 	},
 	chip: {
 		findAll: () => _async(ipcEnum.ChipFindAll) as Promise<{ [key:string]: ChipConfig }>,

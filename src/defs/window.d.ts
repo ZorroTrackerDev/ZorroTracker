@@ -146,7 +146,7 @@ declare global {
 				 */
 				systemInfo: () => void,
 			},
-			rpc: {
+			rpc?: {
 				/**
 				 * Funtion to initialize and enable Discord RPC integration
 				 */
@@ -174,7 +174,7 @@ declare global {
 				 */
 				get: (name:string) => Promise<string | null>,
 			},
-			audio: {
+			audio?: {
 				/**
 				 * Initialize the audio adapter instance.
 				 *

@@ -1,4 +1,4 @@
-import { ipcMain, session, shell, screen, app, dialog } from "electron";
+import { ipcMain, session, shell, screen, app, dialog, BrowserWindow } from "electron";
 import { Worker } from "worker_threads";
 import path from "path";
 import os from "os";
@@ -37,33 +37,33 @@ ipcMain.on(ipcEnum.UiPath, (event) => {
  *
  * @param mode Boolean indicating whether window is currently maximized
  */
-export function updateMaximized(mode:boolean): void {
-	windows.editor?.webContents.send(ipcEnum.UiGetMaximize, mode);
+export function updateMaximized(type:string, mode:boolean): void {
+	windows[type]?.webContents.send(ipcEnum.UiGetMaximize, mode);
 }
 
 // handle the UI requesting maximized status.
-ipcMain.on(ipcEnum.UiGetMaximize, () => {
-	updateMaximized(windows.editor?.isMaximized() ?? false);
+ipcMain.on(ipcEnum.UiGetMaximize, (event, type:string) => {
+	updateMaximized(type, windows[type]?.isMaximized() ?? false);
 });
 
 // handle the UI requesting the current window to maximize
-ipcMain.on(ipcEnum.UiMaximize, () => {
-	if(!windows.editor) {
+ipcMain.on(ipcEnum.UiMaximize, (event, type:string) => {
+	if(!windows[type]) {
 		return;
 	}
 
 	// maximize or unmaximize depending on the current state
-	if (!windows.editor.isMaximized()) {
-		windows.editor.maximize();
+	if (!windows[type].isMaximized()) {
+		windows[type].maximize();
 
 	} else {
-		windows.editor.unmaximize();
+		windows[type].unmaximize();
 	}
 });
 
 // handle the UI requesting the current window to minimize
-ipcMain.on(ipcEnum.UiMinimize, () => {
-	windows.editor?.minimize();
+ipcMain.on(ipcEnum.UiMinimize, (event, type:string) => {
+	windows[type]?.minimize();
 });
 
 /**
@@ -71,9 +71,9 @@ ipcMain.on(ipcEnum.UiMinimize, () => {
  *
  * @returns A promise that will resolve into an exit code for worker, when it is terminated.
  */
-export function close(): void {
+export function close(type:string): void {
 	// ask the UI to exit gracefully
-	windows.editor?.webContents.send(ipcEnum.UiExit);
+	windows[type]?.webContents.send(ipcEnum.UiExit);
 }
 
 // handle the UI requesting the current window to be closed
@@ -83,6 +83,9 @@ ipcMain.on(ipcEnum.UiClose, (event, type:WindowType) => {
 		windows.editor?.close();
 
 	} else {
+		// update devtools cookie
+		setCookie(type +"_devtools", event.sender.isDevToolsOpened() ? "true" : "");
+
 		// destroy this specific window
 		windows[type].destroy();
 		delete windows[type];
@@ -124,18 +127,18 @@ ipcMain.on(ipcEnum.UiOpenURL, (event, url:string) => {
 });
 
 // handle the UI requesting Developer Tools to be opened
-ipcMain.on(ipcEnum.UiDevTools, () => {
-	if(windows.editor?.webContents.isDevToolsOpened()) {
-		windows.editor?.webContents.closeDevTools();
+ipcMain.on(ipcEnum.UiDevTools, (event) => {
+	if(event.sender.isDevToolsOpened()) {
+		event.sender.closeDevTools();
 
 	} else {
-		windows.editor?.webContents.openDevTools({ mode: "right", activate: false, });
+		event.sender.openDevTools({ mode: "right", activate: false, });
 	}
 });
 
 // handle the UI requesting Inspect Element functionality
-ipcMain.on(ipcEnum.UiInspectElement, () => {
-	if(!windows.editor) {
+ipcMain.on(ipcEnum.UiInspectElement, (event, type:string) => {
+	if(!windows[type]) {
 		return;
 	}
 
@@ -143,24 +146,24 @@ ipcMain.on(ipcEnum.UiInspectElement, () => {
 	 * because Electron, we have to actually get the mouse position relative to the SCREEN rather than the current window.
 	 * I don't know why but oh well.
 	 */
-	const bounds = windows.editor.getContentBounds();
+	const bounds = windows[type].getContentBounds();
 	const mouse = screen.getCursorScreenPoint();
 
 	// check if the mouse is inside of the browser window
 	if(mouse.x >= bounds.x && mouse.x < bounds.x + bounds.width &&
 		mouse.y >= bounds.y && mouse.y < bounds.y + bounds.height) {
 			// open dev tools at the mouse position relative the to the window
-			windows.editor.webContents.inspectElement(mouse.x - bounds.x, mouse.y - bounds.y);
+			event.sender.inspectElement(mouse.x - bounds.x, mouse.y - bounds.y);
 			return;
 		}
 
 	// open dev tools at an arbitary position
-	windows.editor.webContents.inspectElement(-1, -1);
+	event.sender.inspectElement(-1, -1);
 });
 
 // handle the UI requesting Console to be opened
-ipcMain.on(ipcEnum.UiConsole, () => {
-	windows.editor?.webContents.openDevTools({ mode: "right", activate: false, });
+ipcMain.on(ipcEnum.UiConsole, (event) => {
+	event.sender.openDevTools({ mode: "right", activate: false, });
 });
 
 // handle the UI requesting a new window being opened
@@ -172,8 +175,8 @@ ipcMain.on(ipcEnum.UiLoadWindow, async(event, name:string) => {
 });
 
 // handle the UI requesting a dialog box be opened
-ipcMain.on(ipcEnum.UiDialog, async(event, type:string, cookie:string, settings:OpenDialogOptions|SaveDialogOptions) => {
-	if(!window) {
+ipcMain.on(ipcEnum.UiDialog, async(event, type:string, mode:string, cookie:string, settings:OpenDialogOptions|SaveDialogOptions) => {
+	if(!windows[type]) {
 		event.reply(ipcEnum.UiDialog, null);
 		return;
 	}
@@ -193,21 +196,21 @@ ipcMain.on(ipcEnum.UiDialog, async(event, type:string, cookie:string, settings:O
 	// show the dialog to the user
 	let result;
 
-	switch(type) {
+	switch(mode) {
 		case "open": {		// OpenFileDialog
-			const r = await dialog.showOpenDialog(windows.editor, settings as OpenDialogOptions);
+			const r = await dialog.showOpenDialog(windows[type], settings as OpenDialogOptions);
 			result = r.filePaths.length !== 1 ? undefined : r.filePaths[0];
 			break;
 		}
 
 		case "save": {		// SaveFileDialog
-			const r = await dialog.showSaveDialog(windows.editor, settings as SaveDialogOptions);
+			const r = await dialog.showSaveDialog(windows[type], settings as SaveDialogOptions);
 			result = r.filePath;
 			break;
 		}
 
 		default:		// invalid
-			throw Error("Invalid dialog type "+ type +"!");
+			throw Error("Invalid dialog type "+ mode +"!");
 	}
 
 

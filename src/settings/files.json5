@@ -6,6 +6,7 @@
 */
 
 {
-	"shortcuts": [ "shortcuts.json5" ],
+	"editorshortcuts": [ "globalshortcuts.json5", "shortcuts.json5" ],
+	"globalshortcuts": [ "globalshortcuts.json5" ],
 	"flags": [ "flags.json5" ],
 }

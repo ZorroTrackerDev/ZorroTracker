@@ -11,7 +11,7 @@ import { Module, Project } from "./project";
 const update = (project:Project|undefined, module:Module|undefined, noselect:boolean) => {
 	if(!project) {
 		// if no project is loaded currently???
-		window.ipc.rpc.set("No project open", "Just what you think you are doing.");
+		window.ipc.rpc?.set("No project open", "Just what you think you are doing.");
 
 	} else {
 		// load the project details
@@ -42,7 +42,7 @@ const update = (project:Project|undefined, module:Module|undefined, noselect:boo
 		}
 
 		// finally update the RPC
-		window.ipc.rpc.set(details, state);
+		window.ipc.rpc?.set(details, state);
 		console.info("rpc-set", details, state);
 	}
 }

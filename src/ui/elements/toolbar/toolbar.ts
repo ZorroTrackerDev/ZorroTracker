@@ -223,17 +223,19 @@ function getDropdownMenu(entry:ToolbarMenuEntry) {
 	return html;
 }
 
-// create the default toolbar
-loadDefaultToolbar();
-
-export function loadDefaultToolbar(): void {
+/**
+ * function tocreate the default toolbar
+ *
+ * @param menu Whether to create the menu as well
+ */
+export function loadDefaultToolbar(menu:boolean): void {
 	try {
 		// find the DOM element for the toolbar
 		const toolbarDiv = document.getElementById("main_toolbar");
 
 		if(toolbarDiv){
 			// note: only calculating the toolbar if the element exists!
-			toolbarDiv.innerHTML = makeToolbar(defaultMenu, defaultButtons);
+			toolbarDiv.innerHTML = makeToolbar(menu ? defaultMenu : {}, defaultButtons);
 			window.ipc.ui.updateMaximized();
 		}
 

@@ -13,6 +13,10 @@ export enum ipcEnum {
 	UiDialog = "ui-dialog",
 	UiLoadWindow = "ui-window",
 
+	ConsoleInfo = "console-info",
+	ConsoleWarn = "console-warn",
+	ConsoleError = "console-error",
+
 	RpcInit = "rpc-init",
 	RpcSet = "rpc-set",
 

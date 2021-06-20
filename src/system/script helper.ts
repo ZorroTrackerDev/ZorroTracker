@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import json5 from "json5";
 import { ConfigVersion, GenericConfig } from "../api/scripts/config";
-import { dataPath } from "./ipc";
+import { dataPath } from "./ipc/ui";
 
 export const scriptsFolder = "scripts";
 

@@ -1,8 +1,11 @@
 import electron, { BrowserWindow } from "electron";
 import path from "path";
+import { create as IpcCreate, log } from "./system/ipc/editor";
 
 // add the IPC handlers here
-import { getCookie, setCookie, updateMaximized, close as IpcClose, create as IpcCreate } from "./system/ipc";
+import { getCookie, setCookie } from "./system/ipc/misc";
+import { close as IpcClose, updateMaximized } from "./system/ipc/ui";
+import "./system/ipc/sub";
 
 // static references to all loaded windows
 export const windows:{ [key:string]: BrowserWindow } = {};
@@ -11,7 +14,7 @@ export const windows:{ [key:string]: BrowserWindow } = {};
 export async function createWindow(name:string): Promise<BrowserWindow> {
 	// load the browser settings
 	const settings = await loadWindowSettings(name);
-	console.log("spawn-window", name, settings);
+	log.info("spawn-window", name);
 
 	const w = new BrowserWindow({
 		width: settings.w, height: settings.h,
@@ -61,7 +64,7 @@ export async function createWindow(name:string): Promise<BrowserWindow> {
 			// tell IPC its ok to close
 			.then(() => IpcClose("editor"))
 			// if we failed, just log it as if it's fine.
-			.catch((e) => e !== undefined && console.error(e));
+			.catch((e) => e !== undefined && log.error(e));
 
 		// prevent Electron closing our window before we can be sure its free to close
 		event.preventDefault();
@@ -105,7 +108,7 @@ electron.app.whenReady().then(async() => {
 	await createWindow("editor");
 
 	// attempt to create the IPC audio worker
-	IpcCreate().catch(console.error);
+	IpcCreate().catch(log.error);
 
 	// on Mac OS, we want to be able to respawn the app without fully closing it apparently
 	electron.app.on("activate", async() => {
@@ -114,7 +117,7 @@ electron.app.whenReady().then(async() => {
 				await createWindow("editor");
 
 				// attempt to create the IPC audio worker
-				IpcCreate().catch(console.error);
+				IpcCreate().catch(log.error);
 			}
 
 		} catch(ex) {

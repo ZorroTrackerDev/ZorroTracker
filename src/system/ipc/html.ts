@@ -1,10 +1,10 @@
-import { ipcEnum } from "../system/ipc enum";
+import { ipcEnum } from "./ipc enum";
 import { ipcRenderer } from "electron";
-import { ChipConfig } from "../api/scripts/chip";
-import { DriverConfig } from "../api/scripts/driver";
+import { ChipConfig } from "../../api/scripts/chip";
+import { DriverConfig } from "../../api/scripts/driver";
 import { OpenDialogOptions, SaveDialogOptions } from "electron/main";
-import { ZorroEvent, ZorroEventEnum } from "../api/events";
-import { WindowType } from "../defs/windowtype";
+import { ZorroEvent, ZorroEventEnum } from "../../api/events";
+import { WindowType } from "../../defs/windowtype";
 
 /**
  * Helper function to run an async IPC event, returning the async value for it.

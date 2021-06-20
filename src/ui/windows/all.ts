@@ -3,6 +3,7 @@ webFrame.setZoomFactor(1);		// testing only
 
 /* load object extensions */
 import "../extensions";
+import "../misc/logger";
 
 window.isLoading = false;
 

@@ -24,7 +24,8 @@ window.type = WindowType.ProjectInfo;
 window.preload = {};
 
 /* ipc communication */
-import "../ipc ui";
+import "../../system/ipc/html";
+import "../../system/ipc/html sub";
 
 window.ipc.ui.path().then(() => {
 	/* load shortcuts handler file */

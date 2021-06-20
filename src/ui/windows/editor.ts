@@ -7,9 +7,10 @@ import { loadDefaultToolbar } from "../elements/toolbar/toolbar";
 import { askSavePopup, clearChildren, fadeToLayout, LayoutType, loadLayout } from "../misc/layout";
 import { Undo } from "../../api/undo";
 import { ipcRenderer } from "electron";
-import { ipcEnum } from "../../system/ipc enum";
+import { ipcEnum } from "../../system/ipc/ipc enum";
 import { ChipConfig } from "../../api/scripts/chip";
 import { DriverConfig } from "../../api/scripts/driver";
+import { PatternIndexEditor } from "../elements/matrixeditor/main";
 
 /**
  * So.. In order for Jest testing to work, we need to load stuff as modules. However, browsers really don't like CommonJS modules
@@ -56,14 +57,14 @@ window.preload = {
 }
 
 /* ipc communication */
-import "../ipc ui";
-import { PatternIndexEditor } from "../elements/matrixeditor/main";
+import "../../system/ipc/html";
 
 // add some extra ipc functions
 window.ipc.rpc = {
 	init: () => ipcRenderer.send(ipcEnum.RpcInit),
 	set: (details:string, state:string) => ipcRenderer.send(ipcEnum.RpcSet, details, state),
 }
+
 window.ipc.audio = {
 	init: (emu:ChipConfig, driver:DriverConfig) => ipcRenderer.send(ipcEnum.AudioCreate, emu, driver),
 	volume: (volume:number) => ipcRenderer.send(ipcEnum.AudioVolume, volume),
@@ -207,9 +208,6 @@ window.ipc.ui.path().then(() => {
 		import("./all").then(() => {
 			/* load the menu */
 			loadDefaultToolbar(true);
-
-			/* logging helpers */
-			import("../misc/logger").catch(console.error);
 
 			// create a new project first
 			Project.createProject().then((p) => {

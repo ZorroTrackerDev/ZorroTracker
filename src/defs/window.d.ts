@@ -157,6 +157,11 @@ declare global {
 				 */
 				set: (details:string, state:string) => void,
 			},
+			log?: {
+				info: (...args:unknown[]) => void,
+				warn: (...args:unknown[]) => void,
+				error: (...args:unknown[]) => void,
+			},
 			cookie: {
 				/**
 				 * Set a browser cookie for later. These persist across runs.

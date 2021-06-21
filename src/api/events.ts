@@ -183,7 +183,7 @@ export interface ZorroListenerTypes {
 
 	[ZorroEventEnum.ProjectOpen]: (event:ZorroEventObject, project:Project|undefined) => Promise<undefined|void>,
 	[ZorroEventEnum.SelectModule]: (event:ZorroEventObject, project:Project, module:Module|undefined, data:ModuleData|undefined) => Promise<undefined|void>,
-	[ZorroEventEnum.ModuleUpdate]: (event:ZorroEventObject, project:Project, module:Module, data:ModuleData) => Promise<undefined|void>,
+	[ZorroEventEnum.ModuleUpdate]: (event:ZorroEventObject, project:Project, module:Module, data:ModuleData|null) => Promise<undefined|void>,
 	[ZorroEventEnum.ModuleCreate]: (event:ZorroEventObject, project:Project, module:Module, data:ModuleData) => Promise<undefined|void>,
 	[ZorroEventEnum.ModuleDelete]: (event:ZorroEventObject, project:Project, module:Module, data:ModuleData) => Promise<undefined|void>,
 
@@ -207,7 +207,7 @@ export interface ZorroSenderTypes {
 
 	[ZorroEventEnum.ProjectOpen]: (project:Project|undefined) => Promise<{ event: ZorroEventObject, value: undefined }>,
 	[ZorroEventEnum.SelectModule]: (project:Project, module:Module|undefined, data:ModuleData|undefined) => Promise<{ event: ZorroEventObject, value: undefined }>,
-	[ZorroEventEnum.ModuleUpdate]: (project:Project, module:Module, data:ModuleData) => Promise<{ event: ZorroEventObject, value: undefined }>,
+	[ZorroEventEnum.ModuleUpdate]: (project:Project, module:Module, data:ModuleData|null) => Promise<{ event: ZorroEventObject, value: undefined }>,
 	[ZorroEventEnum.ModuleCreate]: (project:Project, module:Module, data:ModuleData) => Promise<{ event: ZorroEventObject, value: undefined }>,
 	[ZorroEventEnum.ModuleDelete]: (project:Project, module:Module, data:ModuleData) => Promise<{ event: ZorroEventObject, value: undefined }>,
 

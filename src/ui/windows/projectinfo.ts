@@ -112,7 +112,7 @@ const selectEditFunc = (project?:Project, module?:Module) => {
 const _selectEdit: ((project?:Project, module?:Module) => void)[] = [];
 
 // load the layout for this window
-async function projectInfoLayout():Promise<void> {
+async function projectInfoLayout():Promise<true> {
 	// load the editor parent element as `body`
 	const body = document.getElementById("main_content");
 
@@ -136,6 +136,9 @@ async function projectInfoLayout():Promise<void> {
 			// set the project name
 			if(user && Project.current) {
 				Project.current.config.name = value;
+
+				// send request to update config
+				ipcRenderer.send(ipcEnum.ProjectSetName, Project.current.config.name);
 			}
 
 			return value;
@@ -244,4 +247,6 @@ async function projectInfoLayout():Promise<void> {
 
 	// update textboxes
 	selectEditFunc();
+
+	return true;
 }

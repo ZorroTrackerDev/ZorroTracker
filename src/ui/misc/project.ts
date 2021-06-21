@@ -5,6 +5,9 @@ import { PatternIndex } from "../../api/matrix";
 import { ConfigVersion } from "../../api/scripts/config";
 import { fserror } from "../../api/files";
 import { confirmationDialog, PopupColors, PopupSizes } from "../elements/popup/popup";
+import { ipcRenderer } from "electron";
+import { ipcEnum } from "../../system/ipc/ipc enum";
+import { WindowType } from "../../defs/windowtype";
 
 // load all the events
 const eventProject = ZorroEvent.createEvent(ZorroEventEnum.ProjectOpen);
@@ -495,7 +498,15 @@ export class Project {
 
 		// if this module was currently active, set active module to nothing
 		if(this.activeModuleIndex === index){
-			await this.setActiveModuleIndex(index - 1);
+			let target = index - 1;
+
+			// check if we can select a non-null selection
+			if(target === -1 && this.modules.length > 0) {
+				target = 0;
+			}
+
+			// select this new position
+			await this.setActiveModuleIndex(target);
 		}
 
 		// success!
@@ -505,11 +516,12 @@ export class Project {
 	/**
 	 * Function to add a new module to the project. Default settings will be used
 	 *
+	 * @param file If provided, the filename will be used in the file, as opposed to generating one
 	 * @returns The new module
 	 */
-	public addModule(): Module {
+	public addModule(file?:string): Module {
 		const data = {
-			file: Project.generateName(),
+			file: file ?? Project.generateName(),
 			name: "",
 			author: "",
 			index: 0,		// TODO: Generate index
@@ -517,24 +529,28 @@ export class Project {
 			lastDate: new Date(),
 		}
 
-		// check if the data already exists. If so, try to generate a new one
-		while(this.data[data.file]) {
-			data.file = Project.generateName();
+		if(!file) {
+			// check if the data already exists. If so, try to generate a new one
+			while(this.data[data.file]) {
+				data.file = Project.generateName();
+			}
 		}
 
 		// put it in the module data array
 		this.modules.push(data);
 
-		// set new module data
-		const mdata = {
-			// create an empty patternIndex
-			index: new PatternIndex(this),
-		};
+		if(window.type === WindowType.Editor) {
+			// set new module data
+			const mdata = {
+				// create an empty patternIndex
+				index: new PatternIndex(this),
+			};
 
-		this.data[data.file] = mdata;
+			this.data[data.file] = mdata;
 
-		// send the create event
-		eventCreate(this, data, mdata).catch(console.error);
+			// send the create event
+			eventCreate(this, data, mdata).catch(console.error);
+		}
 
 		// return the module name
 		return data;
@@ -646,13 +662,26 @@ export class Project {
 	 */
 	public changeModule(): void {
 		// check if module exists
-		if(this.activeModuleIndex < 0 || !this.data[this.activeModuleFile]) {
+		if(this.activeModuleIndex < 0) {
 			return;
 		}
 
-		// send the update event and ignore cancellation
-		eventUpdate(this, this.modules[this.activeModuleIndex], this.data[this.activeModuleFile]).catch(console.error);
-		this.dirty();
+		if(window.type === WindowType.Editor) {
+			// check if module data exists
+			if(!this.data[this.activeModuleFile]) {
+				return;
+			}
+
+			// send the update event and ignore cancellation
+			eventUpdate(this, this.modules[this.activeModuleIndex], this.data[this.activeModuleFile]).catch(console.error);
+
+		} else {
+			// send request to update module data
+			ipcRenderer.send(ipcEnum.ProjectSetModule, this.modules[this.activeModuleIndex]);
+
+			// send the update event and ignore cancellation
+			eventUpdate(this, this.modules[this.activeModuleIndex], null).catch(console.error);
+		}
 	}
 
 	/* get the currently active module's object */
@@ -685,14 +714,16 @@ export class Project {
 		destination.index = source.index;
 		destination.name = "clone of "+ source.name;
 
-		// load the module datas
-		const sdata = this.data[source.file];
-		const ddata = this.data[destination.file];
+		if(window.type === WindowType.Editor) {
+			// load the module datas
+			const sdata = this.data[source.file];
+			const ddata = this.data[destination.file];
 
-		// clone the all the data
-		ddata.index.setChannels(sdata.index.channels);
-		ret = ret && ddata.index.loadPatterns(Buffer.from(await sdata.index.savePatterns()));
-		ret = ret && ddata.index.loadMatrix(Buffer.from(sdata.index.saveMatrix()));
+			// clone the all the data
+			ddata.index.setChannels(sdata.index.channels);
+			ret = ret && ddata.index.loadPatterns(Buffer.from(await sdata.index.savePatterns()));
+			ret = ret && ddata.index.loadMatrix(Buffer.from(sdata.index.saveMatrix()));
+		}
 
 		// return whether everything was successful
 		return ret;

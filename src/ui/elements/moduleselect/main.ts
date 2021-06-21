@@ -1,4 +1,6 @@
+import { ipcRenderer } from "electron";
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../../api/events";
+import { ipcEnum } from "../../../system/ipc/ipc enum";
 import { Module, Project } from "../../misc/project";
 import { confirmationDialog, PopupColors, PopupSizes } from "../popup/popup";
 
@@ -61,7 +63,6 @@ export class ModuleSelect {
 			// create a new module and get its index
 			const mod = m.project.addModule();
 			const index = m.project.getModuleIndexByFile(mod.file);
-			m.project.dirty();
 
 			// render the new module
 			m.items.innerHTML += m.renderItem(index);
@@ -72,8 +73,8 @@ export class ModuleSelect {
 			// reset event listeners
 			m.setEventListeners();
 
-			// TEMP
-			m.project.index.setChannels([ "FM1", "FM2", "FM3", "FM4", "FM5", "FM6", "PCM", "PSG1", "PSG2", "PSG3", "PSG4", ]);
+			// let the editor window know
+			ipcRenderer.send(ipcEnum.ProjectAddModule, mod.file);
 		},
 		async(e:MouseEvent, m:ModuleSelect) => {		// clone
 			if(m.project.activeModuleIndex >= 0) {
@@ -85,13 +86,18 @@ export class ModuleSelect {
 
 				// clone the module
 				await m.project.cloneModule(clone, mod);
-				m.project.dirty();
 
 				// render the new module
 				m.items.innerHTML += m.renderItem(index);
 
+				// let the editor window know
+				ipcRenderer.send(ipcEnum.ProjectCloneModule, m.project.activeModuleIndex);
+
 				// set it as the active module
 				await m.project.setActiveModuleIndex(index);
+
+				// tell the editor to change to this module
+				ipcRenderer.send(ipcEnum.ProjectSelectModule, m.project.activeModuleIndex);
 
 				// reset event listeners
 				m.setEventListeners();
@@ -125,7 +131,11 @@ export class ModuleSelect {
 
 				// delete the actual module
 				if(await m.project.deleteModule(index)){
-					m.project.dirty();
+					// let the editor window know
+					ipcRenderer.send(ipcEnum.ProjectDeleteModule, index);
+
+					// tell the editor to change to this module
+					ipcRenderer.send(ipcEnum.ProjectSelectModule, m.project.activeModuleIndex);
 
 					if(_sel) {
 						// if successful, remove the element
@@ -135,6 +145,10 @@ export class ModuleSelect {
 						if(m.project.modules.length === 0) {
 							// force-enable the empty tag
 							m.items.innerHTML = "";
+
+						} else {
+							// plz reselect
+							m.setSelection(m.project.activeModuleIndex);
 						}
 					}
 
@@ -238,6 +252,9 @@ export class ModuleSelect {
 				if(await this.project.setActiveModuleIndex(i)) {
 					// if successful, set the selected element too
 					this.selection = (event.currentTarget as HTMLDivElement) ?? undefined;
+
+					// tell the editor to change to this module
+					ipcRenderer.send(ipcEnum.ProjectSelectModule, i);
 				}
 			}
 		}

@@ -271,8 +271,44 @@ function initShortcutHandler() {
 	});
 }
 
+/**
+ * Function to change the module and reload the editor
+ *
+ * @param index The module index to load to
+ */
+export async function loadToModule(index:number, func?:() => Promise<void>): Promise<void> {
+	// open loading animation
+	loadTransition();
+	Undo.clear();
+
+	if(!await fadeToLayout(async() => {
+		// set the active layout
+		await Project.current?.setActiveModuleIndex(index);
+
+		// if extra function added, then run it
+		if(func) {
+			await func();
+		}
+
+		// if the index is negative then bail
+		if(index < 0) {
+			return false;
+		}
+
+		// reload layout
+		await editorLayout();
+
+		return true;
+	})) {
+		return;
+	}
+
+	// only do if index >= 0
+	removeTransition();
+}
+
 // load the layout for this window
-async function editorLayout():Promise<void> {
+async function editorLayout():Promise<true> {
 	// load the editor parent element as `body`
 	const body = document.getElementById("main_content");
 
@@ -339,6 +375,8 @@ async function editorLayout():Promise<void> {
 	_top.appendChild(btn("PSG2", "window.ipc.chip.mutePSG(1, this.checked)"));
 	_top.appendChild(btn("PSG3", "window.ipc.chip.mutePSG(2, this.checked)"));
 	_top.appendChild(btn("PSG4", "window.ipc.chip.mutePSG(3, this.checked)"));
+
+	return true;
 }
 
 /**

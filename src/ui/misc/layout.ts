@@ -8,13 +8,16 @@ export function removeTransition(): void {
 		throw new Error("Unable to load loading layout: parent element loading not found!");
 	}
 
-	// remove the special class
-	body.children[0].classList.remove("show");
+	if(body.children[0]) {
+		// remove the special class
+		body.children[0].classList.remove("show");
 
-	setTimeout(() => {
-		clearChildren(body);
-		window.isLoading = false;
-	}, 510);
+		setTimeout(() => {
+			// remove the children and disable loading
+			clearChildren(body);
+			window.isLoading = false;
+		}, 510);
+	}
 }
 
 /**
@@ -74,7 +77,7 @@ export function clearChildren(element:Element): void {
  * @param type The type of layout to load next
  */
 // eslint-disable-next-line require-await
-export async function fadeToLayout(callback:() => Promise<void>):Promise<void> {
+export async function fadeToLayout(callback:() => Promise<boolean>):Promise<boolean> {
 	return new Promise((res) => {
 		// load the editor parent element as `body`
 		const body = document.getElementById("main_content");
@@ -90,14 +93,16 @@ export async function fadeToLayout(callback:() => Promise<void>):Promise<void> {
 		// wait for finish
 		setTimeout(async() => {
 			// load the new layout
-			await callback();
+			if(!await callback()) {
+				return res(false);
+			}
 
 			// fade in!
 			body.classList.remove("fadeout");
 
 			// wait for finish
 			setTimeout(() => {
-				res();
+				res(true);
 			}, 510);
 		}, 510);
 	});

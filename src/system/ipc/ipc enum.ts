@@ -40,4 +40,11 @@ export enum ipcEnum {
 	ChipMutePSG = "chip-mutepsg",
 
 	ProjectInit = "project-init",
+	ProjectSetName = "project-set-name",
+	ProjectSetDriver = "project-set-driver",
+	ProjectSetModule = "project-set-module",
+	ProjectAddModule = "project-add-module",
+	ProjectDeleteModule = "project-del-module",
+	ProjectCloneModule = "project-clone-module",
+	ProjectSelectModule = "project-select-module",
 }

@@ -4,7 +4,9 @@ import { volumeSlider, SliderEnum } from "../elements/slider/slider";
 import { Project } from "../misc/project";
 import { WindowType } from "../../defs/windowtype";
 import { loadDefaultToolbar } from "../elements/toolbar/toolbar";
-import { askSavePopup, clearChildren, fadeToLayout, LayoutType, loadLayout } from "../misc/layout";
+import { clearChildren, fadeToLayout, loadTransition, removeTransition } from "../misc/layout";
+import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../api/events";
+import { closePopups, confirmationDialog, createFilename, PopupColors, PopupSizes } from "../elements/popup/popup";
 import { Undo } from "../../api/undo";
 import { ipcRenderer } from "electron";
 import { ipcEnum } from "../../system/ipc/ipc enum";
@@ -75,6 +77,9 @@ window.ipc.audio = {
 
 // request the appPath variable from main thread
 window.ipc.ui.path().then(() => {
+	// create the loading animation
+	loadTransition();
+
 	/* load shortcuts handler file */
 	import("../misc/shortcuts").then((module) => {
 		module.loadDefaultShortcuts(SettingsTypes.editorShortcuts);
@@ -121,21 +126,21 @@ window.ipc.ui.path().then(() => {
 					}
 
 					// open loading animation
-					await loadLayout(LayoutType.Loading);
+					loadTransition();
 					Undo.clear();
 
 					// try to load the project
 					const p = await Project.loadProject(result);
 
 					if(!p){
-						await loadLayout(LayoutType.NoLoading);
+						removeTransition();
 						return false;
 					}
 
 					// save project as current
 					await Project.setActiveProject(p);
 					await fadeToLayout(editorLayout);
-					await loadLayout(LayoutType.NoLoading);
+					removeTransition();
 					return true;
 				}
 
@@ -147,21 +152,21 @@ window.ipc.ui.path().then(() => {
 					}
 
 					// open loading animation
-					await loadLayout(LayoutType.Loading);
+					loadTransition();
 					Undo.clear();
 
 					// try to load the project
 					const p = await Project.createProject();
 
 					if(!p){
-						await loadLayout(LayoutType.NoLoading);
+						removeTransition();
 						return false;
 					}
 
 					// save project as current
 					await Project.setActiveProject(p);
 					await fadeToLayout(editorLayout);
-					await loadLayout(LayoutType.NoLoading);
+					removeTransition();
 					return true;
 				}
 
@@ -214,10 +219,12 @@ window.ipc.ui.path().then(() => {
 				Project.current = p;
 
 				// load the editor
-				return editorLayout();
+				return fadeToLayout(editorLayout);
 
 			}).then(() => {
+				// init shortcut handler and remove the loading animation
 				initShortcutHandler();
+				removeTransition();
 
 			}).catch(console.error);
 
@@ -337,4 +344,55 @@ async function editorLayout():Promise<void> {
 	_top.appendChild(btn("PSG2", "window.ipc.chip.mutePSG(1, this.checked)"));
 	_top.appendChild(btn("PSG3", "window.ipc.chip.mutePSG(2, this.checked)"));
 	_top.appendChild(btn("PSG4", "window.ipc.chip.mutePSG(3, this.checked)"));
+}
+
+/**
+ * Event listener and handler for program exit, making ABSOLUTELY SURE that the user saves their progress!!!
+ */
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.Exit, async(event:ZorroEventObject) => {
+	// ask if the user wants to save, and if user cancels, then cancel the exit event too.
+	if(!await askSavePopup()) {
+		event.cancel();
+	}
+});
+
+/**
+ * Function for asking the user whether to save, not save or cancel, when project is dirty.
+ *
+ * @returns Boolean indicating whether or not user pressed the `cancel` button. `false` if the user did.
+ */
+export async function askSavePopup():Promise<boolean> {
+	if(Project.current && Project.current.isDirty()) {
+		try {
+			// ask the user what to do
+			switch(await confirmationDialog({
+				color: PopupColors.Normal,
+				size: PopupSizes.Small,
+				html: /*html*/`
+					<h2>Do you want to save your changes to ${ createFilename(Project.current.getFilename(), "?") }</h2>
+					<p>Your changes <u>will</u> be lost if you don't save them.</p>
+				`, buttons: [
+					{ result: 0, float: "left", color: PopupColors.Caution, html: "Don't save", },
+					{ result: 2, float: "right", color: PopupColors.Info, html: "Save", },
+					{ result: 1, float: "right", color: PopupColors.Normal, html: "Cancel", },
+				],
+			}) as number) {
+				case 2:						// ask the user to save.
+					// If there is a save-as dialog and user cancels, or save fails, pretend the cancel button was pressed.
+					return Project.current.save(false);
+
+				case 0: return true;		// literally do nothing
+				default: return false;		// indicate as cancelling
+			}
+
+		// on error cancel
+		} catch(err) {
+			return false;
+		}
+
+	} else {
+		// see if we can close the active popups
+		return closePopups();
+	}
 }

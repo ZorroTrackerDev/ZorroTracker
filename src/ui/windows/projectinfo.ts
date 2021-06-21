@@ -3,7 +3,7 @@ import { Module, Project } from "../misc/project";
 import { loadDefaultToolbar } from "../elements/toolbar/toolbar";
 import { SettingsTypes } from "../../api/files";
 import { addShortcutReceiver } from "../misc/shortcuts";
-import { clearChildren } from "../misc/layout";
+import { clearChildren, fadeToLayout, loadTransition, removeTransition } from "../misc/layout";
 import { makeTextbox, TextboxEnum } from "../elements/textbox/textbox";
 import { makeOption, OptionEnum } from "../elements/option/option";
 import { ModuleSelect } from "../elements/moduleselect/main";
@@ -28,6 +28,9 @@ import "../../system/ipc/html";
 import "../../system/ipc/html sub";
 
 window.ipc.ui.path().then(() => {
+	// create the loading animation
+	loadTransition();
+
 	/* load shortcuts handler file */
 	import("../misc/shortcuts").then((module) => {
 		module.loadDefaultShortcuts(SettingsTypes.globalShortcuts);
@@ -73,7 +76,11 @@ window.ipc.ui.path().then(() => {
 			Project.current = p;
 
 			// load the project info view
-			return projectInfoLayout();
+			return fadeToLayout(projectInfoLayout);
+
+		}).then(() => {
+			// remove the loading animation
+			removeTransition();
 
 		}).catch(console.error);
 	}).catch(console.error);

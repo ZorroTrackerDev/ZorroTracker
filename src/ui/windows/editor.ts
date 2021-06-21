@@ -1,19 +1,4 @@
-import { addShortcutReceiver, doShortcut } from "../misc/shortcuts";
-import { loadFlag, SettingsTypes } from "../../api/files";
-import { volumeSlider, SliderEnum } from "../elements/slider/slider";
-import { Project } from "../misc/project";
 import { WindowType } from "../../defs/windowtype";
-import { loadDefaultToolbar } from "../elements/toolbar/toolbar";
-import { clearChildren, fadeToLayout, loadTransition, removeTransition } from "../misc/layout";
-import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../api/events";
-import { closePopups, confirmationDialog, createFilename, PopupColors, PopupSizes } from "../elements/popup/popup";
-import { Undo } from "../../api/undo";
-import { ipcRenderer } from "electron";
-import { ipcEnum } from "../../system/ipc/ipc enum";
-import { ChipConfig } from "../../api/scripts/chip";
-import { DriverConfig } from "../../api/scripts/driver";
-import { PatternIndexEditor } from "../elements/matrixeditor/main";
-
 /**
  * So.. In order for Jest testing to work, we need to load stuff as modules. However, browsers really don't like CommonJS modules
  * Also, Electron does not work with ES2015 modules. Also, trying to use mix of both is apparently borked to hell. Here we have an
@@ -58,22 +43,19 @@ window.preload = {
 	},
 }
 
+import { addShortcutReceiver, doShortcut } from "../misc/shortcuts";
+import { loadFlag, SettingsTypes } from "../../api/files";
+import { volumeSlider, SliderEnum } from "../elements/slider/slider";
+import { Project } from "../misc/project";
+import { loadDefaultToolbar } from "../elements/toolbar/toolbar";
+import { clearChildren, fadeToLayout, loadTransition, removeTransition } from "../misc/layout";
+import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../api/events";
+import { closePopups, confirmationDialog, createFilename, PopupColors, PopupSizes } from "../elements/popup/popup";
+import { Undo } from "../../api/undo";
+import { PatternIndexEditor } from "../elements/matrixeditor/main";
+
 /* ipc communication */
-import "../../system/ipc/html";
-
-// add some extra ipc functions
-window.ipc.rpc = {
-	init: () => ipcRenderer.send(ipcEnum.RpcInit),
-	set: (details:string, state:string) => ipcRenderer.send(ipcEnum.RpcSet, details, state),
-}
-
-window.ipc.audio = {
-	init: (emu:ChipConfig, driver:DriverConfig) => ipcRenderer.send(ipcEnum.AudioCreate, emu, driver),
-	volume: (volume:number) => ipcRenderer.send(ipcEnum.AudioVolume, volume),
-	play: (special?:string) => ipcRenderer.send(ipcEnum.AudioPlay, special),
-	stop: () => ipcRenderer.send(ipcEnum.AudioStop),
-	close: () => ipcRenderer.send(ipcEnum.AudioClose),
-}
+import "../../system/ipc/html editor";
 
 // request the appPath variable from main thread
 window.ipc.ui.path().then(() => {
@@ -139,6 +121,11 @@ window.ipc.ui.path().then(() => {
 
 					// save project as current
 					await Project.setActiveProject(p);
+
+					// let all windows know about the loaded project
+					window.ipc.project?.init(p);
+
+					// reload layout
 					await fadeToLayout(editorLayout);
 					removeTransition();
 					return true;
@@ -165,6 +152,11 @@ window.ipc.ui.path().then(() => {
 
 					// save project as current
 					await Project.setActiveProject(p);
+
+					// let all windows know about the loaded project
+					window.ipc.project?.init(p);
+
+					// reload layout
 					await fadeToLayout(editorLayout);
 					removeTransition();
 					return true;
@@ -217,6 +209,9 @@ window.ipc.ui.path().then(() => {
 			// create a new project first
 			Project.createProject().then((p) => {
 				Project.current = p;
+
+				// let the other windows know about this project
+				window.ipc.project?.init(p);
 
 				// load the editor
 				return fadeToLayout(editorLayout);
@@ -276,7 +271,7 @@ function initShortcutHandler() {
 	});
 }
 
-
+// load the layout for this window
 async function editorLayout():Promise<void> {
 	// load the editor parent element as `body`
 	const body = document.getElementById("main_content");

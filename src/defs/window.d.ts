@@ -1,6 +1,7 @@
 import { DriverConfig } from "../api/scripts/driver";
 import { ChipConfig } from "../api/scripts/chip";
 import { OpenDialogOptions, SaveDialogOptions } from "electron";
+import { Project } from "../ui/misc/project";
 
 export {};
 declare global {
@@ -161,6 +162,9 @@ declare global {
 				info: (...args:unknown[]) => void,
 				warn: (...args:unknown[]) => void,
 				error: (...args:unknown[]) => void,
+			},
+			project?: {
+				init: (project:Project|undefined) => void,
 			},
 			cookie: {
 				/**

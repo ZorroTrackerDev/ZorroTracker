@@ -1,5 +1,5 @@
 import { WindowType } from "../../defs/windowtype";
-import { Module, Project } from "../misc/project";
+import { Module, Project, ProjectConfig } from "../misc/project";
 import { loadDefaultToolbar } from "../elements/toolbar/toolbar";
 import { SettingsTypes } from "../../api/files";
 import { addShortcutReceiver } from "../misc/shortcuts";
@@ -8,6 +8,8 @@ import { makeTextbox, TextboxEnum } from "../elements/textbox/textbox";
 import { makeOption, OptionEnum } from "../elements/option/option";
 import { ModuleSelect } from "../elements/moduleselect/main";
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../api/events";
+import { ipcRenderer } from "electron";
+import { ipcEnum } from "../../system/ipc/ipc enum";
 
 /**
  * So.. In order for Jest testing to work, we need to load stuff as modules. However, browsers really don't like CommonJS modules
@@ -26,6 +28,22 @@ window.preload = {};
 /* ipc communication */
 import "../../system/ipc/html";
 import "../../system/ipc/html sub";
+
+// handler for project init
+ipcRenderer.on(ipcEnum.ProjectInit, (event, config:ProjectConfig, modules:Module[]) => {
+	// create the loading animation
+	loadTransition();
+
+	// load the project data
+	Project.loadInternal(config, modules);
+
+	// load the project layout
+	fadeToLayout(projectInfoLayout).then(() => {
+		// remove the loading animation
+		removeTransition();
+
+	}).catch(console.error);
+});
 
 window.ipc.ui.path().then(() => {
 	// create the loading animation
@@ -69,18 +87,8 @@ window.ipc.ui.path().then(() => {
 			/* load the menu */
 			loadDefaultToolbar(false);
 
-			// load a fake project
-			return Project.createProject();
-
-		}).then((p:Project) => {
-			Project.current = p;
-
-			// load the project info view
-			return fadeToLayout(projectInfoLayout);
-
-		}).then(() => {
-			// remove the loading animation
-			removeTransition();
+			// request for project info
+			ipcRenderer.send(ipcEnum.ProjectInit, window.type);
 
 		}).catch(console.error);
 	}).catch(console.error);

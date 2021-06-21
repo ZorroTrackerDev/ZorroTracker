@@ -6,6 +6,8 @@ import { create as IpcCreate, log } from "./system/ipc/editor";
 import { getCookie, setCookie } from "./system/ipc/misc";
 import { close as IpcClose, updateMaximized } from "./system/ipc/ui";
 import "./system/ipc/sub";
+import "./system/ipc/editor";
+import "./system/ipc/project";
 
 // static references to all loaded windows
 export const windows:{ [key:string]: BrowserWindow } = {};

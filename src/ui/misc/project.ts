@@ -1,5 +1,4 @@
 import admZip from "adm-zip";
-import path from "path";
 import fs from "fs";
 import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 import { PatternIndex } from "../../api/matrix";
@@ -30,6 +29,20 @@ export class Project {
 
 	/* The project that is currently being edited, or undefined if no project is loaded */
 	public static current:Project|undefined;
+
+	/**
+	 * Helper function to load a project based on project's configuration. This is used for sub-windows to aid editing
+	 *
+	 * @param config The project configuration data
+	 * @param modules The module config array
+	 */
+	public static loadInternal(config:ProjectConfig, modules:Module[]):void {
+		// initiate a new project with the data
+		Project.current = new Project("");
+		Project.current.modules = modules;
+		Project.current.config = config;
+		Project.current.setActiveModuleIndex(0).catch(console.error);
+	}
 
 	/**
 	 * Function to create a project from with file path

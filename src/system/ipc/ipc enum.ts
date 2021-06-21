@@ -38,4 +38,6 @@ export enum ipcEnum {
 	ChipFindAll = "chip-findall",
 	ChipMuteFM = "chip-mutefm",
 	ChipMutePSG = "chip-mutepsg",
+
+	ProjectInit = "project-init",
 }

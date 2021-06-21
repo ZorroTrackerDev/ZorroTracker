@@ -4,8 +4,8 @@ import { OpenDialogOptions, SaveDialogOptions } from "electron/main";
 import path from "path";
 import { WindowType } from "../../defs/windowtype";
 import { createWindow, windows } from "../../main";
-import { log } from "./editor";
 import { ipcEnum } from "./ipc enum";
+import { log } from "./editor";
 import { getCookie, setCookie } from "./misc";
 
 /**

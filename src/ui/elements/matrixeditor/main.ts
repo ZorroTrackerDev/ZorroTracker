@@ -1,3 +1,4 @@
+import { tooltipShortcutText } from "../../../api/dom";
 import { PatternIndex } from "../../../api/matrix";
 import { Bounds, clipboard, ClipboardType, Position, shortcutDirection, UIElement } from "../../../api/ui";
 import { Undo, UndoSource } from "../../../api/undo";
@@ -271,7 +272,7 @@ export class PatternIndexEditor implements UIElement {
 		data.items.forEach((d) => {
 			const b = document.createElement("div");
 			b.innerHTML = d.svg;
-			b.title = d.title;
+			b.title = tooltipShortcutText(d.tooltip, d.shortcut);
 
 			// if there is a click event, add it
 			if(d.click) {

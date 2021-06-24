@@ -44,12 +44,12 @@ window.preload = {
 }
 
 import { addShortcutReceiver, doShortcut } from "../misc/shortcuts";
-import { loadFlag, SettingsTypes } from "../../api/files";
-import { volumeSlider, SliderEnum } from "../elements/slider/slider";
-import { Project } from "../misc/project";
 import { loadDefaultToolbar } from "../elements/toolbar/toolbar";
+import { loadFlag, SettingsTypes } from "../../api/files";
+import { Project } from "../misc/project";
 import { clearChildren, fadeToLayout, loadTransition, removeTransition } from "../misc/layout";
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../api/events";
+import { volumeSlider, SliderEnum } from "../elements/slider/slider";
 import { closePopups, confirmationDialog, createFilename, PopupColors, PopupSizes } from "../elements/popup/popup";
 import { Undo } from "../../api/undo";
 import { PatternIndexEditor } from "../elements/matrixeditor/main";

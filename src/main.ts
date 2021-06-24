@@ -107,6 +107,17 @@ export async function createWindow(name:string): Promise<BrowserWindow> {
 
 // this is responsible for creating the window.
 electron.app.whenReady().then(async() => {
+	// prevent any navigation in webcontents, for security
+	electron.app.on("web-contents-created", (event, contents) => {
+		contents.on("will-navigate", (event) => {
+			event.preventDefault();
+		});
+
+		contents.setWindowOpenHandler(() => {
+			return { action: "deny", };
+		});
+	});
+
 	await createWindow("editor");
 
 	// attempt to create the IPC audio worker

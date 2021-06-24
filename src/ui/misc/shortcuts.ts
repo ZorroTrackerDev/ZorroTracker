@@ -146,6 +146,22 @@ export function addShortcuts(shortcuts:{ [key:string]: string|string[] }):void {
 			// get the array name for the "keyMappings" based on modifier keys, and apply the new shortcut function.
 			const arrayname = getKeymappingsName(ctrl, shift, alt);
 			keyMappings[arrayname][button] = functionName;
+
+			// check if shortcutstore has this key already. If not, create it
+			if(!shortcutStores[functionName]) {
+				shortcutStores[functionName] = [];
+			}
+
+			// generate an array of modifiers and buttons, joining via +
+			const scstuff = [ button, ];
+
+			/* eslint-disable @typescript-eslint/no-unused-expressions */
+			ctrl && scstuff.unshift("CTRL");
+			shift && scstuff.unshift("SHIFT");
+			alt && scstuff.unshift("ALT");
+			/* eslint-enable @typescript-eslint/no-unused-expressions */
+
+			shortcutStores[functionName].push(scstuff.join("+"));
 		}
 
 		if(Array.isArray(shortcuts[functionName])) {
@@ -168,4 +184,14 @@ export function loadDefaultShortcuts(type:SettingsTypes): void {
 	// load the files we need to inspect and pass them right to "addShortcuts" function. This pretends files are in the correct format.
 	const files = loadSettingsFiles(type) as { [key: string]: string|string[]}[];
 	files.forEach(addShortcuts);
+}
+
+/**
+ * This is sort of a back up of the shortcuts. This stores them by their name, rather than keys.
+ * This can be used by the app to display what shortcuts have which keys. Useful for menus
+ */
+const shortcutStores:{ [key:string]:string[] } = {};
+
+export function loadShortcutKeys(shortcut:string): string[] {
+	return shortcutStores[shortcut] ?? [];
 }

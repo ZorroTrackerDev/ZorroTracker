@@ -11,7 +11,8 @@ export type PatternIndexEditorButtonList = {
 };
 
 export type PatternIndexEditorButton = {
-	title: string,
+	tooltip: string,
+	shortcut?: string,
 	svg: string,
 	click?: (edit:PatternIndexEditor, event:MouseEvent) => unknown,
 	load?: (element:HTMLDivElement, edit:PatternIndexEditor) => unknown,
@@ -35,7 +36,8 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 						"/>
 					</svg>
 				`,
-				title: "increment digit",
+				tooltip: "Increment digit",
+				shortcut: "layout.patternindex.change.up",
 				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
 					if(edit.mode !== editMode.Paste) {
 						edit.change(1, event.button === 0).catch(console.error);
@@ -51,7 +53,8 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 						"/>
 					</svg>
 				`,
-				title: "decrement digit",
+				tooltip: "Decrement digit",
+				shortcut: "layout.patternindex.change.down",
 				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
 					if(edit.mode !== editMode.Paste) {
 						edit.change(-1, event.button === 0).catch(console.error);
@@ -65,7 +68,7 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 		items: [
 			{
 				svg: "<div>Matrix: </div>00",
-				title: "",
+				tooltip: "",
 			},
 		],
 	},
@@ -91,7 +94,8 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 						"/>
 					</svg>
 				`,
-				title: "insert at selection",
+				tooltip: "Insert at selection",
+				shortcut: "layout.patternindex.insert",
 				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
 					if(event.button === 0 && edit.mode !== editMode.Paste) {
 						edit.insert().catch(console.error);
@@ -117,7 +121,8 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 						"/>
 					</svg>
 				`,
-				title: "copy selection into clipboard",
+				tooltip: "Copy selection into clipboard",
+				shortcut: "layout.patternindex.copy",
 				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
 					if(event.button === 0 && edit.mode !== editMode.Paste) {
 						edit.copy().catch(console.error);
@@ -154,7 +159,8 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 						"/>
 					</svg>
 				`,
-				title: "paste pattern data from clipboard",
+				tooltip: "Paste pattern data from clipboard",
+				shortcut: "layout.patternindex.pasteenter",
 				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
 					if(event.button === 0 && edit.mode !== editMode.Paste) {
 						edit.pasteInit().catch(console.error);
@@ -191,7 +197,8 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 						"/>
 					</svg>
 				`,
-				title: "delete at selection",
+				tooltip: "Delete at selection",
+				shortcut: "layout.patternindex.delete",
 				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
 					if(event.button === 0 && edit.mode !== editMode.Paste) {
 						edit.delete().catch(console.error);
@@ -205,7 +212,7 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 		items: [
 			{
 				svg: "",
-				title: "the song length",
+				tooltip: "The matrix length",
 				load: (element:HTMLDivElement, edit:PatternIndexEditor):void => {
 					// update the matrix resize element
 					_matrixResize = element;
@@ -237,7 +244,8 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 						"/>
 					</svg>
 				`,
-				title: "move selection down",
+				tooltip: "Move selection down",
+				shortcut: "layout.patternindex.shiftdown",
 				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
 					if(event.button === 0 && edit.mode !== editMode.Paste) {
 						edit.shiftDown().catch(console.error);
@@ -262,7 +270,8 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 						"/>
 					</svg>
 				`,
-				title: "move selection up",
+				tooltip: "Move selection up",
+				shortcut: "layout.patternindex.shiftup",
 				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
 					if(event.button === 0 && edit.mode !== editMode.Paste) {
 						edit.shiftUp().catch(console.error);
@@ -292,7 +301,8 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 						"/>
 					</svg>
 				`,
-				title: "cancel the paste action",
+				tooltip: "Cancel the paste action",
+				shortcut: "layout.patternindex.pasteexit",
 				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
 					if(event.button === 0 && edit.mode === editMode.Paste) {
 						edit.pasteExit().catch(console.error);
@@ -309,7 +319,8 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 						"/>
 					</svg>
 				`,
-				title: "apply the paste area",
+				tooltip: "Apply the paste area",
+				shortcut: "layout.patternindex.edit",
 				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
 					if(event.button === 0 && edit.mode === editMode.Paste) {
 						edit.pasteApply().catch(console.error);

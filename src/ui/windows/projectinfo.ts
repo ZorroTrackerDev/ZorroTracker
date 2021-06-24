@@ -1,6 +1,6 @@
 import { WindowType } from "../../defs/windowtype";
 import { Module, Project, ProjectConfig } from "../misc/project";
-import { loadDefaultToolbar } from "../elements/toolbar/toolbar";
+import { loadDefaultToolbar, setTitle } from "../elements/toolbar/toolbar";
 import { SettingsTypes } from "../../api/files";
 import { addShortcutReceiver } from "../misc/shortcuts";
 import { clearChildren, fadeToLayout, loadTransition, removeTransition } from "../misc/layout";
@@ -86,6 +86,7 @@ window.ipc.ui.path().then(() => {
 		import("./all").then(() => {
 			/* load the menu */
 			loadDefaultToolbar(false);
+			setTitle("Project settings");
 
 			// request for project info
 			ipcRenderer.send(ipcEnum.ProjectInit, window.type);

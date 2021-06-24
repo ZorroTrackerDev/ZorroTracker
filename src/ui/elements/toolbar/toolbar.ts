@@ -1,11 +1,18 @@
+import { tooltipShortcutText } from "../../../api/dom";
+
 const HEIGHT = 20+4+4;		// also defined in toolbar.less. Make sure to keep these in sync!
 
 /*
  * this defines the window menu. Each item will be added to the top row.
  */
 type ToolbarMenu = { [key: string]: ToolbarMenuEntry };
-type ToolbarMenuEntry = { enabled?:boolean, action?: ToolbarMenuAction, child?: ToolbarMenu };
-type ToolbarMenuAction = string;
+type ToolbarMenuEntry = {
+	enabled?:boolean,
+	action?: string,
+	child?: ToolbarMenu,
+	tooltip?: string,
+	shortcut?: string,
+};
 
 const defaultMenu:ToolbarMenu = {
 	"File": {
@@ -14,30 +21,36 @@ const defaultMenu:ToolbarMenu = {
 			"VGM TEST": {
 				enabled: true,
 				action: "window.preload.vgm()",
+				tooltip: "Open a VGM file for sound testing",
 			},
 			"New": {
 				enabled: true,
 				action: "window.preload.shortcut(['ui.new'])",
+				shortcut: "ui.new",
+				tooltip: "Create a blank project",
 			},
 			"Open": {
 				enabled: true,
 				action: "window.preload.shortcut(['ui.open'])",
+				shortcut: "ui.open",
+				tooltip: "Open a project file",
 			},
 			"Save": {
 				enabled: true,
 				action: "window.preload.shortcut(['ui.save'])",
+				shortcut: "ui.save",
+				tooltip: "Save project file to the current file",
 			},
 			"Save As": {
 				enabled: true,
 				action: "window.preload.shortcut(['ui.saveas'])",
-			},
-			"Project": {
-				enabled: true,
-				action: "window.preload.shortcut(['layout.open.projectinfo'])",
+				shortcut: "ui.saveas",
+				tooltip: "Save the project file as a new file",
 			},
 			"Exit": {
 				enabled: true,
 				action: "window.ipc.ui.close()",
+				tooltip: "Exit this application",
 			},
 		},
 	},
@@ -47,10 +60,14 @@ const defaultMenu:ToolbarMenu = {
 			"Undo": {
 				enabled: true,
 				action: "window.preload.shortcut(['ui.undo'])",
+				shortcut: "ui.undo",
+				tooltip: "Undo a change",
 			},
 			"Redo": {
 				enabled: true,
 				action: "window.preload.shortcut(['ui.redo'])",
+				shortcut: "ui.redo",
+				tooltip: "Redo a change",
 			},
 			"Cut": {
 				enabled: true,
@@ -64,6 +81,12 @@ const defaultMenu:ToolbarMenu = {
 				enabled: true,
 				action: "window.preload.shortcut([])",
 			},
+			"Project": {
+				enabled: true,
+				action: "window.preload.shortcut(['layout.open.projectinfo'])",
+				shortcut: "layout.open.projectinfo",
+				tooltip: "Open the project settings tab",
+			},
 		},
 	},
 	"About": {
@@ -72,10 +95,12 @@ const defaultMenu:ToolbarMenu = {
 			"Github": {
 				enabled: true,
 				action: "window.toolbarFunc.openGithub()",
+				tooltip: "Open the project Github page",
 			},
 			"Discord": {
 				enabled: true,
 				action: "window.toolbarFunc.openDiscord()",
+				tooltip: "Open the Discord server link for this project",
 			},
 		},
 	},
@@ -175,23 +200,28 @@ export function makeToolbar(menu:ToolbarMenu, buttons:WindowButtons): string {
 	`;
 
 	// loop for each key in the "menu" object. This code will eventually generate the toolbar menu itself.
-	let menuHTML = "";
+	const menuHTML = /*html*/`
+		<div id='main_toolbar_menus'>
+			${
+				// convert every menu into HTML and then merge it together
+				Object.keys(menu).map((key) => {
+					// height of the dropdown menu in pixels.
+					const height = (Object.keys(menu[key].child ?? {}).length * HEIGHT);
 
-	for(const name of Object.keys(menu)) {
-		// height of the dropdown menu in pixels.
-		const height = (Object.keys(menu[name].child ?? {}).length * HEIGHT);
+					return /*html*/`
+						<button class='main_toolbar_dropdown' onclick='window.toolbarFunc.handleDropdown(this.children[1], event)'>
+							<div class='main_toolbar_dropdown_text'>${ key }</div>
+							<div class='main_toolbar_dropdown_content' style='height:${ height }px'>
+								${ getDropdownMenu(menu[key]) }
+							</div>
+						</button>
+					`;
+				}).join("\n")
+			}
+		</div>
+	`;
 
-		menuHTML += /*html*/`
-			<button class='main_toolbar_dropdown' onclick='window.toolbarFunc.handleDropdown(this.children[1], event)'>
-				<div class='main_toolbar_dropdown_text'>${name}</div>
-				<div class='main_toolbar_dropdown_content' style='height:${height}px'>
-					${getDropdownMenu(menu[name])}
-				</div>
-			</button>
-		`;
-	}
-
-	return /*html*/"<div id='main_toolbar_name'>ZorroTracker 🦊</div>"+ menuHTML + buttonHTML;
+	return menuHTML +"<div id='main_toolbar_name'></div>"+ buttonHTML;
 }
 
 /**
@@ -208,8 +238,14 @@ function getDropdownMenu(entry:ToolbarMenuEntry) {
 		// typescript is not smart enough to notice that we actually can't get an undefined object here.
 		const item = (entry.child as ToolbarMenu)[name];
 
+		// load tooltip text
+		const tooltipText = tooltipShortcutText(item.tooltip, item.shortcut);
+
+		// create the final shortcut text
+		const tooltip = tooltipText.length === 0 ? "" : "title=\""+ tooltipText +"\"";
+
 		html += /* html */`
-			<div class='main_toolbar_dropdown_item' onclick="${
+			<div class='main_toolbar_dropdown_item' ${ tooltip } onclick="${
 				// if this has an action, enable the onclick handler, otherwise do nothing
 				item.action ? item.action : ""
 			};window.toolbarFunc.handleDropdown(this.parentNode, event)" >
@@ -256,7 +292,7 @@ function hideDropdownMenus(event?:Event) {
 	event?.preventDefault();
 
 	// deactivate all other dropdown menus
-	const menuButtons = document.getElementById("main_toolbar")?.children;
+	const menuButtons = document.getElementById("main_toolbar_menus")?.children;
 
 	for(let i = 0;i < (menuButtons ? menuButtons.length : 0);i ++){
 		// Checks if this is a menu button. typescript is not smart enough to realize this can't be null or undefined.
@@ -268,6 +304,24 @@ function hideDropdownMenus(event?:Event) {
 
 	// remove the "hideDropdownMenus" event handler from document
 	document.removeEventListener("click", hideDropdownMenus);
+}
+
+/**
+ * Function to set the window title attribute
+ *
+ * @param title The title text
+ */
+export function setTitle(title:string):void {
+	// set the title on taskbar
+	document.title = title;
+
+	// load the toolbar title attribute
+	const e = document.getElementById("main_toolbar_name");
+
+	if(e) {
+		// if found, set it too
+		e.innerText = title;
+	}
 }
 
 // add helper functions here

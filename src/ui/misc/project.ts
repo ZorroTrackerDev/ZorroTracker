@@ -8,6 +8,7 @@ import { confirmationDialog, PopupColors, PopupSizes } from "../elements/popup/p
 import { ipcRenderer } from "electron";
 import { ipcEnum } from "../../system/ipc/ipc enum";
 import { WindowType } from "../../defs/windowtype";
+import { setTitle } from "../elements/toolbar/toolbar";
 
 // load all the events
 const eventProject = ZorroEvent.createEvent(ZorroEventEnum.ProjectOpen);
@@ -92,7 +93,7 @@ export class Project {
 		await project.setActiveModuleIndex(0);
 
 		// mark this project as not dirty for now
-		project._dirty = false;
+		project.clean();
 
 		// return the project itself
 		return project;
@@ -355,7 +356,8 @@ export class Project {
 		}
 
 		// clear the dirty flag
-		window.isLoading = this._dirty = false;
+		window.isLoading = false;
+		this.clean();
 		return true;
 	}
 
@@ -384,6 +386,7 @@ export class Project {
 
 		// if not autosaving, then clear the dirty flag
 		this._dirty = this._dirty && autosave;
+		this.updateTitle();
 		window.isLoading = false;
 		return true;
 	}
@@ -566,6 +569,7 @@ export class Project {
 	 */
 	public dirty(): void {
 		this._dirty = true;
+		this.updateTitle();
 	}
 
 	/**
@@ -573,6 +577,7 @@ export class Project {
 	 */
 	public clean(): void {
 		this._dirty = false;
+		this.updateTitle();
 	}
 
 	/**
@@ -582,6 +587,19 @@ export class Project {
 	 */
 	public isDirty(): boolean {
 		return this._dirty;
+	}
+
+	/**
+	 * Helper function to update the window title
+	 */
+	private updateTitle() {
+		if(window.type === WindowType.Editor) {
+			// load the module name
+			const module = this.activeModuleIndex < 0 ? "" : this.modules[this.activeModuleIndex].name;
+
+			// set the title according to mode
+			setTitle("🦊 ZorroTracker"+ (module.length === 0 ? "" : " - "+ module + (this._dirty ? "*" : "")));
+		}
 	}
 
 	/**
@@ -637,10 +655,12 @@ export class Project {
 
 			// module found, set the active module
 			this.activeModuleFile = this.modules[ix].file;
+			this.updateTitle();
 			return true;
 		}
 
 		// failed, bail
+		this.updateTitle();
 		return false;
 	}
 
@@ -682,6 +702,9 @@ export class Project {
 			// send the update event and ignore cancellation
 			eventUpdate(this, this.modules[this.activeModuleIndex], null).catch(console.error);
 		}
+
+		// update title in case it changed
+		this.updateTitle();
 	}
 
 	/* get the currently active module's object */

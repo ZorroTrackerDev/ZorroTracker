@@ -6,10 +6,11 @@
 */
 
 {
-	"ui.opendevtools":					[ "F12", "ctrl+shift+I" ],				/* shortcut for opening Chromium dev tools */
+	"ui.opendevtools":					[ "ctrl+shift+I", "F12" ],				/* shortcut for opening Chromium dev tools */
 	"ui.inspectelement":				[ "shift+F12" ],						/* shortcut for inspect element in Chromium dev tools */
 	"ui.fullscreen":					[ "F11" ],								/* shortcut for entering/exiting maximized mode */
 	"ui.close":							[ "ctrl+W" ],							/* shortcut for closing the project or window */
 
 	"layout.open.projectinfo":			[ "ctrl+shift+P" ],						/* shortcut for opening the project info editor */
+	"layout.open.shortcuts":			[ "ctrl+shift+Z" ],						/* shortcut for opening the shortcuts editor */
 }

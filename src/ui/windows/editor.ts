@@ -264,6 +264,10 @@ function initShortcutHandler() {
 						case "projectinfo":
 							window.ipc.ui.window(WindowType.ProjectInfo);
 							return true;
+
+						case "shortcuts":
+							window.ipc.ui.window(WindowType.Shortcuts);
+							return true;
 					}
 		}
 

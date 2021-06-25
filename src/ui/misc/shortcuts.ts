@@ -45,12 +45,10 @@ const keyMappings:{ [key:string]:{ [key:string]:string }} = {
 /**
  * Return the proper name for the "keyMappings" object, for specific modifier key combos.
  *
- * @param ctrl If the control key is pressed
- * @param shift If the shift key is pressed
- * @param alt If the alt key is pressed
+ * @param data The data representing modifier keys that are used
  */
-function getKeymappingsName(ctrl:boolean, shift:boolean, alt:boolean): string{
-	const ret = (ctrl ? "ctrl" : "") + (shift ? "shift" : "") + (alt ? "alt" : "");
+function getKeymappingsName(data:{ ctrl: boolean, alt: boolean, shift: boolean }): string {
+	const ret = (data.ctrl ? "ctrl" : "") + (data.shift ? "shift" : "") + (data.alt ? "alt" : "");
 
 	// if any of the modifier keys are pressed, return the calculated value
 	if(ret.length > 0) {
@@ -66,7 +64,7 @@ function getKeymappingsName(ctrl:boolean, shift:boolean, alt:boolean): string{
  */
 document.addEventListener("keydown", (event) => {
 	// check if this key has a registered command
-	const arrayname = getKeymappingsName(event.ctrlKey, event.shiftKey, event.altKey);
+	const arrayname = getKeymappingsName( { ctrl: event.ctrlKey, shift: event.shiftKey, alt: event.altKey, });
 
 	// get the function name from "keyMappings", and return if none were defined
 	const com = keyMappings[arrayname][event.key.toUpperCase()];
@@ -120,48 +118,8 @@ export function addShortcuts(shortcuts:{ [key:string]: string|string[] }):void {
 
 		// helper function to add each shortcut. This allows to use both string and string[] for functions.
 		const addSingleShortcut = (keyCombo:string) => {
-			let ctrl = false, alt = false, shift = false, button:string|null = null;
-
-			// check if modifier keys are applied
-			for(const key of keyCombo.split("+")) {
-				/*
-				 * this switch-case will either enable some flags or set the key
-				 * this is lazy and allows things to be set multiple times.
-				 */
-				const ku = key.toUpperCase();
-				switch(ku) {
-					case "CTRL": ctrl = true; break;
-					case "SHIFT": shift = true; break;
-					case "ALT": alt = true; break;
-					case "": break;
-					default: button = ku; break;
-				}
-			}
-
-			// make sure "button" is not null. If it is, throw an error.
-			if(button === null) {
-				throw new ShortcutError(`Failed to parse function ${functionName} shortcut ${keyCombo}!`);
-			}
-
-			// get the array name for the "keyMappings" based on modifier keys, and apply the new shortcut function.
-			const arrayname = getKeymappingsName(ctrl, shift, alt);
-			keyMappings[arrayname][button] = functionName;
-
-			// check if shortcutstore has this key already. If not, create it
-			if(!shortcutStores[functionName]) {
-				shortcutStores[functionName] = [];
-			}
-
-			// generate an array of modifiers and buttons, joining via +
-			const scstuff = [ button, ];
-
-			/* eslint-disable @typescript-eslint/no-unused-expressions */
-			ctrl && scstuff.unshift("CTRL");
-			shift && scstuff.unshift("SHIFT");
-			alt && scstuff.unshift("ALT");
-			/* eslint-enable @typescript-eslint/no-unused-expressions */
-
-			shortcutStores[functionName].push(scstuff.join("+"));
+			// convert the button state
+			const states = convertShortcutState(keyCombo, functionName);
 		}
 
 		if(Array.isArray(shortcuts[functionName])) {
@@ -175,6 +133,88 @@ export function addShortcuts(shortcuts:{ [key:string]: string|string[] }):void {
 	}
 }
 
+// common type used in many functions, for storing state
+export type ShortcutState = { button: string, ctrl: boolean, alt: boolean, shift: boolean };
+
+export function processShortcuts(files:{ [key: string]: string|string[]}[], callback:(functionName:string, state:ShortcutState) => void):void {
+	files.forEach((file) => {
+		// run for each shortcut in the array
+		for(const functionName in file) {
+
+			// helper function to add each shortcut. This allows to use both string and string[] for functions.
+			const addSingleShortcut = (keyCombo:string) => {
+				// convert the button state
+				const states = convertShortcutState(keyCombo, functionName);
+
+				// run the callback
+				callback(functionName, states);
+			}
+
+			if(Array.isArray(file[functionName])) {
+				// add multiple shortcut keys from array
+				(file[functionName] as string[]).forEach(addSingleShortcut);
+
+			} else {
+				// this is a single shortcut key
+				addSingleShortcut(file[functionName] as string);
+			}
+		}
+	})
+}
+
+/**
+ * Helper function to convert a keycombo into separated fields depending on combo type
+ *
+ * @param keyCombo The input key combo to convert
+ * @param name The name of the function to convert
+ */
+export function convertShortcutState(keyCombo:string, name:string): ShortcutState {
+	let ctrl = false, alt = false, shift = false, button:string|null = null;
+
+	// check if modifier keys are applied
+	for(const key of keyCombo.split("+")) {
+		/*
+		 * this switch-case will either enable some flags or set the key
+		 * this is lazy and allows things to be set multiple times.
+		 */
+		const ku = key.toUpperCase();
+		switch(ku) {
+			case "CTRL": ctrl = true; break;
+			case "SHIFT": shift = true; break;
+			case "ALT": alt = true; break;
+			case "": break;
+			default: button = ku; break;
+		}
+	}
+
+	// make sure "button" is not null. If it is, throw an error.
+	if(button === null) {
+		throw new ShortcutError(`Failed to parse function ${name} shortcut ${keyCombo}!`);
+	}
+
+	// return the button states as an array
+	return { button: button, ctrl: ctrl, alt: alt, shift: shift, };
+}
+
+/**
+ * Convert shortcut data into canonical name.
+ *
+ * @param data The button state data. This represents modifier keys and the actual button string
+ */
+export function makeShortcutString(data:ShortcutState): string {
+	// generate an array of modifiers and buttons, joining via +
+	const arr = [ data.button, ];
+
+	/* eslint-disable @typescript-eslint/no-unused-expressions */
+	data.shift && arr.unshift("SHIFT");
+	data.ctrl && arr.unshift("CTRL");
+	data.alt && arr.unshift("ALT");
+	/* eslint-enable @typescript-eslint/no-unused-expressions */
+
+	// convert this to a string
+	return arr.join("+");
+}
+
 /**
  * Load the default shortcuts for the program.
  *
@@ -183,7 +223,21 @@ export function addShortcuts(shortcuts:{ [key:string]: string|string[] }):void {
 export function loadDefaultShortcuts(type:SettingsTypes): void {
 	// load the files we need to inspect and pass them right to "addShortcuts" function. This pretends files are in the correct format.
 	const files = loadSettingsFiles(type) as { [key: string]: string|string[]}[];
-	files.forEach(addShortcuts);
+
+	// process the shortcuts with this fancy new function
+	processShortcuts(files, (fn, states) => {
+		// get the array name for the "keyMappings" based on modifier keys, and apply the new shortcut function.
+		const arrayname = getKeymappingsName(states);
+		keyMappings[arrayname][states.button] = fn;
+
+		// check if shortcutstore has this key already. If not, create it
+		if(!shortcutStores[fn]) {
+			shortcutStores[fn] = [];
+		}
+
+		// store the shortcut name
+		shortcutStores[fn].push(makeShortcutString(states));
+	});
 }
 
 /**
@@ -195,3 +249,4 @@ const shortcutStores:{ [key:string]:string[] } = {};
 export function loadShortcutKeys(shortcut:string): string[] {
 	return shortcutStores[shortcut] ?? [];
 }
+

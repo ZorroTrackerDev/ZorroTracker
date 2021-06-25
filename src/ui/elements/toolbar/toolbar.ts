@@ -87,6 +87,12 @@ const defaultMenu:ToolbarMenu = {
 				shortcut: "layout.open.projectinfo",
 				tooltip: "Open the project settings tab",
 			},
+			"Shortcuts": {
+				enabled: true,
+				action: "window.preload.shortcut(['layout.open.shortcuts'])",
+				shortcut: "layout.open.shortcuts",
+				tooltip: "Open the shortcuts tab",
+			},
 		},
 	},
 	"About": {

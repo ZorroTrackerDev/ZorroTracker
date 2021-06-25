@@ -214,14 +214,12 @@ body {
 
 // stuff for shortcut editor
 #shortcutedit {
-	margin: 10px auto;
+	margin: 10px 10px;
 	position: relative;
 	height: -webkit-fill-available;
 	width: fit-content;
 	max-width: -webkit-fill-available;
-	background: #1f2021;
 	border-radius: 5px;
-	border: 1px solid #353535;
 	overflow: hidden;
 
 	&> div {
@@ -230,10 +228,19 @@ body {
 		width: 100%;
 
 		&> table {
-			border-collapse: collapse;
+			&:not(:first-child) {
+				margin-top: 10px;
+			}
+
+			border-spacing: 0;
 			color: #afafaf;
 			font-family: 'Noto Sans', cursive;
 			font-size: 12pt;
+			width: 100%;
+			table-layout: fixed;
+			background: #1f2021;
+			border: 1px solid #353535;
+			border-radius: 5px;
 
 			& tr {
 				transition: background-color .4s ease-in-out;
@@ -253,12 +260,43 @@ body {
 						transition-duration: 0s;
 					}
 				}
+
+				&:first-child th:first-child {
+					border-top-left-radius: 5px;
+				}
+
+				&:first-child th:last-child {
+					border-top-right-radius: 5px;
+				}
+
+				&:last-child td:first-child {
+					border-bottom-left-radius: 5px;
+				}
+
+				&:last-child td:last-child {
+					border-bottom-right-radius: 5px;
+				}
 			}
 
 			& th, td {
-				border: 2px solid #464646;
+				border: 1px solid #464646;
 				padding: 4px;
 				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+
+				&:nth-child(1) {
+					width: 40%;
+				}
+
+				&:nth-child(2) {
+					width: 20%;
+				}
+
+				&:nth-child(3) {
+					width: 40%;
+				}
+
 			}
 		}
 

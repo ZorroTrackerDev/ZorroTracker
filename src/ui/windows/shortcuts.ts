@@ -1,15 +1,8 @@
 import { WindowType } from "../../defs/windowtype";
-import { Module, Project, ProjectConfig } from "../misc/project";
 import { loadDefaultToolbar, setTitle } from "../elements/toolbar/toolbar";
 import { loadSettingsFiles, SettingsTypes } from "../../api/files";
 import { addShortcutReceiver, makeShortcutString, processShortcuts } from "../misc/shortcuts";
 import { clearChildren, fadeToLayout, loadTransition, removeTransition } from "../misc/layout";
-import { makeTextbox, TextboxEnum } from "../elements/textbox/textbox";
-import { makeOption, OptionEnum } from "../elements/option/option";
-import { ModuleSelect } from "../elements/moduleselect/main";
-import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../api/events";
-import { ipcRenderer } from "electron";
-import { ipcEnum } from "../../system/ipc/ipc enum";
 
 /**
  * So.. In order for Jest testing to work, we need to load stuff as modules. However, browsers really don't like CommonJS modules
@@ -70,7 +63,7 @@ window.ipc.ui.path().then(() => {
 		import("./all").then(() => {
 			/* load the menu */
 			loadDefaultToolbar(false);
-			setTitle("Project settings");
+			setTitle("Shortcuts");
 
 			// load layout for this window
 			fadeToLayout(layout).then(() => {
@@ -83,6 +76,7 @@ window.ipc.ui.path().then(() => {
 }).catch(console.error);
 
 // function to load the layout for this window
+// eslint-disable-next-line require-await
 async function layout() {
 	// load the editor parent element as `body`
 	const body = document.getElementById("main_content");
@@ -105,25 +99,34 @@ async function layout() {
 	// generate HTML
 	contain.innerHTML = /*html*/`
 		<div>
-			<table>
-				<tr>
-					<th>Shortcut code</th>
-					<th>Shortcut keys</th>
-					<th>Shortcut description</th>
-				</tr>
-				${
-					// join each shortcut as their own row
-					Object.keys(shortcuts).map((key) => {
-						return /*html*/`
+			${
+				Object.keys(shortcuts).map((key) => {
+					return /*html*/`
+						<table>
 							<tr>
-								<td>${ key }</td>
-								<td>${ shortcuts[key].key }</td>
-								<td>${ shortcuts[key].description }</td>
+								<th colspan="3" style="font-size: 15pt;">${ key }</th>
 							</tr>
-						`;
-					}).join("")
-				}
-			</table>
+							<tr>
+								<th>Shortcut code</th>
+								<th>Shortcut keys</th>
+								<th>Shortcut description</th>
+							</tr>
+							${
+								// join each shortcut as their own row
+								shortcuts[key].map((data) => {
+									return /*html*/`
+										<tr>
+											<td>${ data.shortcut }</td>
+											<td>${ data.key }</td>
+											<td>${ data.description }</td>
+										</tr>
+									`;
+								}).join("")
+							}
+						</table>
+					`;
+				}).join("")
+			}
 		</div>
 	`;
 
@@ -132,11 +135,47 @@ async function layout() {
 
 // helper function to load shortcuts into sensible table form
 function loadShortcutTables() {
-	const out:{ [key: string]:{ key:string, description: string, type: string, } } = {};
+	// helper function to convert layout path type to index
+	const getType = (fn:string) => {
+		if(fn.startsWith("layout.patternindex")){
+			return "Pattern index";
+
+		} else if(fn.startsWith("ui") || fn.startsWith("layout.open")){
+			return "General";
+		}
+
+		return "Unknown";
+	}
+
+	// helper function to set a shortcut value
+	const set = (fn:string, key:string) => {
+		// load the type
+		const type = getType(fn);
+
+		// if array not defined, define it
+		if(!out[type]) {
+			out[type] = [];
+		}
+
+		// find the shortcut already defined
+		const item = out[type].find((i) => i.shortcut === fn);
+
+		if(item) {
+			// update item data
+			item.key = key;
+
+		} else {
+			// did not exist, create a new item
+			out[type].push({ shortcut: fn, key: key, description: shortcutDescriptions[fn] ?? "<missing description>", });
+		}
+	}
+
+	// initialize the output data structure
+	const out:{ [key: string]:{ key:string, description: string, shortcut: string, }[] } = {};
 
 	// load all the shortcut keys from description
-	for(const key of Object.keys(shortcutDescriptions)) {
-		out[key] = { type: "", key: "unassigned", description: shortcutDescriptions[key], };
+	for(const fn of Object.keys(shortcutDescriptions)) {
+		set(fn, "unassigned");
 	}
 
 	// load settings files as array of data
@@ -144,7 +183,7 @@ function loadShortcutTables() {
 
 	// process the shortcuts with this fancy new function
 	processShortcuts(files, (fn, states) => {
-		out[fn] = { type: "", key: makeShortcutString(states), description: shortcutDescriptions[fn] ?? "<missing description>", };
+		set(fn, makeShortcutString(states));
 	});
 
 	return out;

@@ -76,6 +76,16 @@ window.ipc.ui.path().then(() => {
 				case "close":
 					window.ipc.ui.close();
 					return true;
+
+				/* shortcut for zooming in the window */
+				case "zoomin":
+					window.ipc.ui.zoomIn();
+					return true;
+
+				/* shortcut for zooming out the window */
+				case "zoomout":
+					window.ipc.ui.zoomOut();
+					return true;
 			}
 
 			// shortcut was not handled

@@ -1,6 +1,3 @@
-import { webFrame } from "electron";
-webFrame.setZoomFactor(1);		// testing only
-
 /* load object extensions */
 import "../extensions";
 import "../misc/logger";

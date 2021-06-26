@@ -20,10 +20,10 @@
 	}
 }
 
-// pattern editor wrapper. This will attempt to be at most 50% wide, and 100% high. Scrollbar on the left will always appear, but on the bottom only when too wide.
-.patterneditor {
-	--pattern_edit_left: infinite;
-	--pattern_edit_right: infinite;
+// matrix editor wrapper. This will attempt to be at most 50% wide, and 100% high. Scrollbar on the left will always appear, but on the bottom only when too wide.
+.matrix {
+	--matrix_edit_left: infinite;
+	--matrix_edit_right: infinite;
 	outline: 0;
 	height: 100%;
 	width: max-content;
@@ -67,7 +67,7 @@
 	}
 
 	// handle nice graaphics for the edit style
-	&> .patterneditor_wrap > .patterneditor_rows > div > .editing {
+	&> .matrix_wrap > .matrix_rows > div > .editing {
 		background: #426b4c !important;
 
 		&:hover {
@@ -76,7 +76,7 @@
 	}
 
 	// only ever animate the selection when in focus
-	&:focus-within > .patterneditor_wrap > .patterneditor_rows > div > .editing {
+	&:focus-within > .matrix_wrap > .matrix_rows > div > .editing {
 		position: relative;
 
 		&::first-letter {
@@ -101,7 +101,7 @@
 	}
 
 	// vertical row wrapper
-	&> .patterneditor_wrap {
+	&> .matrix_wrap {
 		height: calc(100% - @butheight - 3px);
 		width: 100%;
 		scroll-snap-type: y mandatory;
@@ -110,7 +110,7 @@
 		.__scrollbar();
 
 		// channel elements
-		&> .patterneditor_channels {
+		&> .matrix_channels {
 			font-weight: normal;
 			font-size: 9pt;
 			position: sticky;
@@ -134,7 +134,7 @@
 					background: #5b5b6e;
 				}
 
-				&.patterneditor_insert {
+				&.matrix_insert {
 					width: @firstrow;
 					border-bottom-left-radius: 0;
 					transition: background-color .3s ease, background-image .25s ease-in-out;
@@ -152,7 +152,7 @@
 		}
 
 		// actual rows
-		& > .patterneditor_rows {
+		& > .matrix_rows {
 			min-height: 100%;
 			text-align: center;
 			width: 100%;
@@ -253,7 +253,7 @@
 	}
 
 	// all the functional buttons in the pattern editor
-	&> .patterneditor_buttons {
+	&> .matrix_buttons {
 		// add gradients to bottom of the row data
 		&::after {
 			content: "";
@@ -367,7 +367,7 @@
 		display: none !important;
 	}
 
-	.patterneditor_buttons {
+	.matrix_buttons {
 		margin-right: 0px !important;
 	}
 }

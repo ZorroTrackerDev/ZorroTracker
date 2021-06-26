@@ -52,7 +52,7 @@ import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../api/events";
 import { volumeSlider, SliderEnum } from "../elements/slider/slider";
 import { closePopups, confirmationDialog, createFilename, PopupColors, PopupSizes } from "../elements/popup/popup";
 import { Undo } from "../../api/undo";
-import { PatternIndexEditor } from "../elements/matrixeditor/main";
+import { MatrixEditor } from "../elements/matrixeditor/main";
 
 /* ipc communication */
 import "../../system/ipc/html editor";
@@ -83,6 +83,16 @@ window.ipc.ui.path().then(() => {
 				/* shortcut for fullscreen */
 				case "fullscreen":
 					window.ipc.ui.maximize();
+					return true;
+
+				/* shortcut for zooming in the window */
+				case "zoomin":
+					window.ipc.ui.zoomIn();
+					return true;
+
+				/* shortcut for zooming out the window */
+				case "zoomout":
+					window.ipc.ui.zoomOut();
 					return true;
 
 				/* shortcut for opening a file or a project */
@@ -249,15 +259,15 @@ window.ipc.ui.path().then(() => {
 }).catch(console.error);
 
 // handler for receiving shortcuts
-let patternIndex:PatternIndexEditor|undefined;
+let matrixEditor:MatrixEditor|undefined;
 
 // note, this is here just because in testing it might not actually exist!
 function initShortcutHandler() {
 	// eslint-disable-next-line require-await
 	addShortcutReceiver("layout", async(data) => {
 		switch(data.shift()) {
-			case "patternindex":
-				return patternIndex?.receiveShortcut(data) ?? false;
+			case "matrix":
+				return matrixEditor?.receiveShortcut(data) ?? false;
 
 				case "open":
 					switch(data.shift()) {
@@ -338,7 +348,7 @@ async function editorLayout():Promise<true> {
 	_top.id = "editor_top";
 	body.appendChild(_top);
 
-	_top.appendChild((patternIndex = new PatternIndexEditor(Project.current.index)).element);
+	_top.appendChild((matrixEditor = new MatrixEditor(Project.current.index)).element);
 
 	const _bot = document.createElement("div");
 	_bot.id = "editor_bottom";

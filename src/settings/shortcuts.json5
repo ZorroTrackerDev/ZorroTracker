@@ -13,45 +13,45 @@
 	"ui.saveas":						[ "ctrl+shift+S" ],						/* shortcut for saving the project as another file */
 	"ui.new":							[ "ctrl+N" ],							/* shortcut for creating a new project */
 
-	"layout.patternindex.move.up":		[ "ArrowUp" ],							/* shortcut for moving to the pattern index above */
-	"layout.patternindex.move.down":	[ "ArrowDown" ],						/* shortcut for moving to the pattern index below */
-	"layout.patternindex.move.left":	[ "ArrowLeft" ],						/* shortcut for moving to the pattern index left */
-	"layout.patternindex.move.right":	[ "Arrowright" ],						/* shortcut for moving to the pattern index right */
-	"layout.patternindex.movemax.up":	[ "Home" ],								/* shortcut for moving to the pattern index top */
-	"layout.patternindex.movemax.down": [ "End" ],								/* shortcut for moving to the pattern index bottom */
-	"layout.patternindex.select.up":	[ "shift+ArrowUp" ],					/* shortcut for moving the selection to up */
-	"layout.patternindex.select.down":	[ "shift+ArrowDown" ],					/* shortcut for moving the selection to down */
-	"layout.patternindex.select.left":	[ "shift+ArrowLeft" ],					/* shortcut for moving the selection to left */
-	"layout.patternindex.select.right":	[ "shift+Arrowright" ],					/* shortcut for moving the selection to right */
-	"layout.patternindex.selmax.up":	[ "shift+Home" ],						/* shortcut for moving the selection to top */
-	"layout.patternindex.selmax.down":	[ "shift+End" ],						/* shortcut for moving the selection to bottom */
-	"layout.patternindex.selall":		[ "alt+A" ],							/* shortcut for selecting entire matrix */
-	"layout.patternindex.selrow":		[ "shift+A" ],							/* shortcut for selecting entire row */
-	"layout.patternindex.selcolumn":	[ "ctrl+A" ],							/* shortcut for selecting entire column */
-	"layout.patternindex.scroll.up":	[ "PageUp" ],							/* shortcut for scrolling upwards */
-	"layout.patternindex.scroll.down":	[ "PageDown" ],							/* shortcut for scrolling downwards */
-	"layout.patternindex.insert":		[ "Insert" ],							/* shortcut for inserting a new row */
-	"layout.patternindex.delete":		[ "Delete" ],							/* shortcut for deleting rows */
-	"layout.patternindex.copy":			[ "ctrl+C" ],							/* shortcut for deleting copying data or a row */
-	"layout.patternindex.pasteenter":	[ "ctrl+V" ],							/* shortcut for entering paste mode */
-	"layout.patternindex.pasteexit":	[ "Escape" ],							/* shortcut for exiting paste mode */
-	"layout.patternindex.change.up":	[ "ctrl+ArrowUp" ],						/* shortcut for changing the selected digits up by 1 */
-	"layout.patternindex.change.down":	[ "ctrl+ArrowDown" ],					/* shortcut for changing the selected digits down by 1  */
-	"layout.patternindex.edit":			[ "Enter" ],							/* shortcut for toggling edit mode and applying pasted values */
-	"layout.patternindex.hex.0":		[ "0" ],								/* shortcut for the hexadecimal value 0 */
-	"layout.patternindex.hex.1":		[ "1" ],								/* shortcut for the hexadecimal value 1 */
-	"layout.patternindex.hex.2":		[ "2" ],								/* shortcut for the hexadecimal value 2 */
-	"layout.patternindex.hex.3":		[ "3" ],								/* shortcut for the hexadecimal value 3 */
-	"layout.patternindex.hex.4":		[ "4" ],								/* shortcut for the hexadecimal value 4 */
-	"layout.patternindex.hex.5":		[ "5" ],								/* shortcut for the hexadecimal value 5 */
-	"layout.patternindex.hex.6":		[ "6" ],								/* shortcut for the hexadecimal value 6 */
-	"layout.patternindex.hex.7":		[ "7" ],								/* shortcut for the hexadecimal value 7 */
-	"layout.patternindex.hex.8":		[ "8" ],								/* shortcut for the hexadecimal value 8 */
-	"layout.patternindex.hex.9":		[ "9" ],								/* shortcut for the hexadecimal value 9 */
-	"layout.patternindex.hex.A":		[ "A" ],								/* shortcut for the hexadecimal value A */
-	"layout.patternindex.hex.B":		[ "B" ],								/* shortcut for the hexadecimal value B */
-	"layout.patternindex.hex.C":		[ "C" ],								/* shortcut for the hexadecimal value C */
-	"layout.patternindex.hex.D":		[ "D" ],								/* shortcut for the hexadecimal value D */
-	"layout.patternindex.hex.E":		[ "E" ],								/* shortcut for the hexadecimal value E */
-	"layout.patternindex.hex.F":		[ "F" ],								/* shortcut for the hexadecimal value F */
+	"layout.matrix.move.up":			[ "ArrowUp" ],							/* shortcut for moving to the pattern index above */
+	"layout.matrix.move.down":			[ "ArrowDown" ],						/* shortcut for moving to the pattern index below */
+	"layout.matrix.move.left":			[ "ArrowLeft" ],						/* shortcut for moving to the pattern index left */
+	"layout.matrix.move.right":			[ "Arrowright" ],						/* shortcut for moving to the pattern index right */
+	"layout.matrix.movemax.up":			[ "Home" ],								/* shortcut for moving to the pattern index top */
+	"layout.matrix.movemax.down":		[ "End" ],								/* shortcut for moving to the pattern index bottom */
+	"layout.matrix.select.up":			[ "shift+ArrowUp" ],					/* shortcut for moving the selection to up */
+	"layout.matrix.select.down":		[ "shift+ArrowDown" ],					/* shortcut for moving the selection to down */
+	"layout.matrix.select.left":		[ "shift+ArrowLeft" ],					/* shortcut for moving the selection to left */
+	"layout.matrix.select.right":		[ "shift+Arrowright" ],					/* shortcut for moving the selection to right */
+	"layout.matrix.selmax.up":			[ "shift+Home" ],						/* shortcut for moving the selection to top */
+	"layout.matrix.selmax.down":		[ "shift+End" ],						/* shortcut for moving the selection to bottom */
+	"layout.matrix.selall":				[ "alt+A" ],							/* shortcut for selecting entire matrix */
+	"layout.matrix.selrow":				[ "shift+A" ],							/* shortcut for selecting entire row */
+	"layout.matrix.selcolumn":			[ "ctrl+A" ],							/* shortcut for selecting entire column */
+	"layout.matrix.scroll.up":			[ "PageUp" ],							/* shortcut for scrolling upwards */
+	"layout.matrix.scroll.down":		[ "PageDown" ],							/* shortcut for scrolling downwards */
+	"layout.matrix.insert":				[ "Insert" ],							/* shortcut for inserting a new row */
+	"layout.matrix.delete":				[ "Delete" ],							/* shortcut for deleting rows */
+	"layout.matrix.copy":				[ "ctrl+C" ],							/* shortcut for deleting copying data or a row */
+	"layout.matrix.pasteenter":			[ "ctrl+V" ],							/* shortcut for entering paste mode */
+	"layout.matrix.pasteexit":			[ "Escape" ],							/* shortcut for exiting paste mode */
+	"layout.matrix.change.up":			[ "ctrl+ArrowUp" ],						/* shortcut for changing the selected digits up by 1 */
+	"layout.matrix.change.down":		[ "ctrl+ArrowDown" ],					/* shortcut for changing the selected digits down by 1  */
+	"layout.matrix.edit":				[ "Enter" ],							/* shortcut for toggling edit mode and applying pasted values */
+	"layout.matrix.hex.0":				[ "0" ],								/* shortcut for the hexadecimal value 0 */
+	"layout.matrix.hex.1":				[ "1" ],								/* shortcut for the hexadecimal value 1 */
+	"layout.matrix.hex.2":				[ "2" ],								/* shortcut for the hexadecimal value 2 */
+	"layout.matrix.hex.3":				[ "3" ],								/* shortcut for the hexadecimal value 3 */
+	"layout.matrix.hex.4":				[ "4" ],								/* shortcut for the hexadecimal value 4 */
+	"layout.matrix.hex.5":				[ "5" ],								/* shortcut for the hexadecimal value 5 */
+	"layout.matrix.hex.6":				[ "6" ],								/* shortcut for the hexadecimal value 6 */
+	"layout.matrix.hex.7":				[ "7" ],								/* shortcut for the hexadecimal value 7 */
+	"layout.matrix.hex.8":				[ "8" ],								/* shortcut for the hexadecimal value 8 */
+	"layout.matrix.hex.9":				[ "9" ],								/* shortcut for the hexadecimal value 9 */
+	"layout.matrix.hex.A":				[ "A" ],								/* shortcut for the hexadecimal value A */
+	"layout.matrix.hex.B":				[ "B" ],								/* shortcut for the hexadecimal value B */
+	"layout.matrix.hex.C":				[ "C" ],								/* shortcut for the hexadecimal value C */
+	"layout.matrix.hex.D":				[ "D" ],								/* shortcut for the hexadecimal value D */
+	"layout.matrix.hex.E":				[ "E" ],								/* shortcut for the hexadecimal value E */
+	"layout.matrix.hex.F":				[ "F" ],								/* shortcut for the hexadecimal value F */
 }

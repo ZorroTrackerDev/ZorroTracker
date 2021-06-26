@@ -1,6 +1,6 @@
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../../api/events";
 import { PatternIndex } from "../../../api/matrix";
-import { PatternIndexEditor, editMode } from "./main";
+import { MatrixEditor, editMode } from "./main";
 
 /**
  * Helper type declarations for the buttons below
@@ -14,8 +14,8 @@ export type PatternIndexEditorButton = {
 	tooltip: string,
 	shortcut?: string,
 	svg: string,
-	click?: (edit:PatternIndexEditor, event:MouseEvent) => unknown,
-	load?: (element:HTMLDivElement, edit:PatternIndexEditor) => unknown,
+	click?: (edit:MatrixEditor, event:MouseEvent) => unknown,
+	load?: (element:HTMLDivElement, edit:MatrixEditor) => unknown,
 };
 
 /**
@@ -38,7 +38,7 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 				`,
 				tooltip: "Increment digit",
 				shortcut: "layout.patternindex.change.up",
-				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
+				click: (edit:MatrixEditor, event:MouseEvent):void => {
 					if(edit.mode !== editMode.Paste) {
 						edit.change(1, event.button === 0).catch(console.error);
 					}
@@ -55,7 +55,7 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 				`,
 				tooltip: "Decrement digit",
 				shortcut: "layout.patternindex.change.down",
-				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
+				click: (edit:MatrixEditor, event:MouseEvent):void => {
 					if(edit.mode !== editMode.Paste) {
 						edit.change(-1, event.button === 0).catch(console.error);
 					}
@@ -96,7 +96,7 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 				`,
 				tooltip: "Insert at selection",
 				shortcut: "layout.patternindex.insert",
-				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
+				click: (edit:MatrixEditor, event:MouseEvent):void => {
 					if(event.button === 0 && edit.mode !== editMode.Paste) {
 						edit.insert().catch(console.error);
 					}
@@ -123,7 +123,7 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 				`,
 				tooltip: "Copy selection into clipboard",
 				shortcut: "layout.patternindex.copy",
-				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
+				click: (edit:MatrixEditor, event:MouseEvent):void => {
 					if(event.button === 0 && edit.mode !== editMode.Paste) {
 						edit.copy().catch(console.error);
 					}
@@ -161,7 +161,7 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 				`,
 				tooltip: "Paste pattern data from clipboard",
 				shortcut: "layout.patternindex.pasteenter",
-				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
+				click: (edit:MatrixEditor, event:MouseEvent):void => {
 					if(event.button === 0 && edit.mode !== editMode.Paste) {
 						edit.pasteInit().catch(console.error);
 					}
@@ -199,7 +199,7 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 				`,
 				tooltip: "Delete at selection",
 				shortcut: "layout.patternindex.delete",
-				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
+				click: (edit:MatrixEditor, event:MouseEvent):void => {
 					if(event.button === 0 && edit.mode !== editMode.Paste) {
 						edit.delete().catch(console.error);
 					}
@@ -213,7 +213,7 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 			{
 				svg: "",
 				tooltip: "The matrix length",
-				load: (element:HTMLDivElement, edit:PatternIndexEditor):void => {
+				load: (element:HTMLDivElement, edit:MatrixEditor):void => {
 					// update the matrix resize element
 					_matrixResize = element;
 
@@ -246,7 +246,7 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 				`,
 				tooltip: "Move selection down",
 				shortcut: "layout.patternindex.shiftdown",
-				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
+				click: (edit:MatrixEditor, event:MouseEvent):void => {
 					if(event.button === 0 && edit.mode !== editMode.Paste) {
 						edit.shiftDown().catch(console.error);
 					}
@@ -272,7 +272,7 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 				`,
 				tooltip: "Move selection up",
 				shortcut: "layout.patternindex.shiftup",
-				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
+				click: (edit:MatrixEditor, event:MouseEvent):void => {
 					if(event.button === 0 && edit.mode !== editMode.Paste) {
 						edit.shiftUp().catch(console.error);
 					}
@@ -303,7 +303,7 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 				`,
 				tooltip: "Cancel the paste action",
 				shortcut: "layout.patternindex.pasteexit",
-				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
+				click: (edit:MatrixEditor, event:MouseEvent):void => {
 					if(event.button === 0 && edit.mode === editMode.Paste) {
 						edit.pasteExit().catch(console.error);
 					}
@@ -321,7 +321,7 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 				`,
 				tooltip: "Apply the paste area",
 				shortcut: "layout.patternindex.edit",
-				click: (edit:PatternIndexEditor, event:MouseEvent):void => {
+				click: (edit:MatrixEditor, event:MouseEvent):void => {
 					if(event.button === 0 && edit.mode === editMode.Paste) {
 						edit.pasteApply().catch(console.error);
 					}

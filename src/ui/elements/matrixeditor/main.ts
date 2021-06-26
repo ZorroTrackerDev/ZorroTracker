@@ -1,5 +1,5 @@
 import { tooltipShortcutText } from "../../../api/dom";
-import { PatternIndex } from "../../../api/matrix";
+import { PatternIndex as Matrix } from "../../../api/matrix";
 import { Bounds, clipboard, ClipboardType, Position, shortcutDirection, UIElement } from "../../../api/ui";
 import { Undo, UndoSource } from "../../../api/undo";
 import { Project } from "../../misc/project";
@@ -11,21 +11,21 @@ export enum editMode {
 }
 
 /**
- * Class to interact between the UI and the PatternIndex entry. Helps manage UI integration and intercommunication
+ * Class to interact between the UI and the Matrix entry. Helps manage UI integration and intercommunication
  */
-export class PatternIndexEditor implements UIElement {
-	// various standard elements for the pattern editor
+export class MatrixEditor implements UIElement {
+	// various standard elements for the matrix editor
 	public element!:HTMLElement;
 	private elchans!:HTMLElement;
 	private elrows!:HTMLElement;
 	private elbtns!:HTMLElement;
 	private elscroll!:HTMLElement;
 
-	// the pattern index this editor is affecting
-	public index:PatternIndex;
+	// the matrix this editor is affecting
+	public index:Matrix;
 
-	constructor(index:PatternIndex) {
-		// initialize the pattern index. TODO: Driver-dependant behavior
+	constructor(index:Matrix) {
+		// initialize the matrix. TODO: Driver-dependant behavior
 		this.index = index;
 		this.setLayout();
 	}
@@ -44,27 +44,27 @@ export class PatternIndexEditor implements UIElement {
 
 		// generate the main element for this editor
 		this.element = document.createElement("div");
-		this.element.classList.add("patterneditor");
+		this.element.classList.add("matrix");
 		this.element.tabIndex = 0;						// cool so this whole element will break without this line here!
 
 		// generate the pattern display for this editor
 		this.elscroll = document.createElement("div")
-		this.elscroll.classList.add("patterneditor_wrap");
+		this.elscroll.classList.add("matrix_wrap");
 		this.element.appendChild(this.elscroll);
 
 		// generate the channel display for this editor
 		this.elchans = document.createElement("div");
-		this.elchans.classList.add("patterneditor_channels");
+		this.elchans.classList.add("matrix_channels");
 		this.elscroll.appendChild(this.elchans);
 
 		// add the pattern rows itself
 		this.elrows = document.createElement("div");
-		this.elrows.classList.add("patterneditor_rows");
+		this.elrows.classList.add("matrix_rows");
 		this.elscroll.appendChild(this.elrows);
 
 		// generate the buttons for this editor
 		this.elbtns = document.createElement("div");
-		this.elbtns.classList.add("patterneditor_buttons");
+		this.elbtns.classList.add("matrix_buttons");
 		this.element.appendChild(this.elbtns);
 
 		// enable all the standard buttons
@@ -85,7 +85,7 @@ export class PatternIndexEditor implements UIElement {
 				event.stopPropagation();
 
 				// scroll according to the wheel
-				this.scroll(Math.round(event.deltaY / 100 * PatternIndexEditor.SCROLL_STEP));
+				this.scroll(Math.round(event.deltaY / 100 * MatrixEditor.SCROLL_STEP));
 			}
 		}, { passive: false, });
 
@@ -106,7 +106,7 @@ export class PatternIndexEditor implements UIElement {
 		}
 
 		// add the filler rows
-		for(let x = PatternIndexEditor.FILLER_ROWS;x > 0;x --){
+		for(let x = MatrixEditor.FILLER_ROWS;x > 0;x --){
 			this.elrows.appendChild(document.createElement("p"));
 		}
 
@@ -172,7 +172,7 @@ export class PatternIndexEditor implements UIElement {
 	 * Helper function to refresh the editing animation so its synced
 	 */
 	private refreshEdit() {
-		this.element.style.setProperty("--pattern_edit_pos", PatternIndexEditor.EDIT_STYLE(this.editing));
+		this.element.style.setProperty("--pattern_edit_pos", MatrixEditor.EDIT_STYLE(this.editing));
 	}
 
 	// scroll by 3 elements per step
@@ -185,7 +185,7 @@ export class PatternIndexEditor implements UIElement {
 	 */
 	private scroll(speed:number) {
 		// get the height of the element. The first value takes into account the border size
-		const height = 1 + ((this.elrows.children[PatternIndexEditor.FILLER_ROWS] as HTMLDivElement|undefined)?.offsetHeight ?? 0);
+		const height = 1 + ((this.elrows.children[MatrixEditor.FILLER_ROWS] as HTMLDivElement|undefined)?.offsetHeight ?? 0);
 
 		// apply scrolling here
 		this.elscroll.scrollTop += speed * height;
@@ -215,7 +215,7 @@ export class PatternIndexEditor implements UIElement {
 			if(r >= -1 && this.index.getHeight() >= r){
 				// get the row bounding box
 				return this.elscroll.scrollTop - chanh +
-					this.elrows.children[r + PatternIndexEditor.FILLER_ROWS].getBoundingClientRect()[position];
+					this.elrows.children[r + MatrixEditor.FILLER_ROWS].getBoundingClientRect()[position];
 			}
 
 			// plz same position
@@ -337,7 +337,7 @@ export class PatternIndexEditor implements UIElement {
 					}
 
 					// apply scrolling
-					this.scroll(dir.y * PatternIndexEditor.SCROLL_STEP);
+					this.scroll(dir.y * MatrixEditor.SCROLL_STEP);
 					return true;
 				}
 
@@ -957,7 +957,7 @@ export class PatternIndexEditor implements UIElement {
 		this.index.channels.forEach(_add);
 
 		// add class and title for the insert button
-		insert.classList.add("patterneditor_insert");
+		insert.classList.add("matrix_insert");
 		insert.title = "left click: Insert below\nright click: Insert above";
 
 		// handle clicking the insert button
@@ -1036,9 +1036,9 @@ export class PatternIndexEditor implements UIElement {
 		for(const row of this.elrows.children){
 			// remove class from all elements
 			for(const e of row.children){
-				e.classList.remove(PatternIndexEditor.SELECT_CLASS);
-				e.classList.remove(PatternIndexEditor.EDIT_CLASS);
-				e.classList.remove(PatternIndexEditor.PASTE_CLASS);
+				e.classList.remove(MatrixEditor.SELECT_CLASS);
+				e.classList.remove(MatrixEditor.EDIT_CLASS);
+				e.classList.remove(MatrixEditor.PASTE_CLASS);
 			}
 		}
 	}
@@ -1129,13 +1129,13 @@ export class PatternIndexEditor implements UIElement {
 		// loop for every row
 		rows.forEach((y) => {
 			// get the row element and give it the selected class (only in single mode!)
-			const erow = this.elrows.children[y + PatternIndexEditor.FILLER_ROWS];
+			const erow = this.elrows.children[y + MatrixEditor.FILLER_ROWS];
 
 			// loop for every channel giving it the selected or editing class
 			columns.forEach((x) => {
-				erow.children[x + 1].classList.add(this.altSelect ? PatternIndexEditor.PASTE_CLASS :
-					!edit || this.selecting !== null ? PatternIndexEditor.SELECT_CLASS :
-					PatternIndexEditor.EDIT_CLASS);
+				erow.children[x + 1].classList.add(this.altSelect ? MatrixEditor.PASTE_CLASS :
+					!edit || this.selecting !== null ? MatrixEditor.SELECT_CLASS :
+					MatrixEditor.EDIT_CLASS);
 			});
 		});
 
@@ -1287,7 +1287,7 @@ export class PatternIndexEditor implements UIElement {
 	private async insertRowUI(position:number):Promise<boolean> {
 		// insert a new row element based on the position
 		const row = document.createElement("div");
-		this.elrows.insertBefore(row, this.index.getHeight() <= position ? null : this.elrows.children[position + PatternIndexEditor.FILLER_ROWS]);
+		this.elrows.insertBefore(row, this.index.getHeight() <= position ? null : this.elrows.children[position + MatrixEditor.FILLER_ROWS]);
 
 		// render the row at position
 		if(!await this.renderRow(position)){
@@ -1353,7 +1353,7 @@ export class PatternIndexEditor implements UIElement {
 		}
 
 		// get the row element
-		const row = this.elrows.children[position + PatternIndexEditor.FILLER_ROWS] as HTMLDivElement;
+		const row = this.elrows.children[position + MatrixEditor.FILLER_ROWS] as HTMLDivElement;
 
 		// remove all children
 		while(row.children.length > 0){
@@ -1537,9 +1537,9 @@ export class PatternIndexEditor implements UIElement {
 	 * @param row The row index to update
 	 */
 	private fixRowIndex(row:number) {
-		if(row >= 0 && row < this.index.getHeight() && row < this.elrows.children.length - PatternIndexEditor.FILLER_ROWS) {
+		if(row >= 0 && row < this.index.getHeight() && row < this.elrows.children.length - MatrixEditor.FILLER_ROWS) {
 			// fix the innerText of this row
-			this.byteToHTML((this.elrows.children[row + PatternIndexEditor.FILLER_ROWS].children[0] as HTMLDivElement), row);
+			this.byteToHTML((this.elrows.children[row + MatrixEditor.FILLER_ROWS].children[0] as HTMLDivElement), row);
 		}
 	}
 
@@ -1558,7 +1558,7 @@ export class PatternIndexEditor implements UIElement {
 		}
 
 		// get the target element
-		const erow = this.elrows.children[row + PatternIndexEditor.FILLER_ROWS] as HTMLDivElement;
+		const erow = this.elrows.children[row + MatrixEditor.FILLER_ROWS] as HTMLDivElement;
 		const echan = erow.children[channel + 1] as HTMLDivElement;
 
 		// edit its display value
@@ -1573,13 +1573,13 @@ export class PatternIndexEditor implements UIElement {
 	 */
 	private findMe(e:HTMLDivElement): Position {
 		// loop through all rows and elements in the row
-		for(let r = this.elrows.children.length - 1; r >= PatternIndexEditor.FILLER_ROWS;r --) {
+		for(let r = this.elrows.children.length - 1; r >= MatrixEditor.FILLER_ROWS;r --) {
 			for(let c = this.elrows.children[r].children.length -1;c >= 1;c --) {
 
 				// check if this is the element we are looking for
 				if(this.elrows.children[r].children[c] === e){
 					// if yes, return its position
-					return { y: r - PatternIndexEditor.FILLER_ROWS, x: c - 1, };
+					return { y: r - MatrixEditor.FILLER_ROWS, x: c - 1, };
 				}
 			}
 		}
@@ -1711,7 +1711,7 @@ export class PatternIndexEditor implements UIElement {
 		}
 
 		// remove the UI row
-		this.elrows.removeChild(this.elrows.children[position + PatternIndexEditor.FILLER_ROWS]);
+		this.elrows.removeChild(this.elrows.children[position + MatrixEditor.FILLER_ROWS]);
 
 		// fix the row indices
 		this.fixRowIndices();

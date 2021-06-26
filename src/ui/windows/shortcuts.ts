@@ -53,6 +53,16 @@ window.ipc.ui.path().then(() => {
 				case "close":
 					window.ipc.ui.close();
 					return true;
+
+				/* shortcut for zooming in the window */
+				case "zoomin":
+					window.ipc.ui.zoomIn();
+					return true;
+
+				/* shortcut for zooming out the window */
+				case "zoomout":
+					window.ipc.ui.zoomOut();
+					return true;
 			}
 
 			// shortcut was not handled
@@ -137,7 +147,7 @@ async function layout() {
 function loadShortcutTables() {
 	// helper function to convert layout path type to index
 	const getType = (fn:string) => {
-		if(fn.startsWith("layout.patternindex")){
+		if(fn.startsWith("layout.matrix")){
 			return "Pattern index";
 
 		} else if(fn.startsWith("ui") || fn.startsWith("layout.open")){
@@ -195,6 +205,8 @@ const shortcutDescriptions: { [key:string]: string } = {
 	"ui.inspectelement":				"Activate inspect element",
 	"ui.fullscreen":					"Maximize the current window",
 	"ui.close":							"Close the current window",
+	"ui.zoomin":						"Increase the content size",
+	"ui.zoomout":						"Decrease the content size",
 
 	"layout.open.projectinfo":			"Open project info window",
 	"layout.open.shortcuts":			"Open shortcut editor window",
@@ -206,52 +218,52 @@ const shortcutDescriptions: { [key:string]: string } = {
 	"ui.save":							"Save project",
 	"ui.saveas":						"Save project as",
 
-	"layout.patternindex.move.up":		"Move selection up",
-	"layout.patternindex.move.down":	"Move selection down",
-	"layout.patternindex.move.left":	"Move selection left",
-	"layout.patternindex.move.right":	"Move selection right",
-	"layout.patternindex.movemax.up":	"Move selection to the top",
-	"layout.patternindex.movemax.down": "Move selection to the bottom",
+	"layout.matrix.move.up":			"Move selection up",
+	"layout.matrix.move.down":			"Move selection down",
+	"layout.matrix.move.left":			"Move selection left",
+	"layout.matrix.move.right":			"Move selection right",
+	"layout.matrix.movemax.up":			"Move selection to the top",
+	"layout.matrix.movemax.down":		"Move selection to the bottom",
 
-	"layout.patternindex.select.up":	"Extend selection up",
-	"layout.patternindex.select.down":	"Extend selection down",
-	"layout.patternindex.select.left":	"Extend selection left",
-	"layout.patternindex.select.right":	"Extend selection right",
-	"layout.patternindex.selmax.up":	"Extend selection to the top",
-	"layout.patternindex.selmax.down":	"Extend selection to the bottom",
+	"layout.matrix.select.up":			"Extend selection up",
+	"layout.matrix.select.down":		"Extend selection down",
+	"layout.matrix.select.left":		"Extend selection left",
+	"layout.matrix.select.right":		"Extend selection right",
+	"layout.matrix.selmax.up":			"Extend selection to the top",
+	"layout.matrix.selmax.down":		"Extend selection to the bottom",
 
-	"layout.patternindex.selall":		"Select the entire matrix",
-	"layout.patternindex.selrow":		"Select the matrix row",
-	"layout.patternindex.selcolumn":	"Select the matrix column",
-	"layout.patternindex.scroll.up":	"Scroll the matrix up",
-	"layout.patternindex.scroll.down":	"Scroll the matrix down",
+	"layout.matrix.selall":				"Select the entire matrix",
+	"layout.matrix.selrow":				"Select the matrix row",
+	"layout.matrix.selcolumn":			"Select the matrix column",
+	"layout.matrix.scroll.up":			"Scroll the matrix up",
+	"layout.matrix.scroll.down":		"Scroll the matrix down",
 
-	"layout.patternindex.insert":		"Insert matrix row",
-	"layout.patternindex.delete":		"Delete matrix row",
-	"layout.patternindex.copy":			"Copy matrix selection to clipboard",
-	"layout.patternindex.pasteenter":	"Paste matrix data from clipboard",
-	"layout.patternindex.pasteexit":	"Cancel pasting matrix data",
-	"layout.patternindex.edit":			"Apply pasting matrix, or edit matrix digits",
+	"layout.matrix.insert":				"Insert matrix row",
+	"layout.matrix.delete":				"Delete matrix row",
+	"layout.matrix.copy":				"Copy matrix selection to clipboard",
+	"layout.matrix.pasteenter":			"Paste matrix data from clipboard",
+	"layout.matrix.pasteexit":			"Cancel pasting matrix data",
+	"layout.matrix.edit":				"Apply pasting matrix, or edit matrix digits",
 
-	"layout.patternindex.shiftup":		"Shift the selection up",
-	"layout.patternindex.shiftdown":	"Shift the selection down",
-	"layout.patternindex.change.up":	"Increment the selected digit(s)",
-	"layout.patternindex.change.down":	"Decrement the selected digit(s)",
+	"layout.matrix.shiftup":			"Shift the selection up",
+	"layout.matrix.shiftdown":			"Shift the selection down",
+	"layout.matrix.change.up":			"Increment the selected digit(s)",
+	"layout.matrix.change.down":		"Decrement the selected digit(s)",
 
-	"layout.patternindex.hex.0":		"Input digit 0",
-	"layout.patternindex.hex.1":		"Input digit 1",
-	"layout.patternindex.hex.2":		"Input digit 2",
-	"layout.patternindex.hex.3":		"Input digit 3",
-	"layout.patternindex.hex.4":		"Input digit 4",
-	"layout.patternindex.hex.5":		"Input digit 5",
-	"layout.patternindex.hex.6":		"Input digit 6",
-	"layout.patternindex.hex.7":		"Input digit 7",
-	"layout.patternindex.hex.8":		"Input digit 8",
-	"layout.patternindex.hex.9":		"Input digit 9",
-	"layout.patternindex.hex.A":		"Input digit A",
-	"layout.patternindex.hex.B":		"Input digit B",
-	"layout.patternindex.hex.C":		"Input digit C",
-	"layout.patternindex.hex.D":		"Input digit D",
-	"layout.patternindex.hex.E":		"Input digit E",
-	"layout.patternindex.hex.F":		"Input digit F",
+	"layout.matrix.hex.0":				"Input digit 0",
+	"layout.matrix.hex.1":				"Input digit 1",
+	"layout.matrix.hex.2":				"Input digit 2",
+	"layout.matrix.hex.3":				"Input digit 3",
+	"layout.matrix.hex.4":				"Input digit 4",
+	"layout.matrix.hex.5":				"Input digit 5",
+	"layout.matrix.hex.6":				"Input digit 6",
+	"layout.matrix.hex.7":				"Input digit 7",
+	"layout.matrix.hex.8":				"Input digit 8",
+	"layout.matrix.hex.9":				"Input digit 9",
+	"layout.matrix.hex.A":				"Input digit A",
+	"layout.matrix.hex.B":				"Input digit B",
+	"layout.matrix.hex.C":				"Input digit C",
+	"layout.matrix.hex.D":				"Input digit D",
+	"layout.matrix.hex.E":				"Input digit E",
+	"layout.matrix.hex.F":				"Input digit F",
 };

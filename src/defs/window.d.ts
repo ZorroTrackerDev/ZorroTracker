@@ -99,6 +99,21 @@ declare global {
 				maximize: () => void,
 
 				/**
+				 * Helper function to zoom the window in.
+				 */
+				zoomIn: () => void,
+
+				/**
+				 * Helper function to zoom the window out.
+				 */
+				zoomOut: () => void,
+
+				/**
+				 * Helper function to set the window zoom level.
+				 */
+				zoomSet: (zoom:number) => void,
+
+				/**
 				 * Helper function to open a browser window in an external browser, usually the default browser in the OS.
 				 *
 				 * @param url The URL to open.

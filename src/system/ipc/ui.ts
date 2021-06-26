@@ -1,5 +1,5 @@
 
-import { app, dialog, ipcMain, screen, shell } from "electron";
+import { app, dialog, ipcMain, screen, shell, WebContents } from "electron";
 import { OpenDialogOptions, SaveDialogOptions } from "electron/main";
 import path from "path";
 import { WindowType } from "../../defs/windowtype";
@@ -88,6 +88,43 @@ ipcMain.on(ipcEnum.UiClose, (event, type:WindowType) => {
 		log.info("close-window", type);
 	}
 });
+
+// handle the UI requesting to zoom in
+ipcMain.on(ipcEnum.UiZoomIn, (event, type:WindowType) => {
+	const z = event.sender.getZoomFactor();
+	updateZoom(type +"_zoom", event.sender, Math.min(4, z + (0.1 * z)));
+});
+
+// handle the UI requesting to zoom out
+ipcMain.on(ipcEnum.UiZoomOut, (event, type:WindowType) => {
+	const z = event.sender.getZoomFactor();
+	updateZoom(type +"_zoom", event.sender, Math.max(0.33, z - (0.1 * z)));
+});
+
+// handle the UI requesting to zoom in
+ipcMain.on(ipcEnum.UiZoomSet, (event, type:WindowType, zoom:number) => {
+	updateZoom(type +"_zoom", event.sender, zoom);
+});
+
+/**
+ *
+ * @param cookie The target cookie to update with zoom value. null if no update
+ * @param target The target webcontents to update
+ * @param zoom The target zoom level
+ */
+export function updateZoom(cookie:string|null, target:WebContents, zoom:number):void {
+	// set the zoom level
+	target.setZoomFactor(zoom);
+
+	// TODO: Send an event requesting zoom display
+	log.info("current-zoom-level", (Math.round(zoom * 10000) / 100) +"%");
+
+	if(cookie) {
+		// update cookie
+		setCookie(cookie, zoom + "");
+	}
+}
+
 
 // handle the UI requesting an URL be opened in an external window
 ipcMain.on(ipcEnum.UiOpenURL, (event, url:string) => {

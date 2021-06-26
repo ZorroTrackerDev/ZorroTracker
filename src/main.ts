@@ -4,7 +4,7 @@ import { create as IpcCreate, log } from "./system/ipc/editor";
 
 // add the IPC handlers here
 import { getCookie, setCookie } from "./system/ipc/misc";
-import { close as IpcClose, updateMaximized } from "./system/ipc/ui";
+import { close as IpcClose, updateMaximized, updateZoom } from "./system/ipc/ui";
 import "./system/ipc/sub";
 import "./system/ipc/editor";
 import "./system/ipc/project";
@@ -16,7 +16,7 @@ export const windows:{ [key:string]: BrowserWindow } = {};
 export async function createWindow(name:string): Promise<BrowserWindow> {
 	// load the browser settings
 	const settings = await loadWindowSettings(name);
-	log.info("spawn-window", name);
+	log.info("spawn-window", name, settings);
 
 	const w = new BrowserWindow({
 		width: settings.w, height: settings.h,
@@ -30,6 +30,7 @@ export async function createWindow(name:string): Promise<BrowserWindow> {
 			preload: path.join(__dirname, "ui", "windows", name +".js"),
 			contextIsolation: false,		// TODO: possible security risk. Need to be careful about how to access anything outside the app ecosystem
 			enableRemoteModule: false,
+			zoomFactor: settings.zoom,
 		},
 	});
 
@@ -100,6 +101,9 @@ export async function createWindow(name:string): Promise<BrowserWindow> {
 			setCookie(name +"_y", ""+ w.getNormalBounds().y);
 		}
 	});
+
+	// update zoom level
+	updateZoom(null, w.webContents, settings.zoom);
 
 	// return the window
 	return windows[name] = w;
@@ -182,6 +186,7 @@ async function loadWindowSettings(window:string) {
 		y: await cookieToNumber(window +"_y"),
 		w: await cookieToNumber(window +"_w") || 800,
 		h: await cookieToNumber(window +"_h") || 600,
+		zoom: await cookieToNumber(window +"_zoom") || 1,
 		devtools: await getCookieValue(window +"_devtools") === "true",
 		maximized: await getCookieValue(window +"_maximized") === "true",
 	}

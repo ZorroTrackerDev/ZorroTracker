@@ -67,7 +67,7 @@ document.addEventListener("keydown", (event) => {
 	const arrayname = getKeymappingsName( { ctrl: event.ctrlKey, shift: event.shiftKey, alt: event.altKey, });
 
 	// get the function name from "keyMappings", and return if none were defined
-	const com = keyMappings[arrayname][event.key.toUpperCase()];
+	const com = keyMappings[arrayname][event.code.toUpperCase()];
 
 	if(!com) {
 		return;
@@ -105,32 +105,6 @@ export function doShortcut(name:string[], event?:KeyboardEvent):void {
 			}
 		}
 	})().catch(console.error);
-}
-
-/**
- * Add shortcuts to the program. Duplicated shortcuts will override previous ones.
- *
- * @param shortcuts the data describing the shortcut key functionality.
- */
-export function addShortcuts(shortcuts:{ [key:string]: string|string[] }):void {
-	// run for each shortcut in the array
-	for(const functionName in shortcuts) {
-
-		// helper function to add each shortcut. This allows to use both string and string[] for functions.
-		const addSingleShortcut = (keyCombo:string) => {
-			// convert the button state
-			const states = convertShortcutState(keyCombo, functionName);
-		}
-
-		if(Array.isArray(shortcuts[functionName])) {
-			// add multiple shortcut keys from array
-			(shortcuts[functionName] as string[]).forEach(addSingleShortcut);
-
-		} else {
-			// this is a single shortcut key
-			addSingleShortcut(shortcuts[functionName] as string);
-		}
-	}
 }
 
 // common type used in many functions, for storing state
@@ -221,7 +195,7 @@ export function makeShortcutString(data:ShortcutState): string {
  * @throws anything. Invalid files will throw just about any error.
  */
 export function loadDefaultShortcuts(type:SettingsTypes): void {
-	// load the files we need to inspect and pass them right to "addShortcuts" function. This pretends files are in the correct format.
+	// load the files we need to inspect
 	const files = loadSettingsFiles(type) as { [key: string]: string|string[]}[];
 
 	// process the shortcuts with this fancy new function

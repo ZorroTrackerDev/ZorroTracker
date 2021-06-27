@@ -9,6 +9,7 @@ import { ipcRenderer } from "electron";
 import { ipcEnum } from "../../system/ipc/ipc enum";
 import { WindowType } from "../../defs/windowtype";
 import { setTitle } from "../elements/toolbar/toolbar";
+import { Channel } from "../../api/scripts/driver";
 
 // load all the events
 const eventProject = ZorroEvent.createEvent(ZorroEventEnum.ProjectOpen);
@@ -72,6 +73,10 @@ export class Project {
 	public static async createProject():Promise<Project> {
 		console.info("Create new project");
 
+		// initialize the driver instance
+		const driver = loadFlag<string>("DEFAULT_DRIVER") ?? "";
+		await window.ipc.audio?.setDriver(driver);
+
 		// initiate new project without settings
 		const project = new Project("");
 		project.modules = [];
@@ -82,14 +87,16 @@ export class Project {
 			version: Project.VERSION,
 			type: ZorroConfigType.Project,
 			autosave: null,
-			driver: loadFlag<string>("DEFAULT_DRIVER") ?? "",
+			driver: driver,
 		};
 
 		// create a single default module
-		const m = project.addModule();
+		const m = await project.addModule();
 		m.name = "New module";
-		project.data[m.file].index.setChannels(await window.ipc.driver.getChannels());
 		await project.setActiveModuleIndex(0);
+		project.data[m.file].index.setChannels(m.channels as Channel[]);
+
+		console.log(m.channels)
 
 		// mark this project as not dirty for now
 		project.clean();
@@ -240,8 +247,13 @@ export class Project {
 					return;
 				}
 
+				if(!Array.isArray(m.channels)) {
+					Project.projectError("Unable to load channel data for module. This project file might be corrupted");
+					return;
+				}
+
 				// set channels and prepare matrix and patterns
-				x.index.setChannels(await window.ipc.driver.getChannels());
+				x.index.setChannels(m.channels as Channel[]);
 				x.index.loadMatrix(_mat);
 				x.index.loadPatterns(_pat);
 
@@ -252,6 +264,8 @@ export class Project {
 			// set the first module as the active module
 			await project.setActiveModuleIndex(0);
 
+			// initialize the driver instance
+			window.ipc.audio?.setDriver(project.config.driver);
 			return project;
 
 		} catch(ex) {
@@ -525,7 +539,7 @@ export class Project {
 	 * @param file If provided, the filename will be used in the file, as opposed to generating one
 	 * @returns The new module
 	 */
-	public addModule(file?:string): Module {
+	public async addModule(file?:string): Promise<Module> {
 		const data = {
 			file: file ?? Project.generateName(),
 			name: "",
@@ -533,6 +547,7 @@ export class Project {
 			index: 0,		// TODO: Generate index
 			type: ZorroModuleType.Song,
 			lastDate: new Date(),
+			channels: await window.ipc.driver.getChannels(),
 		}
 
 		if(!file) {
@@ -825,6 +840,11 @@ export interface Module {
 	 * Type of this module, various types are used for each module
 	 */
 	type: ZorroModuleType,
+
+	/**
+	 * The channels defined if this is a Song or SFX type
+	 */
+	channels?: Channel[]
 }
 
 export interface ModuleData {

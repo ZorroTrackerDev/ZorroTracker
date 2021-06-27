@@ -62,6 +62,15 @@
 				&:last-child td:last-child {
 					border-bottom-right-radius: 5px;
 				}
+
+				&> td:nth-child(1) {
+					user-select: all;
+
+					&::selection {
+						background-color: #494998;
+						color: #dedede;
+					}
+				}
 			}
 
 			& th, td {
@@ -82,7 +91,6 @@
 				&:nth-child(3) {
 					width: 40%;
 				}
-
 			}
 		}
 

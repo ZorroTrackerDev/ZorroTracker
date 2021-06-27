@@ -1,6 +1,9 @@
 /* load object extensions */
+import { SettingsTypes } from "../../api/files";
+import { WindowType } from "../../defs/windowtype";
 import "../extensions";
 import "../misc/logger";
+import { addShortcutReceiver, loadDefaultShortcuts } from "../misc/shortcuts";
 
 window.isLoading = false;
 
@@ -24,4 +27,78 @@ window.preload.updateMaximizeButtonState = (mode:boolean) => {
 	// update both the main toolbar and the maximize button
 	update(document.getElementById("main_toolbar"));
 	update(document.getElementById("main_toolbar_maximize"));
+}
+
+export function loadStandardShortcuts(type:SettingsTypes, extras:{ [key:string]: () => boolean|Promise<boolean>, }): void {
+	loadDefaultShortcuts(type);
+
+	// add default window open handler
+	// eslint-disable-next-line require-await
+	addShortcutReceiver("window", async(data) => {
+		const c = data.shift();
+
+		switch(c) {
+			case "projectinfo":
+				window.ipc.ui.window(WindowType.ProjectInfo);
+				return true;
+
+			case "shortcuts":
+				window.ipc.ui.window(WindowType.Shortcuts);
+				return true;
+		}
+
+		// shortcut was not handled
+		return false;
+	});
+
+	// add default UI shortcuts handler
+	// eslint-disable-next-line require-await
+	addShortcutReceiver("ui", async(data) => {
+		const c = data.shift();
+
+		switch(c) {
+			/* shortcut for opening chrome dev tools */
+			case "opendevtools":
+				window.ipc.ui.devTools();
+				return true;
+
+			/* shortcut for inspect element */
+			case "inspectelement":
+				window.ipc.ui.inspectElement();
+				return true;
+
+			/* shortcut for fullscreen */
+			case "fullscreen":
+				window.ipc.ui.maximize();
+				return true;
+
+			/* shortcut for zooming in the window */
+			case "zoomin":
+				window.ipc.ui.zoomIn();
+				return true;
+
+			/* shortcut for zooming out the window */
+			case "zoomout":
+				window.ipc.ui.zoomOut();
+				return true;
+
+			/* shortcut for resetting zoom level to 100% */
+			case "zoomreset":
+				window.ipc.ui.zoomSet(1);
+				return true;
+
+			case undefined:
+				break;
+
+			default:
+				// handle extra commands here
+				if(extras[c]){
+					return extras[c]();
+				}
+				break;
+		}
+
+		// shortcut was not handled
+		return false;
+	});
 }

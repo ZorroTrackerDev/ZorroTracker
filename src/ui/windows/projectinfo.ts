@@ -2,7 +2,6 @@ import { WindowType } from "../../defs/windowtype";
 import { Module, Project, ProjectConfig } from "../misc/project";
 import { loadDefaultToolbar, setTitle } from "../elements/toolbar/toolbar";
 import { SettingsTypes } from "../../api/files";
-import { addShortcutReceiver } from "../misc/shortcuts";
 import { clearChildren, fadeToLayout, loadTransition, removeTransition } from "../misc/layout";
 import { makeTextbox, TextboxEnum } from "../elements/textbox/textbox";
 import { makeOption, OptionEnum } from "../elements/option/option";
@@ -49,64 +48,24 @@ window.ipc.ui.path().then(() => {
 	// create the loading animation
 	loadTransition();
 
-	/* load shortcuts handler file */
-	import("../misc/shortcuts").then((module) => {
-		module.loadDefaultShortcuts(SettingsTypes.globalShortcuts);
-
-		// add default UI shortcuts handler
-		// eslint-disable-next-line require-await
-		addShortcutReceiver("ui", async(data) => {
-			switch(data.shift()) {
-				/* shortcut for opening chrome dev tools */
-				case "opendevtools":
-					window.ipc.ui.devTools();
-					return true;
-
-				/* shortcut for inspect element */
-				case "inspectelement":
-					window.ipc.ui.inspectElement();
-					return true;
-
-				/* shortcut for fullscreen */
-				case "fullscreen":
-					window.ipc.ui.maximize();
-					return true;
-
-				/* shortcut for closing a window */
-				case "close":
-					window.ipc.ui.close();
-					return true;
-
-				/* shortcut for zooming in the window */
-				case "zoomin":
-					window.ipc.ui.zoomIn();
-					return true;
-
-				/* shortcut for zooming out the window */
-				case "zoomout":
-					window.ipc.ui.zoomOut();
-					return true;
-
-				/* shortcut for resetting zoom level to 100% */
-				case "zoomreset":
-					window.ipc.ui.zoomSet(1);
-					return true;
-			}
-
-			// shortcut was not handled
-			return false;
+	// load all.ts asynchronously. This will setup our environment better than we can do here
+	import("./all").then((module) => {
+		// load the standard shortcuts
+		module.loadStandardShortcuts(SettingsTypes.globalShortcuts, {
+			close: () => {
+				// shortcut for closing the window
+				window.ipc.ui.close();
+				return true;
+			},
 		});
 
-		// load all.ts asynchronously. This will setup our environment better than we can do here
-		import("./all").then(() => {
-			/* load the menu */
-			loadDefaultToolbar(false);
-			setTitle("Project settings");
+		/* load the menu */
+		loadDefaultToolbar(false);
+		setTitle("Project settings");
 
-			// request for project info
-			ipcRenderer.send(ipcEnum.ProjectInit, window.type);
+		// request for project info
+		ipcRenderer.send(ipcEnum.ProjectInit, window.type);
 
-		}).catch(console.error);
 	}).catch(console.error);
 }).catch(console.error);
 

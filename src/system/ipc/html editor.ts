@@ -1,10 +1,9 @@
 import "../../system/ipc/html";
 import { ipcRenderer } from "electron";
-import { ChipConfig } from "../../api/scripts/chip";
-import { DriverConfig } from "../../api/scripts/driver";
 import { Module, Project } from "../../ui/misc/project";
 import { ipcEnum } from "./ipc enum";
 import { loadToModule } from "../../ui/windows/editor";
+import { _async } from "../../system/ipc/html";
 
 // add some extra ipc functions
 window.ipc.rpc = {
@@ -13,7 +12,16 @@ window.ipc.rpc = {
 }
 
 window.ipc.audio = {
-	init: (emu:ChipConfig, driver:DriverConfig) => ipcRenderer.send(ipcEnum.AudioCreate, emu, driver),
+	setChip: async(uuid:string) => {
+		const res = await window.ipc.chip.findAll();
+		ipcRenderer.send(ipcEnum.AudioChip, res[uuid]);
+	},
+
+	setDriver: async(uuid:string) => {
+		const res = await window.ipc.driver.findAll();
+		await _async(ipcEnum.AudioDriver, res[uuid]);
+	},
+
 	volume: (volume:number) => ipcRenderer.send(ipcEnum.AudioVolume, volume),
 	play: (special?:string) => ipcRenderer.send(ipcEnum.AudioPlay, special),
 	stop: () => ipcRenderer.send(ipcEnum.AudioStop),
@@ -47,6 +55,9 @@ ipcRenderer.on(ipcEnum.ProjectSetDriver, (event, uuid:string) => {
 		// set name and mark as dirty. TODO: convert driver data
 		Project.current.config.driver = uuid;
 		Project.current.dirty();
+
+		// set driver instance
+		window.ipc.audio?.setDriver(uuid);
 	}
 });
 
@@ -68,7 +79,7 @@ ipcRenderer.on(ipcEnum.ProjectAddModule, async(event, file:string) => {
 	// ensure the project is valid
 	if(Project.current) {
 		// create a new module and get its index
-		const m = Project.current.addModule(file);
+		const m = await Project.current.addModule(file);
 		const ix = Project.current.getModuleIndexByFile(m.file);
 
 
@@ -95,7 +106,7 @@ ipcRenderer.on(ipcEnum.ProjectCloneModule, async(event, index:number) => {
 		const clone = Project.current.modules[index];
 
 		// create a new module and get its index
-		const mod = Project.current.addModule();
+		const mod = await Project.current.addModule();
 
 		// delete the module and do nothin
 		await Project.current.cloneModule(clone, mod);

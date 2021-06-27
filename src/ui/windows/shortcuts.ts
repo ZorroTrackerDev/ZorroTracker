@@ -1,7 +1,7 @@
 import { WindowType } from "../../defs/windowtype";
 import { loadDefaultToolbar, setTitle } from "../elements/toolbar/toolbar";
 import { loadSettingsFiles, SettingsTypes } from "../../api/files";
-import { addShortcutReceiver, makeShortcutString, processShortcuts } from "../misc/shortcuts";
+import { makeShortcutString, processShortcuts } from "../misc/shortcuts";
 import { clearChildren, fadeToLayout, loadTransition, removeTransition } from "../misc/layout";
 
 /**
@@ -26,66 +26,26 @@ window.ipc.ui.path().then(() => {
 	// create the loading animation
 	loadTransition();
 
-	/* load shortcuts handler file */
-	import("../misc/shortcuts").then((module) => {
-		module.loadDefaultShortcuts(SettingsTypes.globalShortcuts);
-
-		// add default UI shortcuts handler
-		// eslint-disable-next-line require-await
-		addShortcutReceiver("ui", async(data) => {
-			switch(data.shift()) {
-				/* shortcut for opening chrome dev tools */
-				case "opendevtools":
-					window.ipc.ui.devTools();
-					return true;
-
-				/* shortcut for inspect element */
-				case "inspectelement":
-					window.ipc.ui.inspectElement();
-					return true;
-
-				/* shortcut for fullscreen */
-				case "fullscreen":
-					window.ipc.ui.maximize();
-					return true;
-
-				/* shortcut for closing a window */
-				case "close":
-					window.ipc.ui.close();
-					return true;
-
-				/* shortcut for zooming in the window */
-				case "zoomin":
-					window.ipc.ui.zoomIn();
-					return true;
-
-				/* shortcut for zooming out the window */
-				case "zoomout":
-					window.ipc.ui.zoomOut();
-					return true;
-
-				/* shortcut for resetting zoom level to 100% */
-				case "zoomreset":
-					window.ipc.ui.zoomSet(1);
-					return true;
-			}
-
-			// shortcut was not handled
-			return false;
+	// load all.ts asynchronously. This will setup our environment better than we can do here
+	import("./all").then((module) => {
+		// load the standard shortcuts
+		module.loadStandardShortcuts(SettingsTypes.globalShortcuts, {
+			close: () => {
+				// shortcut for closing the window
+				window.ipc.ui.close();
+				return true;
+			},
 		});
 
-		// load all.ts asynchronously. This will setup our environment better than we can do here
-		import("./all").then(() => {
-			/* load the menu */
-			loadDefaultToolbar(false);
-			setTitle("Shortcuts");
+		/* load the menu */
+		loadDefaultToolbar(false);
+		setTitle("Shortcuts");
 
-			// load layout for this window
-			fadeToLayout(layout).then(() => {
-				// remove the loading animation
-				removeTransition();
+		// load layout for this window
+		fadeToLayout(layout).then(() => {
+			// remove the loading animation
+			removeTransition();
 
-			}).catch(console.error);
 		}).catch(console.error);
 	}).catch(console.error);
 }).catch(console.error);
@@ -131,9 +91,9 @@ async function layout() {
 								shortcuts[key].map((data) => {
 									return /*html*/`
 										<tr>
-											<td>${ data.shortcut }</td>
+											<td title="${ data.shortcut }">${ data.shortcut }</td>
 											<td>${ data.key }</td>
-											<td>${ data.description }</td>
+											<td title="${ data.description }">${ data.description }</td>
 										</tr>
 									`;
 								}).join("")
@@ -155,7 +115,7 @@ function loadShortcutTables() {
 		if(fn.startsWith("layout.matrix")){
 			return "Pattern index";
 
-		} else if(fn.startsWith("ui") || fn.startsWith("layout.open")){
+		} else if(fn.startsWith("ui") || fn.startsWith("window")){
 			return "General";
 		}
 
@@ -214,8 +174,8 @@ const shortcutDescriptions: { [key:string]: string } = {
 	"ui.zoomout":						"Decrease the content size",
 	"ui.zoomreset":						"Reset the content size to 100%",
 
-	"layout.open.projectinfo":			"Open project info window",
-	"layout.open.shortcuts":			"Open shortcut editor window",
+	"window.projectinfo":				"Open project info window",
+	"window.shortcuts":					"Open shortcut editor window",
 
 	"ui.undo":							"Undo",
 	"ui.redo":							"Redo",

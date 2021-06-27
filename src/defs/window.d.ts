@@ -200,12 +200,18 @@ declare global {
 			},
 			audio?: {
 				/**
-				 * Initialize the audio adapter instance.
+				 * Initialize the audio chip instance.
 				 *
-				 * @param chip This is the configuration for the chip the system is going to use
-				 * @param driver This is the configuration for the driver the system is going to use
+				 * @param chip This is the UUID for the chip the system is going to use
 				 */
-				init: (chip:ChipConfig, driver:DriverConfig) => void,
+				setChip: (chip:string) => void,
+
+				/**
+				 * Initialize the audio driver instance.
+				 *
+				 * @param driver This is the UUID for the driver the system is going to use
+				 */
+				setDriver: (driver:string) => Promise<void>,
 
 				/**
 				 * Set the volume for the audio adapter instance.

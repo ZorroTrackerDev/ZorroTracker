@@ -93,6 +93,7 @@ export interface Channel {
 
 export enum ChannelType {
 	Unspecific = 0,
+	TimerA = 1,
 	YM2612FM = 0x10,
 	YM2612DAC = 0x11,
 	YM7101PSG = 0x20,

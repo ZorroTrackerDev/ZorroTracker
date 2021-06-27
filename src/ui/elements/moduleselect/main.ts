@@ -61,7 +61,7 @@ export class ModuleSelect {
 	private buttonFunc = [
 		async(e:MouseEvent, m:ModuleSelect) => {		// create
 			// create a new module and get its index
-			const mod = m.project.addModule();
+			const mod = await m.project.addModule();
 			const index = m.project.getModuleIndexByFile(mod.file);
 
 			// render the new module
@@ -81,7 +81,7 @@ export class ModuleSelect {
 				const clone = m.project.modules[m.project.activeModuleIndex];
 
 				// create a new module and get its index
-				const mod = m.project.addModule();
+				const mod = await m.project.addModule();
 				const index = m.project.getModuleIndexByFile(mod.file);
 
 				// clone the module

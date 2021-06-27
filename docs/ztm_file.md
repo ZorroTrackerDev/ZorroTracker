@@ -1,6 +1,6 @@
 # ZorroTracker project files
 ## General information
-ZorroTracker project files are simply zip files with specific contents. Different versions of the project files may work differently, and this document will be mentioning historical file formats. ZorroTracker will attempt to convert files from older formats (excluding beta formats, prefixed with a `b`). This document will focus on the file format `b0` mainly, but note differences to older formats along the way.
+ZorroTracker project files are simply zip files with specific contents. Different versions of the project files may work differently, and this document will be mentioning historical file formats. ZorroTracker will attempt to convert files from older formats (excluding beta formats, prefixed with a `b`). This document will focus on the file format `b1` mainly, but note differences to older formats along the way.
 
 The project files will contain the following structure inside of them:
 * .zorro
@@ -20,7 +20,6 @@ This file is required to exist on every project file. This file contains stuff m
 | name       | string          | The name of the project.                                            |
 | type       | number          | The type of this project. Must be 0.                                |
 | version    | string          | The version of this project. Must a valid.                          |
-| chip       | string          | The UUID of the chip emulator to use.  (to be deprecated)           |
 | driver     | string          | The UUID of the driver emulator to use.                             |
 | autosave   | string \| null  | The parent file for an autosave. `null` if this is not an autosave. |
 
@@ -35,6 +34,15 @@ This file defines the modules in this project file. This is a JSON file, which i
 | index      | number          | The index/order of this module. Usage depends on the driver.             |
 | file       | string          | The filename of this module. This is the module-specific directory name. |
 | type       | number          | The type of this module:<br/>&nbsp;&nbsp;• `0` = Song files. This is the general music format used in most cases.<br/>&nbsp;&nbsp;• `1` = Sound effect files. Some drivers will support sound effects separately from music.<br/>&nbsp;&nbsp;• `2` = Patch bank files. Some drivers use this to share patches between files. |
+| channel    | string?         | The channel data for this module, if the type is either `0` or `1`. The data will be below |
+
+This shows how the channel data is formatted:
+
+| field name | field type      | description                                                              |
+| ---------- | --------------- | ------------------------------------------------------------------------ |
+| name       | string          | The display name of the channel. This can be anything.                   |
+| id         | number          | An unique identifier for the channel. This can be anything.              |
+| type       | number          | The channel type for this channel. This helps the UI deal appropriately with the channel.<br/>&nbsp;&nbsp;• `0` = Unspecific. This channel does not have a special purpose.<br/>&nbsp;&nbsp;• `1` = Timer A. This channel controls timer A.<br/>&nbsp;&nbsp;• `16` = YM2612 FM. This is a FM-type channel for the YM2612 chip.<br/>&nbsp;&nbsp;• `17` = YM2612 DAC. This is a PCM-type channel for the YM2612 chip.<br/>&nbsp;&nbsp;• `32` = YM7101 PSG. This is a PSG-type channel for the YM7101 chip.<br/>&nbsp;&nbsp;• `33` = YM7101 DAC. This is a PCM-type channel for the YM7101 chip. |
 
 ## Music and sound effect modules
 ### Matrix data (`.matrix`)

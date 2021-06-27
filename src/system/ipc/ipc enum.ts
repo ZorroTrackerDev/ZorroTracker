@@ -30,7 +30,8 @@ export enum ipcEnum {
 	LogWarn = "log-warn",
 	LogError = "log-error",
 
-	AudioCreate = "audio-create",
+	AudioChip = "audio-chip",
+	AudioDriver = "audio-driver",
 	AudioClose = "audio-close",
 	AudioVolume = "audio-volume",
 	AudioPlay = "audio-play",

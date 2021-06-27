@@ -58,169 +58,136 @@ import { MatrixEditor } from "../elements/matrixeditor/main";
 import "../../system/ipc/html editor";
 
 async function loadMainShortcuts() {
-	/* load shortcuts handler file */
-	const module = await import("../misc/shortcuts");
-	module.loadDefaultShortcuts(SettingsTypes.editorShortcuts);
+	// load all.ts asynchronously. This will setup our environment better than we can do here
+	const module = await import("./all");
 
-	// add default UI shortcuts handler
-	// eslint-disable-next-line require-await
-	addShortcutReceiver("ui", async(data) => {
-		switch(data.shift()) {
-			/* shortcut for opening chrome dev tools */
-			case "opendevtools":
-				window.ipc.ui.devTools();
-				return true;
-
-			/* shortcut for inspect element */
-			case "inspectelement":
-				window.ipc.ui.inspectElement();
-				return true;
-
-			/* shortcut for fullscreen */
-			case "fullscreen":
-				window.ipc.ui.maximize();
-				return true;
-
-			/* shortcut for zooming in the window */
-			case "zoomin":
-				window.ipc.ui.zoomIn();
-				return true;
-
-			/* shortcut for zooming out the window */
-			case "zoomout":
-				window.ipc.ui.zoomOut();
-				return true;
-
-			/* shortcut for resetting zoom level to 100% */
-			case "zoomreset":
-				window.ipc.ui.zoomSet(1);
-				return true;
-
-			/* shortcut for opening a file or a project */
-			case "open": {
-				// first, ask to save the current project. If user presses cancel, then do not run the code
-				if(!await askSavePopup()) {
-					return false;
-				}
-
-				// open the openFileDialog to find the target file
-				const result = await window.ipc.ui.dialog.open("openfolder", {
-					properties: [ "openFile", ],
-					filters: [
-						{ name: "ZorroTracker Module Files", extensions: [ "ztm", ], },
-						{ name: "ZorroTracker Files", extensions: [ "zip", ], },
-						{ name: "All Files", extensions: [ "*", ], },
-					],
-				});
-
-				// if invalid file was applied or operation was cancelled, abort
-				if(!result) {
-					return false;
-				}
-
-				// open loading animation
-				loadTransition();
-				Undo.clear();
-
-				// try to load the project
-				const p = await Project.loadProject(result);
-
-				if(!p){
-					removeTransition();
-					return false;
-				}
-
-				// save project as current
-				await Project.setActiveProject(p);
-
-				// let all windows know about the loaded project
-				window.ipc.project?.init(p);
-
-				// reload layout
-				await fadeToLayout(editorLayout);
-				removeTransition();
-				return true;
+	module.loadStandardShortcuts(SettingsTypes.editorShortcuts, {
+		/* shortcut for opening a file or a project */
+		open: async() => {
+			// first, ask to save the current project. If user presses cancel, then do not run the code
+			if(!await askSavePopup()) {
+				return false;
 			}
 
-			/* shortcut for creating a new project */
-			case "new": {
-				// first, ask to save the current project. If user presses cancel, then do not run the code
-				if(!await askSavePopup()) {
-					return false;
-				}
+			// open the openFileDialog to find the target file
+			const result = await window.ipc.ui.dialog.open("openfolder", {
+				properties: [ "openFile", ],
+				filters: [
+					{ name: "ZorroTracker Module Files", extensions: [ "ztm", ], },
+					{ name: "ZorroTracker Files", extensions: [ "zip", ], },
+					{ name: "All Files", extensions: [ "*", ], },
+				],
+			});
 
-				// open loading animation
-				loadTransition();
-				Undo.clear();
-
-				// try to load the project
-				const p = await Project.createProject();
-
-				if(!p){
-					removeTransition();
-					return false;
-				}
-
-				// save project as current
-				await Project.setActiveProject(p);
-
-				// let all windows know about the loaded project
-				window.ipc.project?.init(p);
-
-				// reload layout
-				await fadeToLayout(editorLayout);
-				removeTransition();
-				return true;
+			// if invalid file was applied or operation was cancelled, abort
+			if(!result) {
+				return false;
 			}
 
-			/* shortcut for closing a project */
-			case "close":
+			// open loading animation
+			loadTransition();
+			Undo.clear();
+
+			// try to load the project
+			const p = await Project.loadProject(result);
+
+			if(!p){
+				removeTransition();
 				return false;
+			}
 
-			/* shortcut for doing a redo action */
-			case "redo":
-				return Undo.redo();
+			// save project as current
+			await Project.setActiveProject(p);
 
-			/* shortcut for doing a undo action */
-			case "undo":
-				return Undo.undo();
+			// let all windows know about the loaded project
+			window.ipc.project?.init(p);
 
-			/* shortcut for doing a save action */
-			case "save":
-				try {
-					return await Project.current?.save(false) ?? false;
+			// reload layout
+			await fadeToLayout(editorLayout);
+			removeTransition();
+			return true;
+		},
 
-				} catch(ex)  {
-					console.error(ex);
-				}
-
+		/* shortcut for creating a new project */
+		new: async() => {
+			// first, ask to save the current project. If user presses cancel, then do not run the code
+			if(!await askSavePopup()) {
 				return false;
+			}
 
-			/* shortcut for doing a save as action */
-			case "saveas":
-				try {
-					return await Project.current?.saveAs() ?? false;
+			// open loading animation
+			loadTransition();
+			Undo.clear();
 
-				} catch(ex)  {
-					console.error(ex);
-				}
+			// try to load the project
+			const p = await Project.createProject();
 
+			if(!p){
+				removeTransition();
 				return false;
-		}
+			}
 
-		// shortcut was not handled
-		return false;
+			// save project as current
+			await Project.setActiveProject(p);
+
+			// let all windows know about the loaded project
+			window.ipc.project?.init(p);
+
+			// reload layout
+			await fadeToLayout(editorLayout);
+			removeTransition();
+			return true;
+		},
+
+		/* shortcut for closing a project */
+		close: () => {
+			return false;
+		},
+
+		/* shortcut for doing a redo action */
+		redo: () => {
+			return Undo.redo();
+		},
+
+		/* shortcut for doing a undo action */
+		undo: () => {
+			return Undo.undo();
+		},
+
+		/* shortcut for doing a save action */
+		save: async() => {
+			try {
+				return await Project.current?.save(false) ?? false;
+
+			} catch(ex)  {
+				console.error(ex);
+			}
+
+			return false;
+		},
+
+		/* shortcut for doing a save as action */
+		saveas: async() => {
+			try {
+				return await Project.current?.saveAs() ?? false;
+
+			} catch(ex)  {
+				console.error(ex);
+			}
+
+			return false;
+		},
 	});
 }
 
 // request the appPath variable from main thread
 window.ipc.ui.path().then(async() => {
+	// TODO: Temporary code to initiate the audio system with an emulator and set volume. Bad!
+	window.ipc.audio?.setChip(loadFlag<string>("CHIP") ?? "");
+
 	// create the loading animation
 	loadTransition();
 	await loadMainShortcuts();
-
-	// load all.ts asynchronously. This will setup our environment better than we can do here
-	await import("./all");
 
 	/* load the menu */
 	loadDefaultToolbar(true);
@@ -232,24 +199,10 @@ window.ipc.ui.path().then(async() => {
 		import("../misc/rpc").catch(console.error);
 	}
 
-	// load chips and drivers
-	const emus = await window.ipc.chip.findAll();
-	const drivers = await window.ipc.driver.findAll();
-
-	// load the chip emulator and driver flags
-	const defdrv = loadFlag<string>("DEFAULT_DRIVER") ?? Object.keys(drivers)[0];
-	const chip = loadFlag<string>("CHIP") ?? Object.keys(emus)[0];
-
-	// TODO: Temporary code to initiate the audio system with an emulator and set volume. Bad!
-	if(emus[chip] && drivers[defdrv]){
-		// @ts-ignore
-		window.ipc.audio.init(emus[chip], drivers[defdrv]);
-
-		// TEMP volume hack
-		setTimeout(() => {
-			volumeSlider(SliderEnum.Small).catch(console.error);
-		}, 100);
-	}
+	// TEMP volume hack
+	setTimeout(() => {
+		volumeSlider(SliderEnum.Small).catch(console.error);
+	}, 100);
 
 	// create a blank project
 	Project.current = await Project.createProject();
@@ -276,17 +229,6 @@ function initShortcutHandler() {
 		switch(data.shift()) {
 			case "matrix":
 				return matrixEditor?.receiveShortcut(data) ?? false;
-
-				case "open":
-					switch(data.shift()) {
-						case "projectinfo":
-							window.ipc.ui.window(WindowType.ProjectInfo);
-							return true;
-
-						case "shortcuts":
-							window.ipc.ui.window(WindowType.Shortcuts);
-							return true;
-					}
 		}
 
 		return false;

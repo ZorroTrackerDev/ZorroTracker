@@ -53,12 +53,25 @@ ipcMain.on(ipcEnum.AudioVolume, (event, volume:number) => {
 });
 
 // handle creating the audio adapter instance.
-ipcMain.on(ipcEnum.AudioCreate, (event, chip:ChipConfig, driver:DriverConfig) => {
+ipcMain.on(ipcEnum.AudioChip, (event, chip:ChipConfig) => {
 	// post the ChipConfig
 	worker?.postMessage({ code: "chip", data: chip, });
+});
 
+// handle creating the audio adapter instance.
+ipcMain.on(ipcEnum.AudioDriver, (event, driver:DriverConfig) => {
 	// post the DriverConfig
 	worker?.postMessage({ code: "driver", data: driver, });
+
+	// listen to the response from worker and send later
+	worker?.once("message", (data:{ code:string, data:unknown }) => {
+		if(data.code === "driver"){
+			event.reply(ipcEnum.AudioDriver);
+		}
+	});
+
+	// close the previous instance of RtAudio if running
+	worker?.postMessage({ code: "close", data: undefined, });
 
 	// post the finally initialize the audio adapter instance
 	worker?.postMessage({ code: "load", data: undefined, });

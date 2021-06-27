@@ -178,6 +178,10 @@ ipcMain.on(ipcEnum.UiLoadWindow, async(event, name:string) => {
 	if(!windows[name]) {
 		// if window already not open, then open it
 		await createWindow(name);
+
+	} else {
+		// if already open, just focus on the window
+		windows[name].focus();
 	}
 });
 

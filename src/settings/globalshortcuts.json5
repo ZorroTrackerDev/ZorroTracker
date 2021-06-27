@@ -14,6 +14,6 @@
 	"ui.zoomout":						[ "ctrl+minus" ],						/* shortcut for zooming out the window */
 	"ui.zoomreset":						[ "ctrl+0" ],							/* shortcut for setting zoom level to 100% */
 
-	"layout.open.projectinfo":			[ "ctrl+shift+P" ],						/* shortcut for opening the project info editor */
-	"layout.open.shortcuts":			[ "ctrl+shift+Z" ],						/* shortcut for opening the shortcuts editor */
+	"window.projectinfo":				[ "ctrl+shift+P" ],						/* shortcut for opening the project info editor */
+	"window.shortcuts":					[ "ctrl+shift+Z" ],						/* shortcut for opening the shortcuts editor */
 }

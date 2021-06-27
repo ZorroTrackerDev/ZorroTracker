@@ -13,7 +13,7 @@ import { WindowType } from "../../defs/windowtype";
  * @param args The arguments to give to the IPC event.
  * @returns The Promise, that will eventually resolve into the value from the event.
  */
-const _async = (name:string, ...args:unknown[]) => {
+export const _async = (name:string, ...args:unknown[]): Promise<unknown> => {
 	return new Promise((res) => {
 		ipcRenderer.once(name, (result, value) => {
 			res(value);

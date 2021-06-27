@@ -135,13 +135,17 @@ parentPort?.on("message", (data:{ code:string, data:unknown, fn?:string }) => {
 					throw new Error("Chip is invalid");
 				}
 
-				parentPort?.postMessage({ code: "log", data: [
-					"audio-driver", (data.data as DriverConfig).name, (data.data as DriverConfig).entry,
-				], });
-
 				/* eslint-disable @typescript-eslint/no-var-requires */
 				driver = new (__non_webpack_require__((data.data as DriverConfig).entry).default)();
 				driver?.init(outputRate, data.data as DriverConfig, chip);
+
+				// let the caller know we finished
+				parentPort?.postMessage({ code: "driver", });
+
+				// log it too
+				parentPort?.postMessage({ code: "log", data: [
+					"audio-driver", (data.data as DriverConfig).name, (data.data as DriverConfig).entry,
+				], });
 				break;
 
 			/**
@@ -159,7 +163,14 @@ parentPort?.on("message", (data:{ code:string, data:unknown, fn?:string }) => {
 			 * data: Irrelevant
 			 */
 			case "close":
-				rtAudio.closeStream();
+				if(rtAudio?.isStreamOpen()){
+					// reset the chip just in case
+					chip?.reset();
+
+					// clear the output queue and close the stream down
+					rtAudio.clearOutputQueue();
+					rtAudio.closeStream();
+				}
 				break;
 
 			/**

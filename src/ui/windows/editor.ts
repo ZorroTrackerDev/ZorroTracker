@@ -226,7 +226,7 @@ window.ipc.ui.path().then(async() => {
 	loadDefaultToolbar(true);
 
 	// enable discord RPC
-	if(loadFlag("DISCORD_RPC")) {
+	if(loadFlag<boolean>("DISCORD_RPC")) {
 		// load Discord RPC integration
 		window.ipc.rpc?.init();
 		import("../misc/rpc").catch(console.error);
@@ -236,10 +236,14 @@ window.ipc.ui.path().then(async() => {
 	const emus = await window.ipc.chip.findAll();
 	const drivers = await window.ipc.driver.findAll();
 
+	// load the chip emulator and driver flags
+	const defdrv = loadFlag<string>("DEFAULT_DRIVER") ?? Object.keys(drivers)[0];
+	const chip = loadFlag<string>("CHIP") ?? Object.keys(emus)[0];
+
 	// TODO: Temporary code to initiate the audio system with an emulator and set volume. Bad!
-	if(emus["9d8d2954-ad94-11eb-8529-0242ac130003"] && drivers["9d8d267a-ad94-11eb-8529-0242ac130003"]){
+	if(emus[chip] && drivers[defdrv]){
 		// @ts-ignore
-		window.ipc.audio.init(emus["9d8d2954-ad94-11eb-8529-0242ac130003"], drivers["9d8d267a-ad94-11eb-8529-0242ac130003"]);
+		window.ipc.audio.init(emus[chip], drivers[defdrv]);
 
 		// TEMP volume hack
 		setTimeout(() => {

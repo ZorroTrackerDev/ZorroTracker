@@ -1,0 +1,13 @@
+/*
+ * This is the configuration file for Zorrodriver emulation
+ */
+{
+	uuid: "ec6a4880-3c17-495f-b3d7-6b35dcc56493",	// please generate a *unique ID* for your configuration
+	name: "Zorrodriver",							// the user-friendly name of this script
+	version: "b1",									// the API version identifier. ZorroTracker will support some older versions as long as the API does not have breaking changes. Do not change this by yourself!
+	entry: "dist/index.js",							// the entry point for code for this script. This should never be a .ts file, you should always compile TypeScript files down to JavaScript before using them.
+	date: "2021/6/27",								// the date the driver configuration was created
+	credits: [										// the credits of people who contributed to this driver
+		{ name: "AURORA☆FIELDS", url: "https://github.com/NatsumiFox", info: "The driver script implementation, and Zorrodriver specifications." },
+	],
+}

@@ -3,7 +3,7 @@ import fs from "fs";
 import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 import { PatternIndex } from "../../api/matrix";
 import { ConfigVersion } from "../../api/scripts/config";
-import { fserror } from "../../api/files";
+import { fserror, loadFlag } from "../../api/files";
 import { confirmationDialog, PopupColors, PopupSizes } from "../elements/popup/popup";
 import { ipcRenderer } from "electron";
 import { ipcEnum } from "../../system/ipc/ipc enum";
@@ -29,7 +29,7 @@ const eventUpdate = ZorroEvent.createEvent(ZorroEventEnum.ModuleUpdate);
  *				.patterns -> (binary) PatternIndex.patterns
  */
 export class Project {
-	public static readonly VERSION = ConfigVersion.b0;
+	public static readonly VERSION = ConfigVersion.b1;
 
 	/* The project that is currently being edited, or undefined if no project is loaded */
 	public static current:Project|undefined;
@@ -79,11 +79,10 @@ export class Project {
 		// set project config to default value
 		project.config = {
 			name: "New project",
-			version: ConfigVersion.b0,
+			version: Project.VERSION,
 			type: ZorroConfigType.Project,
 			autosave: null,
-			chip: "9d8d2954-ad94-11eb-8529-0242ac130003",	// Nuked
-			driver: "9d8d267a-ad94-11eb-8529-0242ac130003",	// VGM
+			driver: loadFlag<string>("DEFAULT_DRIVER") ?? "",
 		};
 
 		// create a single default module
@@ -157,6 +156,10 @@ export class Project {
 				// validate the project config
 				switch(project.config.version) {
 					case ConfigVersion.b0:
+						project.config.version = Project.VERSION;
+						break;
+
+					case ConfigVersion.b1:
 						break;
 
 					default:
@@ -775,11 +778,6 @@ export enum ZorroConfigType {
 }
 
 export interface ProjectConfig extends ZorroConfig {
-	/**
-	 * UUID of the chip we are using currently for the project
-	 */
-	chip: string,
-
 	/**
 	 * UUID of the driver we are using currently for the project
 	 */

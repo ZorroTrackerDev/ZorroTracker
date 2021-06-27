@@ -1,6 +1,7 @@
 // list of all valid config versions. These may be used to validate scripts are compatible with the program.
 export enum ConfigVersion {
-	b0 = "b0",
+	b0 = "b0",					// first test version of the API
+	b1 = "b1",					// second version of the API, with expanded functionality to support actual real-world use cases
 }
 
 // a generic configuration object, which specific configurations will extend from.

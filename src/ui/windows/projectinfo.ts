@@ -154,7 +154,7 @@ async function projectInfoLayout():Promise<true> {
 				Project.current.config.name = value;
 
 				// send request to update config
-				ipcRenderer.send(ipcEnum.ProjectSetName, Project.current.config.name);
+				ipcRenderer.send(ipcEnum.ProjectSetName, value);
 			}
 
 			return value;
@@ -175,9 +175,19 @@ async function projectInfoLayout():Promise<true> {
 	const driver = makeOption({
 		type: OptionEnum.Medium, label: "Project sound driver", width: "200px", style: "display: inline-flex; margin-right: 20px;", items:
 		Object.entries(drivers).map(item => { return { text: item[1].name, value: item[1].uuid, } }),
+		getOption: (value) => {
+			if(Project.current) {
+				// set the driver
+				Project.current.config.driver = value;
+
+				// send request to update config
+				ipcRenderer.send(ipcEnum.ProjectSetDriver, value);
+			}
+		},
 	});
 
 	line0.appendChild(driver.element);
+	driver.setOption(Project.current?.config.driver ?? "");
 
 	// add the module selector
 	contain.appendChild(new ModuleSelect(Project.current as Project).element);

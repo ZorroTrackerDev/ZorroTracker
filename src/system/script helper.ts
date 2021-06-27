@@ -18,7 +18,7 @@ export async function findAll(folder:string):Promise<{ [key:string]: GenericConf
 				path.join(dataPath, scriptsFolder, folder, dir, "config.json5"), "utf8")) as GenericConfig;
 
 			// this is the only valid version
-			if(obj.version !== ConfigVersion.b0){
+			if(obj.version !== ConfigVersion.b1){
 				continue;
 			}
 

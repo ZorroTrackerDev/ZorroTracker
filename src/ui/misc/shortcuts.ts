@@ -67,7 +67,7 @@ document.addEventListener("keydown", (event) => {
 	const arrayname = getKeymappingsName( { ctrl: event.ctrlKey, shift: event.shiftKey, alt: event.altKey, });
 
 	// get the function name from "keyMappings", and return if none were defined
-	const com = keyMappings[arrayname][event.code.toUpperCase()];
+	const com = keyMappings[arrayname][event.code.toUpperCase()] ?? keyMappings[arrayname][event.key.toUpperCase()];
 
 	if(!com) {
 		return;

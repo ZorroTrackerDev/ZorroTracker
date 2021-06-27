@@ -4,7 +4,7 @@
 {
 	uuid: "audio",									// DO NOT CHANGE
 	name: "ZorroTracker audio",						// the user-friendly name of this script
-	version: "b0",									// the API version identifier. ZorroTracker will support some older versions as long as the API does not have breaking changes. Do not change this by yourself!
+	version: "b1",									// the API version identifier. ZorroTracker will support some older versions as long as the API does not have breaking changes. Do not change this by yourself!
 	entry: "dist/index.js",							// the entry point for code for this script. This should never be a .ts file, you should always compile TypeScript files down to JavaScript before using them.
 	date: "2021/5/25",								// the date the audio handler configuration was created
 	credits: [										// the credits of people who contributed to this audio handler

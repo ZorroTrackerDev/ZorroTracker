@@ -110,15 +110,6 @@ export async function create(): Promise<void> {
  * Various handlers for dealing with the chip
  */
 
-// handle FM mute command
-ipcMain.on(ipcEnum.ChipMuteFM, (event, channel:number, state:boolean) => {
-	worker?.postMessage({ code: "mutefm", data: [ channel, state, ], });
-});
-
-// handle PSG mute command
-ipcMain.on(ipcEnum.ChipMuteFM, (event, channel:number, state:boolean) => {
-	worker?.postMessage({ code: "mutepsg", data: [ channel, state, ], });
-});
 
 /**
  * Various handlers for dealing with Discord RPC
@@ -171,4 +162,25 @@ ipcMain.on(ipcEnum.UiExit, (event:unknown, state:boolean) => {
 			}).catch(log.error);
 		}
 	});
+});
+
+/**
+ * Various functions for dealing with drivers
+ */
+// handle arbitary function calls
+ipcMain.on(ipcEnum.DriverFunc, (event, args:[string, unknown[]]) => {
+	worker?.postMessage({ code: "cd", data: args[1], fn: args[0], });
+
+	const f = (data:{ code:string, fn:string, data:unknown }) => {
+		if(data.code === "cdr" && data.fn === args[0]){
+			// valid response, return data
+			event.reply(ipcEnum.DriverFunc, data.data);
+
+			// disable this check
+			worker?.off("message", f);
+		}
+	}
+
+	// listen to response TODO: Make this system guarantee correct handling
+	worker?.on("message", f);
 });

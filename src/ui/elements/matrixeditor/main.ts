@@ -954,7 +954,7 @@ export class MatrixEditor implements UIElement {
 
 		// add each channel into the mix along with the insert button
 		const insert = _add("​", -1);
-		this.index.channels.forEach(_add);
+		this.index.channels.forEach((channel, index) => _add(channel.name, index));
 
 		// add class and title for the insert button
 		insert.classList.add("matrix_insert");

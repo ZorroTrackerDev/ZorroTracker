@@ -19,8 +19,11 @@ module.exports = {
       {
         test: /\.ts$/,
         exclude: /node_modules/,
-        use: ["ts-loader"],
+        use: ["ts-loader", ],
       },
     ],
+  },
+  resolve: {
+    extensions: [".ts", ".js", ],
   },
 }

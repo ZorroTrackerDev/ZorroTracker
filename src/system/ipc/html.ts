@@ -1,7 +1,7 @@
 import { ipcEnum } from "./ipc enum";
 import { ipcRenderer } from "electron";
 import { ChipConfig } from "../../api/scripts/chip";
-import { DriverConfig } from "../../api/scripts/driver";
+import { Channel, DriverConfig } from "../../api/scripts/driver";
 import { OpenDialogOptions, SaveDialogOptions } from "electron/main";
 import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 import { WindowType } from "../../defs/windowtype";
@@ -67,11 +67,13 @@ window.ipc = {
 	},
 	chip: {
 		findAll: () => _async(ipcEnum.ChipFindAll) as Promise<{ [key:string]: ChipConfig }>,
-		muteFM: (channel:number, state:boolean) => ipcRenderer.send(ipcEnum.ChipMuteFM, channel, state),
-		mutePSG: (channel:number, state:boolean) => ipcRenderer.send(ipcEnum.ChipMutePSG, channel, state),
 	},
 	driver: {
 		findAll: () => _async(ipcEnum.DriverFindAll) as Promise<{ [key:string]: DriverConfig }>,
+		mute: (channel:Channel, state:boolean) => _async(ipcEnum.DriverFunc, [ "muteChannel", [ channel.id, state, ], ]) as Promise<boolean>,
+		getChannels: () => _async(ipcEnum.DriverFunc, [ "getChannels", [], ]) as Promise<Channel[]>,
+		enableChannel: (channel:Channel) => _async(ipcEnum.DriverFunc, [ "enableChannel", [ channel.id, ], ]) as Promise<boolean>,
+		disableChannel: (channel:Channel) => _async(ipcEnum.DriverFunc, [ "disableChannel", [ channel.id, ], ]) as Promise<boolean>,
 	},
 }
 

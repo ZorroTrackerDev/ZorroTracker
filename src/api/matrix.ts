@@ -2,14 +2,15 @@ import { Position } from "./ui";
 import { ZorroEvent, ZorroEventEnum, ZorroSenderTypes } from "./events";
 import { TrackerCommands } from "./commands";
 import { Project } from "../ui/misc/project";
+import { Channel } from "./scripts/driver";
 
 /**
  * Class for a single pattern cell, which can only be used to store its immediate values.
  */
  export class PatternCell {
-	public note:number;
-	public volume:number;
-	public commands:{ id: TrackerCommands|number, value: number, }[];
+	public note: number;
+	public volume: number;
+	public commands: { id: TrackerCommands|number, value: number, }[];
 
 	constructor(){
 		this.note = 0;
@@ -20,7 +21,7 @@ import { Project } from "../ui/misc/project";
 	/**
 	 * Method to convert this pattern cell  into data
 	 */
-	public save():number[] {
+	public save(): number[] {
 		const ret = [];
 
 		// convert the note to bytes
@@ -69,7 +70,7 @@ import { Project } from "../ui/misc/project";
 	 * @param idx The starting position of the data to read
 	 * @returns The new position
 	 */
-	public load(data:Buffer, idx:number, width:number):number {
+	public load(data:Buffer, idx:number, width:number): number {
 		let index = idx;
 
 		// load the note and the volume
@@ -120,12 +121,12 @@ import { Project } from "../ui/misc/project";
  * Class to hold data for a single pattern and help with intercommunication
  */
 export class PatternData {
-	public cells:PatternCell[];
-	public owner:string;
+	public cells: PatternCell[];
+	public owner: Channel;
 	public edited = false;
 	public width = 1;		// TODO: Get from channel itself
 
-	constructor(owner:string){
+	constructor(owner:Channel){
 		this.owner = owner;
 		this.cells = [];
 
@@ -137,7 +138,7 @@ export class PatternData {
 	/**
 	 * Method to convert this pattern into data
 	 */
-	public save():number[] {
+	public save(): number[] {
 		// save the command width of this pattern
 		const ret = [ this.cells.length, this.width, ];
 
@@ -156,7 +157,7 @@ export class PatternData {
 	 * @param idx The starting position of the data to read
 	 * @returns The new position
 	 */
-	public load(data:Buffer, idx:number):number {
+	public load(data:Buffer, idx:number): number {
 		// load the number of cells for this pattern
 		let index = idx;
 		const cells = data[index++];
@@ -184,16 +185,16 @@ export class PatternData {
  */
 export class PatternIndex {
 	// the project this PatternIndex is apart of
-	private project:Project;
+	private project: Project;
 
 	// Stores the list of channels this pattern index stores
-	public channels!:string[];
+	public channels!: Channel[];
 
 	// Stores a list of patterns per channel. Usage: patterns[channel][index]. Null/undefined means the value is unused
-	public patterns!:(PatternData | null)[][];
+	public patterns!: (PatternData | null)[][];
 
 	// Stores the pattern matrix, where the mappings from song order to pattern index are stored. Usage: matrix[channel][index].
-	public matrix!:Uint8Array[];
+	public matrix!: Uint8Array[];
 
 	// Stores the length of the matrix. Values at greater offsets should always be set to 0. Allows to easily determine long the pattern matrix is.
 	public matrixlen = 0;
@@ -216,7 +217,7 @@ export class PatternIndex {
 	 *
 	 * @param channels The list of channels to set
 	 */
-	public setChannels(channels:string[]):void {
+	public setChannels(channels:Channel[]): void {
 		this.channels = channels;
 		this.patterns = [];
 		this.matrix = [];
@@ -241,7 +242,7 @@ export class PatternIndex {
 	 *
 	 * @returns The size of the matrix
 	 */
-	public getSize():Position {
+	public getSize(): Position {
 		return { x: this.getWidth(), y : this.getHeight(), };
 	}
 
@@ -250,7 +251,7 @@ export class PatternIndex {
 	 *
 	 * @returns The height of the matrix
 	 */
-	public getHeight():number {
+	public getHeight(): number {
 		return this.matrixlen;
 	}
 
@@ -259,7 +260,7 @@ export class PatternIndex {
 	 *
 	 * @returns The width of the matrix
 	 */
-	public getWidth():number {
+	public getWidth(): number {
 		return this.channels.length;
 	}
 
@@ -270,7 +271,7 @@ export class PatternIndex {
 	 * @param index The index to use for generating a row
 	 * @returns Null if failed, or the index if successful
 	 */
-	public get(channel:number, index:number):number|null {
+	public get(channel:number, index:number): number|null {
 		// check that index and channel are valid
 		if(index < 0 || index > 0xFF || channel < 0 || channel >= this.channels.length) {
 			return null;
@@ -286,7 +287,7 @@ export class PatternIndex {
 	 * @param index Index of the row to get
 	 * @returns Null if failed, or an array of pattern indices
 	 */
-	public async getRow(index:number):Promise<Uint8Array|null> {
+	public async getRow(index:number): Promise<Uint8Array|null> {
 		// check that the index is valid
 		if(index < 0 || index >= this.matrixlen) {
 			return null;
@@ -320,7 +321,7 @@ export class PatternIndex {
 	 * @param columns The list of columns to retrurn. Will be reformatted in order
 	 * @returns null if we failed, or the full list of elements as flat array
 	 */
-	public async getRegion(rows:number[], columns:number[]):Promise<number[]|null> {
+	public async getRegion(rows:number[], columns:number[]): Promise<number[]|null> {
 		// generate a new array of values
 		const ret:number[] = Array(rows.length * columns.length);
 		let index = 0;
@@ -361,7 +362,7 @@ export class PatternIndex {
 	 * @param value The value to put into that index
 	 * @returns Null if failed, or the index if successful
 	 */
-	public async set(channel:number, index:number, value:number):Promise<boolean> {
+	public async set(channel:number, index:number, value:number): Promise<boolean> {
 		// check that index and channel are valid
 		if(value < 0 || value > 0xFF || index < 0 || index > 0xFF || channel < 0 || channel >= this.channels.length) {
 			return false;
@@ -387,7 +388,7 @@ export class PatternIndex {
 	 * @param data The row data to change to
 	 * @returns boolean indicating whether it was successful or not.
 	 */
-	public async setRow(index:number, data:Uint8Array):Promise<boolean> {
+	public async setRow(index:number, data:Uint8Array): Promise<boolean> {
 		// check that the index is valid
 		if(index < 0 || index > 0xFF) {
 			return false;
@@ -419,7 +420,7 @@ export class PatternIndex {
 	 * @param values The flat array of values to set
 	 * @returns boolean indicating whether the entire operation succeeded
 	 */
-	public async setRegion(rows:number[], columns:number[], values:number[]):Promise<boolean> {
+	public async setRegion(rows:number[], columns:number[], values:number[]): Promise<boolean> {
 		// make sure the array is the right length
 		if(values.length !== rows.length * columns.length) {
 			return false;
@@ -469,7 +470,7 @@ export class PatternIndex {
 	 * @param row2 The row to switch `row1` with
 	 * @returns boolean indicating whether it was successful or not.
 	 */
-	public async swapRows(row1:number, row2:number):Promise<boolean> {
+	public async swapRows(row1:number, row2:number): Promise<boolean> {
 		// if we're trying to use the same row, bail out
 		if(row1 === row2) {
 			return false;
@@ -496,7 +497,7 @@ export class PatternIndex {
 	 *
 	 * @returns Uint8Array containing the row data for each channel
 	 */
-	public generateRow():Uint8Array {
+	public generateRow(): Uint8Array {
 		const ret = new Uint8Array(this.channels.length);
 
 		// loop through each channel
@@ -522,7 +523,7 @@ export class PatternIndex {
 	 *
 	 * @returns boolean indicating whether it was successful or not.
 	 */
-	public async insertRow(index:number, data:Uint8Array):Promise<boolean> {
+	public async insertRow(index:number, data:Uint8Array): Promise<boolean> {
 		// check that the index is valid, matrix can fit data, and the input data is the right size
 		if(index < 0 || index > this.matrixlen || this.matrixlen > 0xFF || data.length !== this.channels.length) {
 			return false;
@@ -560,7 +561,7 @@ export class PatternIndex {
 	 * @param index Index of the row to delete
 	 * @returns boolean indicating success
 	 */
-	public async deleteRow(index:number):Promise<boolean> {
+	public async deleteRow(index:number): Promise<boolean> {
 		// check that the index is valid
 		if(index < 0 || index >= this.matrixlen) {
 			return false;
@@ -603,7 +604,7 @@ export class PatternIndex {
 	 * @param replace Whether we can replace pre-existing patterns. VERY DANGEROUS
 	 * @returns Whether every operation succeeded
 	 */
-	public async makePatternsRow(data:Uint8Array, replace:boolean):Promise<boolean> {
+	public async makePatternsRow(data:Uint8Array, replace:boolean): Promise<boolean> {
 		// check that the input data is the right size
 		if(data.length !== this.channels.length){
 			return false;
@@ -627,7 +628,7 @@ export class PatternIndex {
 	 * @param replace Whether we can replace pre-existing patterns. VERY DANGEROUS
 	 * @returns Whether every operation succeeded
 	 */
-	public async makePattern(channel:number, index:number, replace:boolean):Promise<boolean> {
+	public async makePattern(channel:number, index:number, replace:boolean): Promise<boolean> {
 		// check that index and channel are valid
 		if(index < 0 || index > 0xFF || channel < 0 || channel >= this.channels.length) {
 			return false;
@@ -686,7 +687,7 @@ export class PatternIndex {
 	 * @param index Index to find references to and delete
 	 * @returns boolean indicating whether it was trimmed or not
 	 */
-	public async trim(channel:number, index:number):Promise<boolean> {
+	public async trim(channel:number, index:number): Promise<boolean> {
 		// get the pattern index to check for
 		const check = this.matrix[channel][index];
 
@@ -720,7 +721,7 @@ export class PatternIndex {
 	 *
 	 * @returns The data representing the current matrix
 	 */
-	public saveMatrix():Uint8Array {
+	public saveMatrix(): Uint8Array {
 		// prepare the output buffer
 		const h = this.getHeight();
 		const ret = new Uint8Array(h * this.getWidth());
@@ -771,7 +772,7 @@ export class PatternIndex {
 	 *
 	 * @returns The data representing the current list of patterns
 	 */
-	public async savePatterns():Promise<Uint8Array> {
+	public async savePatterns(): Promise<Uint8Array> {
 		await this.trimAll();
 
 		// accumulator of channel datas

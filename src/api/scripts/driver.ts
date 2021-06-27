@@ -39,4 +39,62 @@ export interface Driver {
 	 * Reset the driver state. The behavior of this function is dependent on the driver itself.
 	 */
 	reset:() => void;
+
+	/**
+	 * Function to get the possible channels for this driver.
+	 *
+	 * @returns The list of channels. The array order enforces the display order in the UI.
+	 */
+	getChannels:() => Channel[];
+
+	/**
+	 * Function to mute or unmute a channel based on its ID.
+	 *
+	 * @param id The ID of the channel to affect
+	 * @param state Boolean indicating whether to mute or unmute
+	 *
+	 * @returns whether the action was executed
+	 */
+	muteChannel:(id:number, state:boolean) => boolean;
+
+	/**
+	 * Function to enable a channel. This can check for example if both FM6 and DAC are attempting to enable, as some drivers don't support both.
+	 *
+	 * @param id The ID of the channel that we are trying to enable
+	 * @returns Boolean indicating if the channel was enabled
+	 */
+	enableChannel:(id:number) => boolean;
+
+	/**
+	 * Function to disable a channel. This can check if some channel can be disabled for any reason.
+	 *
+	 * @param id The ID of the channel that we are trying to disable
+	 * @returns Boolean indicating if the channel was disabled
+	 */
+	disableChannel:(id:number) => boolean;
+}
+
+export interface Channel {
+	/**
+	 * The channel ID. This can be anything, this only matters
+	 */
+	id: number;
+
+	/**
+	 * The string name for this channel
+	 */
+	name: string;
+
+	/**
+	 * The type of the channel. This helps ZorroTracker use apprioriate elements for channel.
+	 */
+	type: ChannelType;
+}
+
+export enum ChannelType {
+	Unspecific = 0,
+	YM2612FM = 0x10,
+	YM2612DAC = 0x11,
+	YM7101PSG = 0x20,
+	YM7101DAC = 0x21,
 }

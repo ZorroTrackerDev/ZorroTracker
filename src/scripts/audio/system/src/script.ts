@@ -31,7 +31,7 @@ let driver:Driver|undefined;
 let volume = 0;
 
 // handle messages from the parent thread
-parentPort?.on("message", (data:{ code:string, data:unknown }) => {
+parentPort?.on("message", (data:{ code:string, data:unknown, fn?:string }) => {
 	try {
 		switch(data.code) {
 			/**
@@ -187,24 +187,6 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 				break;
 
 			/**
-			 * Mute or unmute FM channel.
-			 *
-			 * data: Array with the properties
-			 */
-			case "mutefm":
-				chip?.muteYM((data.data as [number, boolean])[0], (data.data as [number, boolean])[1])
-				break;
-
-			/**
-			 * Mute or unmute PSG channel.
-			 *
-			 * data: Array with the properties
-			 */
-			case "mutepsg":
-				chip?.mutePSG((data.data as [number, boolean])[0], (data.data as [number, boolean])[1])
-				break;
-
-			/**
 			 * Clean up and exit the instance
 			 *
 			 * data: Irrelevant
@@ -213,6 +195,38 @@ parentPort?.on("message", (data:{ code:string, data:unknown }) => {
 				driver?.stop();
 				rtAudio.closeStream();
 				parentPort?.postMessage({ code: "quit", data: null, });
+				break;
+
+			/**
+			 * Communicate with the driver emulator
+			 *
+			 * data: Array with the properties
+			 */
+			case "cd":
+				// handler driver function call
+				switch((data.fn) as string) {
+					case "getChannels":
+						parentPort?.postMessage({ code: "cdr", fn: "getChannels", data: driver?.getChannels() ?? [], });
+						break;
+
+					case "muteChannel":
+						parentPort?.postMessage({
+							code: "cdr", fn: "muteChannel", data: driver?.muteChannel(...(data.data as [number, boolean])) ?? false,
+						});
+						break;
+
+					case "enableChannel":
+						parentPort?.postMessage({
+							code: "cdr", fn: "enableChannel", data: driver?.enableChannel(...(data.data as [number])) ?? false,
+						});
+						break;
+
+					case "disableChannel":
+						parentPort?.postMessage({
+							code: "cdr", fn: "disableChannel", data: driver?.disableChannel(...(data.data as [number])) ?? false,
+						});
+						break;
+				}
 				break;
 		}
 	} catch(ex) {

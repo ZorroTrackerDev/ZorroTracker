@@ -76,7 +76,7 @@ ipcRenderer.on(ipcEnum.ProjectAddModule, async(event, file:string) => {
 		// eslint-disable-next-line require-await
 		await loadToModule(ix, async() => {
 			// TEMP
-			Project.current?.index.setChannels([ "FM1", "FM2", "FM3", "FM4", "FM5", "FM6", "PCM", "PSG1", "PSG2", "PSG3", "PSG4", ]);
+			Project.current?.index.setChannels(await window.ipc.driver.getChannels());
 		});
 	}
 });

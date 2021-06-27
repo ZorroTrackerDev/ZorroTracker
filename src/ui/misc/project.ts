@@ -89,7 +89,7 @@ export class Project {
 		// create a single default module
 		const m = project.addModule();
 		m.name = "New module";
-		project.data[m.file].index.setChannels([ "FM1", "FM2", "FM3", "FM4", "FM5", "FM6", "PCM", "PSG1", "PSG2", "PSG3", "PSG4", ]);
+		project.data[m.file].index.setChannels(await window.ipc.driver.getChannels());
 		await project.setActiveModuleIndex(0);
 
 		// mark this project as not dirty for now
@@ -238,7 +238,7 @@ export class Project {
 				}
 
 				// set channels and prepare matrix and patterns
-				x.index.setChannels([ "FM1", "FM2", "FM3", "FM4", "FM5", "FM6", "PCM", "PSG1", "PSG2", "PSG3", "PSG4", ]);
+				x.index.setChannels(await window.ipc.driver.getChannels());
 				x.index.loadMatrix(_mat);
 				x.index.loadPatterns(_pat);
 

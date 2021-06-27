@@ -1,4 +1,4 @@
-import { DriverConfig } from "../api/scripts/driver";
+import { Channel, DriverConfig } from "../api/scripts/driver";
 import { ChipConfig } from "../api/scripts/chip";
 import { OpenDialogOptions, SaveDialogOptions } from "electron";
 import { Project } from "../ui/misc/project";
@@ -236,22 +236,6 @@ declare global {
 				 * @returns A promise which resolves to the list of chip configurations.
 				 */
 				findAll: () => Promise<{ [key:string]: ChipConfig }>,
-
-				/**
-				 * Function for muting or unmuting an FM channel.
-				 *
-				 * @param channel The channel to target. 0-5 = FM 1-6, 6 = DAC
-				 * @param state Whether to mute or unmute. true = mute, false = unmute
-				 */
-				muteFM: (channel:number, state:boolean) => void,
-
-				/**
-				 * Function for muting or unmuting a PSG channel.
-				 *
-				 * @param channel The channel to target. 0-3 = PSG 1-3, 4 = PSG noise
-				 * @param state Whether to mute or unmute. true = mute, false = unmute
-				 */
-				mutePSG: (channel:number, state:boolean) => void,
 			}
 			driver: {
 				/**
@@ -260,7 +244,39 @@ declare global {
 				 * @returns A promise which resolves to the list of driver configurations.
 				 */
 				findAll: () => Promise<{ [key:string]: DriverConfig }>,
-			}
+
+				/**
+				 * Function for muting or unmuting a channel.
+				 *
+				 * @param channel The channel to target
+				 * @param state Whether to mute or unmute. true = mute, false = unmute
+				 * @returns boolean indicating whether it was successful or not
+				 */
+				mute: (channel:Channel, state:boolean) => Promise<boolean>,
+
+				/**
+				 * Function for getting all the valid channels for this driver
+				 *
+				 * @returns The list of channels
+				 */
+				getChannels: () => Promise<Channel[]>,
+
+				/**
+				 * Function for trying to enable a channel on the driver.
+				 *
+				 * @param channel The channel to target
+				 * @returns boolean indicating whether it was successful or not
+				 */
+				enableChannel: (channel:Channel) => Promise<boolean>,
+
+				/**
+				 * Function for trying to disable a channel on the driver.
+				 *
+				 * @param channel The channel to target
+				 * @returns boolean indicating whether it was successful or not
+				 */
+				disableChannel: (channel:Channel) => Promise<boolean>,
+			},
 		},
 	}
 }

@@ -37,10 +37,10 @@ export enum ipcEnum {
 	AudioStop = "audio-stop",
 
 	DriverFindAll = "driver-findall",
+	DriverFunc = "driver-func",
 
 	ChipFindAll = "chip-findall",
-	ChipMuteFM = "chip-mutefm",
-	ChipMutePSG = "chip-mutepsg",
+	ChipFunc = "chip-func",
 
 	ProjectInit = "project-init",
 	ProjectSetName = "project-set-name",

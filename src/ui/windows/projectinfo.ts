@@ -86,6 +86,11 @@ window.ipc.ui.path().then(() => {
 				case "zoomout":
 					window.ipc.ui.zoomOut();
 					return true;
+
+				/* shortcut for resetting zoom level to 100% */
+				case "zoomreset":
+					window.ipc.ui.zoomSet(1);
+					return true;
 			}
 
 			// shortcut was not handled

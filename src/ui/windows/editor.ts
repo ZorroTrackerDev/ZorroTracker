@@ -95,6 +95,11 @@ window.ipc.ui.path().then(() => {
 					window.ipc.ui.zoomOut();
 					return true;
 
+				/* shortcut for resetting zoom level to 100% */
+				case "zoomreset":
+					window.ipc.ui.zoomSet(1);
+					return true;
+
 				/* shortcut for opening a file or a project */
 				case "open": {
 					// first, ask to save the current project. If user presses cancel, then do not run the code

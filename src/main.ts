@@ -50,7 +50,7 @@ export async function createWindow(name:string): Promise<BrowserWindow> {
 	}
 
 	w.removeMenu();				// remove default shortcuts
-	w.loadFile(path.join(__dirname, "ui", "main.html")).catch(() => {
+	w.loadFile(path.join(__dirname, "ui", "windows", name +".html")).catch(() => {
 		// TODO: should we add a logging file that will log errors?
 		electron.app.quit();
 	});

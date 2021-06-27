@@ -1,0 +1,46 @@
+// stuff for project config
+#projectinfo {
+	margin: 30px 50px;
+	position: relative;
+	height: -webkit-fill-available;
+	display: flex;
+	flex-direction: column;
+	flex-wrap: nowrap;
+
+	&> .line {
+		display: block;
+		width: fit-content;
+		margin: 0 auto;
+	}
+
+	&> div {
+		flex: 0 0;
+	}
+
+	&> .module {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: nowrap;
+
+		&> div {
+			margin: 0 5px;
+			flex: 1 1;
+			display: inline-flex;
+			flex-direction: row;
+			flex-wrap: nowrap;
+			min-width: 0;
+			overflow: hidden;
+
+			&> label {
+				flex: 0 0;
+				white-space: nowrap;
+				min-width: fit-content;
+			}
+
+			&> textarea {
+				flex: 1 1;
+				white-space: nowrap;
+			}
+		}
+	}
+}

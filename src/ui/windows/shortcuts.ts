@@ -63,6 +63,11 @@ window.ipc.ui.path().then(() => {
 				case "zoomout":
 					window.ipc.ui.zoomOut();
 					return true;
+
+				/* shortcut for resetting zoom level to 100% */
+				case "zoomreset":
+					window.ipc.ui.zoomSet(1);
+					return true;
 			}
 
 			// shortcut was not handled
@@ -207,6 +212,7 @@ const shortcutDescriptions: { [key:string]: string } = {
 	"ui.close":							"Close the current window",
 	"ui.zoomin":						"Increase the content size",
 	"ui.zoomout":						"Decrease the content size",
+	"ui.zoomreset":						"Reset the content size to 100%",
 
 	"layout.open.projectinfo":			"Open project info window",
 	"layout.open.shortcuts":			"Open shortcut editor window",

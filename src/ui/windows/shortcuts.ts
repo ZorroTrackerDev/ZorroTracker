@@ -113,7 +113,10 @@ function loadShortcutTables() {
 	// helper function to convert layout path type to index
 	const getType = (fn:string) => {
 		if(fn.startsWith("layout.matrix")){
-			return "Pattern index";
+			return "Matrix";
+
+		} else if(fn.startsWith("layout.piano")){
+			return "Piano";
 
 		} else if(fn.startsWith("ui") || fn.startsWith("window")){
 			return "General";
@@ -232,4 +235,50 @@ const shortcutDescriptions: { [key:string]: string } = {
 	"layout.matrix.hex.D":				"Input digit D",
 	"layout.matrix.hex.E":				"Input digit E",
 	"layout.matrix.hex.F":				"Input digit F",
+
+	"layout.piano.toleft":				"Move piano to left",
+	"layout.piano.toright":				"Move piano to right",
+	"layout.piano.bigger":				"Increase piano size",
+	"layout.piano.smaller":				"Decrease piano size",
+	"layout.piano.octavedown":			"Increase base octave",
+	"layout.piano.octaveup":			"Decrease base octave",
+
+	"layout.piano.octave0.C":			"Play C on current octave",
+	"layout.piano.octave0.C#":			"Play C# on current octave",
+	"layout.piano.octave0.D":			"Play D on current octave",
+	"layout.piano.octave0.D#":			"Play D# on current octave",
+	"layout.piano.octave0.E":			"Play E on current octave",
+	"layout.piano.octave0.F":			"Play F on current octave",
+	"layout.piano.octave0.F#":			"Play F# on current octave",
+	"layout.piano.octave0.G":			"Play G on current octave",
+	"layout.piano.octave0.G#":			"Play G# on current octave",
+	"layout.piano.octave0.A":			"Play A on current octave",
+	"layout.piano.octave0.A#":			"Play A# on current octave",
+	"layout.piano.octave0.B":			"Play B on current octave",
+
+	"layout.piano.octave1.C":			"Play C on the next octave",
+	"layout.piano.octave1.C#":			"Play C# on the next octave",
+	"layout.piano.octave1.D":			"Play D on the next octave",
+	"layout.piano.octave1.D#":			"Play D# on the next octave",
+	"layout.piano.octave1.E":			"Play E on the next octave",
+	"layout.piano.octave1.F":			"Play F on the next octave",
+	"layout.piano.octave1.F#":			"Play F# on the next octave",
+	"layout.piano.octave1.G":			"Play G on the next octave",
+	"layout.piano.octave1.G#":			"Play G# on the next octave",
+	"layout.piano.octave1.A":			"Play A on the next octave",
+	"layout.piano.octave1.A#":			"Play A# on the next octave",
+	"layout.piano.octave1.B":			"Play B on the next octave",
+
+	"layout.piano.octave2.C":			"Play C on the octave after",
+	"layout.piano.octave2.C#":			"Play C# on the octave after",
+	"layout.piano.octave2.D":			"Play D on the octave after",
+	"layout.piano.octave2.D#":			"Play D# on the octave after",
+	"layout.piano.octave2.E":			"Play E on the octave after",
+	"layout.piano.octave2.F":			"Play F on the octave after",
+	"layout.piano.octave2.F#":			"Play F# on the octave after",
+	"layout.piano.octave2.G":			"Play G on the octave after",
+	"layout.piano.octave2.G#":			"Play G# on the octave after",
+	"layout.piano.octave2.A":			"Play A on the octave after",
+	"layout.piano.octave2.A#":			"Play A# on the octave after",
+	"layout.piano.octave2.B":			"Play B on the octave after",
 };

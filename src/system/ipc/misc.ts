@@ -1,4 +1,4 @@
-import { ipcMain, session, screen } from "electron";
+import { ipcMain, session, screen, app } from "electron";
 import os from "os";
 import process from "process"
 import { ipcEnum } from "./ipc enum";
@@ -81,9 +81,10 @@ function _findall(folder:ScriptFolders, eventName:ipcEnum, event:IpcMainEvent) {
 	})
 }
 
-// handle UI requesting systeminformation
-ipcMain.on(ipcEnum.UiSystemInfo, () => {
+// handle UI requesting system information
+ipcMain.on(ipcEnum.UiSystemInfo, async() => {
 	const uptime = os.uptime();
+	const gpu = await app.getGPUInfo("complete")  as { auxAttributes: Record<string, unknown>, gpuDevice: Record<string, unknown>[] };
 
 	// dump info
 	windows.editor?.webContents.send(ipcEnum.LogInfo, [
@@ -93,6 +94,14 @@ ipcMain.on(ipcEnum.UiSystemInfo, () => {
 		"memory: "+ (Math.round(os.totalmem() / 1024 / 1024) / 1024) +" GB",
 		"displays: ["+ screen.getAllDisplays().map((display) => display.size.width +"x"+ display.size.height +"@"+ display.displayFrequency +" "+
 			display.colorDepth +"bpp scale="+ display.scaleFactor).join(", ") +"]",
+		"gpus: ["+ gpu.gpuDevice.map((g) => (g.active ? "*active* " : "")
+			+"vendor="+ (g.vendorId as number).toString(16)
+			+" device="+ (g.deviceId as number).toString(16)
+			+" revision="+ g.revision
+			+" driverVendor="+ (g.driverVendor ?? "")).join(", ") +"]",
+		"gpu features: [" + [
+			gpu.auxAttributes.vulkanVersion, gpu.auxAttributes.glVersion, gpu.auxAttributes.glRenderer, gpu.auxAttributes.dx12FeatureLevel,
+		].filter((x) => !!x).join(", ") +"]",
 		"uptime: "+ Math.round(uptime / 60 / 60 / 24) +"d "+ (Math.round(uptime / 60 / 60) % 24) +"h "+ (Math.round(uptime / 60) % 60) +"m ",
 		"chrome: "+ process.versions.chrome,
 		"electron: "+ process.versions.electron,

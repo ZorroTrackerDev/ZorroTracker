@@ -56,6 +56,7 @@ import { MatrixEditor } from "../elements/matrixeditor/main";
 
 /* ipc communication */
 import "../../system/ipc/html editor";
+import { Piano } from "../elements/piano/piano";
 
 async function loadMainShortcuts() {
 	// load all.ts asynchronously. This will setup our environment better than we can do here
@@ -220,7 +221,8 @@ window.ipc.ui.path().then(async() => {
 }).catch(console.error);
 
 // handler for receiving shortcuts
-let matrixEditor:MatrixEditor|undefined;
+let matrixEditor: MatrixEditor|undefined;
+let piano: Piano|undefined;
 
 // note, this is here just because in testing it might not actually exist!
 function initShortcutHandler() {
@@ -229,6 +231,9 @@ function initShortcutHandler() {
 		switch(data.shift()) {
 			case "matrix":
 				return matrixEditor?.receiveShortcut(data) ?? false;
+
+			case "piano":
+				return piano?.receiveShortcut(data) ?? false;
 		}
 
 		return false;
@@ -331,6 +336,9 @@ async function editorLayout():Promise<true> {
 	Project.current.index.channels.forEach((c) => {
 		_top.appendChild(btn(c.name, "window.ipc.driver.mute({ id: "+ c.id +" }, this.checked)"));
 	});
+
+	// add the piano overlay
+	_bot.appendChild((piano = await Piano.create()).element);
 
 	return true;
 }

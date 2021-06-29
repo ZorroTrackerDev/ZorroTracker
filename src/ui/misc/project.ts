@@ -96,8 +96,6 @@ export class Project {
 		await project.setActiveModuleIndex(0);
 		project.data[m.file].index.setChannels(m.channels as Channel[]);
 
-		console.log(m.channels)
-
 		// mark this project as not dirty for now
 		project.clean();
 
@@ -162,10 +160,6 @@ export class Project {
 
 				// validate the project config
 				switch(project.config.version) {
-					case ConfigVersion.b0:
-						project.config.version = Project.VERSION;
-						break;
-
 					case ConfigVersion.b1:
 						break;
 

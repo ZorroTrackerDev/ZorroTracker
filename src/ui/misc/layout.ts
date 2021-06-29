@@ -65,7 +65,7 @@ export function loadTransition(): void {
  * @param element The element to clear
  */
 export function clearChildren(element:Element): void {
-	// remove a,ll children
+	// remove all children
 	while(element.children.length > 0){
 		element.removeChild(element.children[0]);
 	}

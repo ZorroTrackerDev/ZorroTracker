@@ -62,23 +62,46 @@ function getKeymappingsName(data:{ ctrl: boolean, alt: boolean, shift: boolean }
 /*
  * Handle user input, to check for special shortcut keys. This won't override things such as input fields, however.
  */
-document.addEventListener("keydown", (event) => {
-	// check if this key has a registered command
-	const arrayname = getKeymappingsName( { ctrl: event.ctrlKey, shift: event.shiftKey, alt: event.altKey, });
+const stdHandler = (type:"keydown"|"keyup", state:boolean) => {
+	document.addEventListener(type, (event) => {
+		// check if this key has a registered command
+		const arrayname = getKeymappingsName( { ctrl: event.ctrlKey, shift: event.shiftKey, alt: event.altKey, });
 
-	// get the function name from "keyMappings", and return if none were defined
-	const com = keyMappings[arrayname][event.code.toUpperCase()] ?? keyMappings[arrayname][event.key.toUpperCase()];
+		// get the function name from "keyMappings", and return if none were defined
+		let com = keyMappings[arrayname][event.code.toUpperCase()] ?? keyMappings[arrayname][event.key.toUpperCase()];
 
-	if(!com) {
-		return;
-	}
+		if(!com) {
+			return;
+		}
 
-	// do shortcut and prevent default event
-	doShortcut([ com, ], event);
-	event.preventDefault();
-});
+		// define the standard state
+		let stt = undefined;
 
-export function doShortcut(name:string[], event?:KeyboardEvent):void {
+		if(com.startsWith("*")) {
+			// must ignore repeated keypresses
+			if(event.repeat) {
+				return;
+			}
+
+			// this event wants both keyup and keydown events
+			com = com.substring(1);
+			stt = state;
+
+		} else if(!state) {
+			// ignore key up
+			return;
+		}
+
+		// do shortcut and prevent default event
+		doShortcut([ com, ], event, stt);
+		event.preventDefault();
+	});
+}
+
+stdHandler("keydown", true);
+stdHandler("keyup", false);
+
+export function doShortcut(name:string[], event?:KeyboardEvent, state?:boolean):void {
 	// if loading currently, disable all shortcuts
 	if(window.isLoading) {
 		return;
@@ -99,7 +122,7 @@ export function doShortcut(name:string[], event?:KeyboardEvent):void {
 			}
 
 			// the function exists, execute it with the current event.
-			if(await shortcutReceivers[comkey](comarr, event)) {
+			if(await shortcutReceivers[comkey](comarr, event, state)) {
 				// event was accepted, return away
 				return;
 			}

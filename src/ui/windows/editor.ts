@@ -227,13 +227,13 @@ let piano: Piano|undefined;
 // note, this is here just because in testing it might not actually exist!
 function initShortcutHandler() {
 	// eslint-disable-next-line require-await
-	addShortcutReceiver("layout", async(data) => {
+	addShortcutReceiver("layout", async(data, e, state) => {
 		switch(data.shift()) {
 			case "matrix":
-				return matrixEditor?.receiveShortcut(data) ?? false;
+				return matrixEditor?.receiveShortcut(data, e, state) ?? false;
 
 			case "piano":
-				return piano?.receiveShortcut(data) ?? false;
+				return piano?.receiveShortcut(data, e, state) ?? false;
 		}
 
 		return false;
@@ -338,7 +338,7 @@ async function editorLayout():Promise<true> {
 	});
 
 	// add the piano overlay
-	_bot.appendChild((piano = await Piano.create()).element);
+	_bot.appendChild((piano = Piano.create()).element);
 
 	return true;
 }

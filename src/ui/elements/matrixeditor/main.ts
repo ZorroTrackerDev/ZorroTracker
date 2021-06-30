@@ -299,7 +299,7 @@ export class MatrixEditor implements UIElement {
 	 * @returns Whether the shortcut was executed
 	 */
 	// eslint-disable-next-line require-await
-	public async receiveShortcut(data:string[]):Promise<boolean> {
+	public async receiveShortcut(data:string[], e:KeyboardEvent|undefined, state:boolean|undefined):Promise<boolean> {
 		if(document.querySelector(":focus") === this.element) {
 			// has focus, process the shortcut
 			switch(data.shift()) {

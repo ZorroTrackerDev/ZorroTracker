@@ -124,8 +124,13 @@ export class Bounds {
 
 /**
  * A common interface for handling UI shortcuts for this element. This helps make development easier
+ *
+ * @param data The array of shortcut function names that was triggered
+ * @param event The target KeyboardEvent object for this shortcut
+ * @param state The shortcut state. For normal shortcuts, this is `undefined`. For special shortcuts, `true` = keydown, `false` = keyup
+ * @returns Boolean indicating whether shortcut was processed or not
  */
-export type receiveShortcutFunc = (data:string[], event:KeyboardEvent|undefined) => Promise<boolean>;
+export type receiveShortcutFunc = (data:string[], event:KeyboardEvent|undefined, state:boolean|undefined) => Promise<boolean>;
 
 export interface UIShortcutHandler {
 	receiveShortcut: receiveShortcutFunc;

@@ -2,7 +2,7 @@ import { loadFlag } from "../../../api/files";
 import { UIElement } from "../../../api/ui";
 
 export class Piano implements UIElement {
-	public static async create() : Promise<Piano> {
+	public static create() : Piano {
 		const piano = new Piano();
 		piano.width = loadFlag<number>("PIANO_DEFAULT_SIZE") ?? 2;
 		piano.octave = loadFlag<number>("PIANO_DEFAULT_OCTAVE") ?? 3;
@@ -28,15 +28,20 @@ export class Piano implements UIElement {
 	 * @returns Whether the shortcut was executed
 	 */
 	// eslint-disable-next-line require-await
-	public async receiveShortcut(data:string[]):Promise<boolean> {
+	public async receiveShortcut(data:string[], e:KeyboardEvent|undefined, state:boolean|undefined):Promise<boolean> {
 		// helper function to process an octave of notes
 		const octave = (data:string[], octave:number) => {
 			// helper function to trigger a single note
 			const note = (note:number) => {
 				const n = 1 + note + octave + (this.octave * this.octaveData.length);
 
-				this.triggerNote(n, 1);
-				setTimeout(() => this.releaseNote(n), 100);
+				// trigger or release note based on keyboard state
+				if(state) {
+					this.triggerNote(n, 1);
+
+				} else {
+					this.releaseNote(n);
+				}
 				return true;
 			};
 

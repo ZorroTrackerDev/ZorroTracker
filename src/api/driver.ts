@@ -72,7 +72,25 @@ export interface Driver {
 	 * @returns Boolean indicating if the channel was disabled
 	 */
 	disableChannel:(id:number) => boolean;
+
+	/**
+	 * Function to get the frequency table based on channel type
+	 *
+	 * @param type The channel type to inspect
+	 * @returns The table containing note info
+	 */
+	notes:(type:ChannelType) => NoteReturnType,
 }
+
+/**
+ * Individual note data type
+ */
+export type NoteData = { frequency: number, name: string, } | undefined;
+
+/**
+ * Represents the data type the notes array must have
+ */
+export type NoteReturnType = Array<NoteData>;
 
 export interface Channel {
 	/**

@@ -1,6 +1,6 @@
 import { ipcMain } from "electron";
-import { ChipConfig } from "../../api/scripts/chip";
-import { DriverConfig } from "../../api/scripts/driver";
+import { ChipConfig } from "../../api/chip";
+import { DriverConfig } from "../../api/driver";
 import { windows } from "../../main";
 import { ipcEnum } from "./ipc enum";
 import { Worker } from "worker_threads";

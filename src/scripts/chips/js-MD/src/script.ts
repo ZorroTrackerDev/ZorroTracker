@@ -1,6 +1,6 @@
 import { YM2612 } from "./ym2612";
 import { SN76489 } from "./sn76489";
-import { Chip, YMREG, PSGCMD, ChipConfig } from "../../../../api/scripts/chip";
+import { Chip, PSGCMD, ChipConfig, FMRegisters, PSGRegisters } from "../../../../api/chip";
 
 export default class implements Chip {
 	private FM:YM2612;
@@ -10,6 +10,13 @@ export default class implements Chip {
 	private curfmvol = 1;
 	private curpsgvol = 1;
 	private volumefactor = 1 << 16;
+
+	private latch: [ number, number, ];
+
+	public registers = {
+		YM2612: new FMRegisters(),
+		SN76489: new PSGRegisters(),
+	};
 
 	constructor() {
 		this.FM = new YM2612();
@@ -30,18 +37,26 @@ export default class implements Chip {
 	public reset(): void {
 		this.PSG.reset();
 		this.FM.reset();
+
+		this.latch = [ 0, 0, ];
+		this.registers.YM2612.reset();
+		this.registers.SN76489.reset();
 	}
 
 	public muteYM(bitfield: number): void {
 		// TODO: Implement
 	}
 
-	public writeYM1(register: YMREG, value: number): void {
-		this.FM.write(register, value);
-	}
+	public writeYM(port: 0|1|2|3, value: number): void {
+		if(port & 1) {
+			// value
+			this.FM.write(this.latch[Math.round(port / 2)] | [ 0, 0x100, ][Math.round(port / 2)], value);
 
-	public writeYM2(register: YMREG, value: number): void {
-		this.FM.write(register | 0x100, value);
+		} else {
+			// register
+			this.latch[Math.round(port / 2)] = value;
+		}
+
 	}
 
 	public readYM(): number {

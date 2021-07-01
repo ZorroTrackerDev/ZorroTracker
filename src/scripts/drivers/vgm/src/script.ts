@@ -1,6 +1,6 @@
-import { Channel, ChannelType, Driver, DriverConfig } from "../../../../api/scripts/driver";
+import { Channel, ChannelType, Driver, DriverConfig } from "../../../../api/driver";
 import * as fs from "fs";
-import { Chip } from "../../../../api/scripts/chip";
+import { Chip } from "../../../../api/chip";
 
 export default class implements Driver {
 	private vgm:Buffer;
@@ -100,11 +100,13 @@ export default class implements Driver {
 
 				switch(this.vgm[this.addr++]) {
 					case 0x52:
-						this.chip.writeYM1(this.vgm[this.addr++], this.vgm[this.addr++]);
+						this.chip.writeYM(0, this.vgm[this.addr++]);
+						this.chip.writeYM(1, this.vgm[this.addr++]);
 						break;
 
 					case 0x53:
-						this.chip.writeYM2(this.vgm[this.addr++], this.vgm[this.addr++]);
+						this.chip.writeYM(2, this.vgm[this.addr++]);
+						this.chip.writeYM(3, this.vgm[this.addr++]);
 						break;
 
 					case 0x4F: case 0x50:
@@ -148,7 +150,8 @@ export default class implements Driver {
 					case 0x88: case 0x89: case 0x8A: case 0x8B:
 					case 0x8C: case 0x8D: case 0x8E: case 0x8F:
 						if(this.blockAddr < this.block.length){
-							this.chip.writeYM1(0x2A, this.block[this.blockAddr++])
+							this.chip.writeYM(0, 0x2A);
+							this.chip.writeYM(1, this.block[this.blockAddr++]);
 						}
 
 						delay = (this.vgm[this.addr - 1] & 0xF);
@@ -210,6 +213,10 @@ export default class implements Driver {
 				}
 			}
 		}
+	}
+
+	public notes(): undefined {
+		return undefined;
 	}
 
 	public getChannels(): Channel[] {

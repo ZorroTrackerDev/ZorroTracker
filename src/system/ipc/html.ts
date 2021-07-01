@@ -1,7 +1,7 @@
 import { ipcEnum } from "./ipc enum";
 import { ipcRenderer } from "electron";
-import { ChipConfig } from "../../api/scripts/chip";
-import { Channel, DriverConfig } from "../../api/scripts/driver";
+import { ChipConfig } from "../../api/chip";
+import { Channel, DriverConfig } from "../../api/driver";
 import { OpenDialogOptions, SaveDialogOptions } from "electron/main";
 import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 import { WindowType } from "../../defs/windowtype";

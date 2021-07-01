@@ -1,8 +1,8 @@
 import { RtAudio, RtAudioApi, RtAudioFormat } from "audify";
 import { parentPort } from "worker_threads";
 import path from "path";
-import { Chip, ChipConfig } from "../../../../api/scripts/chip";
-import { Driver, DriverConfig } from "../../../../api/scripts/driver";
+import { Chip, ChipConfig } from "../../../../api/chip";
+import { Driver, DriverConfig } from "../../../../api/driver";
 
 // eslint-disable-next-line camelcase
 declare const __non_webpack_require__: NodeRequire;

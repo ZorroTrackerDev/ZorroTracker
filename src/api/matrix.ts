@@ -2,7 +2,7 @@ import { Position } from "./ui";
 import { ZorroEvent, ZorroEventEnum, ZorroSenderTypes } from "./events";
 import { TrackerCommands } from "./commands";
 import { Project } from "../ui/misc/project";
-import { Channel } from "./scripts/driver";
+import { Channel } from "./driver";
 
 /**
  * Class for a single pattern cell, which can only be used to store its immediate values.

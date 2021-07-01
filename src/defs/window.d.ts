@@ -1,5 +1,5 @@
-import { Channel, DriverConfig } from "../api/scripts/driver";
-import { ChipConfig } from "../api/scripts/chip";
+import { Channel, DriverConfig } from "../api/driver";
+import { ChipConfig } from "../api/chip";
 import { OpenDialogOptions, SaveDialogOptions } from "electron";
 import { Project } from "../ui/misc/project";
 

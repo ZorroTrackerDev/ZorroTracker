@@ -1,4 +1,4 @@
-import { Chip, YMREG, PSGCMD, ChipConfig } from "../../../../api/scripts/chip";
+import { Chip, PSGCMD, ChipConfig, FMRegisters, PSGRegisters } from "../../../../api/chip";
 import { YMChip, YM2612, ASICYM3438, DiscreteYM3438, YM2612WithMD1 } from "nuked-opn2-node";
 import { PSGChip } from "nuked-psg-node";
 
@@ -10,6 +10,11 @@ export default class implements Chip {
 	private volumefactor = 1 << 18;
 	private config:ChipConfig|null = null;
 	private type = "";
+
+	public registers = {
+		YM2612: new FMRegisters(),
+		SN76489: new PSGRegisters(),
+	};
 
 	public init(samplerate: number, config:ChipConfig): void {
 		this.config = config;
@@ -29,6 +34,9 @@ export default class implements Chip {
 
 		this.FM?.setMutemask(this.fmmute);
 	//	this.PSG?.setMutemask(this.psgmute);
+
+		this.registers.YM2612.reset();
+		this.registers.SN76489.reset();
 	}
 
 	// muted FM channels for this chip
@@ -49,14 +57,9 @@ export default class implements Chip {
 		}
 	}
 
-	public writeYM1(register: YMREG, value: number): void {
-		this.FM?.writeBuffered(0, register);
-		this.FM?.writeBuffered(1, value);
-	}
-
-	public writeYM2(register: YMREG, value: number): void {
-		this.FM?.writeBuffered(2, register);
-		this.FM?.writeBuffered(3, value);
+	public writeYM(port: 0|1|2|3, value: number): void {
+		this.FM?.writeBuffered(port, value);
+		this.registers.YM2612.write(port, value);
 	}
 
 	public readYM(): number {
@@ -83,6 +86,7 @@ export default class implements Chip {
 
 	public writePSG(command: PSGCMD): void {
 		this.PSG?.writeBuffered(command);
+		this.registers.SN76489.write(command);
 	}
 
 	public readPSG(): number {

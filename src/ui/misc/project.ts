@@ -2,14 +2,14 @@ import admZip from "adm-zip";
 import fs from "fs";
 import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 import { PatternIndex } from "../../api/matrix";
-import { ConfigVersion } from "../../api/scripts/config";
+import { ConfigVersion } from "../../api/config";
 import { fserror, loadFlag } from "../../api/files";
 import { confirmationDialog, PopupColors, PopupSizes } from "../elements/popup/popup";
 import { ipcRenderer } from "electron";
 import { ipcEnum } from "../../system/ipc/ipc enum";
 import { WindowType } from "../../defs/windowtype";
 import { setTitle } from "../elements/toolbar/toolbar";
-import { Channel } from "../../api/scripts/driver";
+import { Channel } from "../../api/driver";
 
 // load all the events
 const eventProject = ZorroEvent.createEvent(ZorroEventEnum.ProjectOpen);

@@ -237,6 +237,12 @@ parentPort?.on("message", (data:{ code:string, data:unknown, fn?:string }) => {
 							code: "cdr", fn: "disableChannel", data: driver?.disableChannel(...(data.data as [number])) ?? false,
 						});
 						break;
+
+					case "notes":
+						parentPort?.postMessage({
+							code: "cdr", fn: "notes", data: driver?.notes(...(data.data as [number])) ?? false,
+						});
+						break;
 				}
 				break;
 		}

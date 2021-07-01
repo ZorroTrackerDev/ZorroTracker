@@ -1,7 +1,7 @@
 import { ipcEnum } from "./ipc enum";
 import { ipcRenderer } from "electron";
 import { ChipConfig } from "../../api/chip";
-import { Channel, DriverConfig } from "../../api/driver";
+import { Channel, ChannelType, DriverConfig, NoteReturnType } from "../../api/driver";
 import { OpenDialogOptions, SaveDialogOptions } from "electron/main";
 import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 import { WindowType } from "../../defs/windowtype";
@@ -74,6 +74,7 @@ window.ipc = {
 		getChannels: () => _async(ipcEnum.DriverFunc, [ "getChannels", [], ]) as Promise<Channel[]>,
 		enableChannel: (channel:Channel) => _async(ipcEnum.DriverFunc, [ "enableChannel", [ channel.id, ], ]) as Promise<boolean>,
 		disableChannel: (channel:Channel) => _async(ipcEnum.DriverFunc, [ "disableChannel", [ channel.id, ], ]) as Promise<boolean>,
+		getNotes: (type:ChannelType) => _async(ipcEnum.DriverFunc, [ "notes", [ type, ], ]) as Promise<NoteReturnType>,
 	},
 }
 

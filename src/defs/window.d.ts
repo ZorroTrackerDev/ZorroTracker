@@ -1,4 +1,4 @@
-import { Channel, DriverConfig } from "../api/driver";
+import { Channel, ChannelType, DriverConfig, NoteReturnType } from "../api/driver";
 import { ChipConfig } from "../api/chip";
 import { OpenDialogOptions, SaveDialogOptions } from "electron";
 import { Project } from "../ui/misc/project";
@@ -282,6 +282,14 @@ declare global {
 				 * @returns boolean indicating whether it was successful or not
 				 */
 				disableChannel: (channel:Channel) => Promise<boolean>,
+
+				/**
+				 * Function to get the driver note data table based on channel type
+				 *
+				 * @param type The channel type to inspect
+				 * @returns The table containing note info
+				 */
+				getNotes: (type:ChannelType) => Promise<NoteReturnType>,
 			},
 		},
 	}

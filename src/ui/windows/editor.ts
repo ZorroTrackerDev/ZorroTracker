@@ -338,7 +338,7 @@ async function editorLayout():Promise<true> {
 	});
 
 	// add the piano overlay
-	_bot.appendChild((piano = Piano.create()).element);
+	_bot.appendChild((piano = await Piano.create()).element);
 
 	return true;
 }

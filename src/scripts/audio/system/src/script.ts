@@ -239,8 +239,18 @@ parentPort?.on("message", (data:{ code:string, data:unknown, fn?:string }) => {
 						break;
 
 					case "notes":
+						parentPort?.postMessage({ code: "cdr", fn: "notes", data: driver?.notes(...(data.data as [number])) ?? [], });
+						break;
+
+					case "pianoTrigger":
 						parentPort?.postMessage({
-							code: "cdr", fn: "notes", data: driver?.notes(...(data.data as [number])) ?? false,
+							code: "cdr", fn: "pianoTrigger", data: driver?.pianoTrigger(...(data.data as [number, number, number])) ?? false,
+						});
+						break;
+
+					case "pianoRelease":
+						parentPort?.postMessage({
+							code: "cdr", fn: "pianoRelease", data: driver?.pianoRelease(...(data.data as [number])) ?? false,
 						});
 						break;
 				}

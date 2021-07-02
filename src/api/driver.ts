@@ -80,6 +80,26 @@ export interface Driver {
 	 * @returns The table containing note info
 	 */
 	notes:(type:ChannelType) => NoteReturnType,
+
+	/**
+	 * Trigger a note via the piano. The channel is a mere suggestion for the driver to know how to handle this.
+	 * Be aware that the same note can be triggered multiple times without being released.
+	 *
+	 * @param note The ID of the note to trigger
+	 * @param velocity A value between 0 and 1, representing the velocity of the note. 0 = mute
+	 * @param channel The ID of the channel to trigger the note on
+	 * @returns Whether the note was triggered
+	 */
+	pianoTrigger: (note:number, velocity:number, channel:number) => boolean|Promise<boolean>,
+
+	/**
+	 * Release a note via the piano.
+	 * Be aware that the same note can be released multiple times without being triggered.
+	 *
+	 * @param note The ID of the note to release
+	 * @returns Whether the note was release
+	 */
+	pianoRelease: (note: number) => boolean|Promise<boolean>,
 }
 
 /**

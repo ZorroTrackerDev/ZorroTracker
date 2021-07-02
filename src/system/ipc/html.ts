@@ -74,6 +74,10 @@ window.ipc = {
 		getChannels: () => _async(ipcEnum.DriverFunc, [ "getChannels", [], ]) as Promise<Channel[]>,
 		enableChannel: (channel:Channel) => _async(ipcEnum.DriverFunc, [ "enableChannel", [ channel.id, ], ]) as Promise<boolean>,
 		disableChannel: (channel:Channel) => _async(ipcEnum.DriverFunc, [ "disableChannel", [ channel.id, ], ]) as Promise<boolean>,
+
+		pianoTrigger: (note:number, velocity:number, channel:number) =>
+			_async(ipcEnum.DriverFunc, [ "pianoTrigger", [ note, velocity, channel, ], ]) as Promise<boolean>,
+		pianoRelease: (note:number) => _async(ipcEnum.DriverFunc, [ "pianoRelease", [ note, ], ]) as Promise<boolean>,
 		getNotes: (type:ChannelType) => _async(ipcEnum.DriverFunc, [ "notes", [ type, ], ]) as Promise<NoteReturnType>,
 	},
 }

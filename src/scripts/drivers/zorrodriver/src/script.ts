@@ -1,5 +1,5 @@
 import { Channel, ChannelType, Driver, DriverConfig, NoteData, NoteReturnType } from "../../../../api/driver";
-import { Chip } from "../../../../api/chip";
+import { Chip, PSGCMD } from "../../../../api/chip";
 import { DefaultOctave, DefaultOctaveSharp, Note, OctaveSize } from "../../../../api/notes";
 
 export default class implements Driver {
@@ -10,7 +10,7 @@ export default class implements Driver {
 	constructor() {
 		// process PSG notes
 		this.NotePSG = this.noteGen((note: number) => {
-			const xo = this.frequencies.length - (OctaveSize * 2) + Note.C0;
+			const xo = (OctaveSize * 7) + Note.C0;
 
 			if(note < Note.C0) {
 				// negative octaves
@@ -22,7 +22,7 @@ export default class implements Driver {
 			}
 
 			// positive octaves
-			const ftable = this.frequencies[note + (OctaveSize * 2)];
+			const ftable = this.frequencies[note - Note.C0 + (OctaveSize * 2)];
 			return !ftable ? undefined : Math.min(0x3FF, Math.round(3579545 / (32 * ftable)) - 1);
 		});
 
@@ -165,12 +165,61 @@ export default class implements Driver {
 	}
 
 	/**
-	 * Helper function to convert channel type into appropritate function
+	 * Trigger a note via the piano. The channel is a mere suggestion for the driver to know how to handle this.
 	 *
-	 * @param type The channel type to get
-	 * @returns `undefined` or a function to generate frequency
+	 * @param note The ID of the note to trigger
+	 * @param velocity A value between 0 and 1, representing the velocity of the note. 0 = mute
+	 * @param channel The ID of the channel to trigger the note on
+	 * @returns Whether the note was triggered
 	 */
-	private noteFunc(type:ChannelType) {
+	public pianoTrigger(note:number, velocity:number, channel:number): boolean {
+		// pretend this is PSG
+		const data = this.NotePSG[note];
+
+		// check for invalid notes
+		if(typeof data?.frequency !== "number") {
+			return false;
+		}
+
+		this.pianoNotes[channel] = note;
+
+		// enable PSG frequency
+		this.chip.writePSG(PSGCMD.FREQ | PSGCMD.PSG3 | (data.frequency & 0xF));
+		this.chip.writePSG((data.frequency & 0x3F0) >> 4);
+
+		// enable PSG volume
+		this.chip.writePSG(PSGCMD.VOLUME | PSGCMD.PSG3 | this.PSGVol[(this.PSGVol.length - 1 - Math.floor(velocity * (this.PSGVol.length - 1)))]);
+		return true;
+	}
+
+	/**
+	 * Mapping piano notes to active channel. This helps easily release notes
+	 */
+	private pianoNotes:{ [key:number]: number } = {};
+
+	/**
+	 * PSG volume LUT
+	 */
+	private PSGVol = [ 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 7, 7, 8, 9, 0xA, 0xB, 0xC, 0xD, 0xE, ];
+
+	/**
+	 * Release a note via the piano.
+	 *
+	 * @param note The ID of the note to release
+	 * @returns Whether the note was release
+	 */
+	public pianoRelease(note:number): boolean {
+		// scan for this note
+		for(const channel of Object.keys(this.pianoNotes)) {
+			if(this.pianoNotes[channel] === note) {
+				// release note
+				this.chip.writePSG(PSGCMD.VOLUME | PSGCMD.PSG3 | 0xF);
+				return true;
+			}
+		}
+
+		// found nothing
+		return true;
 	}
 
 	/**

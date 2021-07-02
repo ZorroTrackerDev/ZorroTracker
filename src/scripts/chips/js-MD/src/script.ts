@@ -118,4 +118,12 @@ export default class implements Chip {
 
 		return this.buffer;
 	}
+
+	 public pianoTrigger(): boolean {
+		return false;
+	}
+
+	public pianoRelease(): boolean {
+		return false;
+	}
 }

@@ -16,8 +16,8 @@ export class Piano implements UIElement {
 		piano.position = loadFlag<number>("PIANO_DEFAULT_POSITION") ?? 0;
 
 		// remember to cache FM notes
-		if(!this.notesCache[ChannelType.YM2612FM]) {
-			this.notesCache[ChannelType.YM2612FM] = await window.ipc.driver.getNotes(ChannelType.YM2612FM);
+		if(!this.notesCache[ChannelType.YM7101PSG]) {
+			this.notesCache[ChannelType.YM7101PSG] = await window.ipc.driver.getNotes(ChannelType.YM7101PSG);
 		}
 
 		// update position
@@ -44,16 +44,17 @@ export class Piano implements UIElement {
 		// helper function to process an octave of notes
 		const octave = (data:string[], octave:number) => {
 			// helper function to trigger a single note
-			const note = (note:number) => {
+			const note = async(note:number) => {
 				const n = Note.C0 + note + octave + (this.octave * OctaveSize);
 
 				// trigger or release note based on keyboard state
 				if(state) {
-					this.triggerNote(n, 1);
+					await this.triggerNote(n, 1);
 
 				} else {
-					this.releaseNote(n);
+					await this.releaseNote(n);
 				}
+
 				return true;
 			};
 
@@ -175,7 +176,7 @@ export class Piano implements UIElement {
 			e.setAttribute("note", ""+ note);
 
 			// load the note cache data
-			const cache = Piano.notesCache[ChannelType.YM2612FM][Note.C0 + note + oc];
+			const cache = Piano.notesCache[ChannelType.YM7101PSG][Note.C0 + note + oc];
 
 			if(cache) {
 				// define classes based on sharp param
@@ -213,7 +214,7 @@ export class Piano implements UIElement {
 
 			for(let y = 11;y >= 0; --y) {
 				// check if there is a note cached here
-				const c = Piano.notesCache[ChannelType.YM2612FM][Note.C0 + n + y + oc];
+				const c = Piano.notesCache[ChannelType.YM7101PSG][Note.C0 + n + y + oc];
 
 				if(c) {
 					// if yes, this is the new octave, use it! No matter what!
@@ -247,19 +248,15 @@ export class Piano implements UIElement {
 		let cur:HTMLDivElement|undefined, note = 0;
 
 		// helper function to release the current note
-		const release = () => {
-			// remove the current element
-			cur = undefined;
-
-			if(note > 0) {
+		const release = async(n:number) => {
+			if(n > 0) {
 				// release note
-				this.releaseNote(note);
-				note = 0;
+				await this.releaseNote(n);
 			}
 		}
 
 		// helper function to handle mouse movement
-		const move = (e:MouseEvent) => {
+		const move = async(e:MouseEvent) => {
 			if(e.target instanceof HTMLDivElement && (e.target as HTMLDivElement).classList.contains("pianokey")) {
 				// this is a piano key
 				if(cur === e.target) {
@@ -268,42 +265,46 @@ export class Piano implements UIElement {
 				}
 
 				// release the note
-				release();
-
-				// activate it
-				cur = e.target;
+				release(note).catch(console.error);
 
 				// calculate velocity
-				const rect = cur.getBoundingClientRect();
+				const rect = e.target.getBoundingClientRect();
 				let pos = (e.clientY - rect.top) / rect.height;
 
 				// make the position a bit saner
 				pos = (Math.max(0.05, Math.min(0.9, pos)) * (1 / 0.9));
 
 				// calculate the note
-				note = Note.C0 + (OctaveSize * this.octave) + (parseInt(cur.getAttribute("note") ?? "0", 10));
+				note = Note.C0 + (OctaveSize * this.octave) + (parseInt(e.target.getAttribute("note") ?? "0", 10));
 
 				// trigger the note
-				this.triggerNote(note, pos);
+				await this.triggerNote(note, pos);
+
+				// activate it
+				cur = e.target;
 			}
 		};
 
 		// handle mousedown event
-		wrap.onmousedown = (e) => {
+		wrap.onmousedown = async(e) => {
 			// create new mouse move event
 			wrap.onmousemove = move;
 
 			// when mouse is raised again, remove tracking events
-			wrap.onmouseup = () => {
+			document.onmouseup = async() => {
 				wrap.onmousemove = null;
-				wrap.onmouseup = null;
+				document.onmouseup = null;
 
 				// release the note
-				release();
+				await release(note);
+				note = 0;
+
+				// remove the current element
+				cur = undefined;
 			};
 
 			// do initial move event
-			move(e);
+			await move(e);
 		}
 	}
 
@@ -313,16 +314,13 @@ export class Piano implements UIElement {
 	 * @param note The note ID to play
 	 * @param velocity The velocity to play the note with, from 0 to 1.0.
 	 */
-	private triggerNote(note:number, velocity:number) {
+	private async triggerNote(note:number, velocity:number) {
 		// check if this note exists
-		if(typeof Piano.notesCache[ChannelType.YM2612FM][note]?.frequency === "number"){
-			console.log("trigger",
-				Piano.notesCache[ChannelType.YM2612FM][note]?.name,
-				Piano.notesCache[ChannelType.YM2612FM][note]?.frequency?.toString(16).toUpperCase(),
-				(Math.round(velocity * 1000) / 10) +"%");
-
-			// add the active class
-			this.modNote("active", "add", note);
+		if(typeof Piano.notesCache[ChannelType.YM7101PSG][note]?.frequency === "number"){
+			if(await window.ipc.driver.pianoTrigger(note, velocity, 8)){
+				// add the active class
+				this.modNote("active", "add", note);
+			}
 		}
 	}
 
@@ -331,13 +329,13 @@ export class Piano implements UIElement {
 	 *
 	 * @param note The note ID to release
 	 */
-	private releaseNote(note:number) {
+	private async releaseNote(note:number) {
 		// check if this note exists
-		if(typeof Piano.notesCache[ChannelType.YM2612FM][note]?.frequency === "number"){
-			console.log("release", Piano.notesCache[ChannelType.YM2612FM][note]?.name)
-
-			// remove the active class
-			this.modNote("active", "remove", note);
+		if(typeof Piano.notesCache[ChannelType.YM7101PSG][note]?.frequency === "number"){
+			if(await window.ipc.driver.pianoRelease(note)){
+				// remove the active class
+				this.modNote("active", "remove", note);
+			}
 		}
 	}
 

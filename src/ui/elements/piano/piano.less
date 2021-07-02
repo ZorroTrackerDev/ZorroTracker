@@ -9,78 +9,99 @@
 	@pianowwidth: 32px;
 	@pianobwidth: 24px;
 	@pianoboff: 3px;
+	@labelheight: 18px;
 
 	&> div {
-		white-space: nowrap;
-		text-align: center;
-		width: fit-content;
-		pointer-events: initial;
 		margin: auto;
-		outline: 2px solid transparent;
-		transition: outline-color .25s ease-in-out;
+		width: fit-content;
+		white-space: nowrap;
 
 		&:hover {
 			outline-color: black;
 		}
 
-		&> .pianokey {
-			width: 	@pianowwidth;
-			height: @pianoheight;
+		&> .pianooctave {
 			display: inline-block;
-			position: relative;
-			z-index: 98;
-			font-size: 13pt;
-			background: white;
-			color: #202020;
-			border: 1px solid #202020;
-			border-top: none;
-			border-bottom: none;
-			box-sizing: border-box;
 
-			&.active {
-				background: white linear-gradient(0deg, #00000060, transparent);
-			}
-
-			&.invalid {
-				background: #e0a0a0;
-			}
-
-			&.sharp {
-				height: @pianoheight * @pianoblack;
-				background: black;
+			&> label {
+				height: @labelheight;
+				background: #444444;
+				display: block;
+				font-size: 10.5pt;
+				text-align: center;
+				box-sizing: border-box;
+				border: 1px solid black;
 				color: #e0e0e0;
-				border: none;
-				margin: 0 (-0.5 * @pianobwidth) (@pianoheight * (1 - @pianoblack));
-				z-index: 99;
-				width: @pianobwidth;
-				font-size: 10pt;
-				border-radius: 0 0 4px 4px;
-
-				&.sl {
-					margin-left: (-0.5 * @pianobwidth) - @pianoboff;
-					margin-right: (-0.5 * @pianobwidth) + @pianoboff;
-				}
-
-				&.sr {
-					margin-right: (-0.5 * @pianobwidth) - @pianoboff;
-					margin-left: (-0.5 * @pianobwidth) + @pianoboff;
-				}
-
-				&.active {
-					background: black linear-gradient(0deg, #ffffff60, transparent);
-				}
-
-				&.invalid {
-					background: #300808;
-				}
 			}
 
-			&> span {
-				pointer-events: none;
-				position: absolute;
-				bottom: 2px;
-				width: 100%;
-				left: 0;
+			&> div {
+				white-space: nowrap;
+				text-align: center;
+				width: fit-content;
+				pointer-events: initial;
+				outline: 2px solid transparent;
+				transition: outline-color .25s ease-in-out;
+
+				&> .pianokey {
+					width: 	@pianowwidth;
+					height: @pianoheight;
+					display: inline-block;
+					position: relative;
+					z-index: 98;
+					font-size: 13pt;
+					background: white;
+					color: #202020;
+					border: 1px solid #202020;
+					border-top: none;
+					border-bottom: none;
+					box-sizing: border-box;
+
+					&.active {
+						background: white linear-gradient(0deg, #00000060, transparent);
+					}
+
+					&.invalid {
+						background: #e0a0a0;
+					}
+
+					&.sharp {
+						height: @pianoheight * @pianoblack;
+						background: black;
+						color: #e0e0e0;
+						border: none;
+						margin: 0 (-0.5 * @pianobwidth) (@pianoheight * (1 - @pianoblack));
+						z-index: 99;
+						width: @pianobwidth;
+						font-size: 10pt;
+						border-radius: 0 0 4px 4px;
+
+						&.sl {
+							margin-left: (-0.5 * @pianobwidth) - @pianoboff;
+							margin-right: (-0.5 * @pianobwidth) + @pianoboff;
+						}
+
+						&.sr {
+							margin-right: (-0.5 * @pianobwidth) - @pianoboff;
+							margin-left: (-0.5 * @pianobwidth) + @pianoboff;
+						}
+
+						&.active {
+							background: black linear-gradient(0deg, #ffffff60, transparent);
+						}
+
+						&.invalid {
+							background: #300808;
+						}
+					}
+
+					&> span {
+						pointer-events: none;
+						position: absolute;
+						bottom: 2px;
+						width: 100%;
+						left: 0;
+					}
+				}
 			}
 		}
 	}

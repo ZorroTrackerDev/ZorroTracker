@@ -85,7 +85,24 @@ export interface Driver {
 /**
  * Individual note data type
  */
-export type NoteData = { frequency: number, name: string, } | undefined;
+export type NoteData = {
+	/**
+	 * The frequency of this note. This is driver-dependent and is assumed to follow the conventions of the target chip.
+	 * If `undefined`, this note is marked as invalid. It's other properties will be used for piano display
+	 */
+	frequency: number|undefined,
+
+	/**
+	 * Name of the note. Must have a single \u2060 delimiting the note key and octave. Octave must come after key name.
+	 */
+	name: string,
+
+	/**
+	 * Whether this is a sharp note or not. This also defines how the piano should display the note.
+	 */
+	sharp: ""|"center"|"left"|"right",
+
+};
 
 /**
  * Represents the data type the notes array must have

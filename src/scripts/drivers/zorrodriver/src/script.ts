@@ -1,6 +1,6 @@
 import { Channel, ChannelType, Driver, DriverConfig, NoteData, NoteReturnType } from "../../../../api/driver";
 import { Chip } from "../../../../api/chip";
-import { DefaultOctave, Note, OctaveSize } from "../../../../api/notes";
+import { DefaultOctave, DefaultOctaveSharp, Note, OctaveSize } from "../../../../api/notes";
 
 export default class implements Driver {
 	private chip:Chip|undefined;
@@ -10,14 +10,13 @@ export default class implements Driver {
 	constructor() {
 		// process PSG notes
 		this.NotePSG = this.noteGen((note: number) => {
-			const xo = this.frequencies.length - (OctaveSize * 2);
+			const xo = this.frequencies.length - (OctaveSize * 2) + Note.C0;
 
-			if(note < 0) {
+			if(note < Note.C0) {
 				// negative octaves
 				return undefined;
 
 			} else if(note >= xo) {
-				console.log(note, note - xo)
 				// nB-1
 				return [ 0xB, 0xA, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, ][note - xo];
 			}
@@ -29,26 +28,24 @@ export default class implements Driver {
 
 		// process FM notes
 		this.NoteFM = this.noteGen((note: number) => {
-			if(note < 0) {
+			if(note < Note.C0) {
 				// negative octaves
-				const ftable = this.frequencies[-this.startNote + note];
+				const ftable = this.frequencies[note - Note.C0 + (OctaveSize * 4)];
 				return Math.round((144 * ftable * 2**20 / 7670454) / 2 ** (4 - 1));
+
+			} else if(note >= Note.C0 + (OctaveSize * 8)) {
+				// invalid octaves
+				return undefined;
 			}
 
 			// positive octaves
-			const ftable = this.frequencies[(-this.startNote) + (note % OctaveSize)];
+			const ftable = this.frequencies[(-Note.C0 + (OctaveSize * 4)) + (note % OctaveSize)];
 			return (((note / OctaveSize) | 0) * 0x800) | Math.round((144 * ftable * 2**20 / 7670454) / 2 ** (4 - 1));
 		});
 	}
 
 	public init(samplerate:number, config:DriverConfig|null, chip:Chip):void {
 		this.chip = chip;
-
-		for(const x of this.NoteFM) {
-			if(x) {
-				console.log(x.name +" "+ x.frequency.toString(16));
-			}
-		}
 	}
 
 	public reset():void {
@@ -130,8 +127,6 @@ export default class implements Driver {
 		return undefined;
 	}
 
-	private readonly startNote = -OctaveSize * 4;
-
 	/**
 	 * Function to get the frequency table based on channel type
 	 *
@@ -143,21 +138,27 @@ export default class implements Driver {
 		const ret = Array<NoteData>(256);
 
 		// prepare some values
-		ret[0] = { frequency: 0xFFFE, name: "", };
-		ret[1] = { frequency: 0xFFFF, name: "=", };
+		ret[0] = { frequency: 0xFFFE, name: "", sharp: "", };
+		ret[1] = { frequency: 0xFFFF, name: "=", sharp: "", };
+
+		// filler
+		ret[2] = { frequency: undefined, name: "", sharp: "", };
+		ret[3] = { frequency: undefined, name: "", sharp: "", };
 
 		// function defined, start filling the table
-		for(let n = this.startNote;n < OctaveSize * 8; n++) {
+		for(let n = Note.First;n < Note.Last; n++) {
 			// load frequency
 			const freq = func(n);
 
-			if(typeof freq === "number") {
-				// if valid frequency, enable it
-				ret[Note.C0 + n] = {
-					name: DefaultOctave[(n - this.startNote) % OctaveSize] + ((n / OctaveSize) | 0),
-					frequency: freq,
-				};
-			}
+			// calculate the offset inside of an octave
+			const op = (n - Note.First) % OctaveSize;
+
+			// replace the note data with this
+			ret[n] = {
+				name: DefaultOctave[op] +"\u2060"+ (Math.floor((n - Note.C0) / OctaveSize)),
+				sharp: DefaultOctaveSharp[op],
+				frequency: freq,
+			};
 		}
 
 		return ret;

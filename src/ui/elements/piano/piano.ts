@@ -1,6 +1,6 @@
 import { ChannelType, NoteReturnType } from "../../../api/driver";
 import { loadFlag } from "../../../api/files";
-import { Note } from "../../../api/notes";
+import { Note, OctaveSize } from "../../../api/notes";
 import { UIElement } from "../../../api/ui";
 
 export class Piano implements UIElement {
@@ -45,7 +45,7 @@ export class Piano implements UIElement {
 		const octave = (data:string[], octave:number) => {
 			// helper function to trigger a single note
 			const note = (note:number) => {
-				const n = Note.C0 + note + octave + (this.octave * this.octaveData.length);
+				const n = Note.C0 + note + octave + (this.octave * OctaveSize);
 
 				// trigger or release note based on keyboard state
 				if(state) {
@@ -86,8 +86,8 @@ export class Piano implements UIElement {
 			case "smaller":		return this.changeSize(-1);
 			case "bigger":		return this.changeSize(1);
 			case "octave0":		return octave(data, 0);
-			case "octave1":		return octave(data, this.octaveData.length);
-			case "octave2":		return octave(data, this.octaveData.length * 2);
+			case "octave1":		return octave(data, OctaveSize);
+			case "octave2":		return octave(data, OctaveSize * 2);
 		}
 
 		return false;
@@ -163,10 +163,10 @@ export class Piano implements UIElement {
 			wrap.removeChild(wrap.children[0]);
 		}
 
-		const oc = this.octave * this.octaveData.length;
+		const oc = this.octave * OctaveSize;
 
 		// helper function to add a single key to the wrapper
-		const key = (o: { note: string, class?: string[], }, note: number) => {
+		const key = (note:number, parent:HTMLDivElement) => {
 			// create a new div element to store this key
 			const e = document.createElement("div");
 			e.classList.add("pianokey");
@@ -174,47 +174,69 @@ export class Piano implements UIElement {
 			// give the note attribute to get the note value
 			e.setAttribute("note", ""+ note);
 
-			if(o.class) {
-				// if a class is defined for this note, add it
-				e.classList.add(...(o.class as string[]));
-			}
+			// load the note cache data
+			const cache = Piano.notesCache[ChannelType.YM2612FM][Note.C0 + note + oc];
 
-			// if this is an invalid note, add a class for it
-			if(!Piano.notesCache[ChannelType.YM2612FM][Note.C0 + note + oc]) {
-				// if a class is defined for this note, add it
+			if(cache) {
+				// define classes based on sharp param
+				switch(cache.sharp) {
+					case "center":	e.classList.add("sharp"); break;
+					case "left":	e.classList.add("sharp", "sl"); break;
+					case "right":	e.classList.add("sharp", "sr"); break;
+				}
+
+				// if frequency is not a number, then it must be invalid
+				if(typeof cache.frequency !== "number") {
+					e.classList.add("invalid");
+				}
+
+				// add the inner text to show which note it is
+				e.innerHTML = /*html*/`<span>${ cache.name.split("\u2060")[0] }</span>`;
+
+			} else {
+				// note is very not valid
 				e.classList.add("invalid");
+				e.innerHTML = /*html*/"<span>?</span>";
 			}
 
-			// add the inner text to show which note it is
-			e.innerHTML = /*html*/`<span>${ o.note }</span>`;
-
-			wrap.appendChild(e);
+			parent.appendChild(e);
 		}
 
 		// repeat for each octave
 		for(let x = this.width, n = 0; x > 0; --x){
-			// generate an octave
-			this.octaveData.forEach((o) => key(o, n++));
+			// create a new div element to store this octave
+			const e = document.createElement("div");
+			e.classList.add("pianooctave");
+
+			// find octave ID
+			let o = "invalid";
+
+			for(let y = 11;y >= 0; --y) {
+				// check if there is a note cached here
+				const c = Piano.notesCache[ChannelType.YM2612FM][Note.C0 + n + y + oc];
+
+				if(c) {
+					// if yes, this is the new octave, use it! No matter what!
+					o = c.name.split("\u2060")[1];
+					break;
+				}
+			}
+
+			// generate some HTML for this element
+			e.innerHTML = /*html*/`
+				<div></div>
+				<label>Octave ${ o }</label>
+			`;
+
+			// generate the actual octave elements
+			for(let y = 11;y >= 0; --y) {
+				key(n++, e.children[0] as HTMLDivElement);
+			}
+
+			// append the octave to piano
+			wrap.appendChild(e);
 		}
 	}
-
-	/**
-	 * This array defines data for each octave, so that we can easily represent it
-	 */
-	private readonly octaveData = [
-		{ note: "C", },
-		{ note: "C#", class: [ "sharp", "sl", ], },
-		{ note: "D", },
-		{ note: "D#", class: [ "sharp", "sr", ], },
-		{ note: "E", },
-		{ note: "F", },
-		{ note: "F#", class: [ "sharp", "sl", ], },
-		{ note: "G", },
-		{ note: "G#", class: [ "sharp", ], },
-		{ note: "A", },
-		{ note: "A#", class: [ "sharp", "sr", ], },
-		{ note: "B", },
-	];
 
 	/**
 	 * Initialize the piano fully
@@ -256,10 +278,10 @@ export class Piano implements UIElement {
 				let pos = (e.clientY - rect.top) / rect.height;
 
 				// make the position a bit saner
-				pos = (Math.max(0.1, Math.min(0.8, pos)) * (1 / 0.8));
+				pos = (Math.max(0.05, Math.min(0.9, pos)) * (1 / 0.9));
 
 				// calculate the note
-				note = Note.C0 + (this.octaveData.length * this.octave) + (parseInt(cur.getAttribute("note") ?? "0", 10));
+				note = Note.C0 + (OctaveSize * this.octave) + (parseInt(cur.getAttribute("note") ?? "0", 10));
 
 				// trigger the note
 				this.triggerNote(note, pos);
@@ -293,11 +315,11 @@ export class Piano implements UIElement {
 	 */
 	private triggerNote(note:number, velocity:number) {
 		// check if this note exists
-		if(Piano.notesCache[ChannelType.YM2612FM][note]){
+		if(typeof Piano.notesCache[ChannelType.YM2612FM][note]?.frequency === "number"){
 			console.log("trigger",
-			Piano.notesCache[ChannelType.YM2612FM][note]?.name,
-			Piano.notesCache[ChannelType.YM2612FM][note]?.frequency.toString(16).toUpperCase(),
-			(Math.round(velocity * 1000) / 10) +"%");
+				Piano.notesCache[ChannelType.YM2612FM][note]?.name,
+				Piano.notesCache[ChannelType.YM2612FM][note]?.frequency?.toString(16).toUpperCase(),
+				(Math.round(velocity * 1000) / 10) +"%");
 
 			// add the active class
 			this.modNote("active", "add", note);
@@ -311,7 +333,7 @@ export class Piano implements UIElement {
 	 */
 	private releaseNote(note:number) {
 		// check if this note exists
-		if(Piano.notesCache[ChannelType.YM2612FM][note]){
+		if(typeof Piano.notesCache[ChannelType.YM2612FM][note]?.frequency === "number"){
 			console.log("release", Piano.notesCache[ChannelType.YM2612FM][note]?.name)
 
 			// remove the active class
@@ -328,12 +350,18 @@ export class Piano implements UIElement {
 	 */
 	private modNote(name:string, mode:"add"|"remove", note:number) {
 		// calculate octave
-		const o = this.octave * this.octaveData.length;
+		const o = this.octave * OctaveSize;
 
 		// check if this note is on the piano
-		if(note > o && note - Note.C0 < o + (this.width * this.octaveData.length)) {
-			// note is inside, find the html element
-			const e = (this.element.children[0] as HTMLDivElement).children[note - Note.C0 - o] as HTMLDivElement|undefined;
+		if(note > o && note - Note.C0 < o + (this.width * OctaveSize)) {
+			// load the note offset
+			const off = note - Note.C0 - o;
+
+			// calculate the octave wrapper
+			let e = (this.element.children[0] as HTMLDivElement).children[(off / 12) | 0];
+
+			// calculate the final key
+			e = (e.children[0] as HTMLDivElement).children[(off % 12) | 0];
 
 			// if element exists, modify it
 			e?.classList[mode](name);

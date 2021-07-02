@@ -16,8 +16,8 @@ export class Piano implements UIElement {
 		piano.position = loadFlag<number>("PIANO_DEFAULT_POSITION") ?? 0;
 
 		// remember to cache FM notes
-		if(!this.notesCache[ChannelType.YM7101PSG]) {
-			this.notesCache[ChannelType.YM7101PSG] = await window.ipc.driver.getNotes(ChannelType.YM7101PSG);
+		if(!this.notesCache[ChannelType.YM2612FM]) {
+			this.notesCache[ChannelType.YM2612FM] = await window.ipc.driver.getNotes(ChannelType.YM2612FM);
 		}
 
 		// update position
@@ -185,7 +185,7 @@ export class Piano implements UIElement {
 			e.setAttribute("note", ""+ note);
 
 			// load the note cache data
-			const cache = Piano.notesCache[ChannelType.YM7101PSG][Note.C0 + note + oc];
+			const cache = Piano.notesCache[ChannelType.YM2612FM][Note.C0 + note + oc];
 
 			if(cache) {
 				// define classes based on sharp param
@@ -228,7 +228,7 @@ export class Piano implements UIElement {
 
 			for(let y = 11;y >= 0; --y) {
 				// check if there is a note cached here
-				const c = Piano.notesCache[ChannelType.YM7101PSG][Note.C0 + n + y + oc];
+				const c = Piano.notesCache[ChannelType.YM2612FM][Note.C0 + n + y + oc];
 
 				if(c) {
 					// if yes, this is the new octave, use it! No matter what!
@@ -330,8 +330,8 @@ export class Piano implements UIElement {
 	 */
 	private async triggerNote(note:number, velocity:number) {
 		// check if this note exists
-		if(typeof Piano.notesCache[ChannelType.YM7101PSG][note]?.frequency === "number"){
-			if(await window.ipc.driver.pianoTrigger(note, velocity, 8)){
+		if(typeof Piano.notesCache[ChannelType.YM2612FM][note]?.frequency === "number"){
+			if(await window.ipc.driver.pianoTrigger(note, velocity, 0)){
 				// add the active class
 				this.modNote("active", "add", note);
 			}
@@ -345,7 +345,7 @@ export class Piano implements UIElement {
 	 */
 	private async releaseNote(note:number) {
 		// check if this note exists
-		if(typeof Piano.notesCache[ChannelType.YM7101PSG][note]?.frequency === "number"){
+		if(typeof Piano.notesCache[ChannelType.YM2612FM][note]?.frequency === "number"){
 			if(await window.ipc.driver.pianoRelease(note)){
 				// remove the active class
 				this.modNote("active", "remove", note);

@@ -1,6 +1,6 @@
 .pianowrapper {
 	position: absolute;
-    bottom: 20px; left: 5%; right: 5%;
+    bottom: 20px; left: 10px; right: 10px;
 	font-family: 'Noto Sans', cursive;
 	pointer-events: none;
 
@@ -56,6 +56,20 @@
 					box-sizing: border-box;
 					border: 1px solid black;
 					color: #e0e0e0;
+				}
+
+				&.play > label {
+					background: #4e4d5d;
+
+					&::before {
+						content: "▸ ";
+						color: #bbbbbb;
+					}
+
+					&::after {
+						content: " ◂";
+						color: #bbbbbb;
+					}
 				}
 
 				&> div {

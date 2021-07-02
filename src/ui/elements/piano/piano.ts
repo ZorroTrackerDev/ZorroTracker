@@ -105,6 +105,15 @@ export class Piano implements UIElement {
 		this.element = document.createElement("div");
 		this.element.classList.add("pianowrapper");
 		this.element.innerHTML = /*html*/"<div><div></div></div>";
+
+		// special handling for the mouse wheel
+		(this.element.children[0] as HTMLDivElement).onwheel = (e) => {
+			if(e.deltaY) {
+				// there is vertical movement, translate to horizontal
+				(e.currentTarget as HTMLDivElement).scrollLeft += e.deltaY;
+				e.preventDefault();
+			}
+		};
 	}
 
 	/**
@@ -204,10 +213,15 @@ export class Piano implements UIElement {
 		}
 
 		// repeat for each octave
-		for(let x = this.width, n = 0; x > 0; --x){
+		for(let x = this.octave, n = 0; x < this.octave + this.width; x++){
 			// create a new div element to store this octave
 			const e = document.createElement("div");
 			e.classList.add("pianooctave");
+
+			// user can currently play this ocave
+			if(x >= this.octave && x < this.octave + 2) {
+				e.classList.add("play");
+			}
 
 			// find octave ID
 			let o = "invalid";

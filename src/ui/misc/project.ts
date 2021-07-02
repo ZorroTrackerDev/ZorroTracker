@@ -634,13 +634,13 @@ export class Project {
 	 */
 	public getModuleIndexByFile(file:string): number|-1 {
 		// loop through all modules to find the right index
-		for(let i = 0;i < this.modules.length;i ++) {
+		for(let i = (this.modules?.length - 1 ?? 0);i >= 0; --i) {
 			if(this.modules[i].file === file) {
 				return i;
 			}
 		}
 
-		// not found½
+		// not found
 		return -1;
 	}
 
@@ -655,7 +655,7 @@ export class Project {
 		// decide the index to use
 		const ix = index ?? this.activeModuleIndex;
 
-		if(ix >= -1 && ix < this.modules.length && await this.setActiveCheck(ix)){
+		if(this.modules && ix >= -1 && ix < this.modules.length && await this.setActiveCheck(ix)){
 			// set module selection index
 			this.activeModuleIndex = ix;
 

@@ -12,8 +12,8 @@ export default class implements Driver {
 		this.NotePSG = this.noteGen((note: number) => {
 			const xo = (OctaveSize * 7) + Note.C0;
 
-			if(note < Note.C0) {
-				// negative octaves
+			if(note < Note.C0 + 9) {
+				// negative octaves and C0-A0
 				return undefined;
 
 			} else if(note >= xo) {

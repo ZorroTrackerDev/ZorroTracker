@@ -25,7 +25,7 @@ export class MatrixEditor implements UIElement {
 	public index:Matrix;
 
 	constructor(index:Matrix) {
-		// initialize the matrix. TODO: Driver-dependant behavior
+		// initialize the matrix.
 		this.index = index;
 		this.setLayout();
 	}

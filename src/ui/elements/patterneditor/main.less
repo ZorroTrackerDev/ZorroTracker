@@ -1,0 +1,82 @@
+.patterneditor {
+	position: relative;
+	outline: none;
+	width: -webkit-fill-available;
+	height: -webkit-fill-available;
+
+	@labelheight: 28px;
+
+	&> div {
+		overflow-y: hidden;
+		overflow-x: auto;
+		white-space: nowrap;
+		height: -webkit-fill-available;
+
+		&::-webkit-scrollbar {
+			width: 10px;
+			height: 10px;
+		}
+
+		&::-webkit-scrollbar {
+			background: #222222;
+		}
+
+		&::-webkit-scrollbar-thumb {
+			background: #555555;
+		}
+
+		&::-webkit-scrollbar-corner {
+			background: transparent;
+		}
+
+		&> .channelwrapper {
+			position: relative;
+			width: 50px;
+			display: inline-block;
+
+			&:not(:first-child) {
+				width: 150px;
+				border-left: 2px solid #181818;
+
+				&> .channelnamewrapper::after {
+					content: "";
+					position: absolute;
+					right: 4px; top: 4px; bottom: 4px;
+					width: @labelheight - 8px;
+					background: #7b2808;
+					cursor: e-resize;
+					z-index: 10;
+				}
+
+				&> .channelnamewrapper > label::after {
+					content: "";
+					position: absolute;
+					right: @labelheight + 4px; left: 8px; bottom: 3px;
+					height: 4px;
+					background: #521b00;
+				}
+			}
+
+			&> .channelnamewrapper {
+				position: relative;
+				height: @labelheight;
+				background: #9e4216;
+				text-align: center;
+
+				&> label {
+					height: 100%;
+					color: white;
+					font-family: 'Noto Sans', sans-serif;
+					font-size: 11pt;
+					font-weight: bold;
+					padding-right: @labelheight - 4px;
+				}
+			}
+
+			&> .patternlistwrapper {
+				height: calc(100% - @labelheight);
+				background: black;
+			}
+		}
+	}
+}

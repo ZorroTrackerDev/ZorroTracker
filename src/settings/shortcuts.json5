@@ -55,10 +55,8 @@
 	"layout.matrix.hex.E":				[ "E" ],								/* shortcut for the hexadecimal value E */
 	"layout.matrix.hex.F":				[ "F" ],								/* shortcut for the hexadecimal value F */
 
-	"layout.piano.toleft":				[ "alt+ctrl+ArrowLeft" ],				/* shortcut for moving the piano towards left */
-	"layout.piano.toright":				[ "alt+ctrl+ArrowRight" ],				/* shortcut for moving the piano towards right */
-	"layout.piano.bigger":				[ "alt+ctrl+ArrowUp" ],					/* shortcut for moving increasing piano size */
-	"layout.piano.smaller":				[ "alt+ctrl+ArrowDown" ],				/* shortcut for moving decreasing piano size */
+	"layout.piano.bigger":				[ "alt+F4" ],							/* shortcut for moving increasing piano size */
+	"layout.piano.smaller":				[ "alt+F3" ],							/* shortcut for moving decreasing piano size */
 	"layout.piano.octavedown":			[ "ctrl+F3" ],							/* shortcut for decreasing the base octave */
 	"layout.piano.octaveup":			[ "ctrl+F4" ],							/* shortcut for increasing the base octave */
 	"*layout.piano.octave0.C":			[ "KeyZ" ],								/* shortcut for playing C on current octave +0 */

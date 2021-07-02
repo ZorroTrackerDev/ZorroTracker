@@ -1,5 +1,5 @@
 import { Channel, ChannelType, Driver, DriverConfig, NoteData, NoteReturnType } from "../../../../api/driver";
-import { Chip, PSGCMD } from "../../../../api/chip";
+import { Chip, PSGCMD, YMHelp, YMREG } from "../../../../api/chip";
 import { DefaultOctave, DefaultOctaveSharp, Note, OctaveSize } from "../../../../api/notes";
 
 export default class implements Driver {
@@ -81,6 +81,15 @@ export default class implements Driver {
 			{ name: "PSG3", id: 8, type: ChannelType.YM7101PSG, },
 			{ name: "PSG4", id: 9, type: ChannelType.YM7101PSG, },
 		];
+	}
+
+	/**
+	 * Function to fetch target channel by its ID.
+	 *
+	 * @param id The channel ID to fetch
+	 */
+	private fetchChannel(id:number): Channel {
+		return this.getChannels().find((c) => c.id === id);
 	}
 
 	public muteChannel(id:number, state:boolean): boolean {
@@ -181,14 +190,107 @@ export default class implements Driver {
 			return false;
 		}
 
-		this.pianoNotes[channel] = note;
+		// check if note is already playing
+		if(typeof this.getPianoCh(note) === "number") {
+			return true;
+		}
 
-		// enable PSG frequency
-		this.chip.writePSG(PSGCMD.FREQ | PSGCMD.PSG3 | (data.frequency & 0xF));
-		this.chip.writePSG((data.frequency & 0x3F0) >> 4);
+		// fetch the channel object
+		const ch = this.fetchChannel(channel);
 
-		// enable PSG volume
-		this.chip.writePSG(PSGCMD.VOLUME | PSGCMD.PSG3 | this.PSGVol[(this.PSGVol.length - 1 - Math.floor(velocity * (this.PSGVol.length - 1)))]);
+		switch(ch.type) {
+			case ChannelType.YM2612FM: {
+				// find new channel for polyphony, ignoring certain channels
+				const cc = this.findFreeChannel(channel, [], [ 0, 1, 2, 3, 4, 5, 6, ]);
+
+				// find new channel for polyphony. If failed, jump out
+				if(typeof cc !== "number") {
+					return false;
+				}
+
+				// enable note
+				this.pianoNotes[cc] = note;
+
+				// enable FM frequency
+
+				// enable FM volume
+
+				// enable key volume
+
+				break;
+			}
+
+			case ChannelType.YM7101PSG: {
+				// find new channel for polyphony, ignoring certain channels
+				const cc = this.findFreeChannel(channel, [ 9, ], [ 6, 7, 8, ]);
+
+				// find new channel for polyphony. If failed, jump out
+				if(typeof cc !== "number") {
+					return false;
+				}
+
+				// enable note
+				this.pianoNotes[cc] = note;
+
+				// enable PSG frequency
+				this.chip.writePSG(PSGCMD.FREQ | this.hwid[cc] | (data.frequency & 0xF));
+				this.chip.writePSG((data.frequency & 0x3F0) >> 4);
+
+				// enable PSG volume
+				this.chip.writePSG(PSGCMD.VOLUME | this.hwid[cc] | this.PSGVol[Math.floor(velocity * (this.PSGVol.length - 1))]);
+				break;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Mapping table between channel ID and hardware-based ID
+	 */
+	private hwid = [
+		YMREG.ch1, YMREG.ch2, YMREG.ch3,
+		YMREG.ch1 | 4, YMREG.ch2 | 4, YMREG.ch3 | 4,
+		PSGCMD.PSG1, PSGCMD.PSG2, PSGCMD.PSG3, PSGCMD.PSG4,
+		0, 0,
+	];
+
+	/**
+	 * PSG volume LUT
+	 */
+	private PSGVol = [ 0xE, 0xD, 0xC, 0xB, 0xA, 9, 8, 7, 7, 6, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0, 0, 0, ];
+
+	/**
+	 * Release a note via the piano.
+	 *
+	 * @param note The ID of the note to release
+	 * @returns Whether the note was release
+	 */
+	public pianoRelease(note:number): boolean {
+		// find the channel that is playing this note
+		const channel = this.getPianoCh(note);
+
+		if(channel) {
+			// fetch the channel object
+			const ch = this.fetchChannel(channel);
+
+			// remove channel note
+			delete this.pianoNotes[channel];
+
+			// release note on channel
+			switch(ch.type) {
+				case ChannelType.YM2612FM:
+					// release note
+					break;
+
+				case ChannelType.YM7101PSG:
+					// release note
+					this.chip.writePSG(PSGCMD.VOLUME | this.hwid[channel] | 0xF);
+					break;
+			}
+		}
+
+		// found nothing
 		return true;
 	}
 
@@ -198,28 +300,48 @@ export default class implements Driver {
 	private pianoNotes:{ [key:number]: number } = {};
 
 	/**
-	 * PSG volume LUT
-	 */
-	private PSGVol = [ 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 7, 7, 8, 9, 0xA, 0xB, 0xC, 0xD, 0xE, ];
-
-	/**
-	 * Release a note via the piano.
+	 * Find the channel that is playing a note
 	 *
-	 * @param note The ID of the note to release
-	 * @returns Whether the note was release
+	 * @param note The note to check
 	 */
-	public pianoRelease(note:number): boolean {
+	private getPianoCh(note:number) {
 		// scan for this note
 		for(const channel of Object.keys(this.pianoNotes)) {
 			if(this.pianoNotes[channel] === note) {
-				// release note
-				this.chip.writePSG(PSGCMD.VOLUME | PSGCMD.PSG3 | 0xF);
-				return true;
+				// found the note
+				return parseInt(channel, 10);
+			}
+		}
+	}
+
+	/**
+	 * Function to enable polyphony for channels.
+	 *
+	 * @param chan The current channel
+	 * @param ignore Channels that will not try to enable polyphony
+	 * @param channels Channels to check for polyphony
+	 * @returns Either `undefined` if failed, or channel number if success
+	 */
+	private findFreeChannel(chan:number, ignore:number[], channels:number[]) {
+		// check if channel is busy
+		if(!this.pianoNotes[chan]) {
+			return chan;
+		}
+
+		// check if channel has no polyphony
+		if(ignore.includes(chan)) {
+			return undefined;
+		}
+
+		// find new channel for polyphony
+		for(const c of channels) {
+			if(!this.pianoNotes[c]) {
+				// this channel is free
+				return c;
 			}
 		}
 
-		// found nothing
-		return true;
+		return undefined;
 	}
 
 	/**

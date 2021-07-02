@@ -257,4 +257,12 @@ export default class implements Driver {
 	public disableChannel():boolean {
 		return true;
 	}
+
+	public pianoTrigger(): boolean {
+		return false;
+	}
+
+	public pianoRelease(): boolean {
+		return false;
+	}
 }

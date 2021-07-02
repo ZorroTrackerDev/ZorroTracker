@@ -104,7 +104,7 @@ export class Piano implements UIElement {
 		// create the piano base element
 		this.element = document.createElement("div");
 		this.element.classList.add("pianowrapper");
-		this.element.innerHTML = /*html*/"<div></div>";
+		this.element.innerHTML = /*html*/"<div><div></div></div>";
 	}
 
 	/**
@@ -117,7 +117,7 @@ export class Piano implements UIElement {
 		this.position = Math.max(-1, Math.min(1, this.position + offset));
 
 		// update the float value
-		(this.element.children[0] as HTMLDivElement).style.float = [ "left", "", "right", ][this.position + 1];
+		((this.element.children[0] as HTMLDivElement).children[0] as HTMLDivElement).style.float = [ "left", "", "right", ][this.position + 1];
 		return true;
 	}
 
@@ -127,8 +127,8 @@ export class Piano implements UIElement {
 	 * @param offset The offset to apply to the size
 	 */
 	public changeSize(offset:number): boolean {
-		// update position and cap it between 0 and 5
-		this.width = Math.max(0, Math.min(5, this.width + offset));
+		// update position and cap it between 0 and 13
+		this.width = Math.max(0, Math.min(13, this.width + offset));
 
 		// ensure the octave doesnt go out of range
 		this.changeOctave(0);
@@ -157,7 +157,7 @@ export class Piano implements UIElement {
 	 */
 	public redraw(): void {
 		// find the wrapper
-		const wrap = this.element.children[0] as HTMLDivElement;
+		const wrap = (this.element.children[0] as HTMLDivElement).children[0] as HTMLDivElement;
 
 		// remove all children
 		while(wrap.children.length > 0){
@@ -244,7 +244,7 @@ export class Piano implements UIElement {
 	 */
 	public init(): void {
 		// load the wrapper div
-		const wrap = this.element.children[0] as HTMLDivElement;
+		const wrap = (this.element.children[0] as HTMLDivElement).children[0] as HTMLDivElement;
 		let cur:HTMLDivElement|undefined, note = 0;
 
 		// helper function to release the current note
@@ -356,7 +356,7 @@ export class Piano implements UIElement {
 			const off = note - Note.C0 - o;
 
 			// calculate the octave wrapper
-			let e = (this.element.children[0] as HTMLDivElement).children[(off / 12) | 0];
+			let e = ((this.element.children[0] as HTMLDivElement).children[0] as HTMLDivElement).children[(off / 12) | 0];
 
 			// calculate the final key
 			e = (e.children[0] as HTMLDivElement).children[(off % 12) | 0];

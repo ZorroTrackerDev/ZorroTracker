@@ -181,7 +181,6 @@ export class PSGRegisters {
 				// this is a frequency command
 				(this._channels[this.latch] as PSGChannel).frequency &= 0x3F0;
 				(this._channels[this.latch] as PSGChannel).frequency |= data & 0xF;
-
 			}
 		}
 	}

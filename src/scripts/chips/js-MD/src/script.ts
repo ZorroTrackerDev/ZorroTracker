@@ -43,8 +43,8 @@ export default class implements Chip {
 		this.registers.SN76489.reset();
 	}
 
-	public muteYM(bitfield: number): void {
-		// TODO: Implement
+	public muteYM(): void {
+
 	}
 
 	public writeYM(port: 0|1|2|3, value: number): void {
@@ -63,8 +63,8 @@ export default class implements Chip {
 		return this.FM.read();
 	}
 
-	public mutePSG(bitfield: number): void {
-		// TODO: Implement
+	public mutePSG(): void {
+
 	}
 
 	public writePSG(command: PSGCMD): void {
@@ -117,13 +117,5 @@ export default class implements Chip {
 		}
 
 		return this.buffer;
-	}
-
-	 public pianoTrigger(): boolean {
-		return false;
-	}
-
-	public pianoRelease(): boolean {
-		return false;
 	}
 }

@@ -37,6 +37,7 @@
 		"@types/discord-rich-presence": "^0.0.0",
 		"@types/jest": "^26.0.22",
 		"@types/jsdom": "^16.2.10",
+		"@types/webmidi": "^2.0.5",
 		"@typescript-eslint/eslint-plugin": "^4.22.0",
 		"@typescript-eslint/parser": "^4.22.0",
 		"chromedriver": "^89.0.0",

@@ -58,6 +58,7 @@ import { MatrixEditor } from "../elements/matrixeditor/main";
 import "../../system/ipc/html editor";
 import { Piano } from "../elements/piano/piano";
 import { PatternEditor } from "../elements/patterneditor/main";
+import { MIDI } from "../misc/MIDI";
 
 async function loadMainShortcuts() {
 	// load all.ts asynchronously. This will setup our environment better than we can do here
@@ -215,6 +216,9 @@ window.ipc.ui.path().then(async() => {
 	// load the editor
 	await fadeToLayout(editorLayout);
 
+	// initialize the MIDI input polling
+	MIDI.init();
+
 	// init shortcut handler and remove the loading animation
 	initShortcutHandler();
 	removeTransition();
@@ -336,6 +340,12 @@ async function editorLayout():Promise<true> {
 	_top.appendChild(await volumeSlider(SliderEnum.Horizontal | SliderEnum.Medium));
 
 	_top.appendChild(document.createElement("br"));
+
+	{
+		const e = document.createElement("div");
+		e.id = "midi";
+		_top.appendChild(e);
+	}
 
 	// load channel mute buttons
 	Project.current.index.channels.forEach((c) => {

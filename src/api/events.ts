@@ -145,6 +145,9 @@ export enum ZorroEventEnum {
 
 	PatternTrim,					// event that is ran when a pattern will be trimmed
 	PatternMake,					// event that is ran when a new pattern will be created
+
+	MidiNoteOn,						// event that is ran when a MIDI note is triggered
+	MidiNoteOff,					// event that is ran when a MIDI note is released
 }
 
 /**
@@ -195,6 +198,9 @@ export interface ZorroListenerTypes {
 
 	[ZorroEventEnum.PatternTrim]: (event:ZorroEventObject, index:PatternIndex, channel:number, position:number) => Promise<undefined|void>,
 	[ZorroEventEnum.PatternMake]: (event:ZorroEventObject, index:PatternIndex, channel:number, position:number) => Promise<undefined|void>,
+
+	[ZorroEventEnum.MidiNoteOn]: (event:ZorroEventObject, channel:number, note:number, velocity:number) => Promise<undefined|void>,
+	[ZorroEventEnum.MidiNoteOff]: (event:ZorroEventObject, channel:number, note:number, velocity:number) => Promise<undefined|void>,
 }
 
 /**
@@ -219,5 +225,8 @@ export interface ZorroSenderTypes {
 
 	[ZorroEventEnum.PatternTrim]: (index:PatternIndex, channel:number, position:number) => Promise<{ event: ZorroEventObject, value: undefined }>,
 	[ZorroEventEnum.PatternMake]: (index:PatternIndex, channel:number, position:number) => Promise<{ event: ZorroEventObject, value: undefined }>,
+
+	[ZorroEventEnum.MidiNoteOn]: (channel:number, note:number, velocity:number) => Promise<{ event: ZorroEventObject, value: undefined }>,
+	[ZorroEventEnum.MidiNoteOff]: (channel:number, note:number, velocity:number) => Promise<{ event: ZorroEventObject, value: undefined }>,
 }
 /* eslint-enable max-len*/

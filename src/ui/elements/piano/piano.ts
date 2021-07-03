@@ -1,4 +1,5 @@
 import { ChannelType, NoteReturnType } from "../../../api/driver";
+import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../../api/events";
 import { loadFlag } from "../../../api/files";
 import { UIElement } from "../../../api/ui";
 
@@ -6,13 +7,13 @@ export class Piano implements UIElement {
 	/**
 	 * Cache note lists here
 	 */
-	private static notesCache:{ [key: number]: NoteReturnType } = {};
+	public static notesCache:{ [key: number]: NoteReturnType } = {};
 
 	public static async create() : Promise<Piano> {
-		const piano = new Piano();
-		piano.width = loadFlag<number>("PIANO_DEFAULT_SIZE") ?? 2;
-		piano.octave = loadFlag<number>("PIANO_DEFAULT_OCTAVE") ?? 3;
-		piano.position = loadFlag<number>("PIANO_DEFAULT_POSITION") ?? 0;
+		_piano = new Piano();
+		_piano.width = loadFlag<number>("PIANO_DEFAULT_SIZE") ?? 2;
+		_piano.octave = loadFlag<number>("PIANO_DEFAULT_OCTAVE") ?? 3;
+		_piano.position = loadFlag<number>("PIANO_DEFAULT_POSITION") ?? 0;
 
 		// remember to cache FM notes
 		if(!this.notesCache[ChannelType.YM2612FM]) {
@@ -20,17 +21,22 @@ export class Piano implements UIElement {
 		}
 
 		// update position
-		piano.changePosition(0);
+		_piano.changePosition(0);
 
 		// redraw the inner elements based on size
-		piano.redraw();
+		_piano.redraw();
 
 		// finish initializing the piano
-		piano.init();
+		_piano.init();
 
 		// return the piano
-		return piano;
+		return _piano;
 	}
+
+	/**
+	 * Map strings to note numbers. This will allow the Piano to correctly release notes
+	 */
+	private scmap:{ [key:string]: number, } = {};
 
 	/**
 	 * Function to receive shortcut events from the user.
@@ -44,18 +50,24 @@ export class Piano implements UIElement {
 		const octave = (data:string[], octave:number) => {
 			// helper function to trigger a single note
 			const note = async(note:number) => {
-				// fetch octave info
-				const octaveInfo = Piano.notesCache[ChannelType.YM2612FM].octave;
+				// get the scmap name for this note
+				const name = octave +"-"+ note;
 
-				// calculate the note
-				const n = octaveInfo.C0 + note + ((this.octave + octave) * octaveInfo.size);
-
-				// trigger or release note based on keyboard state
 				if(state) {
-					await this.triggerNote(n, 1);
+					// fetch octave info
+					const octaveInfo = Piano.notesCache[ChannelType.YM2612FM].octave;
 
-				} else {
-					await this.releaseNote(n);
+					// calculate the note
+					const n = octaveInfo.C0 + note + ((this.octave + octave) * octaveInfo.size);
+
+					// trigger the note
+					await this.triggerNote(n, 1);
+					this.scmap[name] = n;
+
+				} else if(this.scmap[name]){
+					// release the note and remove scmap reference
+					await this.releaseNote(this.scmap[name]);
+					delete this.scmap[name];
 				}
 
 				return true;
@@ -208,6 +220,17 @@ export class Piano implements UIElement {
 	}
 
 	/**
+	 * Helper function to get relative note to start of current octave, mainly for MIDI devices.
+	 *
+	 * @param offset The note offset from the start of current octave
+	 * @returns the translated note
+	 */
+	public getRelativeNote(offset:number): number {
+		const octave = Piano.notesCache[ChannelType.YM2612FM].octave;
+		return ((this.octave + 1) * octave.size) + octave.C0 + offset;
+	}
+
+	/**
 	 * Redraw the piano keys
 	 */
 	public redraw(): void {
@@ -337,7 +360,7 @@ export class Piano implements UIElement {
 				let pos = (e.clientY - rect.top) / rect.height;
 
 				// make the position a bit saner
-				pos = (Math.max(0.05, Math.min(0.9, pos)) * (1 / 0.9));
+				pos = (Math.max(0.05, Math.min(0.8, pos)) * (1 / 0.8));
 
 				// calculate the note
 				const [ oct, ] = this.getOctaveRange();
@@ -382,14 +405,17 @@ export class Piano implements UIElement {
 	 * @param note The note ID to play
 	 * @param velocity The velocity to play the note with, from 0 to 1.0.
 	 */
-	private async triggerNote(note:number, velocity:number) {
+	public async triggerNote(note:number, velocity:number):Promise<boolean> {
 		// check if this note exists
 		if(typeof Piano.notesCache[ChannelType.YM2612FM].notes[note]?.frequency === "number"){
 			if(await window.ipc.driver.pianoTrigger(note, velocity, 0)){
 				// add the active class
 				this.modNote("active", "add", note);
+				return true;
 			}
 		}
+
+		return false;
 	}
 
 	/**
@@ -397,14 +423,17 @@ export class Piano implements UIElement {
 	 *
 	 * @param note The note ID to release
 	 */
-	private async releaseNote(note:number) {
+	public async releaseNote(note:number):Promise<boolean> {
 		// check if this note exists
 		if(typeof Piano.notesCache[ChannelType.YM2612FM].notes[note]?.frequency === "number"){
 			if(await window.ipc.driver.pianoRelease(note)){
 				// remove the active class
 				this.modNote("active", "remove", note);
+				return true;
 			}
 		}
+
+		return false;
 	}
 
 	/**
@@ -437,3 +466,37 @@ export class Piano implements UIElement {
 		}
 	}
 }
+
+let _piano: Piano;
+
+/*
+ * Store a translation table of MIDI notes -> driver notes. This allows the octave to change without disturbing the MIDI note.
+ */
+const keys:number[] = Array(128);
+
+/**
+ * Helper event listener for the MidiNoteOn event, so that the piano can receive notes from MIDI devices
+ */
+ZorroEvent.addListener(ZorroEventEnum.MidiNoteOn, async(event:ZorroEventObject, channel:number, note:number, velocity:number) => {
+	if(_piano) {
+		// get the relative note to trigger
+		const rn = _piano.getRelativeNote(note - 60);
+
+		// attempt to trigger the note
+		if(await _piano.triggerNote(rn, velocity)) {
+			keys[note] = rn;
+		}
+	}
+});
+
+/**
+ * Helper event listener for the MidiNoteOff event, so that the piano can receive notes from MIDI devices
+ */
+ZorroEvent.addListener(ZorroEventEnum.MidiNoteOff, async(event:ZorroEventObject, channel:number, note:number) => {
+	if(_piano) {
+		// attempt to release the note
+		if(await _piano.releaseNote(keys[note])) {
+			keys[note] = 0;
+		}
+	}
+});

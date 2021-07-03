@@ -327,16 +327,16 @@ export default class implements Driver {
 				this.loadFMVoice(cx);
 
 				// disable key
-				this.writeYM1(YMREG.Key, cc);
+				this.writeYM1(YMREG.Key, cx);
 
 				// enable FM frequency
 				this.loadFMFrequency(cx, data.frequency);
 
 				// enable FM volume
-				this.writeYMch(channel, YMREG.TL | YMREG.op4, Math.max(0, 0x3F - Math.floor((velocity + 0.2) * 0x3F)));
+				this.writeYMch(cx, YMREG.TL | YMREG.op4, 0x3F - Math.floor(velocity * 0x3F));
 
 				// enable key
-				this.writeYM1(YMREG.Key, cc | YMKey.OpAll);
+				this.writeYM1(YMREG.Key, cx | YMKey.OpAll);
 				break;
 			}
 

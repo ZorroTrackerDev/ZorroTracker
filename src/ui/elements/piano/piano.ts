@@ -110,7 +110,7 @@ export class Piano implements UIElement {
 		(this.element.children[0] as HTMLDivElement).onwheel = (e) => {
 			if(e.deltaY) {
 				// there is vertical movement, translate to horizontal
-				(e.currentTarget as HTMLDivElement).scrollLeft += e.deltaY;
+				(e.currentTarget as HTMLDivElement).scrollLeft += e.deltaY * 0.5;
 				e.preventDefault();
 			}
 		};
@@ -136,8 +136,10 @@ export class Piano implements UIElement {
 	 * @param offset The offset to apply to the size
 	 */
 	public changeSize(offset:number): boolean {
-		// update position and cap it between 0 and 13
-		this.width = Math.max(0, Math.min(13, this.width + offset));
+		const { min, max, } = Piano.notesCache[ChannelType.YM2612FM].octave;
+
+		// update size and cap it between 1 and max octaves
+		this.width = Math.max(1, Math.min((max - min + 1), this.width + offset));
 
 		// ensure the octave doesnt go out of range
 		this.changeOctave(0);
@@ -153,12 +155,53 @@ export class Piano implements UIElement {
 	 * @param offset The offset to apply to the size
 	 */
 	public changeOctave(offset:number): boolean {
-		// update octave and cap it between -3 and 10 - (num of visible octaves)
-		this.octave = Math.max(-3, Math.min(10 - this.width, this.octave + offset));
+		const { min, max, } = Piano.notesCache[ChannelType.YM2612FM].octave;
+
+		// update octave and cap it between minimum and maximum octave
+		this.octave = Math.max(min, Math.min(max - 1, this.octave + offset));
 
 		// redraw the piano
 		this.redraw();
 		return true;
+	}
+
+	/**
+	 * Function to calculate the range of octaves that the piano should display.
+	 *
+	 * @returns An array depicting the minimum and maximum octaves to display. For example to only display octave 3, this will return [ 3, 3 ].
+	 */
+	private getOctaveRange() {
+		// just pretend to show an invalid octave range, if no piano would display.
+		if(this.width < 2) {
+			return [ 1, 0, ];
+		}
+
+		// prepare the octave marker
+		let oc = this.octave;
+
+		// prepare the width values on the left and rightr
+		const lw = Math.floor(this.width / 2), rw = Math.ceil(this.width / 2);
+
+		// fetch the minimum and maximum octaves
+		const { min, max, } = Piano.notesCache[ChannelType.YM2612FM].octave;
+
+		// handle minimum and maximum octave
+		if(oc < min + lw) {
+			oc = min + lw;
+
+		} else if(oc > max - rw) {
+			oc = max - rw + 0.5;
+
+		} else {
+			// little trick to center the octave
+			oc += 0.5;
+		}
+
+		// calculate the total range
+		return [
+			Math.ceil(oc - lw),
+			Math.ceil(oc + rw),
+		];
 	}
 
 	/**
@@ -173,8 +216,6 @@ export class Piano implements UIElement {
 			wrap.removeChild(wrap.children[0]);
 		}
 
-		const oc = this.octave * OctaveSize;
-
 		// helper function to add a single key to the wrapper
 		const key = (note:number, parent:HTMLDivElement) => {
 			// create a new div element to store this key
@@ -185,7 +226,7 @@ export class Piano implements UIElement {
 			e.setAttribute("note", ""+ note);
 
 			// load the note cache data
-			const cache = Piano.notesCache[ChannelType.YM2612FM][Note.C0 + note + oc];
+			const cache = Piano.notesCache[ChannelType.YM2612FM].notes[Note.C0 + note + oc];
 
 			if(cache) {
 				// define classes based on sharp param
@@ -212,8 +253,12 @@ export class Piano implements UIElement {
 			parent.appendChild(e);
 		}
 
+		// calculate which octaves to show
+		const [ ocMin, ocMax, ] = this.getOctaveRange();
+		const oc = ocMin * OctaveSize;
+
 		// repeat for each octave
-		for(let x = this.octave, n = 0; x < this.octave + this.width; x++){
+		for(let x = ocMin, n = 0; x < ocMax; x++){
 			// create a new div element to store this octave
 			const e = document.createElement("div");
 			e.classList.add("pianooctave");
@@ -228,7 +273,7 @@ export class Piano implements UIElement {
 
 			for(let y = 11;y >= 0; --y) {
 				// check if there is a note cached here
-				const c = Piano.notesCache[ChannelType.YM2612FM][Note.C0 + n + y + oc];
+				const c = Piano.notesCache[ChannelType.YM2612FM].notes[Note.C0 + n + y + oc];
 
 				if(c) {
 					// if yes, this is the new octave, use it! No matter what!
@@ -289,7 +334,8 @@ export class Piano implements UIElement {
 				pos = (Math.max(0.05, Math.min(0.9, pos)) * (1 / 0.9));
 
 				// calculate the note
-				note = Note.C0 + (OctaveSize * this.octave) + (parseInt(e.target.getAttribute("note") ?? "0", 10));
+				const [ oct, ] = this.getOctaveRange();
+				note = Note.C0 + (OctaveSize * oct) + (parseInt(e.target.getAttribute("note") ?? "0", 10));
 
 				// trigger the note
 				await this.triggerNote(note, pos);
@@ -330,7 +376,7 @@ export class Piano implements UIElement {
 	 */
 	private async triggerNote(note:number, velocity:number) {
 		// check if this note exists
-		if(typeof Piano.notesCache[ChannelType.YM2612FM][note]?.frequency === "number"){
+		if(typeof Piano.notesCache[ChannelType.YM2612FM].notes[note]?.frequency === "number"){
 			if(await window.ipc.driver.pianoTrigger(note, velocity, 0)){
 				// add the active class
 				this.modNote("active", "add", note);
@@ -345,7 +391,7 @@ export class Piano implements UIElement {
 	 */
 	private async releaseNote(note:number) {
 		// check if this note exists
-		if(typeof Piano.notesCache[ChannelType.YM2612FM][note]?.frequency === "number"){
+		if(typeof Piano.notesCache[ChannelType.YM2612FM].notes[note]?.frequency === "number"){
 			if(await window.ipc.driver.pianoRelease(note)){
 				// remove the active class
 				this.modNote("active", "remove", note);
@@ -361,13 +407,13 @@ export class Piano implements UIElement {
 	 * @param note The note to check
 	 */
 	private modNote(name:string, mode:"add"|"remove", note:number) {
-		// calculate octave
-		const o = this.octave * OctaveSize;
+		// calculate which octaves are being displayed
+		const [ ocMin, ocMax, ] = this.getOctaveRange();
 
 		// check if this note is on the piano
-		if(note > o && note - Note.C0 < o + (this.width * OctaveSize)) {
+		if(note > ocMin * OctaveSize && note - Note.C0 < ocMax * OctaveSize) {
 			// load the note offset
-			const off = note - Note.C0 - o;
+			const off = note - Note.C0 - (ocMin * OctaveSize);
 
 			// calculate the octave wrapper
 			let e = ((this.element.children[0] as HTMLDivElement).children[0] as HTMLDivElement).children[(off / 12) | 0];

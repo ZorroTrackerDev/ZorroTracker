@@ -239,7 +239,9 @@ parentPort?.on("message", (data:{ code:string, data:unknown, fn?:string }) => {
 						break;
 
 					case "notes":
-						parentPort?.postMessage({ code: "cdr", fn: "notes", data: driver?.notes(...(data.data as [number])) ?? [], });
+						parentPort?.postMessage({
+							code: "cdr", fn: "notes", data: driver?.notes(...(data.data as [number])) ?? { octave: { min: 0, max: 0, }, notes: [], },
+						});
 						break;
 
 					case "pianoTrigger":

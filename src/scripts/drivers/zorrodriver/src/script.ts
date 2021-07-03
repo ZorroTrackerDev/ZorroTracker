@@ -1,5 +1,5 @@
 import { Channel, ChannelType, Driver, DriverConfig, NoteData, NoteReturnType } from "../../../../api/driver";
-import { Chip, PSGCMD, YMHelp, YMKey, YMREG } from "../../../../api/chip";
+import { Chip, PSGCMD, YMKey, YMREG } from "../../../../api/chip";
 import { DefaultOctave, DefaultOctaveSharp, Note, OctaveSize } from "../../../../api/notes";
 
 export default class implements Driver {
@@ -9,7 +9,7 @@ export default class implements Driver {
 
 	constructor() {
 		// process PSG notes
-		this.NotePSG = this.noteGen((note: number) => {
+		this.NotePSG = this.noteGen({ min: 0, max: 7, }, (note: number) => {
 			const xo = (OctaveSize * 7) + Note.C0;
 
 			if(note < Note.C0 + 9) {
@@ -27,7 +27,7 @@ export default class implements Driver {
 		});
 
 		// process FM notes
-		this.NoteFM = this.noteGen((note: number) => {
+		this.NoteFM = this.noteGen({ min: -4, max: 7, }, (note: number) => {
 			if(note < Note.C0) {
 				// negative octaves
 				const ftable = this.frequencies[note - Note.C0 + (OctaveSize * 4)];
@@ -64,10 +64,11 @@ export default class implements Driver {
 	/**
 	 * Function to get the frequency table based on channel type
 	 *
+	 * @param octave The discrete data for octaves
 	 * @param type The channel type to inspect
 	 * @returns The table containing note info
 	 */
-	private noteGen(func:(note: number) => number|undefined): NoteReturnType {
+	private noteGen(octave: { min: number, max: number }, func:(note: number) => number|undefined): NoteReturnType {
 		// prepare some variables
 		const ret = Array<NoteData>(256);
 
@@ -95,7 +96,10 @@ export default class implements Driver {
 			};
 		}
 
-		return ret;
+		return {
+			octave: octave,
+			notes: ret,
+		};
 	}
 
 
@@ -300,7 +304,7 @@ export default class implements Driver {
 		switch(ch.type) {
 			case ChannelType.YM2612FM: {
 				// pretend this is PSG
-				const data = this.NoteFM[note];
+				const data = this.NoteFM.notes[note];
 
 				// check for invalid notes
 				if(typeof data?.frequency !== "number") {
@@ -338,7 +342,7 @@ export default class implements Driver {
 
 			case ChannelType.YM7101PSG: {
 				// pretend this is PSG
-				const data = this.NotePSG[note];
+				const data = this.NotePSG.notes[note];
 
 				// check for invalid notes
 				if(typeof data?.frequency !== "number") {

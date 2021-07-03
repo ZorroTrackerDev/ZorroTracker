@@ -127,7 +127,25 @@ export type NoteData = {
 /**
  * Represents the data type the notes array must have
  */
-export type NoteReturnType = Array<NoteData>;
+export type NoteReturnType = {
+	/**
+	 * Special octave settings
+	 */
+	octave: {
+		/**
+		 * The minimum octave number
+		 */
+		min: number,
+		/**
+		 * The maximum octave number
+		 */
+		max: number,
+	},
+	/**
+	 * The list of actual notes on this chip type
+	 */
+	notes: Array<NoteData>,
+};
 
 export interface Channel {
 	/**

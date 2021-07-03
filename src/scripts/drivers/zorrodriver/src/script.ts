@@ -1,4 +1,4 @@
-import { Channel, ChannelType, Driver, DriverConfig, NoteData, NoteReturnType } from "../../../../api/driver";
+import { Channel, ChannelType, Driver, DriverConfig, NoteData, NoteReturnType, OctaveInfo } from "../../../../api/driver";
 import { Chip, PSGCMD, YMKey, YMREG } from "../../../../api/chip";
 import { DefaultOctave, DefaultOctaveSharp, Note, OctaveSize } from "../../../../api/notes";
 
@@ -9,7 +9,7 @@ export default class implements Driver {
 
 	constructor() {
 		// process PSG notes
-		this.NotePSG = this.noteGen({ min: 0, max: 7, }, (note: number) => {
+		this.NotePSG = this.noteGen({ min: 0, max: 7, C0: Note.C0, size: 12, }, (note: number) => {
 			const xo = (OctaveSize * 7) + Note.C0;
 
 			if(note < Note.C0 + 9) {
@@ -27,7 +27,7 @@ export default class implements Driver {
 		});
 
 		// process FM notes
-		this.NoteFM = this.noteGen({ min: -4, max: 7, }, (note: number) => {
+		this.NoteFM = this.noteGen({ min: -4, max: 7, C0: Note.C0, size: 12, }, (note: number) => {
 			if(note < Note.C0) {
 				// negative octaves
 				const ftable = this.frequencies[note - Note.C0 + (OctaveSize * 4)];
@@ -68,7 +68,7 @@ export default class implements Driver {
 	 * @param type The channel type to inspect
 	 * @returns The table containing note info
 	 */
-	private noteGen(octave: { min: number, max: number }, func:(note: number) => number|undefined): NoteReturnType {
+	private noteGen(octave: OctaveInfo, func:(note: number) => number|undefined): NoteReturnType {
 		// prepare some variables
 		const ret = Array<NoteData>(256);
 

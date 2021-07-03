@@ -1,6 +1,5 @@
 import { ChannelType, NoteReturnType } from "../../../api/driver";
 import { loadFlag } from "../../../api/files";
-import { Note, OctaveSize } from "../../../api/notes";
 import { UIElement } from "../../../api/ui";
 
 export class Piano implements UIElement {
@@ -45,7 +44,11 @@ export class Piano implements UIElement {
 		const octave = (data:string[], octave:number) => {
 			// helper function to trigger a single note
 			const note = async(note:number) => {
-				const n = Note.C0 + note + octave + (this.octave * OctaveSize);
+				// fetch octave info
+				const octaveInfo = Piano.notesCache[ChannelType.YM2612FM].octave;
+
+				// calculate the note
+				const n = octaveInfo.C0 + note + ((this.octave + octave) * octaveInfo.size);
 
 				// trigger or release note based on keyboard state
 				if(state) {
@@ -87,8 +90,8 @@ export class Piano implements UIElement {
 			case "smaller":		return this.changeSize(-1);
 			case "bigger":		return this.changeSize(1);
 			case "octave0":		return octave(data, 0);
-			case "octave1":		return octave(data, OctaveSize);
-			case "octave2":		return octave(data, OctaveSize * 2);
+			case "octave1":		return octave(data, 1);
+			case "octave2":		return octave(data, 2);
 		}
 
 		return false;
@@ -216,6 +219,9 @@ export class Piano implements UIElement {
 			wrap.removeChild(wrap.children[0]);
 		}
 
+		// load note cache data
+		const cache = Piano.notesCache[ChannelType.YM2612FM];
+
 		// helper function to add a single key to the wrapper
 		const key = (note:number, parent:HTMLDivElement) => {
 			// create a new div element to store this key
@@ -226,23 +232,23 @@ export class Piano implements UIElement {
 			e.setAttribute("note", ""+ note);
 
 			// load the note cache data
-			const cache = Piano.notesCache[ChannelType.YM2612FM].notes[Note.C0 + note + oc];
+			const cn = cache.notes[cache.octave.C0 + note + oc];
 
-			if(cache) {
+			if(cn) {
 				// define classes based on sharp param
-				switch(cache.sharp) {
+				switch(cn.sharp) {
 					case "center":	e.classList.add("sharp"); break;
 					case "left":	e.classList.add("sharp", "sl"); break;
 					case "right":	e.classList.add("sharp", "sr"); break;
 				}
 
 				// if frequency is not a number, then it must be invalid
-				if(typeof cache.frequency !== "number") {
+				if(typeof cn.frequency !== "number") {
 					e.classList.add("invalid");
 				}
 
 				// add the inner text to show which note it is
-				e.innerHTML = /*html*/`<span>${ cache.name.split("\u2060")[0] }</span>`;
+				e.innerHTML = /*html*/`<span>${ cn.name.split("\u2060")[0] }</span>`;
 
 			} else {
 				// note is very not valid
@@ -255,7 +261,7 @@ export class Piano implements UIElement {
 
 		// calculate which octaves to show
 		const [ ocMin, ocMax, ] = this.getOctaveRange();
-		const oc = ocMin * OctaveSize;
+		const oc = ocMin * cache.octave.size;
 
 		// repeat for each octave
 		for(let x = ocMin, n = 0; x < ocMax; x++){
@@ -273,7 +279,7 @@ export class Piano implements UIElement {
 
 			for(let y = 11;y >= 0; --y) {
 				// check if there is a note cached here
-				const c = Piano.notesCache[ChannelType.YM2612FM].notes[Note.C0 + n + y + oc];
+				const c = cache.notes[cache.octave.C0 + n + y + oc];
 
 				if(c) {
 					// if yes, this is the new octave, use it! No matter what!
@@ -335,7 +341,9 @@ export class Piano implements UIElement {
 
 				// calculate the note
 				const [ oct, ] = this.getOctaveRange();
-				note = Note.C0 + (OctaveSize * oct) + (parseInt(e.target.getAttribute("note") ?? "0", 10));
+				const octaveInfo = Piano.notesCache[ChannelType.YM2612FM].octave;
+
+				note = octaveInfo.C0 + (octaveInfo.size * oct) + (parseInt(e.target.getAttribute("note") ?? "0", 10));
 
 				// trigger the note
 				await this.triggerNote(note, pos);
@@ -410,10 +418,13 @@ export class Piano implements UIElement {
 		// calculate which octaves are being displayed
 		const [ ocMin, ocMax, ] = this.getOctaveRange();
 
+		// fetch octave info
+		const octaveInfo = Piano.notesCache[ChannelType.YM2612FM].octave;
+
 		// check if this note is on the piano
-		if(note > ocMin * OctaveSize && note - Note.C0 < ocMax * OctaveSize) {
+		if(note > ocMin * octaveInfo.size && note - octaveInfo.C0 < ocMax * octaveInfo.size) {
 			// load the note offset
-			const off = note - Note.C0 - (ocMin * OctaveSize);
+			const off = note - octaveInfo.C0 - (ocMin * octaveInfo.size);
 
 			// calculate the octave wrapper
 			let e = ((this.element.children[0] as HTMLDivElement).children[0] as HTMLDivElement).children[(off / 12) | 0];

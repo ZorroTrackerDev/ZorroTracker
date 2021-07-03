@@ -125,22 +125,39 @@ export type NoteData = {
 };
 
 /**
+ * Represents octave information for each chip
+ */
+export type OctaveInfo = {
+	/**
+	 * The minimum octave number
+	 */
+	min: number,
+
+	/**
+	 * The maximum octave number
+	 */
+	max: number,
+
+	/**
+	 * Number of notes per octave
+	 */
+	size: number,
+
+	/**
+	 * The note ID that will represent C0 on this chip
+	 */
+	C0: number,
+}
+
+/**
  * Represents the data type the notes array must have
  */
 export type NoteReturnType = {
 	/**
 	 * Special octave settings
 	 */
-	octave: {
-		/**
-		 * The minimum octave number
-		 */
-		min: number,
-		/**
-		 * The maximum octave number
-		 */
-		max: number,
-	},
+	octave: OctaveInfo,
+
 	/**
 	 * The list of actual notes on this chip type
 	 */

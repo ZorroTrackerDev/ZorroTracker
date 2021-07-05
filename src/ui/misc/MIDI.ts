@@ -1,8 +1,5 @@
 import { ZorroEvent, ZorroEventEnum, ZorroSenderTypes } from "../../api/events";
 import { loadFlag } from "../../api/files";
-import { Note } from "../../api/notes";
-
-
 
 export class MIDI {
 	public static current:MIDI|null = null;

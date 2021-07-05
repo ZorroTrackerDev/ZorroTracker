@@ -217,42 +217,42 @@ parentPort?.on("message", (data:{ code:string, data:unknown, fn?:string }) => {
 				// handler driver function call
 				switch((data.fn) as string) {
 					case "getChannels":
-						parentPort?.postMessage({ code: "cdr", fn: "getChannels", data: driver?.getChannels() ?? [], });
+						parentPort?.postMessage({ code: "cd", fn: data.fn, data: driver?.getChannels() ?? [], });
 						break;
 
 					case "muteChannel":
 						parentPort?.postMessage({
-							code: "cdr", fn: "muteChannel", data: driver?.muteChannel(...(data.data as [number, boolean])) ?? false,
+							code: "cd", fn: data.fn, data: driver?.muteChannel(...(data.data as [number, boolean])) ?? false,
 						});
 						break;
 
 					case "enableChannel":
 						parentPort?.postMessage({
-							code: "cdr", fn: "enableChannel", data: driver?.enableChannel(...(data.data as [number])) ?? false,
+							code: "cd", fn: data.fn, data: driver?.enableChannel(...(data.data as [number])) ?? false,
 						});
 						break;
 
 					case "disableChannel":
 						parentPort?.postMessage({
-							code: "cdr", fn: "disableChannel", data: driver?.disableChannel(...(data.data as [number])) ?? false,
+							code: "cd", fn: data.fn, data: driver?.disableChannel(...(data.data as [number])) ?? false,
 						});
 						break;
 
 					case "notes":
 						parentPort?.postMessage({
-							code: "cdr", fn: "notes", data: driver?.notes(...(data.data as [number])) ?? { octave: { min: 0, max: 0, }, notes: [], },
+							code: "cd", fn: data.fn, data: driver?.notes(...(data.data as [number])) ?? { octave: { min: 0, max: 0, }, notes: [], },
 						});
 						break;
 
 					case "pianoTrigger":
 						parentPort?.postMessage({
-							code: "cdr", fn: "pianoTrigger", data: driver?.pianoTrigger(...(data.data as [number, number, number])) ?? false,
+							code: "cd", fn: data.fn, data: driver?.pianoTrigger(...(data.data as [number, number, number])) ?? false,
 						});
 						break;
 
 					case "pianoRelease":
 						parentPort?.postMessage({
-							code: "cdr", fn: "pianoRelease", data: driver?.pianoRelease(...(data.data as [number])) ?? false,
+							code: "cd", fn: data.fn, data: driver?.pianoRelease(...(data.data as [number])) ?? false,
 						});
 						break;
 				}

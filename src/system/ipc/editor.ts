@@ -47,6 +47,30 @@ export const log = {
  */
 let worker:Worker|undefined;
 
+/**
+ * Helper function for listening to worker messages correctly and responding with data
+ */
+function workerAsync(code:string, data:unknown, fn:string|undefined, handler:(data:unknown) => void): void {
+	// helper function to listen to the response
+	const f = (data:{ code:string, data:unknown, fn:string|undefined }) => {
+		console.log("CHECK", data.code, data.fn, fn)
+		if(data.code === code && data.fn === fn){
+			// success, now send it along
+			worker?.off("message", f);
+			log.info("worker ->", code, fn)
+			handler(data.data);
+		}
+	};
+
+	log.info("-> worker ", code, fn)
+
+	// add reponse listener
+	worker?.on("message", f);
+
+	// post the messages to the worker
+	worker?.postMessage({ code: code, data: data, fn: fn, });
+}
+
  // handle changing the volume of the audio adapter instance.
 ipcMain.on(ipcEnum.AudioVolume, (event, volume:number) => {
 	worker?.postMessage({ code: "volume", data: volume, });
@@ -61,20 +85,16 @@ ipcMain.on(ipcEnum.AudioChip, (event, chip:ChipConfig) => {
 // handle creating the audio adapter instance.
 ipcMain.on(ipcEnum.AudioDriver, (event, driver:DriverConfig) => {
 	// post the DriverConfig
-	worker?.postMessage({ code: "driver", data: driver, });
+	workerAsync("driver", driver, undefined, () => {
+		// tell the UI we finished
+		event.reply(ipcEnum.AudioDriver);
 
-	// listen to the response from worker and send later
-	worker?.once("message", (data:{ code:string, data:unknown }) => {
-		if(data.code === "driver"){
-			event.reply(ipcEnum.AudioDriver);
-		}
+		// initialize the audio adapter instance
+		worker?.postMessage({ code: "load", data: undefined, });
 	});
 
 	// close the previous instance of RtAudio if running
 	worker?.postMessage({ code: "close", data: undefined, });
-
-	// post the finally initialize the audio adapter instance
-	worker?.postMessage({ code: "load", data: undefined, });
 });
 
 // handle closing the audio adapter instance.
@@ -162,18 +182,14 @@ ipcMain.on(ipcEnum.UiExit, (event:unknown, state:boolean) => {
 	rpc.client = undefined;
 
 	// will be closed, tell the worker about it and terminate it
-	worker?.postMessage({ code: "quit", });
+	workerAsync("quit", undefined, undefined, () => {
+		worker?.terminate().then(() => {
 
-	worker?.once("message", (data:{ code:string, data:unknown }) => {
-		if(data.code === "quit"){
-			worker?.terminate().then(() => {
-
-				// kill all windows
-				for(const w of Object.values(windows)) {
-					w.destroy();
-				}
-			}).catch(log.error);
-		}
+			// kill all windows
+			for(const w of Object.values(windows)) {
+				w.destroy();
+			}
+		}).catch(log.error);
 	});
 });
 
@@ -182,18 +198,9 @@ ipcMain.on(ipcEnum.UiExit, (event:unknown, state:boolean) => {
  */
 // handle arbitary function calls
 ipcMain.on(ipcEnum.DriverFunc, (event, args:[string, unknown[]]) => {
-	worker?.postMessage({ code: "cd", data: args[1], fn: args[0], });
-
-	const f = (data:{ code:string, fn:string, data:unknown }) => {
-		if(data.code === "cdr" && data.fn === args[0]){
-			// valid response, return data
-			event.reply(ipcEnum.DriverFunc, data.data);
-
-			// disable this check
-			worker?.off("message", f);
-		}
-	}
-
-	// listen to response TODO: Make this system guarantee correct handling
-	worker?.on("message", f);
+	// create a new message and listen to it
+	workerAsync("cd", args[1], args[0], (data) => {
+		// valid response, return data
+		event.reply(ipcEnum.DriverFunc, data);
+	});
 });

@@ -31,6 +31,9 @@ export class PatternEditor implements UIElement {
 
 		// initialize channels in element
 		this.initChannels();
+
+		// initialize rows
+		this.loadRows();
 	}
 
 	/**
@@ -88,5 +91,84 @@ export class PatternEditor implements UIElement {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Load the pattern list div element for a specific column
+	 *
+	 * @param column The column to load from
+	 * @returns The pattern list div element that was requested
+	 */
+	private getPatternListDiv(column:number) {
+		// get the column wrapper
+		const list = this.scrollwrapper.children[column] as HTMLDivElement;
+
+		// check if this column exists
+		if(list) {
+			return list.children[1] as HTMLDivElement;
+		}
+	}
+
+	/**
+	 * Function to create the wrapper for pattern data
+	 *
+	 * @param position The position of the row vertically
+	 * @returns The newly created element
+	 */
+	private createPatternData(position:number) {
+		// create the element and give it classes
+		const div = document.createElement("div");
+		div.classList.add("patternlist", "active");
+
+		// store its position in an attribute
+		div.setAttribute("plr", ""+ position);
+
+		// handle its position
+		div.style.top = "calc(14*("+ (position * 64) +"px+var(--patterneditor-y)))";
+		return div;
+	}
+
+	/**
+	 * Function to load more pattern rows onscreen
+	 */
+	private loadRows() {
+		// create the pattern list element for this
+		let div = this.createPatternData(0);
+		this.getPatternListDiv(0)?.appendChild(div);
+
+		for(let i = 0;i < 64;i ++) {
+			// create the element and give it classes
+			const x = document.createElement("div");
+			div.appendChild(x);
+			x.classList.add("patternrownum");
+
+			// set the number
+			x.innerText = i.toString().padStart(3, "0");
+		}
+
+		// handle each channel
+		for(let c = 0;c < this.index.channels.length;c ++) {
+			// create the pattern list element for this
+			div = this.createPatternData(0);
+			this.getPatternListDiv(1 + c)?.appendChild(div);
+
+			// add the note data
+			for(let i = 0;i < 64;i ++) {
+				// create the element and give it classes
+				const x = document.createElement("div");
+				div.appendChild(x);
+				x.classList.add("patterndataitem");
+
+				// set the text
+				x.innerHTML = /*html*/`
+					<div class='note ${ c === 0 || c % 2 === 0 ? "set" : "" }' >${ c === 0 || c % 2 === 0 ? "C#3" : "---" }</div>
+					<div class='idk ${ c > 4 ? "set" : "" }'>${ c > 4 ? "66" : "–" }</div>
+					<div class='volume ${ c % 4 === 0 ? "set" : "" }'>${ c % 4 === 0 ? "2F" : "–" }</div>
+					<div class='command ${ c % 3 === 0 ? "set" : "" }'>${ c % 3 === 0 ? "82" : "—" }</div>
+					<div class='value ${ c % 3 === 0 ? "set" : "" }'>${ c % 3 === 0 ? "E1" : "—" }</div>
+				`.replace(/[\t|\r|\n]+/g, "");
+
+			}
+		}
 	}
 }

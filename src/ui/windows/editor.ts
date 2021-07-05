@@ -38,8 +38,8 @@ window.preload = {
 	 *
 	 * @param name The name of the shortcut to execute
 	 */
-	shortcut: (name:string[]) => {
-		doShortcut(name);
+	shortcut: async(name:string[]) => {
+		await doShortcut(name);
 	},
 }
 
@@ -53,12 +53,12 @@ import { volumeSlider, SliderEnum } from "../elements/slider/slider";
 import { closePopups, confirmationDialog, createFilename, PopupColors, PopupSizes } from "../elements/popup/popup";
 import { Undo } from "../../api/undo";
 import { MatrixEditor } from "../elements/matrixeditor/main";
-
-/* ipc communication */
-import "../../system/ipc/html editor";
 import { Piano } from "../elements/piano/piano";
 import { PatternEditor } from "../elements/patterneditor/main";
 import { MIDI } from "../misc/MIDI";
+
+/* ipc communication */
+import "../../system/ipc/html editor";
 
 async function loadMainShortcuts() {
 	// load all.ts asynchronously. This will setup our environment better than we can do here
@@ -302,9 +302,10 @@ async function editorLayout():Promise<true> {
 	clearChildren(body);
 	/**
 	 * -------------------------------------
-	 * pattern index     | settings
+	 * matrix edit     | settings
 	 * -------------------------------------
 	 * pattern edit
+	 *           piano (float)
 	 * -------------------------------------
 	 */
 
@@ -318,25 +319,7 @@ async function editorLayout():Promise<true> {
 	_bot.id = "editor_bottom";
 	body.appendChild(_bot);
 
-	const getspace = () => {
-		const space = document.createElement("div");
-		space.style.width = "20px";
-		space.style.display = "inline-block";
-		return space;
-	}
 
-	const btn = (text:string, event:string) => {
-		const b = document.createElement("label");
-		b.innerHTML = /*html*/`
-			<div style="white-space: nowrap; display: inline-block;">
-				<input type="checkbox" onchange="${event}" />
-				${text}
-			</div>
-		`;
-		return b;
-	};
-
-	_top.appendChild(getspace());
 	_top.appendChild(await volumeSlider(SliderEnum.Horizontal | SliderEnum.Medium));
 
 	_top.appendChild(document.createElement("br"));
@@ -349,7 +332,15 @@ async function editorLayout():Promise<true> {
 
 	// load channel mute buttons
 	Project.current.index.channels.forEach((c) => {
-		_top.appendChild(btn(c.name, "window.ipc.driver.mute({ id: "+ c.id +" }, this.checked)"));
+		const b = document.createElement("label");
+		b.innerHTML = /*html*/`
+			<div style="white-space: nowrap; display: inline-block;">
+				<input type="checkbox" onchange="window.ipc.driver.mute({ id: ${ c.id }}, this.checked)" />
+				${ c.name }
+			</div>
+		`;
+
+		_top.appendChild(b);
 	});
 
 	// add the pattern editor here

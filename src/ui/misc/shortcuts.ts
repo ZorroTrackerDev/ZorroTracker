@@ -148,6 +148,14 @@ window.addEventListener("blur", () => {
 	}
 });
 
+/**
+ * Execute shortcuts from an array of possible shortcuts. This will only execute the first accepted shortcut.
+ *
+ * @param name The list of shortcuts to execute
+ * @param event The KeyboardEvent related to this shortcut, if one exists
+ * @param state The state of the key that handles the event. This can be true or false for keydown or keyup, or undefined in some cases
+ * @returns The shortcut that was executed, or `undefined` if no shortcut was
+ */
 export async function doShortcut(name:string[], event?:KeyboardEvent, state?:boolean):Promise<undefined|string> {
 	// if loading currently, disable all shortcuts
 	if(window.isLoading) {
@@ -178,30 +186,43 @@ export async function doShortcut(name:string[], event?:KeyboardEvent, state?:boo
 // common type used in many functions, for storing state
 export type ShortcutState = { button: string, ctrl: boolean, alt: boolean, shift: boolean };
 
+/**
+ * Function to list all defined shortcuts, allowing the caller to handle it the way they want
+ *
+ * @param files The list of file contents that should be examined
+ * @param callback The callback function whenever a shortcut is detected
+ */
 export function processShortcuts(files:{ [key: string]: string|string[]}[], callback:(functionName:string, state:ShortcutState) => void):void {
+	const merged:{ [key: string]: string|string[]} = {};
+
+	// merge multiple files into 1, dismissing duplicate shortcut definitions
 	files.forEach((file) => {
 		// run for each shortcut in the array
 		for(const functionName in file) {
-
-			// helper function to add each shortcut. This allows to use both string and string[] for functions.
-			const addSingleShortcut = (keyCombo:string) => {
-				// convert the button state
-				const states = convertShortcutState(keyCombo, functionName);
-
-				// run the callback
-				callback(functionName, states);
-			}
-
-			if(Array.isArray(file[functionName])) {
-				// add multiple shortcut keys from array
-				(file[functionName] as string[]).forEach(addSingleShortcut);
-
-			} else {
-				// this is a single shortcut key
-				addSingleShortcut(file[functionName] as string);
-			}
+			merged[functionName] = file[functionName];
 		}
-	})
+	});
+
+	// run for each shortcut in the array
+	for(const functionName in merged) {
+		// helper function to add each shortcut. This allows to use both string and string[] for functions.
+		const addSingleShortcut = (keyCombo:string) => {
+			// convert the button state
+			const states = convertShortcutState(keyCombo, functionName);
+
+			// run the callback
+			callback(functionName, states);
+		}
+
+		if(Array.isArray(merged[functionName])) {
+			// add multiple shortcut keys from array
+			(merged[functionName] as string[]).forEach(addSingleShortcut);
+
+		} else {
+			// this is a single shortcut key
+			addSingleShortcut(merged[functionName] as string);
+		}
+	}
 }
 
 /**

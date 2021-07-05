@@ -35,13 +35,10 @@
 
 		&> .channelwrapper {
 			position: relative;
-			width: 50px;
 			display: inline-block;
+			border-right: 4px solid black;
 
 			&:not(:first-child) {
-				width: 150px;
-				border-left: 2px solid #181818;
-
 				&> .channelnamewrapper::after {
 					content: "";
 					position: absolute;
@@ -80,6 +77,57 @@
 			&> .patternlistwrapper {
 				height: calc(100% - @labelheight);
 				background: black;
+
+				&> .patternlist {
+					font: 11pt monospace;
+
+					@charsize: 9px;
+					@space: 7px;
+
+					&> div {
+						background: #262627;
+						padding: 0px 2px 1px;
+						color: #949494;
+
+						&.patterndataitem > div {
+							display: inline-block;
+							text-align: center;
+
+							&:not(.set) {
+								color: #616161 !important;
+							}
+
+							&.note {
+								width: @charsize * 3;
+								color: #b7b7b7;
+							}
+
+							&.idk {
+								padding-left: @space;
+								width: @charsize * 2;
+								color: #62ab4a;
+							}
+
+							&.volume {
+								padding-left: 1px;
+								width: @charsize * 2;
+								color: #717494;
+							}
+
+							&.command {
+								padding-left: @space;
+								width: @charsize * 2;
+								color: #d07433;
+							}
+
+							&.value {
+								padding-left: 1px;
+								width: @charsize * 2;
+								color: #a76060;
+							}
+						}
+					}
+				}
 			}
 		}
 	}

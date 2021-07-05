@@ -19,7 +19,7 @@ export class MIDI {
 		MIDI.eventNoteOn = ZorroEvent.createEvent(ZorroEventEnum.MidiNoteOn);
 		MIDI.eventNoteOff = ZorroEvent.createEvent(ZorroEventEnum.MidiNoteOff);
 
-		// start polling whether MIDI devices are connected every 10 seconds
+		// start polling whether MIDI devices are connected every 1 second
 		MIDI.poll();
 		return true;
 	}

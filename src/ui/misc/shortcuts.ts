@@ -31,7 +31,7 @@ export function addShortcutReceiver(key:string, target:receiveShortcutFunc):void
  * then it is logged to the console and ignored. This array has entry points for the different types of combinations of modifier keys.
  * each modifier key array itself also has arrays of key names that are registered.
  */
-const keyMappings:{ [key:string]:{ [key:string]:string }} = {
+const keyMappings:{ [key:string]:{ [key:string]:string[] }} = {
 	none: {},
 	ctrl: {},
 	shift: {},
@@ -59,75 +59,105 @@ function getKeymappingsName(data:{ ctrl: boolean, alt: boolean, shift: boolean }
 	return "none";
 }
 
+/**
+ * Translation table between what key is pressed and what shortcut it is executing.
+ * This is needed so that when you hold a button down, your shortcut will be remembered, and no other shortcut, even with modifier keys,
+ * can override it. This is also good so that when a new higher priority shortcut may be acceptable, that shortcut will not be executed
+ * until the previous one is done being held down.
+ */
+const activeKeys:{ [key:string]: string } = {};
+
 /*
  * Handle user input, to check for special shortcut keys. This won't override things such as input fields, however.
  */
 const stdHandler = (type:"keydown"|"keyup", state:boolean) => {
 	document.addEventListener(type, (event) => {
+		// fetch the key name
+		const _key = event.code.toUpperCase();
+
+		// check if this shortcut is active
+		if(activeKeys[_key]) {
+			// shortcut is already active, prevent default event and handle event correctly
+			event.preventDefault();
+
+			// determine if this shortcut should handle being held down
+			const hold = activeKeys[_key].startsWith("*");
+
+			if(state) {
+				// ignore the keydown event if the shortcut should be held down, otherwise handle it
+				return hold ? undefined : doShortcut([ activeKeys[_key], ], event, undefined);
+			}
+
+			// get the key before its deleted
+			const kk = activeKeys[_key];
+
+			// delete the key so its inactive
+			delete activeKeys[_key];
+
+			// handle keyup for hold keys
+			return hold ? doShortcut([ kk, ], event, false) : undefined;
+
+		} else if(!state) {
+			// if this is keyup, just ignore
+			return;
+		}
+
 		// check if this key has a registered command
 		const arrayname = getKeymappingsName( { ctrl: event.ctrlKey, shift: event.shiftKey, alt: event.altKey, });
 
-		// get the function name from "keyMappings", and return if none were defined
-		let com = keyMappings[arrayname][event.code.toUpperCase()] ?? keyMappings[arrayname][event.key.toUpperCase()];
+		// prepare the commands list
+		const comlist:string[] = [];
 
-		if(!com) {
+		// get the keymappings for key names (these take precedent)
+		(keyMappings[arrayname][event.key.toUpperCase()] ?? []).forEach((c) => comlist.push(c));
+
+		// get the keymappings for positional key codes and add them to the list
+		(keyMappings[arrayname][_key] ?? []).forEach((c) => comlist.push(c));
+
+		// if nothing found, return
+		if(comlist.length === 0) {
 			return;
 		}
 
-		// define the standard state
-		let stt = undefined;
-
-		if(com.startsWith("*")) {
-			// must ignore repeated keypresses
-			if(event.repeat) {
-				return;
+		// check all shortcuts
+		doShortcut(comlist, event, true).then((rs) => {
+			if(rs){
+				// found a shortcut, now save it and prevent defaults
+				activeKeys[_key] = rs;
+				event.preventDefault();
 			}
-
-			// this event wants both keyup and keydown events
-			com = com.substring(1);
-			stt = state;
-
-		} else if(!state) {
-			// ignore key up
-			return;
-		}
-
-		// do shortcut and prevent default event
-		doShortcut([ com, ], event, stt);
-		event.preventDefault();
+		}).catch(console.error);
 	});
 }
 
 stdHandler("keydown", true);
 stdHandler("keyup", false);
 
-export function doShortcut(name:string[], event?:KeyboardEvent, state?:boolean):void {
+export async function doShortcut(name:string[], event?:KeyboardEvent, state?:boolean):Promise<undefined|string> {
 	// if loading currently, disable all shortcuts
 	if(window.isLoading) {
 		return;
 	}
 
-	(async() => {
-		// do each shortcut separately
-		for(const com of name) {
-			// split into an array based on dots and get the first element of the array
-			const comarr = com.toLowerCase().split(".");
-			const comkey = comarr.shift() ?? "<null>";
+	// do each shortcut separately
+	for(const com of name) {
+		// split into an array based on dots and get the first element of the array
+		const comarr = (com.startsWith("*") ? com.substring(1) : com).toLowerCase().split(".");
+		const comkey = comarr.shift() ?? "<null>";
 
-			// check if there is a shortcut function defined here
-			if(!shortcutReceivers[comkey]){
-				// there is not, log it. TODO: handle this better.
-				console.error("!!! Invalid command!!!\nShortcut had an invalid command "+ comkey);
-				return;
-			}
-
-			// the function exists, execute it with the current event.
-			if(await shortcutReceivers[comkey](comarr, event, state)) {
-				// event was accepted, return away
-				return;
-			}
+		// check if there is a shortcut function defined here
+		if(!shortcutReceivers[comkey]){
+			// there is not, log it. TODO: handle this better.
+			console.error("!!! Invalid command!!!\nShortcut had an invalid command "+ comkey);
+			return;
 		}
-	})().catch(console.error);
+
+		// the function exists, execute it with the current event.
+		if(await shortcutReceivers[comkey](comarr, event, state)) {
+			// event was accepted, return away
+			return com;
+		}
+	}
 }
 
 // common type used in many functions, for storing state
@@ -225,7 +255,13 @@ export function loadDefaultShortcuts(type:SettingsTypes): void {
 	processShortcuts(files, (fn, states) => {
 		// get the array name for the "keyMappings" based on modifier keys, and apply the new shortcut function.
 		const arrayname = getKeymappingsName(states);
-		keyMappings[arrayname][states.button] = fn;
+
+		if(!keyMappings[arrayname][states.button]){
+			keyMappings[arrayname][states.button] = [ fn, ];
+
+		} else if(!keyMappings[arrayname][states.button].includes(fn)){
+			keyMappings[arrayname][states.button].push(fn);
+		}
 
 		// check if shortcutstore has this key already. If not, create it
 		if(!shortcutStores[fn]) {

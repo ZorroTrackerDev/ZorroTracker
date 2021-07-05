@@ -381,10 +381,11 @@ export class Piano implements UIElement {
 			// create new mouse move event
 			wrap.onmousemove = move;
 
-			// when mouse is raised again, remove tracking events
-			document.onmouseup = async() => {
+			// helper method to handle when the mouse trackers should be removed
+			const up = async() => {
 				wrap.onmousemove = null;
 				document.onmouseup = null;
+				window.onblur = null;
 
 				// release the note
 				await release(note);
@@ -392,7 +393,13 @@ export class Piano implements UIElement {
 
 				// remove the current element
 				cur = undefined;
-			};
+			}
+
+			// when mouse is raised again, remove tracking events
+			document.onmouseup = up;
+
+			// when the window loses focus, remove tracking events
+			window.onblur = up;
 
 			// do initial move event
 			await move(e);

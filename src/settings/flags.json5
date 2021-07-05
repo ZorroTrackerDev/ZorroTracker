@@ -13,4 +13,5 @@
 	PIANO_DEFAULT_POSITION: 0,													/* The default piano position. 0 = center, -1 = left, 1 = right */
 	PIANO_DEFAULT_OCTAVE: 3,													/* The default starting ocatave */
 	MIDI_ENABLE: true,															/* If true, ZorroTracker will scan for MIDI devices and allow them to interface with ZorroTracker */
+	OPEN_PREVIOUS: true,														/* If true, the previous project will be opened if possible. Otherwise, always create an empty project. */
 }

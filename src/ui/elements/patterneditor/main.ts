@@ -34,7 +34,23 @@ export class PatternEditor implements UIElement {
 
 		// initialize rows
 		this.loadRows();
+
+		// add handler for vertical scrolling
+		this.scrollwrapper.onwheel = (e) => {
+			if(e.deltaY) {
+				// there is vertical movement, translate it into a CSS variable
+				e.preventDefault();
+
+				// change the scrolling position
+				this.scrollPosition = Math.round((e.deltaY * 0.03) + this.scrollPosition);
+				this.scrollPosition = Math.max(-16, Math.min(this.scrollPosition, 32));
+
+				document.documentElement.style.setProperty("--patterneditor-y", this.scrollPosition +"");
+			}
+		};
 	}
+
+	private scrollPosition = 0;
 
 	/**
 	 * Function to clear all children from an element
@@ -124,9 +140,11 @@ export class PatternEditor implements UIElement {
 		div.setAttribute("plr", ""+ position);
 
 		// handle its position
-		div.style.top = "calc(14*("+ (position * 64) +"px+var(--patterneditor-y)))";
+		div.style.transform = "translateY(calc("+ this.dataHeight +"px * ("+ (position * 64) +" - var(--patterneditor-y))))";
 		return div;
 	}
+
+	private dataHeight = 19;
 
 	/**
 	 * Function to load more pattern rows onscreen
@@ -161,11 +179,11 @@ export class PatternEditor implements UIElement {
 
 				// set the text
 				x.innerHTML = /*html*/`
-					<div class='note ${ c === 0 || c % 2 === 0 ? "set" : "" }' >${ c === 0 || c % 2 === 0 ? "C#3" : "---" }</div>
-					<div class='idk ${ c > 4 ? "set" : "" }'>${ c > 4 ? "66" : "–" }</div>
-					<div class='volume ${ c % 4 === 0 ? "set" : "" }'>${ c % 4 === 0 ? "2F" : "–" }</div>
-					<div class='command ${ c % 3 === 0 ? "set" : "" }'>${ c % 3 === 0 ? "82" : "—" }</div>
-					<div class='value ${ c % 3 === 0 ? "set" : "" }'>${ c % 3 === 0 ? "E1" : "—" }</div>
+					<div class='note ${  c % 2 === 0 ? "set" : "" }' >${ c % 2 === 0 ? "C#"+ Math.round(Math.random() * 9) : "---" }</div>
+					<div class='idk ${ c === 0 ||c > 4 ? "set" : "" }'>${ c === 0 || c > 4 ? Math.round(Math.random() * 255).toString(16).toUpperCase().padStart(2, "0") : "–" }</div>
+					<div class='volume ${ c % 4 === 0 ? "set" : "" }'>${ c % 4 === 0 ? Math.round(Math.random() * 255).toString(16).toUpperCase().padStart(2, "0") : "–" }</div>
+					<div class='command ${ c % 3 === 0 ? "set" : "" }'>${ c % 3 === 0 ? Math.round(Math.random() * 255).toString(16).toUpperCase().padStart(2, "0") : "—" }</div>
+					<div class='value ${ c % 3 === 0 ? "set" : "" }'>${ c % 3 === 0 ? Math.round(Math.random() * 255).toString(16).toUpperCase().padStart(2, "0") : "—" }</div>
 				`.replace(/[\t|\r|\n]+/g, "");
 
 			}

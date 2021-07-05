@@ -1,5 +1,5 @@
 :root {
-	--patterneditor-y: 0px;
+	--patterneditor-y: 0;
 }
 
 .patterneditor {
@@ -46,7 +46,7 @@
 					width: @labelheight - 8px;
 					background: #7b2808;
 					cursor: e-resize;
-					z-index: 10;
+					z-index: 11;
 				}
 
 				&> .channelnamewrapper > label::after {
@@ -63,6 +63,8 @@
 				height: @labelheight;
 				background: #9e4216;
 				text-align: center;
+				border-bottom: 2px solid black;
+				z-index: 10;
 
 				&> label {
 					height: 100%;
@@ -75,14 +77,13 @@
 			}
 
 			&> .patternlistwrapper {
+				position: relative;
 				height: calc(100% - @labelheight);
 				background: black;
 
 				&> .patternlist {
-					font: 11pt monospace;
-
+					font: 10pt 'Roboto Mono', monospace;
 					@charsize: 9px;
-					@space: 7px;
 
 					&> div {
 						background: #262627;
@@ -103,27 +104,27 @@
 							}
 
 							&.idk {
-								padding-left: @space;
+								padding-left: 2px;
 								width: @charsize * 2;
 								color: #62ab4a;
 							}
 
 							&.volume {
-								padding-left: 1px;
+								padding-left: 2px;
 								width: @charsize * 2;
-								color: #717494;
+								color: #7e81a5;
 							}
 
 							&.command {
-								padding-left: @space;
+								padding-left: 2px;
 								width: @charsize * 2;
-								color: #d07433;
+								color: #b16f6f;
 							}
 
 							&.value {
-								padding-left: 1px;
+								padding-left: -1px;
 								width: @charsize * 2;
-								color: #a76060;
+								color: #bba6a1;
 							}
 						}
 					}

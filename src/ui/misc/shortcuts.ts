@@ -65,7 +65,7 @@ function getKeymappingsName(data:{ ctrl: boolean, alt: boolean, shift: boolean }
  * can override it. This is also good so that when a new higher priority shortcut may be acceptable, that shortcut will not be executed
  * until the previous one is done being held down.
  */
-const activeKeys:{ [key:string]: string } = {};
+let activeKeys:{ [key:string]: string } = {};
 
 /*
  * Handle user input, to check for special shortcut keys. This won't override things such as input fields, however.
@@ -132,6 +132,21 @@ const stdHandler = (type:"keydown"|"keyup", state:boolean) => {
 
 stdHandler("keydown", true);
 stdHandler("keyup", false);
+
+// add handler for panicking when the window loses focus
+window.addEventListener("blur", () => {
+	// copy the active keys array and reset the old one
+	const store = activeKeys;
+	activeKeys = {};
+
+	// loop through each shortcut that was active
+	for(const sc of Object.values(store)) {
+		if(sc.startsWith("*")){
+			// do the keyup version of the event for each
+			doShortcut([ sc, ], undefined, false).catch(console.error);
+		}
+	}
+});
 
 export async function doShortcut(name:string[], event?:KeyboardEvent, state?:boolean):Promise<undefined|string> {
 	// if loading currently, disable all shortcuts

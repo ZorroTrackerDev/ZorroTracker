@@ -3,6 +3,10 @@
 }
 
 @labelheight: 28px;
+@charsize: 9px;
+@chanwidth: (@charsize * 11) + 4;
+@rowwidth: 27px;
+@itemheight: 18px;
 
 .patterneditor {
 	position: relative;
@@ -40,6 +44,8 @@
 			border-right: 4px solid black;
 
 			&:not(:first-child) {
+				width: @chanwidth + 4;
+
 				&> .channelnamewrapper::after {
 					content: "";
 					position: absolute;
@@ -59,13 +65,35 @@
 				}
 			}
 
+			&:first-child {
+				width: @rowwidth + 4;
+
+				&> .channelnamewrapper {
+					width: @rowwidth + 4;
+				}
+
+				&> .patternlistwrapper {
+					width: @rowwidth;
+
+					&> .patternlist {
+						width: @rowwidth;
+
+						&> div {
+							width: @rowwidth;
+						}
+					}
+				}
+			}
+
 			&> .channelnamewrapper {
+				contain: layout size;
 				position: relative;
 				height: @labelheight;
 				background: #9e4216;
 				text-align: center;
 				border-bottom: 2px solid black;
 				z-index: 10;
+				width: @chanwidth + 4;
 
 				&> label {
 					height: 100%;
@@ -84,43 +112,36 @@
 	position: relative;
 	height: calc(100% - @labelheight);
 	background: black;
+	width: @chanwidth;
+	contain: layout size style;
 }
 
 .patternlist {
-	font: 10pt 'Roboto Mono', monospace;
+	font: 10pt 'Roboto Mono';
 	height: 0;				// hack! This actually makes it possible to stack these patterns despite them never appearing in the "right" place.
 	opacity: 70%;
 	will-change: opacity, transform;
-	contain: layout;
-
-	&.active {
-		opacity: 100%;
-	}
-
-	@height: 18px;
+	contain: layout size style;
+	width: @chanwidth;
 
 	&> div {
 		background: #262627;
 		padding: 0px 2px 1px;
 		color: #949494;
-		height: @height;
-		will-change: none;
-		contain: layout paint;
-
-		&> div {
-			height: @height;
-			contain: size layout paint;
-			display: inline-block;
-			text-align: center;
-			will-change: color;
-		}
-
+		height: @itemheight;
+		contain: layout size style;
+		width: @chanwidth;
 	}
 }
 
 .patterndataitem > div {
-	@charsize: 9px;
 	text-rendering: optimizeSpeed;
+	height: @itemheight;
+	width: @chanwidth - 1;
+	contain: size style;
+	display: inline-block;
+	text-align: center;
+	will-change: color;
 
 	&:not(.set) {
 		color: #616161 !important;

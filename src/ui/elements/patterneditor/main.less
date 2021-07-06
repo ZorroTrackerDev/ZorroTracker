@@ -83,6 +83,13 @@
 
 				&> .patternlist {
 					font: 10pt 'Roboto Mono', monospace;
+					height: 0;				// hack! This actually makes it possible to stack these patterns despite them never appearing in the "right" place.
+					opacity: 70%;
+
+					&.active {
+						opacity: 100%;
+					}
+
 					@charsize: 9px;
 
 					&> div {
@@ -103,13 +110,13 @@
 								color: #b7b7b7;
 							}
 
-							&.idk {
+							&.volume {
 								padding-left: 1px;
 								width: @charsize * 2;
 								color: #62ab4a;
 							}
 
-							&.volume {
+							&.instrument {
 								padding-left: 1px;
 								width: @charsize * 2;
 								color: #7e81a5;

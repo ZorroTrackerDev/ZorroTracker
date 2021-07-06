@@ -8,7 +8,7 @@ export class PatternEditor implements UIElement {
 	private scrollwrapper!:HTMLDivElement;
 
 	/**
-	 * The pattern index this editor is responding to
+	 * The pattern index this editor is apart of
 	 */
 	private index: PatternIndex;
 
@@ -38,8 +38,9 @@ export class PatternEditor implements UIElement {
 			(row:number) => row.toString(16).toUpperCase().padStart(2, "0") :
 			(row:number) => row.toString().padStart(3, "0");
 
-		// initialize rows
-		this.loadRows();
+		// initialize patterns and update active pattern
+		this.refreshPatternsList();
+		this.setActivePattern();
 
 		// helper function to update the scroll position of the pattern editor
 		const scroll = (delta:number) => {
@@ -53,7 +54,7 @@ export class PatternEditor implements UIElement {
 			} else {
 				// calculate the maximum position
 				const rect = this.scrollwrapper.getBoundingClientRect();
-				const max = (this.index.matrixlen * 64) + 16 - Math.floor(rect.height / this.dataHeight);
+				const max = (this.index.matrixlen * this.index.patternlen) + 16 - Math.floor(rect.height / this.dataHeight);
 
 				// try to clamp to max position
 				if(this.scrollPosition > max) {
@@ -63,18 +64,21 @@ export class PatternEditor implements UIElement {
 
 			// save position
 			document.documentElement.style.setProperty("--patterneditor-y", this.scrollPosition +"");
+
+			// load patterns and update active pattern
+			setTimeout(() => {
+				this.refreshPatternsList();
+				this.setActivePattern();
+			}, 1);
 		}
 
 		// add handler for vertical scrolling
-		this.scrollwrapper.onwheel = (e) => {
+		this.scrollwrapper.addEventListener("wheel", (e) => {
 			if(e.deltaY) {
 				// there is vertical movement, translate it into a CSS variable
-				e.preventDefault();
-
-				// handle resize
 				scroll(e.deltaY);
 			}
-		};
+		}, { passive: true, });
 
 		// when window resizes, make sure to change scroll position as well
 		window.addEventListener("resize", () => {
@@ -166,13 +170,13 @@ export class PatternEditor implements UIElement {
 	private createPatternData(position:number) {
 		// create the element and give it classes
 		const div = document.createElement("div");
-		div.classList.add("patternlist", "active");
+		div.classList.add("patternlist");
 
 		// store its position in an attribute
 		div.setAttribute("plr", ""+ position);
 
 		// handle its position
-		div.style.transform = "translateY(calc("+ this.dataHeight +"px * ("+ (position * 64) +" - var(--patterneditor-y))))";
+		div.style.transform = "translateY(calc("+ this.dataHeight +"px * ("+ (position * this.index.patternlen) +" - var(--patterneditor-y))))";
 		return div;
 	}
 
@@ -190,14 +194,31 @@ export class PatternEditor implements UIElement {
 	private dataHeight = 19;
 
 	/**
-	 * Function to load more pattern rows onscreen
+	 * This is the array that contains all the currently loaded rows
 	 */
-	private loadRows() {
-		// create the pattern list element for this
-		let div = this.createPatternData(0);
-		this.getPatternListDiv(0)?.appendChild(div);
+	private loadedRows: { [key: string]: HTMLDivElement[] } = {};
 
-		for(let i = 0;i < 64;i ++) {
+	/**
+	 * Function to load a pattern rown onscreen
+	 *
+	 * @param row The row index to load
+	 */
+	private loadRow(row:number) {
+		// make sure no invalid row is loaded
+		if(row < 0 || row >= this.index.matrixlen) {
+			return;
+		}
+
+		// create the container for this row elements
+		const store:HTMLDivElement[] = [];
+		this.loadedRows[row] = store;
+
+		// create the pattern list element for this
+		let div = this.createPatternData(row);
+		this.getPatternListDiv(0)?.appendChild(div);
+		store.push(div);
+
+		for(let i = 0;i < this.index.patternlen;i ++) {
 			// create the element and give it classes
 			const x = document.createElement("div");
 			div.appendChild(x);
@@ -210,11 +231,12 @@ export class PatternEditor implements UIElement {
 		// handle each channel
 		for(let c = 0;c < this.index.channels.length;c ++) {
 			// create the pattern list element for this
-			div = this.createPatternData(0);
+			div = this.createPatternData(row);
 			this.getPatternListDiv(1 + c)?.appendChild(div);
+			store.push(div);
 
 			// add the note data
-			for(let i = 0;i < 64;i ++) {
+			for(let i = 0;i < this.index.patternlen;i ++) {
 				// create the element and give it classes
 				const x = document.createElement("div");
 				div.appendChild(x);
@@ -223,13 +245,85 @@ export class PatternEditor implements UIElement {
 				// set the text
 				x.innerHTML = /*html*/`
 					<div class='note ${  c % 2 === 0 ? "set" : "" }' >${ c % 2 === 0 ? "C#"+ Math.round(Math.random() * 9) : "---" }</div>
-					<div class='idk ${ c === 0 ||c > 4 ? "set" : "" }'>${ c === 0 || c > 4 ? Math.round(Math.random() * 255).toString(16).toUpperCase().padStart(2, "0") : "–" }</div>
-					<div class='volume ${ c % 4 === 0 ? "set" : "" }'>${ c % 4 === 0 ? Math.round(Math.random() * 255).toString(16).toUpperCase().padStart(2, "0") : "–" }</div>
+					<div class='volume ${ c % 4 === 0 ? "set" : "" }'>${ c % 4 === 0 ? Math.round(Math.random() * 255).toString(16).toUpperCase().padStart(2, "0") : "—" }</div>
+					<div class='instrument ${ c === 0 ||c > 4 ? "set" : "" }'>${ c === 0 || c > 4 ? Math.round(Math.random() * 255).toString(16).toUpperCase().padStart(2, "0") : "—" }</div>
 					<div class='command ${ c % 3 === 0 ? "set" : "" }'>${ c % 3 === 0 ? Math.round(Math.random() * 255).toString(16).toUpperCase().padStart(2, "0") : "—" }</div>
 					<div class='value ${ c % 3 === 0 ? "set" : "" }'>${ c % 3 === 0 ? Math.round(Math.random() * 255).toString(16).toUpperCase().padStart(2, "0") : "—" }</div>
 				`.replace(/[\t|\r|\n]+/g, "");
-
 			}
+		}
+	}
+
+	/**
+	 * Helper function to update which patterns should be rendered
+	 */
+	private refreshPatternsList() {
+		// load the target range
+		const [ rangeMin, rangeMax, ] = this.getVisibleRange();
+
+		// unload elements that are not in range
+		for(const key of Object.keys(this.loadedRows)) {
+			const k = parseInt(key, 10);
+
+			// check if the key is in range
+			if(k < rangeMin || k > rangeMax) {
+				// if yes, remove all the elements
+				this.loadedRows[key].forEach((e) => e.parentElement?.removeChild(e));
+
+				// and the key
+				delete this.loadedRows[key];
+			}
+		}
+
+		// now find each row that is not loaded
+		for(let r = rangeMin;r <= rangeMax; r++) {
+			if(!this.loadedRows[r]) {
+				// load the row now
+				this.loadRow(r);
+			}
+		}
+	}
+
+	/**
+	 * How many rows that can be hidden, but will still make the visible range larger.
+	 * This is used so that the user doesn't see the pattern list elements loading.
+	 */
+	private visibleSafeHeight = 6;
+
+	/**
+	 * Helper function to get the visible range of patterns
+	 */
+	private getVisibleRange() {
+		// get the wrapper bounding rectangle
+		const rect = this.scrollwrapper.getBoundingClientRect();
+
+		// return the visible range of patterns
+		return [
+			Math.floor((this.scrollPosition - this.visibleSafeHeight) / this.index.patternlen),
+			Math.floor((this.scrollPosition + this.visibleSafeHeight + ((rect.height - 30) / this.dataHeight)) / this.index.patternlen),
+		];
+	}
+
+	/**
+	 * Helper function to set the currently active pattern
+	 */
+	private setActivePattern() {
+		// get the wrapper bounding rectangle
+		const rect = this.scrollwrapper.getBoundingClientRect();
+
+		// calculate the effective position at the middle of the screen
+		const middle = this.scrollPosition + Math.round(rect.height / 2 / this.dataHeight);
+
+		// check which pattern is at this location
+		const pat = Math.min(this.index.matrixlen - 1, Math.max(0, Math.round((middle - (this.index.patternlen / 1.75)) / this.index.patternlen)));
+
+		// update the active status of all patterns
+		for(const key of Object.keys(this.loadedRows)) {
+			// get the method to call
+			const method = key === pat.toString() ? "add" : "remove";
+
+			// update every single element with this class
+			this.loadedRows[key].forEach((e) => e.classList[method]("active"));
 		}
 	}
 }

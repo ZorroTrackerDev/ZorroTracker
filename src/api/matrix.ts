@@ -126,11 +126,11 @@ export class PatternData {
 	public edited = false;
 	public width = 1;		// TODO: Get from channel itself
 
-	constructor(owner:Channel){
+	constructor(owner:Channel, cells:number){
 		this.owner = owner;
 		this.cells = [];
 
-		for(let i = 64;i > 0; --i){
+		for(let i = cells;i > 0; --i){
 			this.cells.push(new PatternCell());
 		}
 	}
@@ -184,20 +184,35 @@ export class PatternData {
  * Class to hold the pattern index of the song. Will be managed by both the PatternEditor instance and the wider program.
  */
 export class PatternIndex {
-	// the project this PatternIndex is apart of
+	/**
+	 * the project this PatternIndex is apart of.
+	 */
 	private project: Project;
 
-	// Stores the list of channels this pattern index stores
+	/**
+	 * Stores the list of channels this pattern index stores
+	 */
 	public channels!: Channel[];
 
-	// Stores a list of patterns per channel. Usage: patterns[channel][index]. Null/undefined means the value is unused
+	/**
+	 * Stores a list of patterns per channel. Usage: patterns[channel][index]. `null` or `undefined` means the value is unused.
+	 */
 	public patterns!: (PatternData | null)[][];
 
-	// Stores the pattern matrix, where the mappings from song order to pattern index are stored. Usage: matrix[channel][index].
+	/**
+	 * Stores the pattern matrix, where the mappings from song order to pattern index are stored. Usage: matrix[channel][index].
+	 */
 	public matrix!: Uint8Array[];
 
-	// Stores the length of the matrix. Values at greater offsets should always be set to 0. Allows to easily determine long the pattern matrix is.
+	/**
+	 * Stores the length of the matrix. Values at greater offsets should always be set to 0. Allows to easily determine long the pattern matrix is.
+	 */
 	public matrixlen = 0;
+
+	/**
+	 * Stores the length of each row in number of cells
+	 */
+	public patternlen = 64;
 
 	constructor(project:Project) {
 		this.project = project;
@@ -645,7 +660,7 @@ export class PatternIndex {
 		}
 
 		// create a new pattern here and indicate success
-		this.patterns[channel][index] = new PatternData(this.channels[channel]);
+		this.patterns[channel][index] = new PatternData(this.channels[channel], this.patternlen);
 		this.project.dirty();
 		return true;
 	}
@@ -828,7 +843,7 @@ export class PatternIndex {
 
 				} else {
 					// there is data here
-					this.patterns[c][i] = new PatternData(this.channels[c]);
+					this.patterns[c][i] = new PatternData(this.channels[c], 0);
 					index = (this.patterns[c][i] as PatternData).load(data, index);
 				}
 			}

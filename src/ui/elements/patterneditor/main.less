@@ -34,8 +34,9 @@
 		}
 
 		&> .channelwrapper {
-			position: absolute;
+			position: relative;
 			display: inline-block;
+			contain: layout;
 			border-right: 4px solid black;
 
 			&:not(:first-child) {
@@ -90,6 +91,7 @@
 	height: 0;				// hack! This actually makes it possible to stack these patterns despite them never appearing in the "right" place.
 	opacity: 70%;
 	will-change: opacity, transform;
+	contain: layout;
 
 	&.active {
 		opacity: 100%;
@@ -103,6 +105,7 @@
 		color: #949494;
 		height: @height;
 		will-change: none;
+		contain: layout paint;
 
 		&> div {
 			height: @height;

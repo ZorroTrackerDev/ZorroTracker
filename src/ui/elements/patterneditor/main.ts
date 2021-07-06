@@ -40,7 +40,6 @@ export class PatternEditor implements UIElement {
 
 		// initialize patterns and update active pattern
 		this.refreshPatternsList();
-		this.setActivePattern();
 
 		// helper function to update the scroll position of the pattern editor
 		const scroll = (delta:number) => {
@@ -68,7 +67,6 @@ export class PatternEditor implements UIElement {
 			// load patterns and update active pattern
 			setTimeout(() => {
 				this.refreshPatternsList();
-				this.setActivePattern();
 			}, 1);
 		}
 
@@ -107,11 +105,13 @@ export class PatternEditor implements UIElement {
 		// delete any previous children
 		this.clearChildren(this.scrollwrapper);
 
+		let left = 0;
+
 		// handle a single channel
 		const doChannel = (name:string) => {
 			// do some regex hacking to remove all tabs and newlines. HTML whyyy
 			return /*html*/`
-				<div class="channelwrapper">
+				<div class="channelwrapper" style="left: ${ left }px">
 					<div class="channelnamewrapper">
 						<label>${ name }</label>
 					</div>
@@ -123,8 +123,14 @@ export class PatternEditor implements UIElement {
 		// add the index column
 		this.scrollwrapper.innerHTML = doChannel("\u200B");
 
+		left += 32;
+
 		// run for each channel
-		this.scrollwrapper.innerHTML += this.index.channels.map((c) => doChannel(c.name)).join("");
+		this.scrollwrapper.innerHTML += this.index.channels.map((c) => {
+			const r = doChannel(c.name);
+			left += 110;
+			return r;
+		}).join("");
 	}
 
 	/**
@@ -202,8 +208,9 @@ export class PatternEditor implements UIElement {
 	 * Function to load a pattern rown onscreen
 	 *
 	 * @param row The row index to load
+	 * @param active True if this is the active row
 	 */
-	private loadRow(row:number) {
+	private loadRow(row:number, active:boolean) {
 		// make sure no invalid row is loaded
 		if(row < 0 || row >= this.index.matrixlen) {
 			return;
@@ -224,9 +231,17 @@ export class PatternEditor implements UIElement {
 			div.appendChild(x);
 			x.classList.add("patternrownum");
 
+			// handle active classes
+			if(active) {
+				x.classList.add("active");
+			}
+
 			// set the number
 			x.innerText = this.getRowNumber(i);
 		}
+
+		// calculate the classes to give
+		const classes = active ? [ "patterndataitem", "active", ] : [ "patterndataitem", ];
 
 		// handle each channel
 		for(let c = 0;c < this.index.channels.length;c ++) {
@@ -240,7 +255,7 @@ export class PatternEditor implements UIElement {
 				// create the element and give it classes
 				const x = document.createElement("div");
 				div.appendChild(x);
-				x.classList.add("patterndataitem");
+				x.classList.add(...classes);
 
 				// set the text
 				x.innerHTML = /*html*/`
@@ -261,6 +276,10 @@ export class PatternEditor implements UIElement {
 		// load the target range
 		const [ rangeMin, rangeMax, ] = this.getVisibleRange();
 
+		// calculate the active pattern
+		const middle = this.scrollPosition + Math.round(this.scrollwrapper.getBoundingClientRect().height / 2 / this.dataHeight);
+		const pat = Math.min(this.index.matrixlen - 1, Math.max(0, Math.round((middle - (this.index.patternlen / 1.75)) / this.index.patternlen)));
+
 		// unload elements that are not in range
 		for(const key of Object.keys(this.loadedRows)) {
 			const k = parseInt(key, 10);
@@ -279,7 +298,14 @@ export class PatternEditor implements UIElement {
 		for(let r = rangeMin;r <= rangeMax; r++) {
 			if(!this.loadedRows[r]) {
 				// load the row now
-				this.loadRow(r);
+				this.loadRow(r, pat === r);
+
+			} else {
+				// get the method to call
+				const method = r === pat ? "add" : "remove";
+
+				// update every single element with this class
+				this.loadedRows[r].forEach((e) => e.classList[method]("active"));
 			}
 		}
 	}
@@ -302,28 +328,5 @@ export class PatternEditor implements UIElement {
 			Math.floor((this.scrollPosition - this.visibleSafeHeight) / this.index.patternlen),
 			Math.floor((this.scrollPosition + this.visibleSafeHeight + ((rect.height - 30) / this.dataHeight)) / this.index.patternlen),
 		];
-	}
-
-	/**
-	 * Helper function to set the currently active pattern
-	 */
-	private setActivePattern() {
-		// get the wrapper bounding rectangle
-		const rect = this.scrollwrapper.getBoundingClientRect();
-
-		// calculate the effective position at the middle of the screen
-		const middle = this.scrollPosition + Math.round(rect.height / 2 / this.dataHeight);
-
-		// check which pattern is at this location
-		const pat = Math.min(this.index.matrixlen - 1, Math.max(0, Math.round((middle - (this.index.patternlen / 1.75)) / this.index.patternlen)));
-
-		// update the active status of all patterns
-		for(const key of Object.keys(this.loadedRows)) {
-			// get the method to call
-			const method = key === pat.toString() ? "add" : "remove";
-
-			// update every single element with this class
-			this.loadedRows[key].forEach((e) => e.classList[method]("active"));
-		}
 	}
 }

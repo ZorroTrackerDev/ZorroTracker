@@ -86,4 +86,6 @@
 	"*layout.piano.octave2.C":			[ "KeyI" ],								/* shortcut for playing C on current octave +2 */
 	"*layout.piano.octave2.C#":			[ "Digit9" ],							/* shortcut for playing C# on current octave +2 */
 	"*layout.piano.octave2.D":			[ "KeyO" ],								/* shortcut for playing D on current octave +2 */
+	"*layout.piano.octave2.D#":			[ "Digit0" ],							/* shortcut for playing D# on current octave +2 */
+	"*layout.piano.octave2.E":			[ "KeyP" ],								/* shortcut for playing E on current octave +2 */
 }

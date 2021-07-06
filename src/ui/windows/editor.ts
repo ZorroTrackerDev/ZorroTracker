@@ -207,8 +207,24 @@ window.ipc.ui.path().then(async() => {
 		volumeSlider(SliderEnum.Small).catch(console.error);
 	}, 100);
 
-	// create a blank project
-	Project.current = await Project.createProject();
+	// check if we should attempt loading the previous project
+	if(loadFlag<boolean>("OPEN_PREVIOUS")) {
+		// get the cookie for the project
+		const url = await window.ipc.cookie.get("lastproject");
+
+		try {
+			if((url?.length ?? 0) > 0) {
+				// attempt to load project
+				Project.current = await Project.loadProject(url as string);
+			}
+
+		} catch(ex) { /* ignore */ }
+	}
+
+	// if no valid project is loaded still, create a blank project
+	if(!Project.current) {
+		Project.current = await Project.createProject();
+	}
 
 	// let the other windows know about this project
 	window.ipc.project?.init(Project.current);

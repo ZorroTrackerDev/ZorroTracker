@@ -453,6 +453,9 @@ export class Project {
 
 					// success, resolve the promise
 					res();
+
+					// also save this as the last opened project now
+					window.ipc.cookie.set("lastproject", file);
 				});
 			});
 		});

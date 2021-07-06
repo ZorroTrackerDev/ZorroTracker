@@ -1,3 +1,4 @@
+import { loadFlag } from "../../../api/files";
 import { PatternIndex } from "../../../api/matrix";
 import { UIElement } from "../../../api/ui";
 
@@ -32,8 +33,37 @@ export class PatternEditor implements UIElement {
 		// initialize channels in element
 		this.initChannels();
 
+		// load the row numbers flag
+		this.getRowNumber = loadFlag<boolean>("ROW_NUM_IN_HEX") ?
+			(row:number) => row.toString(16).toUpperCase().padStart(2, "0") :
+			(row:number) => row.toString().padStart(3, "0");
+
 		// initialize rows
 		this.loadRows();
+
+		// helper function to update the scroll position of the pattern editor
+		const scroll = (delta:number) => {
+			// change the scrolling position
+			this.scrollPosition = Math.round((delta * 0.03) + this.scrollPosition);
+
+			// try to clamp to minimim position
+			if(this.scrollPosition <= -16) {
+				this.scrollPosition = -16;
+
+			} else {
+				// calculate the maximum position
+				const rect = this.scrollwrapper.getBoundingClientRect();
+				const max = (this.index.matrixlen * 64) + 16 - Math.floor(rect.height / this.dataHeight);
+
+				// try to clamp to max position
+				if(this.scrollPosition > max) {
+					this.scrollPosition = max;
+				}
+			}
+
+			// save position
+			document.documentElement.style.setProperty("--patterneditor-y", this.scrollPosition +"");
+		}
 
 		// add handler for vertical scrolling
 		this.scrollwrapper.onwheel = (e) => {
@@ -41,13 +71,15 @@ export class PatternEditor implements UIElement {
 				// there is vertical movement, translate it into a CSS variable
 				e.preventDefault();
 
-				// change the scrolling position
-				this.scrollPosition = Math.round((e.deltaY * 0.03) + this.scrollPosition);
-				this.scrollPosition = Math.max(-16, Math.min(this.scrollPosition, 32));
-
-				document.documentElement.style.setProperty("--patterneditor-y", this.scrollPosition +"");
+				// handle resize
+				scroll(e.deltaY);
 			}
 		};
+
+		// when window resizes, make sure to change scroll position as well
+		window.addEventListener("resize", () => {
+			scroll(0);
+		});
 	}
 
 	private scrollPosition = 0;
@@ -144,6 +176,17 @@ export class PatternEditor implements UIElement {
 		return div;
 	}
 
+	/**
+	 * Helper function to convert row numbers to string. This can be different based on flags.json5
+	 *
+	 * @param row The row number to calculcate
+	 * @returns A string representing the row number
+	 */
+	private getRowNumber!: (row:number) => string;
+
+	/**
+	 * The number of pixels for the height of each data element
+	 */
 	private dataHeight = 19;
 
 	/**
@@ -161,7 +204,7 @@ export class PatternEditor implements UIElement {
 			x.classList.add("patternrownum");
 
 			// set the number
-			x.innerText = i.toString().padStart(3, "0");
+			x.innerText = this.getRowNumber(i);
 		}
 
 		// handle each channel

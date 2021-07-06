@@ -2,13 +2,13 @@
 	--patterneditor-y: 0;
 }
 
+@labelheight: 28px;
+
 .patterneditor {
 	position: relative;
 	outline: none;
 	width: -webkit-fill-available;
 	height: 100%;
-
-	@labelheight: 28px;
 
 	&> div {
 		overflow-y: hidden;
@@ -95,7 +95,6 @@
 		opacity: 100%;
 	}
 
-	@charsize: 9px;
 	@height: 18px;
 
 	&> div {
@@ -117,6 +116,7 @@
 }
 
 .patterndataitem > div {
+	@charsize: 9px;
 	text-rendering: optimizeSpeed;
 
 	&:not(.set) {

@@ -2,6 +2,28 @@ import { loadFlag } from "../../../api/files";
 import { PatternIndex } from "../../../api/matrix";
 import { UIElement } from "../../../api/ui";
 
+type rowElementData = {
+	/**
+	 * The scroll row ID
+	 */
+	scroll: number,
+
+	/**
+	 * The pattern row ID
+	 */
+	pattern: number,
+
+	/**
+	 * The start offset within the row
+	 */
+	offset: number,
+
+	/**
+	 * The element for each channel
+	 */
+	elements: HTMLDivElement[],
+};
+
 export class PatternEditor implements UIElement {
 	// various standard elements for the pattern editor
 	public element!:HTMLElement;
@@ -43,6 +65,7 @@ export class PatternEditor implements UIElement {
 			// initialize scrolling height
 			this.scrollHeight = this.scrollwrapper.getBoundingClientRect().height - 30;
 
+			// refresh the amount of patterns
 			this.refreshPatternAmount();
 
 			// initialize patterns and update active pattern
@@ -182,27 +205,32 @@ export class PatternEditor implements UIElement {
 	 */
 	private refreshPatternAmount() {
 		// calculate the amount of rows needed to display
-		const amount = Math.ceil(((this.scrollHeight / this.dataHeight) + (this.visibleSafeHeight * 2)) / this.index.patternlen);
+		const amount = Math.ceil(((this.scrollHeight / this.dataHeight) + (this.visibleSafeHeight * 2)) / this.chunkSize);
 
 		// generate each row
 		for(let row = 0;row <= amount; row++) {
 			// create the container for this row elements
 			const store:HTMLDivElement[] = [];
-			this.loadedRows.push({ row: -1, elements: store, });
+
+			this.loadedRows.push({
+				elements: store, scroll: -1,
+				offset: -1,
+				pattern: -1,
+			});
 
 			// create the pattern list element for this
 			let div = this.createPatternData();
 			this.getPatternListDiv(0)?.appendChild(div);
 			store.push(div);
 
-			for(let i = 0;i < this.index.patternlen;i ++) {
+			for(let i = 0;i < this.chunkSize;i ++) {
 				// create the element and give it classes
 				const x = document.createElement("div");
 				div.appendChild(x);
 				x.classList.add("patternrownum");
 
 				// set the number
-				x.innerText = this.getRowNumber(i);
+				x.innerText = this.getRowNumber(i + (row % (this.index.patternlen / this.chunkSize) * this.chunkSize));
 			}
 
 			// handle each channel
@@ -213,7 +241,7 @@ export class PatternEditor implements UIElement {
 				store.push(div);
 
 				// add the note data
-				for(let i = 0;i < this.index.patternlen;i ++) {
+				for(let i = 0;i < this.chunkSize;i ++) {
 					// create the element and give it classes
 					const x = document.createElement("div");
 					div.appendChild(x);
@@ -264,7 +292,7 @@ export class PatternEditor implements UIElement {
 	/**
 	 * This is the array that contains all the currently loaded rows
 	 */
-	private loadedRows: { row: number, elements: HTMLDivElement[], }[] = [];
+	private loadedRows: rowElementData[] = [];
 
 	/**
 	 * Function to load a pattern rown onscreen
@@ -272,12 +300,14 @@ export class PatternEditor implements UIElement {
 	 * @param row The row index to load
 	 * @param active True if this is the active row
 	 */
-	private loadRow(rd:{ row: number, elements: HTMLDivElement[], }, row:number, active:boolean, direction:boolean) {
+	private loadRow(rd:rowElementData, row:number, active:boolean, direction:boolean) {
 		// update row position
-		rd.row = row;
+		rd.scroll = row;
+		rd.offset = row % this.chunkSize;
+		rd.pattern = row / this.chunkSize;
 
 		// make sure no invalid row is loaded
-		if(row < 0 || row >= this.index.matrixlen) {
+		if(row < 0 || row >= (this.index.matrixlen * this.chunkSize)) {
 			// update transform values
 			rd.elements.forEach((e) => {
 				e.style.transform = "translateY(-10000px)";
@@ -294,14 +324,10 @@ export class PatternEditor implements UIElement {
 			e.style.opacity = opacity;
 		});
 
-		// reset the base position
-		const diff = direction ? this.rowRenderPerFrame : -this.rowRenderPerFrame;
-		let base = direction ? 0 : this.index.patternlen + diff;
-
 		// helper function to draw a single channel
 		const drawSingle = () => {
 			// check that the row still matches
-			if(rd.row !== row) {
+			if(rd.scroll !== row) {
 				return;
 			}
 
@@ -309,7 +335,7 @@ export class PatternEditor implements UIElement {
 			let c = 0;
 			rd.elements.forEach((e) => {
 				// run for every single row withing channel
-				for(let i = base;i - base < this.rowRenderPerFrame && i < this.index.patternlen;i ++) {
+				for(let i = 0;i < this.chunkSize && i + rd.offset < this.index.patternlen;i ++) {
 					const rr = e.children[i] as HTMLDivElement;
 
 					// run for every single element within a channel
@@ -339,24 +365,16 @@ export class PatternEditor implements UIElement {
 
 				c++;
 			});
-
-			// increment base offset
-			base += diff;
-
-			// if more rows to render, loop
-			if(base < this.index.patternlen && base >= 0) {
-				requestAnimationFrame(drawSingle);
-			}
 		}
 
 		// initialize the rendering
-		requestAnimationFrame(drawSingle);
+		drawSingle();
 	}
 
 	/**
 	 * How many rows to render per frame
 	 */
-	private rowRenderPerFrame = 8;
+	private chunkSize = 8;
 
 	/**
 	 * Helper function to load a standardized styles for pattern lists
@@ -368,7 +386,7 @@ export class PatternEditor implements UIElement {
 	private getStyles(active:boolean, row:number) {
 		return [
 			active ? "100%" : "70%",
-			"translateY("+ (((row * this.index.patternlen) - this.scrollPosition) * this.dataHeight) +"px)",
+			"translateY("+ (((row * this.chunkSize) - this.scrollPosition) * this.dataHeight) +"px)",
 		];
 	}
 
@@ -381,19 +399,22 @@ export class PatternEditor implements UIElement {
 
 		// calculate the active pattern
 		const middle = this.scrollPosition + Math.round(this.scrollHeight / 2 / this.dataHeight);
-		const pat = Math.min(this.index.matrixlen - 1, Math.max(0, Math.round((middle - (this.index.patternlen / 1.75)) / this.index.patternlen)));
+		const pat = Math.min(this.index.matrixlen - 1,
+			Math.max(0, Math.round((middle - (this.index.patternlen / 1.75)) / this.index.patternlen))) * this.chunkSize;
 
 		// now find each row that is not loaded
 		for(let r = rangeMin;r <= rangeMax; r++) {
 			const rd = this.loadedRows[(this.loadedRows.length + r) % this.loadedRows.length];
 
-			if(rd.row !== r) {
-				// load the row now
-				this.loadRow(rd, r, pat === r, direction);
+			const base = r - (r % this.chunkSize);
 
-			} else if(r >= 0 && r < this.index.matrixlen){
+			if(rd.scroll !== r) {
+				// load the row now
+				this.loadRow(rd, r, base >= pat && base < pat + this.chunkSize, direction);
+
+			} else if(r >= 0 && r < (this.index.matrixlen * this.chunkSize)){
 				// calculate the styles
-				const [ opacity, transform, ] = this.getStyles(r === pat, r);
+				const [ opacity, transform, ] = this.getStyles(base >= pat && base < pat + this.chunkSize, r);
 
 				// update transform and opacity values of each element
 				rd.elements.forEach((e) => {
@@ -416,8 +437,8 @@ export class PatternEditor implements UIElement {
 	private getVisibleRange() {
 		// return the visible range of patterns
 		return [
-			Math.floor((this.scrollPosition - this.visibleSafeHeight) / this.index.patternlen),
-			Math.floor((this.scrollPosition + this.visibleSafeHeight + (this.scrollHeight / this.dataHeight)) / this.index.patternlen),
+			Math.floor((this.scrollPosition - this.visibleSafeHeight) / this.chunkSize),
+			Math.floor((this.scrollPosition + this.visibleSafeHeight + (this.scrollHeight / this.dataHeight)) / this.chunkSize),
 		];
 	}
 }

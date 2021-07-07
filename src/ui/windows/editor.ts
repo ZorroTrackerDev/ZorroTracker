@@ -359,11 +359,11 @@ async function editorLayout():Promise<true> {
 		_top.appendChild(b);
 	});
 
-	// add the pattern editor here
-	_bot.appendChild((patternEditor = new PatternEditor(Project.current.index)).element);
-
 	// add the piano overlay
 	_bot.appendChild((piano = await Piano.create()).element);
+
+	// add the pattern editor here
+	_bot.appendChild((patternEditor = new PatternEditor(Project.current.index)).element);
 
 	return true;
 }

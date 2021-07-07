@@ -2,26 +2,21 @@ import { loadFlag } from "../../../api/files";
 import { PatternIndex } from "../../../api/matrix";
 import { UIElement } from "../../../api/ui";
 
-type rowElementData = {
+type canvasElement = {
 	/**
-	 * The scroll row ID
-	 */
-	scroll: number,
-
-	/**
-	 * The pattern row ID
+	 * The current pattern row ID
 	 */
 	pattern: number,
 
 	/**
-	 * The start offset within the row
+	 * The actual element
 	 */
-	offset: number,
+	element: HTMLCanvasElement,
 
 	/**
-	 * The element for each channel
+	 * The 2D context of this canvas
 	 */
-	elements: HTMLDivElement[],
+	context: CanvasRenderingContext2D|null,
 };
 
 export class PatternEditor implements UIElement {
@@ -68,9 +63,6 @@ export class PatternEditor implements UIElement {
 			// refresh the amount of patterns
 			this.refreshPatternAmount();
 
-			// initialize patterns and update active pattern
-			this.refreshPatternsList(true);
-
 			// helper function to update the scroll position of the pattern editor
 			const scroll = (delta:number) => {
 				// change the scrolling position
@@ -90,8 +82,8 @@ export class PatternEditor implements UIElement {
 					}
 				}
 
-				// load patterns and update active pattern
-				this.refreshPatternsList(delta > 0);
+				// internally handle scrolling of elements and redrawing areas
+				this.handleScrolling();
 			}
 
 			// add handler for vertical scrolling
@@ -102,27 +94,31 @@ export class PatternEditor implements UIElement {
 				}
 			}, { passive: false, });
 
-			let timeout:null|NodeJS.Timeout = null;
+			this.handleScrolling();
 
-			// when window resizes, make sure to change scroll position as well
-			window.addEventListener("resize", () => {
-				// if previous timeout was defined, clear it
-				if(timeout) {
-					clearTimeout(timeout);
-				}
-
-				// create a new timeout for updating scrolling and pattern amounts
-				timeout = setTimeout(() => {
-					// uådate scrolling height
-					this.scrollHeight = this.scrollwrapper.getBoundingClientRect().height - 30;
-
-				//	this.refreshPatternAmount();
-					scroll(0);
-				}, 25);
-			});
+			// initialize canvases
+			setTimeout(() => {
+				this.handleScrolling();
+			}, 100);
 		});
 	}
 
+	/**
+	 * Helper function to convert row numbers to string. This can be different based on flags.json5
+	 *
+	 * @param row The row number to calculcate
+	 * @returns A string representing the row number
+	 */
+	private getRowNumber!: (row:number) => string;
+
+	/**
+	 * The number of pixels for the height of each data element
+	 */
+	private dataHeight = 19;
+
+	/**
+	 * Store the vertical scroll position of channel datas
+	 */
 	private scrollPosition = 0;
 
 	/**
@@ -138,21 +134,40 @@ export class PatternEditor implements UIElement {
 	}
 
 	/**
+	 * This is a list of all the channel x-positions from left. This helps canvases get lined up.
+	 */
+	private channelPositionsLeft!:number[];
+
+	/**
+	 * This is a list of all the channel x-positions from right. This helps canvases get lined up.
+	 */
+	private channelPositionsRight!:number[];
+
+	/**
+	 * This is the total width of the render area
+	 */
+	private totalWidth!:number;
+
+	/**
 	 * Helper function to initialize empty channel content for each defined channel
 	 */
 	private initChannels() {
 		// delete any previous children
 		this.clearChildren(this.scrollwrapper);
 
+		this.channelPositionsLeft = [];
+		this.channelPositionsRight = [];
+		let pos = 0;
+
 		// handle a single channel
 		const doChannel = (name:string) => {
+
 			// do some regex hacking to remove all tabs and newlines. HTML whyyy
 			return /*html*/`
 				<div class="channelwrapper">
 					<div class="channelnamewrapper">
 						<label>${ name }</label>
 					</div>
-					<div class="patternlistwrapper"></div>
 				</div>
 			`.replace(/[\t|\r|\n]+/g, "");
 		};
@@ -160,10 +175,23 @@ export class PatternEditor implements UIElement {
 		// add the index column
 		this.scrollwrapper.innerHTML = doChannel("\u200B");
 
+		this.channelPositionsLeft.push(pos);
+		pos += 35;
+		this.channelPositionsRight.push(pos - 4);
+
 		// run for each channel
 		this.scrollwrapper.innerHTML += this.index.channels.map((c) => {
-			return doChannel(c.name);
+			const r = doChannel(c.name);
+
+			this.channelPositionsLeft.push(pos);
+			pos += 111;
+			this.channelPositionsRight.push(pos - 4);
+			return r;
+
 		}).join("");
+
+		// save the total width of the render area
+		this.totalWidth = pos;
 	}
 
 	/**
@@ -185,243 +213,55 @@ export class PatternEditor implements UIElement {
 	}
 
 	/**
-	 * Load the pattern list div element for a specific column
-	 *
-	 * @param column The column to load from
-	 * @returns The pattern list div element that was requested
-	 */
-	private getPatternListDiv(column:number) {
-		// get the column wrapper
-		const list = this.scrollwrapper.children[column] as HTMLDivElement;
-
-		// check if this column exists
-		if(list) {
-			return list.children[1] as HTMLDivElement;
-		}
-	}
-
-	/**
 	 * Helper function that updates the list of pattern lists. This will delete any that is not strictly necessary to fill display.
 	 */
 	private refreshPatternAmount() {
+		this.canvas = [];
+
 		// calculate the amount of rows needed to display
-		const amount = Math.ceil(((this.scrollHeight / this.dataHeight) + (this.visibleSafeHeight * 2)) / this.chunkSize);
+		const amount = 3;				// super cool temporary advanced math operation
 
 		// generate each row
-		for(let row = 0;row <= amount; row++) {
-			// create the container for this row elements
-			const store:HTMLDivElement[] = [];
+		for(let row = 0;row < amount; row++) {
+			// create the element and give it classes
+			const x = document.createElement("canvas");
+			x.width = this.totalWidth;
+			x.height = this.dataHeight * this.index.patternlen;
 
-			this.loadedRows.push({
-				elements: store, scroll: -1,
-				offset: -1,
-				pattern: -1,
-			});
-
-			// create the pattern list element for this
-			let div = this.createPatternData();
-			this.getPatternListDiv(0)?.appendChild(div);
-			store.push(div);
-
-			for(let i = 0;i < this.chunkSize;i ++) {
-				// create the element and give it classes
-				const x = document.createElement("div");
-				div.appendChild(x);
-				x.classList.add("patternrownum");
-
-				// set the number
-				x.innerText = this.getRowNumber(i + (row % (this.index.patternlen / this.chunkSize) * this.chunkSize));
-			}
-
-			// handle each channel
-			for(let c = 0;c < this.index.channels.length;c ++) {
-				// create the pattern list element for this
-				div = this.createPatternData();
-				this.getPatternListDiv(1 + c)?.appendChild(div);
-				store.push(div);
-
-				// add the note data
-				for(let i = 0;i < this.chunkSize;i ++) {
-					// create the element and give it classes
-					const x = document.createElement("div");
-					div.appendChild(x);
-					x.classList.add("patterndataitem");
-
-					// set the text
-					x.innerHTML = /*html*/`
-						<div class='note'>---</div>
-						<div class='instrument'>—</div>
-						<div class='volume'>—</div>
-						<div class='command'>—</div>
-						<div class='value'>—</div>
-					`.replace(/[\t|\r|\n]+/g, "");
-				}
-			}
+			x.style.top = "-10000px";
+			x.classList.add("patterncanvas");
+			this.scrollwrapper.appendChild(x);
+			this.canvas.push({ element: x, context: x.getContext("2d"), pattern: -1, });
 		}
 	}
 
 	/**
-	 * Function to create the wrapper for pattern data
-	 *
-	 * @param position The position of the row vertically
-	 * @returns The newly created element
+	 * Container for each canvas element
 	 */
-	private createPatternData() {
-		// create the element and give it classes
-		const div = document.createElement("div");
-		div.classList.add("patternlist");
-
-		// force offscreen
-		div.style.transform = "translateY(-10000px)";
-		return div;
-	}
+	private canvas!:canvasElement[];
 
 	/**
-	 * Helper function to convert row numbers to string. This can be different based on flags.json5
-	 *
-	 * @param row The row number to calculcate
-	 * @returns A string representing the row number
+	 * Handle scrolling by updating positions
 	 */
-	private getRowNumber!: (row:number) => string;
-
-	/**
-	 * The number of pixels for the height of each data element
-	 */
-	private dataHeight = 19;
-
-	/**
-	 * This is the array that contains all the currently loaded rows
-	 */
-	private loadedRows: rowElementData[] = [];
-
-	/**
-	 * Function to load a pattern rown onscreen
-	 *
-	 * @param row The row index to load
-	 * @param active True if this is the active row
-	 */
-	private loadRow(rd:rowElementData, row:number, active:boolean, direction:boolean) {
-		// update row position
-		rd.scroll = row;
-		rd.offset = row % this.chunkSize;
-		rd.pattern = row / this.chunkSize;
-
-		// make sure no invalid row is loaded
-		if(row < 0 || row >= (this.index.matrixlen * this.chunkSize)) {
-			// update transform values
-			rd.elements.forEach((e) => {
-				e.style.transform = "translateY(-10000px)";
-			});
-			return;
-		}
-
-		// calculate the styles
-		const [ opacity, transform, ] = this.getStyles(active, row);
-
-		// update transform and opacity values of each element
-		rd.elements.forEach((e) => {
-			e.style.transform = transform;
-			e.style.opacity = opacity;
-		});
-
-		// helper function to draw a single channel
-		const drawSingle = () => {
-			// check that the row still matches
-			if(rd.scroll !== row) {
-				return;
-			}
-
-			// run for every single channel
-			let c = 0;
-			rd.elements.forEach((e) => {
-				// run for every single row withing channel
-				for(let i = 0;i < this.chunkSize && i + rd.offset < this.index.patternlen;i ++) {
-					const rr = e.children[i] as HTMLDivElement;
-
-					// run for every single element within a channel
-					for(let x = 0;x < rr.children.length;x++) {
-						let d:string|null = null;
-
-						// generate "random" garbage values
-						switch(x) {
-							case 0: d = c % 2 === 0 ? (direction ? "C#1" : "D·4") : null; break;
-							case 1: d = c % 4 === 0 ? (direction ? "2F" : "AA") : null; break;
-							case 2: d = c === 0 || c > 4 ? (direction ? "11" : "00") : null; break;
-							case 3: d = c % 3 === 0 ? (direction ? "WQ" : "I1") : null; break;
-							case 4: d = c % 3 === 0 ? (direction ? "DD" : "43") : null; break;
-						}
-
-						// save the value in the element
-						if(d) {
-							rr.children[x].classList.add("set");
-							(rr.children[x] as HTMLDivElement).innerText = d;
-
-						} else {
-							rr.children[x].classList.remove("set");
-							(rr.children[x] as HTMLDivElement).innerText = x === 0 ? "---" : "--";
-						}
-					}
-				}
-
-				c++;
-			});
-		}
-
-		// initialize the rendering
-		drawSingle();
-	}
-
-	/**
-	 * How many rows to render per frame
-	 */
-	private chunkSize = 8;
-
-	/**
-	 * Helper function to load a standardized styles for pattern lists
-	 *
-	 * @param active If the row is active or not
-	 * @param row The row number
-	 * @returns An array of items representing properties
-	 */
-	private getStyles(active:boolean, row:number) {
-		return [
-			active ? "100%" : "70%",
-			"translateY("+ (((row * this.chunkSize) - this.scrollPosition) * this.dataHeight) +"px)",
-		];
-	}
-
-	/**
-	 * Helper function to update which patterns should be rendered
-	 */
-	private refreshPatternsList(direction:boolean) {
-		// load the target range
+	private handleScrolling() {
+		// load the target display
 		const [ rangeMin, rangeMax, ] = this.getVisibleRange();
 
 		// calculate the active pattern
 		const middle = this.scrollPosition + Math.round(this.scrollHeight / 2 / this.dataHeight);
 		const pat = Math.min(this.index.matrixlen - 1,
-			Math.max(0, Math.round((middle - (this.index.patternlen / 1.75)) / this.index.patternlen))) * this.chunkSize;
+			Math.max(0, Math.round((middle - (this.index.patternlen / 1.75)) / this.index.patternlen)));
 
-		// now find each row that is not loaded
+		// run for each visible row
 		for(let r = rangeMin;r <= rangeMax; r++) {
-			const rd = this.loadedRows[(this.loadedRows.length + r) % this.loadedRows.length];
+			// load the canvas that represents this pattern
+			const cv = this.canvas[(this.canvas.length + r) % this.canvas.length];
 
-			const base = r - (r % this.chunkSize);
+			// update canvas y-position
+			cv.element.style.top = ((((r * this.index.patternlen) - this.scrollPosition) * this.dataHeight) + 30) +"px";
 
-			if(rd.scroll !== r) {
-				// load the row now
-				this.loadRow(rd, r, base >= pat && base < pat + this.chunkSize, direction);
-
-			} else if(r >= 0 && r < (this.index.matrixlen * this.chunkSize)){
-				// calculate the styles
-				const [ opacity, transform, ] = this.getStyles(base >= pat && base < pat + this.chunkSize, r);
-
-				// update transform and opacity values of each element
-				rd.elements.forEach((e) => {
-					e.style.transform = transform;
-					e.style.opacity = opacity;
-				});
-			}
+			// fully render because lazy and testing
+			this.renderPattern(cv, r, r === pat, r >= 0 && r < this.index.matrixlen);
 		}
 	}
 
@@ -437,8 +277,79 @@ export class PatternEditor implements UIElement {
 	private getVisibleRange() {
 		// return the visible range of patterns
 		return [
-			Math.floor((this.scrollPosition - this.visibleSafeHeight) / this.chunkSize),
-			Math.floor((this.scrollPosition + this.visibleSafeHeight + (this.scrollHeight / this.dataHeight)) / this.chunkSize),
+			Math.floor((this.scrollPosition - this.visibleSafeHeight) / this.index.patternlen),
+			Math.floor((this.scrollPosition + this.visibleSafeHeight + (this.scrollHeight / this.dataHeight)) / this.index.patternlen),
 		];
 	}
+
+	private renderPattern(cv:canvasElement, row:number, active:boolean, valid:boolean) {
+		cv.pattern = row;
+
+		if(!cv.context) {
+			console.error("failed to capture 2D context for row "+ row);
+			// wtf fail
+			return;
+		}
+
+		const ctx = cv.context;
+
+		if(!valid) {
+			// if outside of bounds, just fill with black
+			ctx.fillStyle = "#000";
+			ctx.fillRect(0, 0, cv.element.width, cv.element.height);
+			return;
+		}
+
+		// draw background
+		ctx.fillStyle = active ? "#262627" : "#1E1E1E";
+		ctx.fillRect(0, 0, cv.element.width, cv.element.height);
+
+		// draw borders
+		ctx.fillStyle = "#000";
+
+		this.channelPositionsRight.forEach((left) => {
+			ctx.fillRect(left, 0, 4, cv.element.height);
+		});
+
+		// prepare text
+		ctx.font = "10pt 'Roboto Mono'";
+		ctx.fillStyle = active ? "#949494" : "#686868";
+
+		// draw pattern indices
+		for(let r = 0;r < this.index.patternlen;r ++) {
+			ctx.fillText(this.getRowNumber(r), this.channelPositionsLeft[0] + 3, 14 + (r * this.dataHeight));
+		}
+
+		// draw all other elements
+		for(let r = 0;r < this.index.patternlen;r ++) {
+			const top = 14 + (r * this.dataHeight);
+
+			for(let c = 0;c < this.index.channels.length;c ++) {
+				const left = this.channelPositionsLeft[c + 1];
+
+				for(let i = 0;i < 5;i ++){
+					if(c & 1) {
+						let text = "";
+						switch(i) {
+							case 0: text = "C#6"; break;
+							case 1: text = "2F"; break;
+							case 2: text = "11"; break;
+							case 3: text = "WQ"; break;
+							case 4: text = "DD"; break;
+						}
+
+						ctx.fillStyle = active ? this.channelElementColors[i] : "#686868";
+						ctx.fillText(text, left + this.channelElementOffsets[i], top);
+
+					} else {
+						ctx.fillStyle = active ? "#616161" : "#404040";
+						ctx.fillText(i === 0 ? "---" : "--", left + this.channelElementOffsets[i], top);
+					}
+				}
+			}
+		}
+	}
+
+	private channelElementOffsets = [ 3, 31, 50, 70, 87, ];
+	private channelElementColors = [ "#b7b7b7", "#7e81a5", "#62ab4a", "#b16f6f", "#bba6a1", ];
 }

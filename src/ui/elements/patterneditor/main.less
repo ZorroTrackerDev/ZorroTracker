@@ -42,6 +42,7 @@
 			display: inline-block;
 			contain: layout;
 			border-right: 4px solid black;
+			z-index: 11;
 
 			&:not(:first-child) {
 				width: @chanwidth + 4;
@@ -53,7 +54,7 @@
 					width: @labelheight - 8px;
 					background: #7b2808;
 					cursor: e-resize;
-					z-index: 11;
+					z-index: 12;
 				}
 
 				&> .channelnamewrapper > label::after {
@@ -92,7 +93,7 @@
 				background: #9e4216;
 				text-align: center;
 				border-bottom: 2px solid black;
-				z-index: 10;
+				z-index: 11;
 				width: @chanwidth + 4;
 
 				&> label {
@@ -108,71 +109,8 @@
 	}
 }
 
-.patternlistwrapper {
-	position: relative;
-	height: calc(100% - @labelheight);
-	background: black;
-	width: @chanwidth;
-	contain: layout size style;
-}
-
-.patternlist {
-	font: 10pt 'Roboto Mono';
-	height: 0;				// hack! This actually makes it possible to stack these patterns despite them never appearing in the "right" place.
-	opacity: 70%;
-	will-change: opacity, transform;
-	contain: layout size style;
-	width: @chanwidth;
-
-	&> div {
-		background: #262627;
-		padding: 0px 2px 1px;
-		color: #949494;
-		height: @itemheight;
-		contain: layout size style;
-		width: @chanwidth;
-	}
-}
-
-.patterndataitem > div {
-	text-rendering: optimizeSpeed;
-	height: @itemheight;
-	width: @chanwidth - 1;
-	contain: size style;
-	display: inline-block;
-	text-align: center;
-	will-change: color;
-
-	&:not(.set) {
-		color: #616161 !important;
-	}
-
-	&.note {
-		width: @charsize * 3;
-		color: #b7b7b7;
-	}
-
-	&.volume {
-		padding-left: 1px;
-		width: @charsize * 2;
-		color: #62ab4a;
-	}
-
-	&.instrument {
-		padding-left: 1px;
-		width: @charsize * 2;
-		color: #7e81a5;
-	}
-
-	&.command {
-		padding-left: 2px;
-		width: @charsize * 2;
-		color: #b16f6f;
-	}
-
-	&.value {
-		margin-left: -1px;
-		width: @charsize * 2;
-		color: #bba6a1;
-	}
+.patterncanvas {
+	z-index: 10;
+	position: absolute;
+	left: 0; right: 0;
 }

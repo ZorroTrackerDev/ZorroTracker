@@ -77,11 +77,34 @@ const handleMessage = (command:string, data:{ [key:string]: unknown }) => {
 				rendered[i] = false;
 			}
 			break;
+
+		case "setactive": {
+			// update active row
+			const ar = activeRow;
+			activeRow = data.row as number;
+
+			// invalidate last active row
+			if(ar >= 0) {
+				renderRow(ar, data.active as boolean);
+			}
+
+			// invalidate current active row
+			if(activeRow >= 0) {
+				console.log("draw", activeRow)
+				renderRow(activeRow, data.active as boolean);
+			}
+			break;
+		}
 	}
 }
 
 // receive messages from PatternCanvas
 onmessage = (e) => handleMessage(e.data.command, e.data.data);
+
+/**
+ * The row that is currently active
+ */
+let activeRow = -1;
 
 /**
  * Boolean indicating whether the font is loaded. Any font rendering is disallowed before font is loaded
@@ -164,6 +187,13 @@ function renderRow(row:number, active:boolean) {
 		// draw the border
 		ctx.fillRect(left, top, 4, dataHeight);
 	});
+
+	// if this row is active, render a border around it
+	if(activeRow === row) {
+		ctx.strokeStyle = "#666";
+		ctx.lineWidth = 2;
+		ctx.strokeRect(1, top + 1, canvas.width - 1, dataHeight - 2);
+	}
 
 	if(fontLoaded !== null) {
 		// font not loaded, instead add to the load queue

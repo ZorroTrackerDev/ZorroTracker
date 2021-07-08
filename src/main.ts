@@ -1,4 +1,4 @@
-import electron, { BrowserWindow } from "electron";
+import electron, { BrowserWindow, NodeEventEmitter } from "electron";
 import path from "path";
 import { create as IpcCreate, log } from "./system/ipc/editor";
 
@@ -121,6 +121,9 @@ electron.app.whenReady().then(async() => {
 			return { action: "deny", };
 		});
 	});
+
+	// allow more listners before warning
+	process.setMaxListeners(200);
 
 	await createWindow("editor");
 

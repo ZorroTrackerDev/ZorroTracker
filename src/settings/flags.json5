@@ -14,4 +14,5 @@
 	MIDI_ENABLE: true,															/* If true, ZorroTracker will scan for MIDI devices and allow them to interface with ZorroTracker */
 	ROW_NUM_IN_HEX: false,														/* If true, row numbers will be in hexadecimal */
 	OPEN_PREVIOUS: true,														/* If true, the previous project will be opened if possible. Otherwise, always create an empty project. */
+	PATTERN_PREVIEW: true,														/* If true, pattern previews will also be rendered */
 }

@@ -53,16 +53,12 @@ let worker:Worker|undefined;
 function workerAsync(code:string, data:unknown, fn:string|undefined, handler:(data:unknown) => void): void {
 	// helper function to listen to the response
 	const f = (data:{ code:string, data:unknown, fn:string|undefined }) => {
-		console.log("CHECK", data.code, data.fn, fn)
 		if(data.code === code && data.fn === fn){
 			// success, now send it along
 			worker?.off("message", f);
-			log.info("worker ->", code, fn)
 			handler(data.data);
 		}
 	};
-
-	log.info("-> worker ", code, fn)
 
 	// add reponse listener
 	worker?.on("message", f);

@@ -364,7 +364,6 @@ async function editorLayout():Promise<true> {
 
 	// add the pattern editor here
 	_bot.appendChild((patternEditor = new PatternEditor(Project.current.index)).element);
-
 	return true;
 }
 

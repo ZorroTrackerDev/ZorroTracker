@@ -39,9 +39,7 @@ export class PatternEditor implements UIElement {
 		this.initChannels();
 
 		// load the row number generator function
-		this.getRowNumber = loadFlag<boolean>("ROW_NUM_IN_HEX") ?
-			(row:number) => row.toString(16).toUpperCase().padStart(2, "0") :
-			(row:number) => row.toString().padStart(3, "0");
+		this.getRowNumber = loadFlag<boolean>("ROW_NUM_IN_HEX") ?? false;
 
 		requestAnimationFrame(() => {
 			// initialize the scrolling region size
@@ -79,15 +77,12 @@ export class PatternEditor implements UIElement {
 			// add handler for vertical and horizontal scrolling
 			this.scrollwrapper.addEventListener("wheel", (e) => {
 				if(e.deltaX) {
-					/*
-					 * when moving horizontally, check the direction. For left scrolling, just check scroll position is above 0.
-					 * For right scrolling, check that there are more channels to show, and that some channels are still obscured.
-					 */
-					if(e.deltaX < 0 ? this.horizScroll > 0 : (this.horizScroll < this.channelPositionsLeft.length - 1) &&
-						(this.renderAreaWidth - this.channelPositionsLeft[this.horizScroll]) > this.scrollWidth) {
+					// calculate the new scrolling position
+					const p = Math.max(0, Math.min(this.horizScroll + e.deltaX, this.renderAreaWidth - this.scrollWidth));
 
-						// update horizontal scrolling variable
-						this.horizScroll += e.deltaX < 0 ? -1 : 1;
+					// check if the scrolling was actually allowed to move
+					if(p !== this.horizScroll) {
+						this.horizScroll = p;
 
 						// tell each canvas to update left offset
 						this.canvas.forEach((c) => c.updateHoriz(this));
@@ -95,7 +90,7 @@ export class PatternEditor implements UIElement {
 						// update every channel header too, to change their translateX values
 						for(let i = this.index.channels.length;i >= 0;--i){
 							(this.scrollwrapper.children[i] as HTMLDivElement)
-								.style.transform = "translateX(-"+ this.channelPositionsLeft[this.horizScroll] +"px)"
+								.style.transform = "translateX(-"+ this.horizScroll +"px)"
 						}
 					}
 				}
@@ -124,7 +119,7 @@ export class PatternEditor implements UIElement {
 					this.updateScrollerSize();
 
 					// remove old canvases so everything can be updated
-					this.canvas.forEach((c) => c.element.parentElement?.removeChild(c.element));
+					this.canvas.forEach((c) => c.dispose());
 
 					// reload the number of patterns that need to be visible
 					this.refreshPatternAmount();
@@ -156,12 +151,9 @@ export class PatternEditor implements UIElement {
 	}
 
 	/**
-	 * Helper function to convert row numbers to string. This can be different based on flags.json5
-	 *
-	 * @param row The row number to calculcate
-	 * @returns A string representing the row number
+	 * The row number setting. This will be used to generata function for converting row numbers
 	 */
-	public getRowNumber!: (row:number) => string;
+	public getRowNumber!: boolean;
 
 	/**
 	 * The number of pixels for the height of each data element
@@ -296,7 +288,7 @@ export class PatternEditor implements UIElement {
 		// generate each canvas
 		for(let c = 0;c <= amount; c++) {
 			// generate the canvas class itself
-			const x = new PatternCanvas(this.renderAreaWidth, this.dataHeight * this.index.patternlen,
+			const x = new PatternCanvas(this.renderAreaWidth, this.dataHeight * this.index.patternlen, this,
 				this.index.patternlen, this.index.channels.length);
 
 			// update horizontal scrolling of the canvas
@@ -349,7 +341,7 @@ export class PatternEditor implements UIElement {
 			// check if this pattern is visible
 			if(r >= 0 && r < this.index.matrixlen) {
 				// if yes, request to render every visible row in this pattern
-				cv.renderPattern(this, Math.max(0, -offsetTop - this.visibleSafeHeight),
+				cv.renderPattern(Math.max(0, -offsetTop - this.visibleSafeHeight),
 					Math.min(this.index.patternlen, rowsPerScreen + this.visibleSafeHeight - offsetTop));
 
 			} else if(!cv.isClear){
@@ -363,7 +355,7 @@ export class PatternEditor implements UIElement {
 	 * How many rows that can be hidden, but will still make the visible range larger.
 	 * This is used so that the user doesn't see the pattern rows drawing.
 	 */
-	private visibleSafeHeight = 4;
+	private visibleSafeHeight = 7;
 
 	/**
 	 * Helper function to get the visible range of patterns
@@ -386,8 +378,11 @@ class PatternCanvas {
 	// the canvas element itself for this canvas
 	public element:HTMLCanvasElement;
 
-	// the 2D context for this canvas
-	private ctx:CanvasRenderingContext2D;
+	// the parent of this element
+	public parent:PatternEditor;
+
+	// the worker for this canvas
+	public worker:Worker;
 
 	/**
 	 * Initialize this PatternCanvas and store some data passed.
@@ -397,7 +392,7 @@ class PatternCanvas {
 	 * @param patternlen The number of rows per pattern
 	 * @param channels The number of channels in the project
 	 */
-	constructor(width:number, height:number, patternlen:number, channels:number) {
+	constructor(width:number, height:number, parent:PatternEditor, patternlen:number, channels:number) {
 		// create the main canvas and update its size
 		this.element = document.createElement("canvas");
 		this.element.width = width;
@@ -407,23 +402,39 @@ class PatternCanvas {
 		this.element.style.top = "-10000px";
 		this.element.classList.add("patterncanvas");
 
+		// initialize the offscreen canvas worker
+		this.worker = new Worker("../elements/patterneditor/defaultworker.js");
+		const offscreen = this.element.transferControlToOffscreen();
+		this.worker.postMessage({ command: "init", data: { width, height, canvas: offscreen, }, }, [ offscreen, ]);
+
 		// store internal variables
-		this.channels = channels;
 		this.patternlen = patternlen;
+		this.parent = parent;
+
+		// update a few variables to the worker
+		this.worker.postMessage({ command: "vars", data: {
+			channels, patternlen, dataHeight: parent.dataHeight, getRowNumber: parent.getRowNumber,
+		}, });
+
+		// update positional data to the worker
+		this.worker.postMessage({ command: "posi", data: {
+			right: parent.channelPositionsRight, left: parent.channelPositionsLeft,
+		}, });
 
 		// set internal variables to default values
 		this.pattern = -1;
 		this.active = false;
 
-		// load the graphics context and pretend it can't be null
-		this.ctx = this.element.getContext("2d", { alpha: false, }) as CanvasRenderingContext2D;
-
-		// clear the canvas content and set every row as unrendered
-		this.rendered = Array<boolean>(patternlen);
+		// clear the canvas content
 		this.clear();
+	}
 
-		// load the font for this canvas ahead of time
-		this.ctx.font = "10pt 'Roboto Mono'";
+	public dispose() {
+		// remove the canvas from DOM
+		this.element.parentElement?.removeChild(this.element);
+
+		// tell the worker to close
+		this.worker.terminate();
 	}
 
 	/**
@@ -447,30 +458,18 @@ class PatternCanvas {
 	private patternlen:number;
 
 	/**
-	 * The number of channels to render
-	 */
-	private channels:number;
-
-	/**
 	 * Update horizontal scrolling of canvas
 	 */
 	public updateHoriz(parent:PatternEditor) {
-		this.element.style.left = -parent.channelPositionsLeft[parent.horizScroll] +"px";
+		this.element.style.left = -parent.horizScroll +"px";
 	}
 
 	/**
 	 * Function to fill the canvas with black and invalidate all rows
 	 */
 	public clear() {
-		// check if 2D context is valid
-		if(!this.ctx) {
-			console.error("failed to capture 2D context for pattern "+ this.pattern);
-			return;
-		}
-
-		// set the entire canvas to black
-		this.ctx.fillStyle = "#000";
-		this.ctx.fillRect(0, 0, this.element.width, this.element.height);
+		// send the clear command
+		this.worker.postMessage({ command: "clear", data: {}, });
 
 		// set as cleared and invalidate the entire canvas
 		this.isClear = true;
@@ -491,113 +490,21 @@ class PatternCanvas {
 	 * @param end The end of the range to invalidate
 	 */
 	public invalidateRange(start:number, end:number) {
-		for(let i = start;i < end;i ++){
-			this.rendered[i] = false;
-		}
+		// send the invalidate command
+		this.worker.postMessage({ command: "invalidate", data: { start, end, }, });
 	}
-
-	/**
-	 * This bitfield determines which rows are rendered already, so they can't be re-rendered
-	 */
-	private rendered:boolean[];
 
 	/**
 	 * Function to render part of the pattern if not rendered
 	 *
-	 * @param parent The parent PatternEditor that is responsible for this canvas
 	 * @param start The start of the range of rows to render
 	 * @param end The end of the range of rows to render
 	 */
-	public renderPattern(parent:PatternEditor, start:number, end:number) {
-		// check if 2D context is valid
-		if(!this.ctx) {
-			console.error("failed to capture 2D context for pattern "+ this.pattern);
-			return;
-		}
-
-		// loop for each row in the range
-		for(let r = start;r <= end;r ++) {
-			if(!this.rendered[r]) {
-				// this row needs to be rendered. Go do that
-				this.renderRow(r, parent);
-				this.rendered[r] = true;
-			}
-		}
-	}
-
-	/**
-	 * The horizontal offsets for each element in the channel row
-	 */
-	private channelElementOffsets = [ 3, 31, 50, 70, 87, ];
-
-	/**
-	 * The colors for each element in the channel row
-	 */
-	private channelElementColors = [ "#b7b7b7", "#7e81a5", "#62ab4a", "#b16f6f", "#bba6a1", ];
-
-	/**
-	 * This is the vertical offset of text. This is needed somehow
-	 */
-	private textVerticalOffset = 14;
-
-	/**
-	 * Function to re-render a single row of graphics
-	 *
-	 * @param row The row to render
-	 * @param parent The parent PatternEditor that is responsible for this canvas
-	 */
-	private renderRow(row:number, parent:PatternEditor) {
+	public renderPattern(start:number, end:number) {
 		// set the canvas as not cleared
 		this.isClear = false;
 
-		// the top position of this row
-		const top = row * parent.dataHeight;
-
-		// draw the background fill color
-		this.ctx.fillStyle = this.active ? "#262627" : "#1E1E1E";
-		this.ctx.fillRect(0, top, this.element.width, parent.dataHeight);
-
-		// initialize border color
-		this.ctx.fillStyle = "#000";
-
-		// loop for each channel position
-		parent.channelPositionsRight.forEach((left) => {
-			// draw the border
-			this.ctx.fillRect(left, top, 4, parent.dataHeight);
-		});
-
-		// render the pattern index of this row
-		this.ctx.fillStyle = this.active ? "#949494" : "#686868";
-		this.ctx.fillText(parent.getRowNumber(row), parent.channelPositionsLeft[0] + 3, top + this.textVerticalOffset);
-
-		// loop for every channel
-		for(let c = 0;c < this.channels;c ++) {
-			// load the channel position
-			const left = parent.channelPositionsLeft[c + 1];
-
-			// render each channel element
-			for(let i = 0;i < 5;i ++){
-				// some dummy code to generate text for this row
-				if(c & 1) {
-					let text = "";
-					switch(i) {
-						case 0: text = "C#6"; break;
-						case 1: text = "2F"; break;
-						case 2: text = "11"; break;
-						case 3: text = "WQ"; break;
-						case 4: text = "DD"; break;
-					}
-
-					// render the element with text
-					this.ctx.fillStyle = this.active ? this.channelElementColors[i] : "#686868";
-					this.ctx.fillText(text, left + this.channelElementOffsets[i], top + this.textVerticalOffset);
-
-				} else {
-					// render the element with blanks
-					this.ctx.fillStyle = this.active ? "#616161" : "#404040";
-					this.ctx.fillText(i === 0 ? "---" : "--", left + this.channelElementOffsets[i], top + this.textVerticalOffset);
-				}
-			}
-		}
+		// send the command to render row
+		this.worker.postMessage({ command: "renderrange", data: { start, end, active: this.active, }, });
 	}
 }

@@ -13,7 +13,7 @@
 		"less-watch": "less-watch-compiler --source-map src/ui build/ui",
 		"tsc": "npx tsc -p tsconfig.build.json",
 		"tsc-watch": "npx tsc -w -p tsconfig.build.json",
-		"copy": "copyfiles -e \"src/**/node_modules/**\" -e \"src/**/webpack.config.js\"  -u 1 \"src/**/*.node\" \"src/**/*.js\" \"src/**/*.json5\" \"src/**/*.html\" \"src/scripts/**/dist/**/*.*\" build",
+		"copy": "copyfiles -e \"src/**/node_modules/**\" -e \"src/**/webpack.config.js\"  -u 1 \"src/**/*.node\" \"src/**/*.js\" \"src/**/*.json5\" \"src/**/*.html\" \"src/**/*.woff2\" \"src/scripts/**/dist/**/*.*\" build",
 		"build": "npx concurrently \"npm run tsc\" \"npm run less-compile\" \"npm run copy\"",
 		"electron": "electron build/main.js",
 		"start": "npm run build & npm run electron",

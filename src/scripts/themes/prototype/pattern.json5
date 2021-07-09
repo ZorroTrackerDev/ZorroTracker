@@ -9,7 +9,7 @@
 			// font settings for pattern rows
 			font: {
 				// The source of this font. This can be a web URL or a local file
-				source: "url(https://fonts.gstatic.com/s/robotomono/v13/L0xuDF4xlVMF-BfR8bXMIhJHg45mwgGEFl0_3vq_ROW4.woff2)",
+				source: "url('%folder%RobotoMono.woff2')",
 
 				// The name of the font. This can be an arbitary string
 				name: "Roboto Mono",

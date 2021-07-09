@@ -4,6 +4,7 @@
 */
 
 {
+	THEME: "prototype",															/* The UUID of the theme to use */
 	CHIP: "9d8d2954-ad94-11eb-8529-0242ac130003",								/* The UUID of the chip to use for ZorroTracker */
 	DEFAULT_DRIVER: "ec6a4880-3c17-495f-b3d7-6b35dcc56493",						/* The UUID of the default driver to use for new projects. */
 	UNDO_STACK_SIZE: 100,														/* The size of the undo stack, how many steps away to remember undo data */
@@ -15,4 +16,6 @@
 	ROW_NUM_IN_HEX: false,														/* If true, row numbers will be in hexadecimal */
 	OPEN_PREVIOUS: true,														/* If true, the previous project will be opened if possible. Otherwise, always create an empty project. */
 	PATTERN_PREVIEW: true,														/* If true, pattern previews will also be rendered */
+	HIGHLIGHT_A_DEFAULT: 4,														/* How often to highlight a row in the pattern editor. This is usually the beat highlight */
+	HIGHLIGHT_B_DEFAULT: 16,													/* How often to highlight a row in the pattern editor. This is usually the bar highlight. Takes precedence over A */
 }

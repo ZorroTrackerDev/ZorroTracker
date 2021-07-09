@@ -18,33 +18,12 @@ const handleMessage = (command:string, data:{ [key:string]: unknown }) => {
 
 			// save the context
 			ctx = _ctx;
-
-			// request the font to be loaded
-			const font = new FontFace("Roboto Mono", "url(https://fonts.gstatic.com/s/robotomono/v13/L0xuDF4xlVMF-BfR8bXMIhJHg45mwgGEFl0_3vq_ROW4.woff2)", {
-				display: "swap",
-			});
-
-			// wait for the font to load
-			font.load().then((f) => {
-				// add to the global font stack
-				(self as unknown as WorkerGlobalScope).fonts.add(f);
-
-				// set context font status
-				ctx.font = "10pt '"+ f.family +"'";
-
-				// reload all rows that were requested
-				const _f = fontLoaded;
-				fontLoaded = null;
-				_f?.forEach((f) => renderRow(f[0], f[1]));
-
-			}).catch(console.error);
-
 			break;
 		}
 
 		case "vars":
 			// initialize some standard variables
-			dataHeight = data.dataHeight as number;
+			rowHeight = data.dataHeight as number;
 			channelCount = data.channels as number;
 			patternLen = data.patternlen as number;
 
@@ -57,6 +36,14 @@ const handleMessage = (command:string, data:{ [key:string]: unknown }) => {
 		case "posi":
 			channelPositionsLeft = data.left as number[];
 			channelPositionsRight = data.right as number[];
+			break;
+
+		case "highlight":
+			highlights = data.values as [ number, number ];
+			break;
+
+		case "theme":
+			setTheme(data as unknown as WorkerThemeSettings);
 			break;
 
 		case "clear":
@@ -78,6 +65,77 @@ const handleMessage = (command:string, data:{ [key:string]: unknown }) => {
 			}
 			break;
 	}
+}
+
+/**
+ * Load theme settings
+ *
+ * @param theme The theme to load
+ */
+function setTheme(theme:WorkerThemeSettings|undefined){
+	// prepare some values
+	const fallbackRow = theme?.fallback?.backdrop ?? "#000000";
+	const fallbackText = theme?.fallback?.text ?? "#FF00FF";
+
+	// load some default values
+	textVerticalOffset = theme?.font?.top ?? 0;
+	rowHeight = theme?.params?.rowHeight ?? 0;
+	clearColor = theme?.fallback?.clear ?? fallbackRow;
+	rowNumInactiveColor = theme?.rownum?.inactive ?? fallbackText;
+	backdropInactiveColor = theme?.rowbg?.inactive ?? fallbackRow;
+	backdropColors = theme?.rowbg?.active ?? [ fallbackRow, fallbackRow, fallbackRow, ];
+	rowNumColors = theme?.rownum?.active ?? [ fallbackText, fallbackText, fallbackText, ];
+
+	// reset element arrays
+	unsetColors = [];
+	channelElementColors = [];
+	channelElementOffsets = [];
+	unsetInactiveColors = [];
+	channelInactiveElementColors = [];
+
+	// load element data
+	for(const data of [ theme?.note, theme?.instrument, theme?.volume, ]) {
+		// load each array with values
+		channelElementOffsets.push(data?.left ?? 0);
+		unsetInactiveColors.push(data?.inactiveblank ?? fallbackText);
+		channelInactiveElementColors.push(data?.inactive ?? fallbackText);
+		unsetColors.push(data?.activeblank ?? [ fallbackText, fallbackText, fallbackText, ]);
+		channelElementColors.push(data?.active ?? [ fallbackText, fallbackText, fallbackText, ]);
+	}
+
+	// load element data
+	for(const data of [ theme?.effect, theme?.value, ]) {
+		// load each array with values
+		channelElementOffsets.push((data?.left ?? [ 0, ])[0]);
+		unsetInactiveColors.push(data?.inactiveblank ?? fallbackText);
+		channelInactiveElementColors.push(data?.inactive ?? fallbackText);
+		unsetColors.push(data?.activeblank ?? [ fallbackText, fallbackText, fallbackText, ]);
+		channelElementColors.push(data?.active ?? [ fallbackText, fallbackText, fallbackText, ]);
+	}
+
+	// request the font to be loaded
+	const font = new FontFace(theme?.font?.name ?? "Font", theme?.font?.source ?? "url()", {
+		display: "swap",
+	});
+
+	// wait for the font to load
+	font.load().then((f) => {
+		// add to the global font stack
+		(self as unknown as WorkerGlobalScope).fonts.add(f);
+
+		// set context font status
+		ctx.font = theme?.font?.size +" '"+ f.family +"'";
+
+		// invalidate every row
+		for(let i = 0;i < rendered.length;i ++){
+			rendered[i] = false;
+		}
+
+		// reload all rows that were requested
+		const _f = fontLoaded;
+		fontLoaded = null;
+		_f?.forEach((f) => renderRow(f[0], f[1]));
+	}).catch(console.error);
 }
 
 // receive messages from PatternCanvas
@@ -102,6 +160,11 @@ const rendered:boolean[] = [];
 let getRowNumber:(row:number) => string;
 
 /**
+ * The row highlight numbers for this pattern
+ */
+let highlights:[ number, number ];
+
+/**
  * The number of channels currently active
  */
 let channelCount = 0;
@@ -115,32 +178,17 @@ let patternLen = 0;
 /**
  * The number of pixels for the height of each data element
  */
-let dataHeight = 0;
-
-/**
- * The horizontal offsets for each element in the channel row
- */
-const channelElementOffsets = [ 3, 31, 50, 70, 87, ];
-
-/**
- * The colors for each element in the channel row
- */
-const channelElementColors = [ "#b7b7b7", "#7e81a5", "#62ab4a", "#b16f6f", "#bba6a1", ];
-
-/**
- * This is the vertical offset of text. This is needed somehow
- */
-const textVerticalOffset = 14;
+let rowHeight = 0;
 
 /**
  * This is a list of all the channel x-positions from left. This helps canvases get lined up and with scrolling.
  */
-let channelPositionsLeft!:number[];
+let channelPositionsLeft:number[];
 
 /**
  * This is a list of all the channel x-positions from right. This helps canvases get lined up.
  */
-let channelPositionsRight!:number[];
+let channelPositionsRight:number[];
 
 /**
  * Function to render a single row of graphics
@@ -150,19 +198,22 @@ let channelPositionsRight!:number[];
  */
 function renderRow(row:number, active:boolean) {
 	// the top position of this row
-	const top = row * dataHeight;
+	const top = row * rowHeight;
+
+	// get the highlight ID
+	const hid = (row % highlights[0]) === 0 ? 2 : (row % highlights[1]) === 0 ? 1 : 0;
 
 	// draw the background fill color
-	ctx.fillStyle = active ? "#262627" : "#1E1E1E";
-	ctx.fillRect(0, top, canvas.width, dataHeight);
+	ctx.fillStyle = active ? backdropColors[hid] : backdropInactiveColor;
+	ctx.fillRect(0, top, canvas.width, rowHeight);
 
 	// initialize border color
-	ctx.fillStyle = "#000";
+	ctx.fillStyle = clearColor;
 
 	// loop for each channel position
 	channelPositionsRight.forEach((left) => {
 		// draw the border
-		ctx.fillRect(left, top, 4, dataHeight);
+		ctx.fillRect(left, top, 4, rowHeight);
 	});
 
 	if(fontLoaded !== null) {
@@ -176,7 +227,7 @@ function renderRow(row:number, active:boolean) {
 		rendered[row] = true;
 
 		// render the pattern index of this row
-		ctx.fillStyle = active ? "#949494" : "#686868";
+		ctx.fillStyle = active ? rowNumColors[hid] : rowNumInactiveColor;
 		ctx.fillText(getRowNumber(row), channelPositionsLeft[0] + 3, top + textVerticalOffset);
 
 		// loop for every channel
@@ -198,16 +249,71 @@ function renderRow(row:number, active:boolean) {
 					}
 
 					// render the element with text
-					ctx.fillStyle = active ? channelElementColors[i] : "#686868";
+					ctx.fillStyle = active ? channelElementColors[i][hid] : channelInactiveElementColors[i];
 					ctx.fillText(text, left + channelElementOffsets[i], top + textVerticalOffset);
 
 				} else {
 					// render the element with blanks
-					ctx.fillStyle = active ? "#616161" : "#404040";
+					ctx.fillStyle = active ? unsetColors[i][hid] : unsetInactiveColors[i];
 					ctx.fillText(i === 0 ? "---" : "--", left + channelElementOffsets[i], top + textVerticalOffset);
 				}
 			}
 		}
 	}
 }
+
+/**
+ * The color that is displayed on a cleared pattern
+ */
+let clearColor:string;
+
+/**
+ * The list of backdrop colors depending on which highlight is active (or none at all)
+ */
+let backdropColors:string[] = [];
+
+/**
+ * The inactive backdrop color
+ */
+let backdropInactiveColor:string;
+
+/**
+ * The list of row number colors depending on which highlight is active (or none at all)
+ */
+let rowNumColors:string[] = [];
+
+/**
+ * The inactive row number color
+ */
+let rowNumInactiveColor:string;
+
+/**
+ * The list of unset dash colors for each element in the channel row depending on which highlight is active (or none at all)
+ */
+let unsetColors:string[][] = [];
+
+/**
+ * The list of unset dash colors for each inactive element in the channel row
+ */
+let unsetInactiveColors:string[] = [];
+
+/**
+ * The horizontal offsets for each element in the channel row
+ */
+let channelElementOffsets:number[] = [];
+
+/**
+ * The colors for each element in the channel row depending on which highlight is active (or none at all)
+ */
+let channelElementColors:string[][] = [];
+
+/**
+ * The colors for each inactive element in the channel row
+ */
+let channelInactiveElementColors:string[] = [];
+
+/**
+ * This is the vertical offset of text. This is needed somehow
+ */
+let textVerticalOffset = 0;
 

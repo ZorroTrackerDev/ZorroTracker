@@ -1,0 +1,63 @@
+{
+	pattern: {
+		worker: {
+			params: {
+				rowHeight: 19,
+			},
+			font: {
+				source: "url(https://fonts.gstatic.com/s/robotomono/v13/L0xuDF4xlVMF-BfR8bXMIhJHg45mwgGEFl0_3vq_ROW4.woff2)",
+				name: "Roboto Mono",
+				size: "10pt",
+				top: 14,
+			},
+			fallback: {
+				backdrop: "#000000",
+				text: "#FF00FF",
+				clear: "#000000",
+			},
+			rowbg: {
+				inactive: "#1E1E1E",
+				active: [ "#262627", "#2e2e38", "#35362a", ],
+			},
+			rownum: {
+				inactive: "#686868",
+				active: [ "#8a8a8a", "#8b8ba3", "#9c9b80", ],
+			},
+			note: {
+				left: 3,
+				inactive: "#686868",
+				inactiveblank: "#404040",
+				active: [ "#b7b7b7", "#a2a5ba", "#c6c99f", ],
+				activeblank: [ "#616161", "#63636e", "#706f60", ],
+			},
+			instrument: {
+				left: 31,
+				inactive: "#686868",
+				inactiveblank: "#404040",
+				active: [ "#7e81a5", "#8590cc", "#a18abf", ],
+				activeblank: [ "#616161", "#63636e", "#706f60", ],
+			},
+			volume: {
+				left: 50,
+				inactive: "#686868",
+				inactiveblank: "#404040",
+				active: [ "#62ab4a", "#50ba7e", "#98bf4b", ],
+				activeblank: [ "#616161", "#63636e", "#706f60", ],
+			},
+			effect: {
+				left: [ 70, ],
+				inactive: "#686868",
+				inactiveblank: "#404040",
+				active: [ "#b16f6f", "#b18c6f", "#bf8f6d", ],
+				activeblank: [ "#616161", "#63636e", "#706f60", ],
+			},
+			value: {
+				left: [ 87, ],
+				inactive: "#686868",
+				inactiveblank: "#404040",
+				active: [ "#bba6a1", "#b8bba1", "#ccbaa7", ],
+				activeblank: [ "#616161", "#63636e", "#706f60", ],
+			},
+		}
+	}
+}

@@ -57,11 +57,12 @@ ipcMain.on(ipcEnum.CookieGet, (event, name:string) => {
 /**
  * Various handlers for dealing with scripts.
  */
-type ScriptFolders = "chips"|"drivers";
+type ScriptFolders = "chips"|"drivers"|"themes";
 
 // find all different kind of scripts.
 ipcMain.on(ipcEnum.ChipFindAll, (event) => _findall("chips", ipcEnum.ChipFindAll, event));
 ipcMain.on(ipcEnum.DriverFindAll, (event) => _findall("drivers", ipcEnum.DriverFindAll, event));
+ipcMain.on(ipcEnum.ThemeFindAll, (event) => _findall("themes", ipcEnum.ThemeFindAll, event));
 
 /**
  * Find all scripts and return their configurations.

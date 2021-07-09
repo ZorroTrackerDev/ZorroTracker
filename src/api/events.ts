@@ -131,6 +131,8 @@ export enum ZorroEventEnum {
 	ClipboardSet,					// event that is ran when the clipboard is set to a custom value (for example, does not apply to text boxes)
 	ClipboardGet,					// event that is ran when the clipboard is being fetched for custom value (again, does not apply to text boxes)
 
+	LoadTheme,						// event that is ran when a new theme is loaded
+
 	ProjectOpen,					// event that is ran when a project is opened or created
 	SelectModule,					// event that is ran when a module is selected (as the active module)
 	ModuleUpdate,					// event that is ran when a module information is updated (such as its name)
@@ -184,6 +186,8 @@ export interface ZorroListenerTypes {
 	[ZorroEventEnum.ClipboardGet]: (event:ZorroEventObject, type:ClipboardType) => Promise<string|undefined|void>,
 	[ZorroEventEnum.ClipboardSet]: (event:ZorroEventObject, type:ClipboardType, data:string) => Promise<string|undefined|void>,
 
+	[ZorroEventEnum.LoadTheme]: (event:ZorroEventObject) => Promise<undefined|void>,
+
 	[ZorroEventEnum.ProjectOpen]: (event:ZorroEventObject, project:Project|undefined) => Promise<undefined|void>,
 	[ZorroEventEnum.SelectModule]: (event:ZorroEventObject, project:Project, module:Module|undefined, data:ModuleData|undefined) => Promise<undefined|void>,
 	[ZorroEventEnum.ModuleUpdate]: (event:ZorroEventObject, project:Project, module:Module, data:ModuleData|null) => Promise<undefined|void>,
@@ -203,30 +207,34 @@ export interface ZorroListenerTypes {
 	[ZorroEventEnum.MidiNoteOff]: (event:ZorroEventObject, channel:number, note:number, velocity:number) => Promise<undefined|void>,
 }
 
+type ZorroSenderReturn<T> = Promise<{ event: ZorroEventObject, value: T|undefined }>
+
 /**
  * Different sender function types. Each emitter expects to use the following functions
  */
 export interface ZorroSenderTypes {
-	[ZorroEventEnum.Exit]: () => Promise<{ event: ZorroEventObject, value: undefined }>,
-	[ZorroEventEnum.ClipboardGet]: (type:ClipboardType) => Promise<{ event: ZorroEventObject, value: string|undefined }>,
-	[ZorroEventEnum.ClipboardSet]: (type:ClipboardType, data:string) => Promise<{ event: ZorroEventObject, value: string|undefined }>,
+	[ZorroEventEnum.Exit]: () => ZorroSenderReturn<undefined>,
+	[ZorroEventEnum.ClipboardGet]: (type:ClipboardType) => ZorroSenderReturn<string>,
+	[ZorroEventEnum.ClipboardSet]: (type:ClipboardType, data:string) => ZorroSenderReturn<string>,
 
-	[ZorroEventEnum.ProjectOpen]: (project:Project|undefined) => Promise<{ event: ZorroEventObject, value: undefined }>,
-	[ZorroEventEnum.SelectModule]: (project:Project, module:Module|undefined, data:ModuleData|undefined) => Promise<{ event: ZorroEventObject, value: undefined }>,
-	[ZorroEventEnum.ModuleUpdate]: (project:Project, module:Module, data:ModuleData|null) => Promise<{ event: ZorroEventObject, value: undefined }>,
-	[ZorroEventEnum.ModuleCreate]: (project:Project, module:Module, data:ModuleData) => Promise<{ event: ZorroEventObject, value: undefined }>,
-	[ZorroEventEnum.ModuleDelete]: (project:Project, module:Module, data:ModuleData) => Promise<{ event: ZorroEventObject, value: undefined }>,
+	[ZorroEventEnum.LoadTheme]: () => ZorroSenderReturn<undefined>,
 
-	[ZorroEventEnum.MatrixSet]: (index:PatternIndex, channel:number, row:number, value:number) => Promise<{ event: ZorroEventObject, value: number|undefined }>,
-	[ZorroEventEnum.MatrixGet]: (index:PatternIndex, channel:number, row:number, value:number) => Promise<{ event: ZorroEventObject, value: number|undefined }>,
-	[ZorroEventEnum.MatrixResize]: (index:PatternIndex, height:number, width:number) => Promise<{ event: ZorroEventObject, value: undefined }>,
-	[ZorroEventEnum.MatrixInsert]: (index:PatternIndex, row:number, data:Uint8Array) => Promise<{ event: ZorroEventObject, value: undefined }>,
-	[ZorroEventEnum.MatrixRemove]: (index:PatternIndex, row:number) => Promise<{ event: ZorroEventObject, value: undefined }>,
+	[ZorroEventEnum.ProjectOpen]: (project:Project|undefined) => ZorroSenderReturn<undefined>,
+	[ZorroEventEnum.SelectModule]: (project:Project, module:Module|undefined, data:ModuleData|undefined) => ZorroSenderReturn<undefined>,
+	[ZorroEventEnum.ModuleUpdate]: (project:Project, module:Module, data:ModuleData|null) => ZorroSenderReturn<undefined>,
+	[ZorroEventEnum.ModuleCreate]: (project:Project, module:Module, data:ModuleData) => ZorroSenderReturn<undefined>,
+	[ZorroEventEnum.ModuleDelete]: (project:Project, module:Module, data:ModuleData) => ZorroSenderReturn<undefined>,
 
-	[ZorroEventEnum.PatternTrim]: (index:PatternIndex, channel:number, position:number) => Promise<{ event: ZorroEventObject, value: undefined }>,
-	[ZorroEventEnum.PatternMake]: (index:PatternIndex, channel:number, position:number) => Promise<{ event: ZorroEventObject, value: undefined }>,
+	[ZorroEventEnum.MatrixSet]: (index:PatternIndex, channel:number, row:number, value:number) => ZorroSenderReturn<number>,
+	[ZorroEventEnum.MatrixGet]: (index:PatternIndex, channel:number, row:number, value:number) => ZorroSenderReturn<number>,
+	[ZorroEventEnum.MatrixResize]: (index:PatternIndex, height:number, width:number) => ZorroSenderReturn<undefined>,
+	[ZorroEventEnum.MatrixInsert]: (index:PatternIndex, row:number, data:Uint8Array) => ZorroSenderReturn<undefined>,
+	[ZorroEventEnum.MatrixRemove]: (index:PatternIndex, row:number) => ZorroSenderReturn<undefined>,
 
-	[ZorroEventEnum.MidiNoteOn]: (channel:number, note:number, velocity:number) => Promise<{ event: ZorroEventObject, value: undefined }>,
-	[ZorroEventEnum.MidiNoteOff]: (channel:number, note:number, velocity:number) => Promise<{ event: ZorroEventObject, value: undefined }>,
+	[ZorroEventEnum.PatternTrim]: (index:PatternIndex, channel:number, position:number) => ZorroSenderReturn<undefined>,
+	[ZorroEventEnum.PatternMake]: (index:PatternIndex, channel:number, position:number) => ZorroSenderReturn<undefined>,
+
+	[ZorroEventEnum.MidiNoteOn]: (channel:number, note:number, velocity:number) => ZorroSenderReturn<undefined>,
+	[ZorroEventEnum.MidiNoteOff]: (channel:number, note:number, velocity:number) => ZorroSenderReturn<undefined>,
 }
 /* eslint-enable max-len*/

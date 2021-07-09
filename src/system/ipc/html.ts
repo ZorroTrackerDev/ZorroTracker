@@ -65,6 +65,9 @@ window.ipc = {
 		set: (name:string, value:string) => ipcRenderer.send(ipcEnum.CookieSet, name, value),
 		get: (name:string) => _async(ipcEnum.CookieGet, name) as Promise<string | null>,
 	},
+	theme: {
+		findAll: () => _async(ipcEnum.ThemeFindAll) as Promise<{ [key:string]: ChipConfig }>,
+	},
 	chip: {
 		findAll: () => _async(ipcEnum.ChipFindAll) as Promise<{ [key:string]: ChipConfig }>,
 	},

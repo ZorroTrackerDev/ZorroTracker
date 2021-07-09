@@ -9,6 +9,11 @@ declare global {
 		exports: unknown,
 
 		/**
+		 * Helper function to forcefully reload the theme
+		 */
+		reloadTheme:() => void,
+
+		/**
 		 * The current window type. This can define how components act.
 		 */
 		type: WindowType,
@@ -235,6 +240,14 @@ declare global {
 				 */
 				close: () => void,
 			},
+			theme: {
+				/**
+				 * Find all themes and return their configurations
+				 *
+				 * @returns A promise which resolves to the list of chip configurations.
+				 */
+				findAll: () => Promise<{ [key:string]: ThemeConfig }>,
+			},
 			chip: {
 				/**
 				 * Find all chip scripts and return their configurations.
@@ -242,7 +255,7 @@ declare global {
 				 * @returns A promise which resolves to the list of chip configurations.
 				 */
 				findAll: () => Promise<{ [key:string]: ChipConfig }>,
-			}
+			},
 			driver: {
 				/**
 				 * Find all driver scripts and return their configurations.

@@ -1,6 +1,8 @@
+import { ZorroEvent, ZorroEventEnum } from "../../../api/events";
 import { loadFlag } from "../../../api/files";
 import { PatternIndex } from "../../../api/matrix";
 import { UIElement } from "../../../api/ui";
+import { theme } from "../../misc/theme";
 
 export class PatternEditor implements UIElement {
 	// various standard elements for the pattern editor
@@ -18,6 +20,7 @@ export class PatternEditor implements UIElement {
 	 * @param index The Matrix this PatternEditor is targeting
 	 */
 	constructor(index:PatternIndex) {
+		_edit = this;
 		this.index = index;
 		this.setLayout();
 	}
@@ -44,6 +47,12 @@ export class PatternEditor implements UIElement {
 
 		// load the row number generator function
 		this.drawPatternPreview = loadFlag<boolean>("PATTERN_PREVIEW") ?? true;
+
+		// load the row highlights
+		this.rowHighlights = [
+			loadFlag<number>("HIGHLIGHT_B_DEFAULT") ?? 16,
+			loadFlag<number>("HIGHLIGHT_A_DEFAULT") ?? 4,
+		];
 
 		requestAnimationFrame(() => {
 			// initialize the scrolling region size
@@ -158,6 +167,11 @@ export class PatternEditor implements UIElement {
 		this.scrollHeight = bounds.height - 30;
 		this.scrollWidth = bounds.width + 5;
 	}
+
+	/**
+	 * The row highlight numbers for this pattern editor
+	 */
+	public rowHighlights!:[ number, number ];
 
 	/**
 	 * Whether to draw pattern previews at all
@@ -331,7 +345,6 @@ export class PatternEditor implements UIElement {
 	private handleScrolling() {
 		// load the range of patterns that are visible currently
 		const [ rangeMin, rangeMax, ] = this.getVisibleRange();
-		console.log(rangeMin, rangeMax);
 
 		// calculate which pattern is currently active
 		const pat = Math.max(0, Math.min(this.index.matrixlen - 1, Math.floor(this.currentRow / this.index.patternlen)));
@@ -411,6 +424,16 @@ export class PatternEditor implements UIElement {
 			Math.floor((this.currentRow + this.visibleSafeHeight + scroll) / this.index.patternlen),
 		];
 	}
+
+	/**
+	 * Helper function to inform that the theme was reloaded
+	 */
+	public reloadTheme():void {
+		this.canvas.forEach((c) => c.reloadTheme());
+
+		// pretend 200ms is enough time to reload theme
+		setTimeout(() => this.handleScrolling(), 200);
+	}
 }
 
 /**
@@ -462,6 +485,12 @@ class PatternCanvas {
 		this.worker.postMessage({ command: "posi", data: {
 			right: parent.channelPositionsRight, left: parent.channelPositionsLeft,
 		}, });
+
+		// update highlight data to the worker
+		this.worker.postMessage({ command: "highlight", data: { values: parent.rowHighlights, }, });
+
+		// tell the worker the reload the theme
+		this.reloadTheme();
 
 		// set internal variables to default values
 		this.pattern = -1;
@@ -552,4 +581,21 @@ class PatternCanvas {
 		// send the command to render row
 		this.worker.postMessage({ command: "renderrange", data: { start, end, active: this.active, }, });
 	}
+
+	/**
+	 * Helper function to tell the worker to reload the theme
+	 */
+	public reloadTheme() {
+		this.worker.postMessage({ command: "theme", data: theme?.pattern?.worker ?? {}, });
+	}
 }
+
+let _edit:PatternEditor|undefined;
+
+// listen to theme reloading
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.LoadTheme, async() => {
+	if(_edit) {
+		_edit.reloadTheme();
+	}
+});

@@ -1,0 +1,17 @@
+/*
+ * This is the configuration file for prototype theme. This will allow ZorroTracker to look nice!
+ */
+{
+	uuid: "prototype",								// please generate a *unique ID* for your configuration
+	name: "prototype theme",						// the user-friendly name of this script
+	version: "b1",									// the API version identifier. ZorroTracker will support some older versions as long as the API does not have breaking changes. Do not change this by yourself!
+	entry: "./",									// this should always be "./"
+	date: "2021/9/7",								// the date the theme configuration was created
+	credits: [										// the credits of people who contributed to this audio handler
+		{ name: "AURORA☆FIELDS", url: "https://github.com/NatsumiFox", info: "Initial implementation of the theme" },
+	],
+
+	files: [										// the files that are included within this theme configuration
+		"pattern.json5",
+	]
+}

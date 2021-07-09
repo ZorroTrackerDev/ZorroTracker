@@ -10,6 +10,11 @@ window.exports = {};
 // set window type
 window.type = WindowType.Editor;
 
+// helper function to reload the current theme
+window.reloadTheme = () => {
+	reloadTheme();
+};
+
 // @ts-expect-error - the remaining functions will be defined by all.ts
 window.preload = {
 	/* open a VGM file */
@@ -59,6 +64,7 @@ import { MIDI } from "../misc/MIDI";
 
 /* ipc communication */
 import "../../system/ipc/html editor";
+import { loadTheme, reloadTheme } from "../misc/theme";
 
 async function loadMainShortcuts() {
 	// load all.ts asynchronously. This will setup our environment better than we can do here
@@ -185,6 +191,14 @@ async function loadMainShortcuts() {
 
 // request the appPath variable from main thread
 window.ipc.ui.path().then(async() => {
+	// TODO: Temporary code to initiate the system theme
+	const themes = await window.ipc.theme.findAll();
+	const tcur = themes[loadFlag<string>("THEME") ?? "prototype"];
+
+	if(tcur) {
+		loadTheme(tcur);
+	}
+
 	// TODO: Temporary code to initiate the audio system with an emulator and set volume. Bad!
 	window.ipc.audio?.setChip(loadFlag<string>("CHIP") ?? "");
 

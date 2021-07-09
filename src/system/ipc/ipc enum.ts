@@ -43,6 +43,8 @@ export enum ipcEnum {
 	ChipFindAll = "chip-findall",
 	ChipFunc = "chip-func",
 
+	ThemeFindAll = "theme-findall",
+
 	ProjectInit = "project-init",
 	ProjectSetName = "project-set-name",
 	ProjectSetDriver = "project-set-driver",

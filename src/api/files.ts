@@ -39,13 +39,34 @@ export function loadSettingsFiles(settingsType:SettingsTypes): unknown[] {
 		return [];
 	}
 
+	if(Array.isArray(_cachedFileMappings[settingsType])) {
+		// this is an array of filesnames, convert every one individually
+		console.info("files.json5 load key "+ settingsType +": [ "+ (_cachedFileMappings[settingsType] as string[]).join(", ") +" ]");
+		return loadFiles([ window.path.data, settingsDirectory, ], _cachedFileMappings[settingsType] as string[]);
+
+	} else {
+		// this is not an array, convert the single filename
+		console.info("files.json5 load key "+ settingsType +": [ "+ _cachedFileMappings[settingsType] +" ]");
+		return loadFiles([ window.path.data, settingsDirectory, ], [ _cachedFileMappings[settingsType] as string, ]);
+	}
+}
+
+/**
+ * Load array of file names as file contentes
+ *
+ * @param files The files to read and interpret
+ * @param base The base folders
+ * @returns List of the file data for the defines files. JSON files are interpreted by default. No guarantee of what you might get out. Be careful
+ * @throws anything. Invalid files will throw just about any error.
+ */
+export function loadFiles(base:string[], files:string[]): unknown[] {
 	const retFiles:unknown[] = [];
 
-	// define a helper function to convert individual files
-	const convertSingleFile = (fileName:string) => {
+	// run through every single file
+	for(const fileName of files) {
 		try {
 			// read the file based on its filename. All files must be in the "settingsDirectory".
-			const fileAddress = path.join(window.path.data, settingsDirectory, fileName);
+			const fileAddress = path.join(...base, fileName);
 			let fileData = fs.readFileSync(fileAddress, "utf-8");
 
 			if(fileAddress.endsWith(".json") || fileAddress.endsWith(".json5")) {
@@ -59,17 +80,6 @@ export function loadSettingsFiles(settingsType:SettingsTypes): unknown[] {
 		} catch(ex) {
 			/* ignore all failing files */
 		}
-	}
-
-	if(Array.isArray(_cachedFileMappings[settingsType])) {
-		// this is an array of filesnames, convert every one individually
-		(_cachedFileMappings[settingsType] as string[]).forEach(convertSingleFile);
-		console.info("files.json5 load key "+ settingsType +": [ "+ (_cachedFileMappings[settingsType] as string[]).join(", ") +" ]");
-
-	} else {
-		// this is not an array, convert the single filename
-		convertSingleFile(_cachedFileMappings[settingsType] as string);
-		console.info("files.json5 load key "+ settingsType +": [ "+ _cachedFileMappings[settingsType] +" ]");
 	}
 
 	// return all the files

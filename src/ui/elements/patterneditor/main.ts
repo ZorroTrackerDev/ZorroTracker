@@ -22,13 +22,13 @@ export class PatternEditor implements UIElement {
 	constructor(index:PatternIndex) {
 		_edit = this;
 		this.index = index;
-		this.setLayout();
+		this.setLayout().catch(console.error);
 	}
 
 	/**
 	 * Helper function to initialize the layout for the pattern editor
 	 */
-	private setLayout() {
+	private async setLayout() {
 		// generate the main element for this editor
 		this.element = document.createElement("div");
 		this.element.classList.add("patterneditor");
@@ -38,6 +38,10 @@ export class PatternEditor implements UIElement {
 		this.scrollwrapper = document.createElement("div");
 		this.scrollwrapper.classList.add("patterneditorwrap");
 		this.element.appendChild(this.scrollwrapper);
+
+		// load the theme before doing anything else
+		this.canvas = [];
+		await this.reloadTheme(true);
 
 		// initialize the channel layout for this editor
 		this.initChannels();
@@ -54,12 +58,15 @@ export class PatternEditor implements UIElement {
 			loadFlag<number>("HIGHLIGHT_A_DEFAULT") ?? 4,
 		];
 
-		requestAnimationFrame(() => {
+		requestAnimationFrame(async() => {
 			// initialize the scrolling region size
 			this.updateScrollerSize();
 
 			// reload the number of patterns that need to be visible
 			this.refreshPatternAmount();
+
+			// load the theme before doing anything else
+			await this.reloadTheme(false);
 
 			// initialize the misc wrapper element
 			const wrap = document.createElement("div");
@@ -147,14 +154,8 @@ export class PatternEditor implements UIElement {
 				}, 50);
 			});
 
-			// temporary hack: This forces the font to load and draw correctly
-			this.handleScrolling();
-			this.canvas.forEach((c) => c.clear());
-
 			// initially handle scrolling, reloading, drawing, etc
-			setTimeout(() => {
-				this.handleScrolling();
-			}, 100);
+			this.handleScrolling();
 		});
 	}
 
@@ -254,6 +255,7 @@ export class PatternEditor implements UIElement {
 				<div class="channelwrapper">
 					<div class="channelnamewrapper">
 						<label>${ name }</label>
+						<div class="channeldragarea"></div>
 					</div>
 				</div>
 			`.replace(/[\t|\r|\n]+/g, "");
@@ -428,11 +430,17 @@ export class PatternEditor implements UIElement {
 	/**
 	 * Helper function to inform that the theme was reloaded
 	 */
-	public reloadTheme():void {
-		this.canvas.forEach((c) => c.reloadTheme());
+	public async reloadTheme(preload:boolean):Promise<void> {
+		// request every canvas to reload theme
+		const promises = this.canvas.map((c) => c.reloadTheme());
 
-		// pretend 200ms is enough time to reload theme
-		setTimeout(() => this.handleScrolling(), 200);
+		if(!preload) {
+			// wait for them to finish
+			await Promise.all(promises);
+
+			// handle scrolling
+			this.handleScrolling();
+		}
 	}
 }
 
@@ -488,9 +496,6 @@ class PatternCanvas {
 
 		// update highlight data to the worker
 		this.worker.postMessage({ command: "highlight", data: { values: parent.rowHighlights, }, });
-
-		// tell the worker the reload the theme
-		this.reloadTheme();
 
 		// set internal variables to default values
 		this.pattern = -1;
@@ -585,17 +590,37 @@ class PatternCanvas {
 	/**
 	 * Helper function to tell the worker to reload the theme
 	 */
-	public reloadTheme() {
+	public reloadTheme(): Promise<void> {
+		// tell the worker tro reload the theme
 		this.worker.postMessage({ command: "theme", data: theme?.pattern?.worker ?? {}, });
+
+		return new Promise((res, rej) => {
+			// handle incoming messages
+			const msg = (e:MessageEvent) => {
+				if(e.data === "theme") {
+					// right message, resolve
+					res();
+					this.worker.removeEventListener("message", msg);
+				}
+			};
+
+			// listen to messages
+			this.worker.addEventListener("message", msg);
+
+			// if worker does not respond in 1 second, bail
+			setTimeout(() => {
+				this.worker.removeEventListener("message", msg);
+				rej("Did not get a response from worker");
+			}, 1000);
+		});
 	}
 }
 
 let _edit:PatternEditor|undefined;
 
 // listen to theme reloading
-// eslint-disable-next-line require-await
 ZorroEvent.addListener(ZorroEventEnum.LoadTheme, async() => {
 	if(_edit) {
-		_edit.reloadTheme();
+		await _edit.reloadTheme(false);
 	}
 });

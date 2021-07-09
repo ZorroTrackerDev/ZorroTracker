@@ -115,51 +115,44 @@
 				activeblank: [ "#616161", "#63636e", "#706f60", ],
 			},
 			// effect element settings
-			effect: [
-				{
-					// the offset from the left side of the channel row to render this at
-					left: 70,
+			effect:	{
+				// when the pattern is inactive but not blank, these colors will be shown
+				// format: normal, highlight a, highlight b
+				inactive: [ "#686868", "#686868", "#686868", ],
 
-					// when the pattern is inactive but not blank, these colors will be shown
-					// format: normal, highlight a, highlight b
-					inactive: [ "#686868", "#686868", "#686868", ],
+				// when the pattern is inactive and blank, these colors will be shown
+				// format: normal, highlight a, highlight b
+				inactiveblank: [ "#404040", "#404040", "#404040", ],
 
-					// when the pattern is inactive and blank, these colors will be shown
-					// format: normal, highlight a, highlight b
-					inactiveblank: [ "#404040", "#404040", "#404040", ],
+				// when the pattern is active but not blank, these colors will be shown
+				// format: normal, highlight a, highlight b
+				active: [ "#b16f6f", "#b18c6f", "#bf8f6d", ],
 
-					// when the pattern is active but not blank, these colors will be shown
-					// format: normal, highlight a, highlight b
-					active: [ "#b16f6f", "#b18c6f", "#bf8f6d", ],
-
-					// when the pattern is active and blank, these colors will be shown
-					// format: normal, highlight a, highlight b
-					activeblank: [ "#616161", "#63636e", "#706f60", ],
-				},
-			],
+				// when the pattern is active and blank, these colors will be shown
+				// format: normal, highlight a, highlight b
+				activeblank: [ "#616161", "#63636e", "#706f60", ],
+			},
 			// effect value element settings
-			value: [
-				{
-					// the offset from the left side of the channel row to render this at
-					left: 87,
+			value: {
+				// when the pattern is inactive but not blank, these colors will be shown
+				// format: normal, highlight a, highlight b
+				inactive: [ "#686868", "#686868", "#686868", ],
 
-					// when the pattern is inactive but not blank, these colors will be shown
-					// format: normal, highlight a, highlight b
-					inactive: [ "#686868", "#686868", "#686868", ],
+				// when the pattern is inactive and blank, these colors will be shown
+				// format: normal, highlight a, highlight b
+				inactiveblank: [ "#404040", "#404040", "#404040", ],
 
-					// when the pattern is inactive and blank, these colors will be shown
-					// format: normal, highlight a, highlight b
-					inactiveblank: [ "#404040", "#404040", "#404040", ],
+				// when the pattern is active but not blank, these colors will be shown
+				// format: normal, highlight a, highlight b
+				active: [ "#bba6a1", "#b8bba1", "#ccbaa7", ],
 
-					// when the pattern is active but not blank, these colors will be shown
-					// format: normal, highlight a, highlight b
-					active: [ "#bba6a1", "#b8bba1", "#ccbaa7", ],
+				// when the pattern is active and blank, these colors will be shown
+				// format: normal, highlight a, highlight b
+				activeblank: [ "#616161", "#63636e", "#706f60", ],
+			},
 
-					// when the pattern is active and blank, these colors will be shown
-					// format: normal, highlight a, highlight b
-					activeblank: [ "#616161", "#63636e", "#706f60", ],
-				},
-			],
+			// the offset from the left side of the channel row to render each effect and effect value pairs at
+			effectleft: [ 70, 87, 127, 163, ],
 		}
 	}
 }

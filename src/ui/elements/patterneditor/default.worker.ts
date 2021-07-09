@@ -103,14 +103,17 @@ function setTheme(theme:WorkerThemeSettings|undefined){
 		channelElementColors.push([ ...(data?.active ?? fallback3Text), ...(data?.inactive ?? fallback3Text), ]);
 	}
 
-	// load element data
-	for(const array of [ theme?.effect, theme?.value, ]) {
-		for(const data of array ?? []) {
-			// load each array with values
-			channelElementOffsets.push(data?.left ?? 0);
-			unsetColors.push([ ...(data?.activeblank ?? fallback3Text), ...(data?.inactiveblank ?? fallback3Text), ]);
-			channelElementColors.push([ ...(data?.active ?? fallback3Text), ...(data?.inactive ?? fallback3Text), ]);
-		}
+	// load effect elements data
+	let p = 0;
+
+	for(const position of theme?.effectleft ?? []) {
+		// load each array with values
+		const data = theme ? theme[p & 1 ? "value" : "effect"] : undefined;
+		unsetColors.push([ ...(data?.activeblank ?? fallback3Text), ...(data?.inactiveblank ?? fallback3Text), ]);
+		channelElementColors.push([ ...(data?.active ?? fallback3Text), ...(data?.inactive ?? fallback3Text), ]);
+
+		channelElementOffsets.push(position);
+		p++;
 	}
 
 	// request the font to be loaded
@@ -130,6 +133,9 @@ function setTheme(theme:WorkerThemeSettings|undefined){
 		for(let i = 0;i < rendered.length;i ++){
 			rendered[i] = false;
 		}
+
+		// tell we are done loading the theme
+		postMessage("theme");
 
 		// reload all rows that were requested
 		const _f = fontLoaded;

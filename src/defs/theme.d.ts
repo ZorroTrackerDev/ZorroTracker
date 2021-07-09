@@ -99,11 +99,15 @@ declare interface WorkerThemeSettings {
 	/**
 	 * Settings for the effect elements for each row
 	 */
-	effect?: ElementSettings[],
+	effect?: ElementSettings,
 	/**
 	 * Settings for the effect value elements for each row
 	 */
-	value?: ElementSettings[],
+	value?: ElementSettings,
+	/**
+	 * The left position(s) for drawing every effect and value
+	 */
+	effectleft?: number[],
 }
 
 /**

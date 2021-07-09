@@ -1033,9 +1033,11 @@ export class MatrixEditor implements UIElement {
 	 */
 	private clearSelect() {
 		// remove class from all rows
-		for(const row of this.elrows.children){
+		for(let i = 0;i < this.elrows.children.length;i ++){
 			// remove class from all elements
-			for(const e of row.children){
+			for(let x = this.elrows.children[i].children.length - 1;x >= 0; --x){
+				const e = this.elrows.children[i].children[x];
+
 				e.classList.remove(MatrixEditor.SELECT_CLASS);
 				e.classList.remove(MatrixEditor.EDIT_CLASS);
 				e.classList.remove(MatrixEditor.PASTE_CLASS);

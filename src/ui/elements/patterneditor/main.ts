@@ -476,7 +476,7 @@ class PatternCanvas {
 		this.element.classList.add("patterncanvas");
 
 		// initialize the offscreen canvas worker
-		this.worker = new Worker("../elements/patterneditor/defaultworker.js");
+		this.worker = new Worker("../elements/patterneditor/default.worker.js");
 		const offscreen = this.element.transferControlToOffscreen();
 		this.worker.postMessage({ command: "init", data: { width, height, canvas: offscreen, }, }, [ offscreen, ]);
 

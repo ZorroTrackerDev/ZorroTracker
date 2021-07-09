@@ -33,6 +33,7 @@ export class PatternEditor implements UIElement {
 
 		// add the scrolling wrapper to the list
 		this.scrollwrapper = document.createElement("div");
+		this.scrollwrapper.classList.add("patterneditorwrap");
 		this.element.appendChild(this.scrollwrapper);
 
 		// initialize the channel layout for this editor
@@ -50,6 +51,17 @@ export class PatternEditor implements UIElement {
 
 			// reload the number of patterns that need to be visible
 			this.refreshPatternAmount();
+
+			// initialize the misc wrapper element
+			const wrap = document.createElement("div");
+			wrap.classList.add("patternextras");
+			this.element.appendChild(wrap);
+
+			// initialize the highlight element
+			const h = document.createElement("div");
+			h.classList.add("highlight");
+			wrap.appendChild(h);
+			wrap.style.width = this.renderAreaWidth +"px";
 
 			// helper function for updating scrolling position and capping it
 			const scroll = (delta:number) => {
@@ -341,9 +353,6 @@ export class PatternEditor implements UIElement {
 			const offsetTop = ((pat * this.index.patternlen) - this.currentRow);
 			this.canvas[0].element.style.top = ((offsetTop * this.dataHeight) + (this.scrollHeight / 2) + 15) +"px";
 
-			// set the active row
-			this.canvas[0].activeRow(this.currentRow % this.index.patternlen);
-
 			// request to render every visible row in this pattern
 			this.canvas[0].renderPattern(Math.max(0, -rowsPerHalf - this.visibleSafeHeight - offsetTop),
 				Math.min(this.index.patternlen, rowsPerHalf + this.visibleSafeHeight - offsetTop));
@@ -364,7 +373,6 @@ export class PatternEditor implements UIElement {
 				// update pattern status
 				cv.active = r === pat;
 				cv.pattern = r;
-				cv.activeRow(-1);
 
 				// invalidate every row in pattern
 				cv.invalidateAll();
@@ -372,11 +380,6 @@ export class PatternEditor implements UIElement {
 
 			// check if this pattern is visible
 			if(r >= 0 && r < this.index.matrixlen) {
-				// set the active row
-				if(r === pat) {
-					cv.activeRow(this.currentRow % this.index.patternlen);
-				}
-
 				// if yes, request to render every visible row in this pattern
 				cv.renderPattern(Math.max(0, -rowsPerHalf - this.visibleSafeHeight - offsetTop),
 					Math.min(this.index.patternlen, rowsPerHalf + this.visibleSafeHeight - offsetTop));
@@ -534,15 +537,6 @@ class PatternCanvas {
 	public invalidateRange(start:number, end:number) {
 		// send the invalidate command
 		this.worker.postMessage({ command: "invalidate", data: { start, end, }, });
-	}
-
-	/**
-	 * Function to update the currently active row. This will tell the worker to re-render correctly
-	 *
-	 * @param row The row number to set as active
-	 */
-	public activeRow(row:number) {
-		this.worker.postMessage({ command: "setactive", data: { row, active: this.active, }, });
 	}
 
 	/**

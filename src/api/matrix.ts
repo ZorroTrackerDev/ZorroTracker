@@ -140,7 +140,7 @@ export class PatternData {
 	 */
 	public save(): number[] {
 		// save the command width of this pattern
-		const ret = [ this.cells.length, this.width, ];
+		const ret = [ this.cells.length - 1, this.width, ];
 
 		// push each cell data to ret
 		for(const c of this.cells) {
@@ -166,7 +166,7 @@ export class PatternData {
 		this.width = data[index++];
 
 		// process every cells one at a time
-		for(let i = cells;i > 0; --i) {
+		for(let i = cells;i >= 0; --i) {
 			// generate a new cell
 			const cd = new PatternCell();
 			this.cells.push(cd);

@@ -75,42 +75,42 @@ const handleMessage = (command:string, data:{ [key:string]: unknown }) => {
 function setTheme(theme:WorkerThemeSettings|undefined){
 	// prepare some values
 	const fallbackRow = theme?.fallback?.backdrop ?? "#000000";
+	const fallback3Row = [ fallbackRow, fallbackRow, fallbackRow, ];
 	const fallbackText = theme?.fallback?.text ?? "#FF00FF";
+	const fallback3Text = [ fallbackText, fallbackText, fallbackText, ];
 
 	// load some default values
 	textVerticalOffset = theme?.font?.top ?? 0;
 	rowHeight = theme?.params?.rowHeight ?? 0;
 	clearColor = theme?.fallback?.clear ?? fallbackRow;
-	rowNumInactiveColor = theme?.rownum?.inactive ?? fallbackText;
-	backdropInactiveColor = theme?.rowbg?.inactive ?? fallbackRow;
-	backdropColors = theme?.rowbg?.active ?? [ fallbackRow, fallbackRow, fallbackRow, ];
-	rowNumColors = theme?.rownum?.active ?? [ fallbackText, fallbackText, fallbackText, ];
+
+	backdropColors = [];
+	backdropColors.push(...(theme?.rowbg?.active ?? fallback3Row), ...(theme?.rowbg?.inactive ?? fallback3Row));
+
+	rowNumColors = [];
+	rowNumColors.push(...(theme?.rownum?.active ?? fallback3Text), ...(theme?.rownum?.inactive ?? fallback3Text));
 
 	// reset element arrays
 	unsetColors = [];
 	channelElementColors = [];
 	channelElementOffsets = [];
-	unsetInactiveColors = [];
-	channelInactiveElementColors = [];
 
 	// load element data
 	for(const data of [ theme?.note, theme?.instrument, theme?.volume, ]) {
 		// load each array with values
 		channelElementOffsets.push(data?.left ?? 0);
-		unsetInactiveColors.push(data?.inactiveblank ?? fallbackText);
-		channelInactiveElementColors.push(data?.inactive ?? fallbackText);
-		unsetColors.push(data?.activeblank ?? [ fallbackText, fallbackText, fallbackText, ]);
-		channelElementColors.push(data?.active ?? [ fallbackText, fallbackText, fallbackText, ]);
+		unsetColors.push([ ...(data?.activeblank ?? fallback3Text), ...(data?.inactiveblank ?? fallback3Text), ]);
+		channelElementColors.push([ ...(data?.active ?? fallback3Text), ...(data?.inactive ?? fallback3Text), ]);
 	}
 
 	// load element data
-	for(const data of [ theme?.effect, theme?.value, ]) {
-		// load each array with values
-		channelElementOffsets.push((data?.left ?? [ 0, ])[0]);
-		unsetInactiveColors.push(data?.inactiveblank ?? fallbackText);
-		channelInactiveElementColors.push(data?.inactive ?? fallbackText);
-		unsetColors.push(data?.activeblank ?? [ fallbackText, fallbackText, fallbackText, ]);
-		channelElementColors.push(data?.active ?? [ fallbackText, fallbackText, fallbackText, ]);
+	for(const array of [ theme?.effect, theme?.value, ]) {
+		for(const data of array ?? []) {
+			// load each array with values
+			channelElementOffsets.push(data?.left ?? 0);
+			unsetColors.push([ ...(data?.activeblank ?? fallback3Text), ...(data?.inactiveblank ?? fallback3Text), ]);
+			channelElementColors.push([ ...(data?.active ?? fallback3Text), ...(data?.inactive ?? fallback3Text), ]);
+		}
 	}
 
 	// request the font to be loaded
@@ -201,10 +201,10 @@ function renderRow(row:number, active:boolean) {
 	const top = row * rowHeight;
 
 	// get the highlight ID
-	const hid = (row % highlights[0]) === 0 ? 2 : (row % highlights[1]) === 0 ? 1 : 0;
+	const hid = (active ? 0 : 3) + ((row % highlights[0]) === 0 ? 2 : (row % highlights[1]) === 0 ? 1 : 0);
 
 	// draw the background fill color
-	ctx.fillStyle = active ? backdropColors[hid] : backdropInactiveColor;
+	ctx.fillStyle = backdropColors[hid];
 	ctx.fillRect(0, top, canvas.width, rowHeight);
 
 	// initialize border color
@@ -227,7 +227,7 @@ function renderRow(row:number, active:boolean) {
 		rendered[row] = true;
 
 		// render the pattern index of this row
-		ctx.fillStyle = active ? rowNumColors[hid] : rowNumInactiveColor;
+		ctx.fillStyle = rowNumColors[hid];
 		ctx.fillText(getRowNumber(row), channelPositionsLeft[0] + 3, top + textVerticalOffset);
 
 		// loop for every channel
@@ -249,12 +249,12 @@ function renderRow(row:number, active:boolean) {
 					}
 
 					// render the element with text
-					ctx.fillStyle = active ? channelElementColors[i][hid] : channelInactiveElementColors[i];
+					ctx.fillStyle = channelElementColors[i][hid];
 					ctx.fillText(text, left + channelElementOffsets[i], top + textVerticalOffset);
 
 				} else {
 					// render the element with blanks
-					ctx.fillStyle = active ? unsetColors[i][hid] : unsetInactiveColors[i];
+					ctx.fillStyle = unsetColors[i][hid];
 					ctx.fillText(i === 0 ? "---" : "--", left + channelElementOffsets[i], top + textVerticalOffset);
 				}
 			}
@@ -273,29 +273,14 @@ let clearColor:string;
 let backdropColors:string[] = [];
 
 /**
- * The inactive backdrop color
- */
-let backdropInactiveColor:string;
-
-/**
  * The list of row number colors depending on which highlight is active (or none at all)
  */
 let rowNumColors:string[] = [];
 
 /**
- * The inactive row number color
- */
-let rowNumInactiveColor:string;
-
-/**
  * The list of unset dash colors for each element in the channel row depending on which highlight is active (or none at all)
  */
 let unsetColors:string[][] = [];
-
-/**
- * The list of unset dash colors for each inactive element in the channel row
- */
-let unsetInactiveColors:string[] = [];
 
 /**
  * The horizontal offsets for each element in the channel row
@@ -306,11 +291,6 @@ let channelElementOffsets:number[] = [];
  * The colors for each element in the channel row depending on which highlight is active (or none at all)
  */
 let channelElementColors:string[][] = [];
-
-/**
- * The colors for each inactive element in the channel row
- */
-let channelInactiveElementColors:string[] = [];
 
 /**
  * This is the vertical offset of text. This is needed somehow

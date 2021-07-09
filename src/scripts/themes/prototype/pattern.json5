@@ -1,63 +1,165 @@
 {
 	pattern: {
 		worker: {
+			// Miscellaneous parameters that are used for pattern editor
 			params: {
+				// The height of each pattern row in pixels
 				rowHeight: 19,
 			},
+			// font settings for pattern rows
 			font: {
+				// The source of this font. This can be a web URL or a local file
 				source: "url(https://fonts.gstatic.com/s/robotomono/v13/L0xuDF4xlVMF-BfR8bXMIhJHg45mwgGEFl0_3vq_ROW4.woff2)",
+
+				// The name of the font. This can be an arbitary string
 				name: "Roboto Mono",
+
+				// CSS size of the font. This can be for example in pt, px, etc.
 				size: "10pt",
+
+				// The vertical offset from the top of the row in pixels, for text rendering
 				top: 14,
 			},
+			// some fallback values to easier debug broken themes
 			fallback: {
+				// the backdrop colors for various elements
 				backdrop: "#000000",
+
+				// text color for all elements
 				text: "#FF00FF",
+
+				// color for patterns that are not visible, and other negative space
 				clear: "#000000",
 			},
+			// row background settings
 			rowbg: {
-				inactive: "#1E1E1E",
+				// when the pattern is inactive, these colors will be shown
+				// format: normal, highlight a, highlight b
+				inactive: [ "#1E1E1E", "#1E1E1E", "#1E1E1E", ],
+
+				// when the pattern is active, these colors will be shown
+				// format: normal, highlight a, highlight b
 				active: [ "#262627", "#2e2e38", "#35362a", ],
 			},
+			// row text settings
 			rownum: {
-				inactive: "#686868",
+				// when the pattern is inactive, these colors will be shown
+				// format: normal, highlight a, highlight b
+				inactive: [ "#686868", "#686868", "#686868", ],
+
+				// when the pattern is active, these colors will be shown
+				// format: normal, highlight a, highlight b
 				active: [ "#8a8a8a", "#8b8ba3", "#9c9b80", ],
 			},
+			// note element settings
 			note: {
+				// the offset from the left side of the channel row to render this at
 				left: 3,
-				inactive: "#686868",
-				inactiveblank: "#404040",
+
+				// when the pattern is inactive but not blank, these colors will be shown
+				// format: normal, highlight a, highlight b
+				inactive: [ "#686868", "#686868", "#686868", ],
+
+				// when the pattern is inactive and blank, these colors will be shown
+				// format: normal, highlight a, highlight b
+				inactiveblank: [ "#404040", "#404040", "#404040", ],
+
+				// when the pattern is active but not blank, these colors will be shown
+				// format: normal, highlight a, highlight b
 				active: [ "#b7b7b7", "#a2a5ba", "#c6c99f", ],
+
+				// when the pattern is active and blank, these colors will be shown
+				// format: normal, highlight a, highlight b
 				activeblank: [ "#616161", "#63636e", "#706f60", ],
 			},
+			// instrument element settings
 			instrument: {
+				// the offset from the left side of the channel row to render this at
 				left: 31,
-				inactive: "#686868",
-				inactiveblank: "#404040",
+
+				// when the pattern is inactive but not blank, these colors will be shown
+				// format: normal, highlight a, highlight b
+				inactive: [ "#686868", "#686868", "#686868", ],
+
+				// when the pattern is inactive and blank, these colors will be shown
+				// format: normal, highlight a, highlight b
+				inactiveblank: [ "#404040", "#404040", "#404040", ],
+
+				// when the pattern is active but not blank, these colors will be shown
+				// format: normal, highlight a, highlight b
 				active: [ "#7e81a5", "#8590cc", "#a18abf", ],
+
+				// when the pattern is active and blank, these colors will be shown
+				// format: normal, highlight a, highlight b
 				activeblank: [ "#616161", "#63636e", "#706f60", ],
 			},
+			// volume element settings
 			volume: {
+				// the offset from the left side of the channel row to render this at
 				left: 50,
-				inactive: "#686868",
-				inactiveblank: "#404040",
+
+				// when the pattern is inactive but not blank, these colors will be shown
+				// format: normal, highlight a, highlight b
+				inactive: [ "#686868", "#686868", "#686868", ],
+
+				// when the pattern is inactive and blank, these colors will be shown
+				// format: normal, highlight a, highlight b
+				inactiveblank: [ "#404040", "#404040", "#404040", ],
+
+				// when the pattern is active but not blank, these colors will be shown
+				// format: normal, highlight a, highlight b
 				active: [ "#62ab4a", "#50ba7e", "#98bf4b", ],
+
+				// when the pattern is active and blank, these colors will be shown
+				// format: normal, highlight a, highlight b
 				activeblank: [ "#616161", "#63636e", "#706f60", ],
 			},
-			effect: {
-				left: [ 70, ],
-				inactive: "#686868",
-				inactiveblank: "#404040",
-				active: [ "#b16f6f", "#b18c6f", "#bf8f6d", ],
-				activeblank: [ "#616161", "#63636e", "#706f60", ],
-			},
-			value: {
-				left: [ 87, ],
-				inactive: "#686868",
-				inactiveblank: "#404040",
-				active: [ "#bba6a1", "#b8bba1", "#ccbaa7", ],
-				activeblank: [ "#616161", "#63636e", "#706f60", ],
-			},
+			// effect element settings
+			effect: [
+				{
+					// the offset from the left side of the channel row to render this at
+					left: 70,
+
+					// when the pattern is inactive but not blank, these colors will be shown
+					// format: normal, highlight a, highlight b
+					inactive: [ "#686868", "#686868", "#686868", ],
+
+					// when the pattern is inactive and blank, these colors will be shown
+					// format: normal, highlight a, highlight b
+					inactiveblank: [ "#404040", "#404040", "#404040", ],
+
+					// when the pattern is active but not blank, these colors will be shown
+					// format: normal, highlight a, highlight b
+					active: [ "#b16f6f", "#b18c6f", "#bf8f6d", ],
+
+					// when the pattern is active and blank, these colors will be shown
+					// format: normal, highlight a, highlight b
+					activeblank: [ "#616161", "#63636e", "#706f60", ],
+				},
+			],
+			// effect value element settings
+			value: [
+				{
+					// the offset from the left side of the channel row to render this at
+					left: 87,
+
+					// when the pattern is inactive but not blank, these colors will be shown
+					// format: normal, highlight a, highlight b
+					inactive: [ "#686868", "#686868", "#686868", ],
+
+					// when the pattern is inactive and blank, these colors will be shown
+					// format: normal, highlight a, highlight b
+					inactiveblank: [ "#404040", "#404040", "#404040", ],
+
+					// when the pattern is active but not blank, these colors will be shown
+					// format: normal, highlight a, highlight b
+					active: [ "#bba6a1", "#b8bba1", "#ccbaa7", ],
+
+					// when the pattern is active and blank, these colors will be shown
+					// format: normal, highlight a, highlight b
+					activeblank: [ "#616161", "#63636e", "#706f60", ],
+				},
+			],
 		}
 	}
 }

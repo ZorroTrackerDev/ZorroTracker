@@ -7,6 +7,8 @@ declare interface ThemeSettings {
 	},
 }
 
+type WorkerThemeHighlight = [ string, string, string ];
+
 /**
  * Helper type to handle theme settings
  */
@@ -63,11 +65,11 @@ declare interface WorkerThemeSettings {
 		/**
 		 * The background color for inactive rows
 		 */
-		inactive?: string,
+		inactive?: WorkerThemeHighlight,
 		/**
 		 * The background color for active rows in different highlights
 		 */
-		active?: [ string, string, string, ],
+		active?: WorkerThemeHighlight,
 	},
 	/**
 	 * Settings for each row background
@@ -76,56 +78,56 @@ declare interface WorkerThemeSettings {
 		/**
 		 * The background color for inactive row number
 		 */
-		inactive?: string,
+		inactive?: WorkerThemeHighlight,
 		/**
 		 * The background color for active row numbers in different highlights
 		 */
-		active?: [ string, string, string, ],
+		active?: WorkerThemeHighlight,
 	},
 	/**
 	 * Settings for the note elements for each row
 	 */
-	note?: ElementSettings<number>,
+	note?: ElementSettings,
 	/**
 	 * Settings for the instrument elements for each row
 	 */
-	instrument?: ElementSettings<number>,
+	instrument?: ElementSettings,
 	/**
 	 * Settings for the volume elements for each row
 	 */
-	volume?: ElementSettings<number>,
+	volume?: ElementSettings,
 	/**
 	 * Settings for the effect elements for each row
 	 */
-	effect?: ElementSettings<number[]>,
+	effect?: ElementSettings[],
 	/**
 	 * Settings for the effect value elements for each row
 	 */
-	value?: ElementSettings<number[]>,
+	value?: ElementSettings[],
 }
 
 /**
  * Helper type for different element settings
  */
-declare interface ElementSettings<T> {
+declare interface ElementSettings {
 	/**
 	 * The left position(s) for drawing this symbol.
 	 */
-	left?: T,
+	left?: number,
 	/**
 	 * The inactive color for text for an element that is set
 	 */
-	inactive?: string,
+	inactive?: WorkerThemeHighlight,
 	/**
 	 * The inactive color for text for an element that is not set
 	 */
-	inactiveblank?: string,
+	inactiveblank?: WorkerThemeHighlight,
 	/**
 	 * The active color for text for an element that is set for different highlights
 	 */
-	active?: [ string, string, string, ],
+	active?: WorkerThemeHighlight,
 	/**
 	 * The active color for text for an element that is not set for different highlights
 	 */
-	activeblank?: [ string, string, string, ],
+	activeblank?: WorkerThemeHighlight,
 }

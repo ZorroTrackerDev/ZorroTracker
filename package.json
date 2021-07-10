@@ -140,6 +140,7 @@
 					"drivers/*/build/**/*",
 					"audio/*/dist/**/*",
 					"audio/*/build/**/*",
+					"themes/**/*",
 					"**/*.json5"
 				],
 				"to": "./scripts"

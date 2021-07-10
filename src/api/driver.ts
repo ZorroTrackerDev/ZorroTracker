@@ -179,6 +179,11 @@ export interface Channel {
 	 * The type of the channel. This helps ZorroTracker use apprioriate elements for channel.
 	 */
 	type: ChannelType;
+
+	/**
+	 * How many commands are displayed
+	 */
+	commands: number,
 }
 
 export enum ChannelType {

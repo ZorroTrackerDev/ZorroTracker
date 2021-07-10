@@ -15,7 +15,16 @@ import { Channel } from "./driver";
 	constructor(){
 		this.note = 0;
 		this.volume = 0;
-		this.commands = [ { id: TrackerCommands.Empty, value: 0, }, ];
+		this.commands = [
+			{ id: TrackerCommands.Empty, value: 0, },
+			{ id: TrackerCommands.Empty, value: 0, },
+			{ id: TrackerCommands.Empty, value: 0, },
+			{ id: TrackerCommands.Empty, value: 0, },
+			{ id: TrackerCommands.Empty, value: 0, },
+			{ id: TrackerCommands.Empty, value: 0, },
+			{ id: TrackerCommands.Empty, value: 0, },
+			{ id: TrackerCommands.Empty, value: 0, },
+		];
 	}
 
 	/**
@@ -78,7 +87,7 @@ import { Channel } from "./driver";
 		this.volume = data[index++];
 
 		// loop for each command
-		for(let i = width;i > 0; --i) {
+		for(let i = 0;i < width; i++) {
 			// load the command ID
 			const id = data[index++] | (data[index++] << 8);
 			let value = 0;
@@ -109,7 +118,8 @@ import { Channel } from "./driver";
 			}
 
 			// finally, put dat command in
-			this.commands.push({ id: id, value: value, });
+			this.commands[i].id = id;
+			this.commands[i].value = value;
 		}
 
 		// return the new position
@@ -124,7 +134,11 @@ export class PatternData {
 	public cells: PatternCell[];
 	public owner: Channel;
 	public edited = false;
-	public width = 1;		// TODO: Get from channel itself
+
+	/**
+	 * This is the maximum number of pattern commands. This has no relation to actual number of commands in the channel.
+	 */
+	public width = 8;
 
 	constructor(owner:Channel, cells:number){
 		this.owner = owner;
@@ -242,6 +256,9 @@ export class PatternIndex {
 			this.patterns.push(new Array(256));
 			this.matrix.push(new Uint8Array(256));
 		}
+
+		// TEMP: set random commands count
+		this.channels.forEach((c) => c.commands = Math.round(Math.random() * 7) + 1);
 	}
 
 	private eventGet:ZorroSenderTypes[ZorroEventEnum.MatrixSet];

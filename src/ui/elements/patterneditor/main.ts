@@ -1,3 +1,4 @@
+import { Channel } from "../../../api/driver";
 import { ZorroEvent, ZorroEventEnum } from "../../../api/events";
 import { loadFlag } from "../../../api/files";
 import { PatternIndex } from "../../../api/matrix";
@@ -237,22 +238,32 @@ export class PatternEditor implements UIElement {
 	public renderAreaWidth!: number;
 
 	/**
+	 * This is the actual width of each canvas in pixels
+	 */
+	public canvasWidth = 4000;
+
+	/**
+	 * Array of channel width values that are accepted
+	 */
+	private channelWidths = [ 30, 107, 145, 183, 221, 259, 297, 335, 373, ];
+
+	/**
 	 * Helper function to initialize channel headers and channel positions
 	 */
 	private initChannels() {
 		// delete any previous children
 		this.clearChildren(this.scrollwrapper);
-
-		// initialize channel position arrays
-		this.channelPositionsLeft = [];
-		this.channelPositionsRight = [];
-		let pos = 0;
+		this.channelElements = [];
 
 		// generating DOM for a single channel
-		const doChannel = (name:string) => {
+		const doChannel = (name:string, channel:Channel|undefined) => {
+			if(channel){
+				this.channelElements.push([ 3, 5, 7, 9, 11, 13, 15, 17, 19, ][channel?.commands]);
+			}
+
 			// do some regex hacking to remove all tabs and newlines. HTML whyyy
 			return /*html*/`
-				<div class="channelwrapper">
+				<div class="channelwrapper${ (channel?.commands === 1 ? " dragright" : channel?.commands === 8 ? " dragleft" : "") }" style="width: ${ this.channelWidths[channel?.commands ?? 0] }px">
 					<div class="channelnamewrapper">
 						<label>${ name }</label>
 						<div class="channeldragarea"></div>
@@ -262,29 +273,45 @@ export class PatternEditor implements UIElement {
 		};
 
 		// create the row index column
-		this.scrollwrapper.innerHTML = doChannel("\u200B");
-
-		// update channel positions
-		this.channelPositionsLeft.push(pos);
-		pos += 35;
-		this.channelPositionsRight.push(pos - 4);
+		this.scrollwrapper.innerHTML = doChannel("\u200B", undefined);
 
 		// handle DOM generation for each channel and save it to scrollwrapper
 		this.scrollwrapper.innerHTML += this.index.channels.map((c) => {
 			// generate DOM for a single channel
-			const r = doChannel(c.name);
+			return doChannel(c.name, c);
+		}).join("");
 
+		// also refresh channel widths
+		this.refreshChannelWidth();
+	}
+
+	/**
+	 * The amount of elements per channel for each channel
+	 */
+	public channelElements!:number[];
+
+	/**
+	 * Helper function to update channel widths into position buffers
+	 */
+	private refreshChannelWidth() {
+		// initialize channel position arrays
+		this.channelPositionsLeft = [];
+		this.channelPositionsRight = [];
+		let pos = 0;
+
+		// update every channel header too, to change their translateX values
+		for(let i = 0;i <= this.index.channels.length;i++){
 			// update channel positions
 			this.channelPositionsLeft.push(pos);
-			pos += 111;
+			pos += (this.scrollwrapper.children[i] as HTMLDivElement).offsetWidth;
 			this.channelPositionsRight.push(pos - 4);
-
-			// return DOM data
-			return r;
-		}).join("");
+		}
 
 		// save the total width of the render area
 		this.renderAreaWidth = pos;
+
+		// inform canvases it has maybe changed
+		this.canvas.forEach((c) => c.updateChannelWidths());
 	}
 
 	/**
@@ -332,6 +359,9 @@ export class PatternEditor implements UIElement {
 				// add this canvas to the DOM
 				this.scrollwrapper.appendChild(x.element);
 				this.canvas.push(x);
+
+				// tell to update canvas widths
+				x.updateChannelWidths();
 			}
 		}
 	}
@@ -468,7 +498,7 @@ class PatternCanvas {
 	constructor(width:number, height:number, parent:PatternEditor, patternlen:number, channels:number) {
 		// create the main canvas and update its size
 		this.element = document.createElement("canvas");
-		this.element.width = width;
+		this.element.width = parent.canvasWidth;
 		this.element.height = height;
 
 		// hide the canvas for now and give its class
@@ -476,7 +506,7 @@ class PatternCanvas {
 		this.element.classList.add("patterncanvas");
 
 		// initialize the offscreen canvas worker
-		this.worker = new Worker("../elements/patterneditor/defaultworker.js");
+		this.worker = new Worker("../elements/patterneditor/default.worker.js");
 		const offscreen = this.element.transferControlToOffscreen();
 		this.worker.postMessage({ command: "init", data: { width, height, canvas: offscreen, }, }, [ offscreen, ]);
 
@@ -487,11 +517,6 @@ class PatternCanvas {
 		// update a few variables to the worker
 		this.worker.postMessage({ command: "vars", data: {
 			channels, patternlen, dataHeight: parent.dataHeight, getRowNumber: parent.getRowNumber,
-		}, });
-
-		// update positional data to the worker
-		this.worker.postMessage({ command: "posi", data: {
-			right: parent.channelPositionsRight, left: parent.channelPositionsLeft,
 		}, });
 
 		// update highlight data to the worker
@@ -514,6 +539,18 @@ class PatternCanvas {
 
 		// tell the worker to close
 		this.worker.terminate();
+	}
+
+	/**
+	 * Helper function to update channel widths for the canvas
+	 */
+	public updateChannelWidths() {
+		// update positional data to the worker
+		this.worker.postMessage({ command: "posi", data: {
+			right: this.parent.channelPositionsRight, left: this.parent.channelPositionsLeft,
+			elements: this.parent.channelElements,
+			width: this.parent.renderAreaWidth,
+		}, });
 	}
 
 	/**

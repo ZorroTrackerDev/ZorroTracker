@@ -18,6 +18,7 @@ const handleMessage = (command:string, data:{ [key:string]: unknown }) => {
 
 			// save the context
 			ctx = _ctx;
+			renderWidth = data.width as number;
 			break;
 		}
 
@@ -36,6 +37,8 @@ const handleMessage = (command:string, data:{ [key:string]: unknown }) => {
 		case "posi":
 			channelPositionsLeft = data.left as number[];
 			channelPositionsRight = data.right as number[];
+			renderWidth = data.width as number;
+			elementCount = data.elements as number[];
 			break;
 
 		case "highlight":
@@ -66,6 +69,9 @@ const handleMessage = (command:string, data:{ [key:string]: unknown }) => {
 			break;
 	}
 }
+
+// the width of the render area of this canvas
+let renderWidth = 0;
 
 /**
  * Load theme settings
@@ -197,6 +203,11 @@ let channelPositionsLeft:number[];
 let channelPositionsRight:number[];
 
 /**
+ * The number of elements per channel
+ */
+let elementCount:number[];
+
+/**
  * Function to render a single row of graphics
  *
  * @param row The row number to render
@@ -211,7 +222,7 @@ function renderRow(row:number, active:boolean) {
 
 	// draw the background fill color
 	ctx.fillStyle = backdropColors[hid];
-	ctx.fillRect(0, top, canvas.width, rowHeight);
+	ctx.fillRect(0, top, renderWidth, rowHeight);
 
 	// initialize border color
 	ctx.fillStyle = clearColor;
@@ -242,16 +253,30 @@ function renderRow(row:number, active:boolean) {
 			const left = channelPositionsLeft[c + 1];
 
 			// render each channel element
-			for(let i = 0;i < 5;i ++){
+			for(let i = 0;i < elementCount[c];i ++){
 				// some dummy code to generate text for this row
 				if(c & 1) {
 					let text = "";
 					switch(i) {
-						case 0: text = "C#6"; break;
+						case 0: text = "C#6";break;
 						case 1: text = "2F"; break;
 						case 2: text = "11"; break;
 						case 3: text = "WQ"; break;
 						case 4: text = "DD"; break;
+						case 5: text = "0Z"; break;
+						case 6: text = "00"; break;
+						case 7: text = "RR"; break;
+						case 8: text = "FF"; break;
+						case 9: text = "PE"; break;
+						case 10:text = "30"; break;
+						case 11:text = "OO"; break;
+						case 12:text = "00"; break;
+						case 13:text = "AF"; break;
+						case 14:text = "97"; break;
+						case 15:text = "WW"; break;
+						case 16:text = "66"; break;
+						case 17:text = "II"; break;
+						case 18:text = "11"; break;
 					}
 
 					// render the element with text
@@ -302,4 +327,3 @@ let channelElementColors:string[][] = [];
  * This is the vertical offset of text. This is needed somehow
  */
 let textVerticalOffset = 0;
-

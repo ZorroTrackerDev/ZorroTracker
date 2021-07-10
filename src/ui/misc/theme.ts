@@ -32,6 +32,7 @@ export function loadTheme(config:ThemeConfig):void {
 	// TODO: figure out how to merge it all
 	theme = data[0];
 
+	// file all relative paths
 	fixItems<string>(_folder, (u) => u.replace("%folder%", path.join(config.entry).replace(/\\/g, "/")));
 
 	// inform theme is loaded

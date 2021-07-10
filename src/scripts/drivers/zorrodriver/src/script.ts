@@ -127,18 +127,18 @@ export default class implements Driver {
 
 	public getChannels(): Channel[] {
 		return [
-			{ name: "FM1", id: 0, type: ChannelType.YM2612FM, },
-			{ name: "FM2", id: 1, type: ChannelType.YM2612FM, },
-			{ name: "FM3", id: 2, type: ChannelType.YM2612FM, },
-			{ name: "FM4", id: 3, type: ChannelType.YM2612FM, },
-			{ name: "FM5", id: 4, type: ChannelType.YM2612FM, },
-			{ name: "FM6", id: 5, type: ChannelType.YM2612FM, },
-			{ name: "PCM1", id:10, type: ChannelType.YM2612DAC, },
-			{ name: "PCM2", id:11, type: ChannelType.YM2612DAC, },
-			{ name: "PSG1", id: 6, type: ChannelType.YM7101PSG, },
-			{ name: "PSG2", id: 7, type: ChannelType.YM7101PSG, },
-			{ name: "PSG3", id: 8, type: ChannelType.YM7101PSG, },
-			{ name: "PSG4", id: 9, type: ChannelType.YM7101PSG, },
+			{ name: "FM1", id: 0, type: ChannelType.YM2612FM, commands: 1, },
+			{ name: "FM2", id: 1, type: ChannelType.YM2612FM, commands: 1, },
+			{ name: "FM3", id: 2, type: ChannelType.YM2612FM, commands: 1, },
+			{ name: "FM4", id: 3, type: ChannelType.YM2612FM, commands: 1, },
+			{ name: "FM5", id: 4, type: ChannelType.YM2612FM, commands: 1, },
+			{ name: "FM6", id: 5, type: ChannelType.YM2612FM, commands: 1, },
+			{ name: "PCM1", id:10, type: ChannelType.YM2612DAC, commands: 1, },
+			{ name: "PCM2", id:11, type: ChannelType.YM2612DAC, commands: 1, },
+			{ name: "PSG1", id: 6, type: ChannelType.YM7101PSG, commands: 1, },
+			{ name: "PSG2", id: 7, type: ChannelType.YM7101PSG, commands: 1, },
+			{ name: "PSG3", id: 8, type: ChannelType.YM7101PSG, commands: 1, },
+			{ name: "PSG4", id: 9, type: ChannelType.YM7101PSG, commands: 1, },
 		];
 	}
 

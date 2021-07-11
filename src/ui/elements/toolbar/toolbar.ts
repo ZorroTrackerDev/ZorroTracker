@@ -108,6 +108,11 @@ const defaultMenu:ToolbarMenu = {
 				action: "window.toolbarFunc.openDiscord()",
 				tooltip: "Open the Discord server link for this project",
 			},
+			"Donate": {
+				enabled: true,
+				action: "window.toolbarFunc.openKofi()",
+				tooltip: "Open the Ko-fi page for the lead developer",
+			},
 		},
 	},
 };
@@ -375,5 +380,12 @@ window.toolbarFunc = {
 	 */
 	openDiscord: () => {
 		window.ipc.ui.openInBrowser("https://discord.gg/VhR3kwtZ5r");
+	},
+
+	/**
+	 * Helper function to open the Ko-fi site for the main developer
+	 */
+	openKofi: () => {
+		window.ipc.ui.openInBrowser("https://ko-fi.com/aurorafields");
 	},
 };

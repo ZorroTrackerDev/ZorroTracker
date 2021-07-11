@@ -1,7 +1,9 @@
 # ZorroTracker
-Work in Progress Sega Mega Drive / Genesis Music Tracker created in Electron.
+Work in Progress Sega Mega Drive / Genesis Music Tracker created in Electron. Support for multiple Mega Drive sound drivers, and VGM export. You have the ability to control a lot of customizations, themes, custom drivers, chip emulators, and more! Forever free for all.
 
 [Join the Discord Server!](https://discord.gg/VhR3kwtZ5r)
+
+[Donate to the lead developer](https://ko-fi.com/aurorafields)
 
 ## Using ZorroTracker
 ## Possible issues and solutions

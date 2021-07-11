@@ -73,6 +73,11 @@ declare global {
 			 * Helper function to open the Discord server link in an external browser.
 			 */
 			openDiscord: () => void,
+
+			/**
+			 * Helper function to open the Ko-fi site for the main developer
+			 */
+			openKofi: () => void,
 		},
 		ipc: {
 			ui: {

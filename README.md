@@ -3,7 +3,7 @@ Work in Progress Sega Mega Drive / Genesis Music Tracker created in Electron. Su
 
 [Join the Discord Server!](https://discord.gg/VhR3kwtZ5r)
 
-[Donate to the lead developer](https://ko-fi.com/aurorafields)
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/P5P75AB3L)
 
 ## Using ZorroTracker
 ## Possible issues and solutions

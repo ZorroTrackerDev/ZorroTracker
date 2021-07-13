@@ -3,6 +3,7 @@ import { loadFlag } from "../../../api/files";
 import { PatternIndex } from "../../../api/matrix";
 import { UIElement } from "../../../api/ui";
 import { theme } from "../../misc/theme";
+import { PatternCanvas, RowsCanvas } from "./canvas wrappers";
 
 export class PatternEditor implements UIElement {
 	// various standard elements for the pattern editor
@@ -52,6 +53,7 @@ export class PatternEditor implements UIElement {
 
 		// load the theme before doing anything else
 		this.canvas = [];
+		this.rows = [];
 		await this.reloadTheme(true);
 
 		// initialize the channel layout for this editor
@@ -131,6 +133,9 @@ export class PatternEditor implements UIElement {
 					// reload the number of patterns that need to be visible
 					await this.refreshPatternAmount();
 
+					// update horizontal scrolling
+					this.scrollHoriz(0);
+
 					// call the special scroll handler, mainly to update the current position and to redraw canvases
 					scroll(0);
 				}, 50);
@@ -163,7 +168,7 @@ export class PatternEditor implements UIElement {
 			this.canvas.forEach((c) => c.updateHoriz(this));
 
 			// update every channel header too, to change their translateX values
-			for(let i = this.index.channels.length;i >= 0;--i){
+			for(let i = this.index.channels.length;i > 0;--i){
 				(this.scrollwrapper.children[i] as HTMLDivElement)
 					.style.transform = "translateX(-"+ this.horizScroll +"px)";
 			}
@@ -253,7 +258,11 @@ export class PatternEditor implements UIElement {
 				<div class="channelwrapper">
 					<div class="channelnamewrapper">
 						<label>${ name }</label>
-						<div class="channeldragarea"></div>
+						<div class="channeldragarea">
+							<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+								<path stroke="#3b1b0f" fill="#3b1b0f" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+							</svg>
+						</div>
 					</div>
 				</div>
 			`.replace(/[\t|\r|\n]+/g, "");
@@ -272,32 +281,45 @@ export class PatternEditor implements UIElement {
 		for(let i = this.index.channels.length;i > 0; --i){
 			const chan = this.scrollwrapper.children[i] as HTMLDivElement;
 			const drag = chan.children[0].children[1] as HTMLDivElement;
-			let pointer = -1;
+
+			let pos = -1, lastsize = -1, left = 0;
 
 			// initialize header size
 			this.setChannelHeaderSize(this.index.channels[i - 1]?.commands ?? 0, i - 1, chan);
 
 			// enable mouse down detection
 			drag.onpointerdown = (e) => {
-				drag.setPointerCapture(pointer = e.pointerId);
-				drag.onpointermove = move;
+				// lock the pointer in-place so it works as expected
+				drag.requestPointerLock();
 
-				// enable mouse up detection
+				// reset the channel header position and mouse position
+				left = chan.getBoundingClientRect().x;
+				pos = e.x;
+
+				// load the channel commands count for scrolling
+				lastsize = this.index.channels[i - 1]?.commands ?? 0;
+
+				// enable mouse button and movement detection
+				drag.onmousemove = move;
 				drag.onpointerup = up;
-				window.addEventListener("mouseup", up);
 			}
 
 			// handler for mouse movement
 			const move = (e:MouseEvent) => {
 				// fetch channel size
-				const sz = this.getClosestChannelSize(e.x - chan.getBoundingClientRect().x);
+				pos += e.movementX;
+				const sz = this.getClosestChannelSize(pos - left);
 
 				if(this.index.channels[i - 1].commands !== sz) {
-					// update channel header
+					// update channel header size
 					this.setChannelHeaderSize(sz, i - 1, chan);
 
 					// update worker with data
 					this.refreshChannelWidth();
+
+					// scroll to follow cursor and update size
+					this.scrollHoriz((sz - lastsize) * 38);
+					lastsize = sz;
 
 					// invalidate and clear all canvas rows
 					this.canvas.forEach((c) => {
@@ -311,13 +333,15 @@ export class PatternEditor implements UIElement {
 			}
 
 			// handler for mouse release
-			const up = (e:MouseEvent|PointerEvent) => {
-				// @ts-expect-error
-				drag.releasePointerCapture(e.pointerId ?? pointer);
-				window.removeEventListener("mouseup", up);
-				document.body.setAttribute("style", "");
+			const up = () => {
+				// disable pointer lock so we can again move it freely
+				document.exitPointerLock();
 
-				// fix horizontal scrolling
+				// remove event updates
+				drag.onpointerup = null;
+				drag.onmousemove = null;
+
+				// fix horizontal scrolling just in case
 				this.scrollHoriz(0);
 			}
 		}
@@ -380,7 +404,7 @@ export class PatternEditor implements UIElement {
 		let pos = 0;
 
 		// update every channel header too, to change their translateX values
-		for(let i = 0;i <= this.index.channels.length;i++){
+		for(let i = 1;i <= this.index.channels.length;i++){
 			// update channel positions
 			this.channelPositionsLeft.push(pos);
 			pos += (this.scrollwrapper.children[i] as HTMLDivElement).offsetWidth;
@@ -388,7 +412,7 @@ export class PatternEditor implements UIElement {
 		}
 
 		// save the total width of the render area
-		this.renderAreaWidth = pos;
+		this.renderAreaWidth = pos + 35;
 
 		// update highlight to be at this location too
 		this.highlight.style.maxWidth = (this.renderAreaWidth - 4) +"px";
@@ -472,15 +496,16 @@ export class PatternEditor implements UIElement {
 		if((this.canvas?.length - 1) !== amount) {
 			// remove old canvases so everything can be updated
 			this.canvas?.forEach((c) => c.dispose());
+			this.rows?.forEach((c) => c.dispose());
 
-			// clear the canvas list
+			// clear the canvas lists
 			this.canvas = [];
+			this.rows = [];
 
 			// generate each canvas
 			for(let c = 0;c <= amount; c++) {
 				// generate the canvas class itself
-				const x = new PatternCanvas(this.renderAreaWidth, this.dataHeight * this.index.patternlen, this,
-					this.index.patternlen, this.index.channels.length);
+				const x = new PatternCanvas(this.dataHeight * this.index.patternlen, this, this.index.patternlen, this.index.channels.length);
 
 				// update horizontal scrolling of the canvas
 				x.updateHoriz(this);
@@ -494,7 +519,23 @@ export class PatternEditor implements UIElement {
 
 				// force update canvas theme
 				await x.reloadTheme();
+
+				// generate the rows as well (we need the same number of row canvases)
+				const y = new RowsCanvas(this.dataHeight * this.index.patternlen, this, this.index.patternlen, this.getRowNumber, c === 0);
+
+				// add this canvas to the DOM
+				this.scrollwrapper.appendChild(y.element);
+				this.rows.push(y);
+
+				// force update canvas theme
+				await y.reloadTheme();
+
+				// reload graphics
+				y.render();
 			}
+
+			// make the first row canvas be above the rest
+			this.rows[0].element.style.zIndex = "12";
 		}
 	}
 
@@ -502,6 +543,11 @@ export class PatternEditor implements UIElement {
 	 * Container for each loaded canvas
 	 */
 	private canvas!: PatternCanvas[];
+
+	/**
+	 * Container for each loaded canvas
+	 */
+	private rows!: RowsCanvas[];
 
 	/**
 	 * Handle scrolling. This updates each canvas position, graphics, active canvas, etc
@@ -532,8 +578,30 @@ export class PatternEditor implements UIElement {
 					Math.ceil((this.scrollHeight - this.scrollMiddle) / this.dataHeight) + this.visibleSafeHeight - offsetTop));
 
 			// update element position
-			this.canvas[0].element.style.top = ((offsetTop * this.dataHeight) + this.scrollMiddle) +"px";
+			this.rows[0].element.style.top = this.canvas[0].element.style.top = ((offsetTop * this.dataHeight) + this.scrollMiddle) +"px";
 			return;
+		}
+
+		// position all row elements
+		const rowoff = Math.ceil(((this.scrollMiddle / this.dataHeight) - (this.currentRow % this.index.patternlen)) / this.index.patternlen);
+
+		for(let r = 0;r < this.rows.length;r ++) {
+			const cr = this.rows[(this.rows.length + r - rowoff) % this.rows.length];
+
+			// calculate target pattern
+			const ppos = r - rowoff + pat;
+
+			if(ppos < 0 || ppos >= this.index.matrixlen) {
+				// hide row if out of bounds
+				cr.element.style.top = "-10000px";
+				continue;
+			}
+
+			// calculate row y-position
+			const top = ((((ppos * this.index.patternlen) - this.currentRow) * this.dataHeight) + this.scrollMiddle) +"px";
+
+			// update row position
+			cr.element.style.top = top;
 		}
 
 		// run for each visible patterns
@@ -541,8 +609,9 @@ export class PatternEditor implements UIElement {
 			// load the canvas that represents this pattern
 			const cv = this.canvas[(this.canvas.length + r) % this.canvas.length];
 
-			// update canvas y-position
+			// calculate canvas y-position
 			const offsetTop = ((r * this.index.patternlen) - this.currentRow);
+			const top = ((offsetTop * this.dataHeight) + this.scrollMiddle) +"px";
 
 			// invalidate layout if it is not the same pattern or active status doesn't match
 			if(cv.pattern !== r || (r === pat) !== cv.active) {
@@ -554,6 +623,7 @@ export class PatternEditor implements UIElement {
 				cv.invalidateAll();
 			}
 
+
 			// check if this pattern is visible
 			if(r >= 0 && r < this.index.matrixlen) {
 				// if yes, request to render every visible row in this pattern
@@ -561,13 +631,14 @@ export class PatternEditor implements UIElement {
 					Math.min(this.index.patternlen,
 						Math.ceil((this.scrollHeight - this.scrollMiddle) / this.dataHeight) + this.visibleSafeHeight - offsetTop));
 
+
 			} else if(!cv.isClear){
 				// clear the pattern if neither visible nor cleared
 				cv.clear();
 			}
 
-			// update element position
-			cv.element.style.top = ((offsetTop * this.dataHeight) + this.scrollMiddle) +"px";
+			// update canvas position
+			cv.element.style.top = top;
 		}
 	}
 
@@ -597,7 +668,7 @@ export class PatternEditor implements UIElement {
 	 */
 	public async reloadTheme(preload:boolean):Promise<void> {
 		// request every canvas to reload theme
-		const promises = this.canvas.map((c) => c.reloadTheme());
+		const promises = [ ...this.canvas, ...this.rows, ].map((c) => c.reloadTheme());
 
 		if(!preload) {
 			// wait for them to finish
@@ -605,193 +676,10 @@ export class PatternEditor implements UIElement {
 
 			// handle scrolling
 			this.handleScrolling();
+
+			// reload row graphics
+			this.rows.forEach((r) => r.render());
 		}
-	}
-}
-
-/**
- * Helper class for each pattern canvas
- */
-class PatternCanvas {
-	// the canvas element itself for this canvas
-	public element:HTMLCanvasElement;
-
-	// the parent of this element
-	public parent:PatternEditor;
-
-	// the worker for this canvas
-	public worker:Worker;
-
-	/**
-	 * Initialize this PatternCanvas and store some data passed.
-	 *
-	 * @param width The width of the entire canvas in pixels
-	 * @param height The height of the entire canvas in pixels
-	 * @param patternlen The number of rows per pattern
-	 * @param channels The number of channels in the project
-	 */
-	constructor(width:number, height:number, parent:PatternEditor, patternlen:number, channels:number) {
-		// create the main canvas and update its size
-		this.element = document.createElement("canvas");
-		this.element.width = parent.canvasWidth;
-		this.element.height = height;
-
-		// hide the canvas for now and give its class
-		this.element.style.top = "-10000px";
-		this.element.classList.add("patterncanvas");
-
-		// initialize the offscreen canvas worker
-		this.worker = new Worker("../elements/patterneditor/default.worker.js");
-		const offscreen = this.element.transferControlToOffscreen();
-		this.worker.postMessage({ command: "init", data: { width, height, canvas: offscreen, }, }, [ offscreen, ]);
-
-		// store internal variables
-		this.patternlen = patternlen;
-		this.parent = parent;
-
-		// update a few variables to the worker
-		this.worker.postMessage({ command: "vars", data: {
-			channels, patternlen, dataHeight: parent.dataHeight, getRowNumber: parent.getRowNumber,
-		}, });
-
-		// update highlight data to the worker
-		this.worker.postMessage({ command: "highlight", data: { values: parent.rowHighlights, }, });
-
-		// set internal variables to default values
-		this.pattern = -1;
-		this.active = false;
-
-		// clear the canvas content
-		this.clear();
-	}
-
-	/**
-	 * Clear all the resources this PatternCanvas uses
-	 */
-	public dispose() {
-		// remove the canvas from DOM
-		this.element.parentElement?.removeChild(this.element);
-
-		// tell the worker to close
-		this.worker.terminate();
-	}
-
-	/**
-	 * Helper function to update channel widths for the canvas
-	 */
-	public updateChannelWidths() {
-		// update positional data to the worker
-		this.worker.postMessage({ command: "posi", data: {
-			right: this.parent.channelPositionsRight, left: this.parent.channelPositionsLeft,
-			elements: this.parent.channelElements,
-			width: this.parent.renderAreaWidth,
-		}, });
-	}
-
-	/**
-	 * The current pattern that this canvas is showing
-	 */
-	public pattern:number;
-
-	/**
-	 * Whether this is the active canvas
-	 */
-	public active:boolean;
-
-	/**
-	 * Whether this canvas is fully cleared (black)
-	 */
-	public isClear!:boolean;
-
-	/**
-	 * The length of the pattern this is showing
-	 */
-	private patternlen:number;
-
-	/**
-	 * Update horizontal scrolling of canvas
-	 */
-	public updateHoriz(parent:PatternEditor) {
-		this.element.style.left = -parent.horizScroll +"px";
-	}
-
-	/**
-	 * Helper command to fill the void left after channel data. This is useful for resizing channels
-	 */
-	public fillVoid() {
-		this.worker.postMessage({ command: "fillvoid", data: {}, });
-	}
-
-	/**
-	 * Function to fill the canvas with black and invalidate all rows
-	 */
-	public clear() {
-		// send the clear command
-		this.worker.postMessage({ command: "clear", data: {}, });
-
-		// set as cleared and invalidate the entire canvas
-		this.isClear = true;
-		this.invalidateAll();
-	}
-
-	/**
-	 * Function to invalidate every row of the canvas
-	 */
-	public invalidateAll() {
-		this.invalidateRange(0, this.patternlen);
-	}
-
-	/**
-	 * Invalidate a range of rows in the canvas
-	 *
-	 * @param start The start of the range to invalidate
-	 * @param end The end of the range to invalidate
-	 */
-	public invalidateRange(start:number, end:number) {
-		// send the invalidate command
-		this.worker.postMessage({ command: "invalidate", data: { start, end, }, });
-	}
-
-	/**
-	 * Function to render part of the pattern if not rendered
-	 *
-	 * @param start The start of the range of rows to render
-	 * @param end The end of the range of rows to render
-	 */
-	public renderPattern(start:number, end:number) {
-		// set the canvas as not cleared
-		this.isClear = false;
-
-		// send the command to render row
-		this.worker.postMessage({ command: "renderrange", data: { start, end, active: this.active, }, });
-	}
-
-	/**
-	 * Helper function to tell the worker to reload the theme
-	 */
-	public reloadTheme(): Promise<void> {
-		// tell the worker tro reload the theme
-		this.worker.postMessage({ command: "theme", data: theme?.pattern?.worker ?? {}, });
-
-		return new Promise((res, rej) => {
-			// handle incoming messages
-			const msg = (e:MessageEvent) => {
-				if(e.data === "theme") {
-					// right message, resolve
-					res();
-					this.worker.removeEventListener("message", msg);
-				}
-			};
-
-			// listen to messages
-			this.worker.addEventListener("message", msg);
-
-			// if worker does not respond in 1 second, bail
-			setTimeout(() => {
-				this.worker.removeEventListener("message", msg);
-				rej("Did not get a response from worker");
-			}, 1000);
-		});
 	}
 }
 

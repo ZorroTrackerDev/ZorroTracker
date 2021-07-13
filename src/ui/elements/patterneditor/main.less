@@ -43,25 +43,42 @@
 			border-right: 4px solid black;
 			z-index: 11;
 
-			&.dragright > .channelnamewrapper > .channeldragarea {
-				background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M60 50L40 25V75Z' style='fill:%233b1b0f;stroke-linejoin:round;stroke-width:2;stroke:%233b1b0f'/%3E%3C/svg%3E%0A") !important;
+			&.dragright > .channelnamewrapper > .channeldragarea > svg > path {
+				d: path("M60 50L40 25V75ZM60 50L40 25V75Z") !important;
 			}
 
-			&.dragleft > .channelnamewrapper > .channeldragarea {
-				background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M40 50L60 25V75Z' style='fill:%233b1b0f;stroke-linejoin:round;stroke-width:2;stroke:%233b1b0f'/%3E%3C/svg%3E%0A") !important;
+			&.dragleft > .channelnamewrapper > .channeldragarea > svg > path {
+				d: path("M40 50L60 25V75ZM40 50L60 25V75Z") !important;
 			}
 
 			&:not(:first-child) {
 				&> .channelnamewrapper {
 					&> .channeldragarea {
-						content: "";
 						position: absolute;
 						right: 0; top: 0; bottom: 0;
 						width: @labelheight;
-						background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M20 50L40 25V40 75ZM80 50L60 25V69 75Z' style='fill:%233b1b0f;stroke-linejoin:round;stroke-width:2;stroke:%233b1b0f'/%3E%3C/svg%3E%0A");
 						background-size: @labelheight @labelheight;
 						cursor: e-resize;
 						z-index: 12;
+
+						filter: brightness(100%);
+						transition: filter .15s linear;
+
+						&:hover > svg > path {
+							fill: #c78a74;
+							stroke: #c78a74;
+						}
+
+						&> svg {
+							width: 100%;
+							height: 100%;
+							position: relative;
+
+							&> path {
+								transition: d .25s ease-in-out, fill .15s linear, stroke .15s linear;
+								d: path("M20 50L40 25V75ZM80 50L60 25V75Z");
+							}
+						}
 					}
 
 					&> label::after {
@@ -76,9 +93,11 @@
 
 			&:first-child {
 				width: @rowwidth + 4;
+				z-index: 16;
 
 				&> .channelnamewrapper {
 					width: 100%;
+					background: #613123;
 
 					&> .channeldragarea {
 						display: none;
@@ -92,7 +111,7 @@
 				background: #9e4216;
 				text-align: center;
 				border-bottom: 2px solid black;
-				z-index: 11;
+				z-index: 15;
 				width: 100%;
 
 				&> label {
@@ -109,10 +128,17 @@
 }
 
 .patterncanvas {
+	left: 0;
 	z-index: 10;
 	position: absolute;
 	pointer-events: none;
+}
+
+.rowscanvas {
 	left: 0;
+	z-index: 11;
+	position: absolute;
+	pointer-events: none;
 }
 
 .patternextras {

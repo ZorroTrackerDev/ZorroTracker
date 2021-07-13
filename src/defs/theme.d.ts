@@ -61,29 +61,11 @@ declare interface WorkerThemeSettings {
 	/**
 	 * Settings for each row background
 	 */
-	rowbg?: {
-		/**
-		 * The background color for inactive rows
-		 */
-		inactive?: WorkerThemeHighlight,
-		/**
-		 * The background color for active rows in different highlights
-		 */
-		active?: WorkerThemeHighlight,
-	},
+	background?: SimpleElementSettings,
 	/**
-	 * Settings for each row background
+	 * Settings for row number column
 	 */
-	rownum?: {
-		/**
-		 * The background color for inactive row number
-		 */
-		inactive?: WorkerThemeHighlight,
-		/**
-		 * The background color for active row numbers in different highlights
-		 */
-		active?: WorkerThemeHighlight,
-	},
+	rownum?: RowNumElementSettings,
 	/**
 	 * Settings for the note elements for each row
 	 */
@@ -111,25 +93,45 @@ declare interface WorkerThemeSettings {
 }
 
 /**
- * Helper type for different element settings
+ * Some simple element settings more widely shared
  */
-declare interface ElementSettings {
-	/**
-	 * The left position(s) for drawing this symbol.
-	 */
-	left?: number,
+declare interface SimpleElementSettings {
 	/**
 	 * The inactive color for text for an element that is set
 	 */
 	inactive?: WorkerThemeHighlight,
 	/**
-	 * The inactive color for text for an element that is not set
-	 */
-	inactiveblank?: WorkerThemeHighlight,
-	/**
 	 * The active color for text for an element that is set for different highlights
 	 */
 	active?: WorkerThemeHighlight,
+}
+
+/**
+ * Some simple element settings more widely shared
+ */
+declare interface RowNumElementSettings extends SimpleElementSettings {
+	/**
+	 * The inactive background colors for a row
+	 */
+	inactivebg?: WorkerThemeHighlight,
+	/**
+	 * The active background colors for a row
+	 */
+	activebg?: WorkerThemeHighlight,
+}
+
+/**
+ * Helper type for different element settings
+ */
+declare interface ElementSettings extends SimpleElementSettings {
+	/**
+	 * The left position(s) for drawing this symbol.
+	 */
+	left?: number,
+	/**
+	 * The inactive color for text for an element that is not set
+	 */
+	inactiveblank?: WorkerThemeHighlight,
 	/**
 	 * The active color for text for an element that is not set for different highlights
 	 */

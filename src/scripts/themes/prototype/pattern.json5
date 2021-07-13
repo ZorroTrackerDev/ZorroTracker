@@ -31,8 +31,26 @@
 				// color for patterns that are not visible, and other negative space
 				clear: "#000000",
 			},
+			// row number settings
+			rownum: {
+				// when the pattern is inactive, these colors will be shown
+				// format: normal, highlight a, highlight b
+				inactive: [ "#006868", "#686868", "#686868", ],
+
+				// when the pattern is active, these colors will be shown
+				// format: normal, highlight a, highlight b
+				active: [ "#008a8a", "#8b8ba3", "#9c9b80", ],
+
+				// when the pattern is inactive, these colors will be shown
+				// format: normal, highlight a, highlight b
+				inactivebg: [ "#001E1E", "#1E1E1E", "#1E1E1E", ],
+
+				// when the pattern is active, these colors will be shown
+				// format: normal, highlight a, highlight b
+				activebg: [ "#002627", "#2e2e38", "#35362a", ],
+			},
 			// row background settings
-			rowbg: {
+			background: {
 				// when the pattern is inactive, these colors will be shown
 				// format: normal, highlight a, highlight b
 				inactive: [ "#1E1E1E", "#1E1E1E", "#1E1E1E", ],
@@ -40,16 +58,6 @@
 				// when the pattern is active, these colors will be shown
 				// format: normal, highlight a, highlight b
 				active: [ "#262627", "#2e2e38", "#35362a", ],
-			},
-			// row text settings
-			rownum: {
-				// when the pattern is inactive, these colors will be shown
-				// format: normal, highlight a, highlight b
-				inactive: [ "#686868", "#686868", "#686868", ],
-
-				// when the pattern is active, these colors will be shown
-				// format: normal, highlight a, highlight b
-				active: [ "#8a8a8a", "#8b8ba3", "#9c9b80", ],
 			},
 			// note element settings
 			note: {

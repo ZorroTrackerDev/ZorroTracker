@@ -44,11 +44,11 @@
 			z-index: 11;
 
 			&.dragright > .channelnamewrapper > .channeldragarea > svg > path {
-				d: path("M60 50L40 25V75ZM60 50L40 25V75Z") !important;
+				d: path("M20 50L20 25V75Z M60 50L40 25V75Z") !important;
 			}
 
 			&.dragleft > .channelnamewrapper > .channeldragarea > svg > path {
-				d: path("M40 50L60 25V75ZM40 50L60 25V75Z") !important;
+				d: path("M40 50L60 25V75Z M80 50L80 25V75Z") !important;
 			}
 
 			&:not(:first-child) {
@@ -66,7 +66,6 @@
 
 						&:hover > svg > path {
 							fill: #c78a74;
-							stroke: #c78a74;
 						}
 
 						&> svg {
@@ -75,8 +74,8 @@
 							position: relative;
 
 							&> path {
-								transition: d .25s ease-in-out, fill .15s linear, stroke .15s linear;
-								d: path("M20 50L40 25V75ZM80 50L60 25V75Z");
+								transition: d .25s ease-in-out, fill .15s linear;
+								d: path("M20 50L40 25V75Z M80 50L60 25V75Z");
 							}
 						}
 					}

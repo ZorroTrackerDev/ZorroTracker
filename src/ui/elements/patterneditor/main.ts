@@ -260,7 +260,7 @@ export class PatternEditor implements UIElement {
 						<label>${ name }</label>
 						<div class="channeldragarea">
 							<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-								<path stroke="#3b1b0f" fill="#3b1b0f" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+								<path fill="#3b1b0f" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"/>
 							</svg>
 						</div>
 					</div>

@@ -1,4 +1,3 @@
-import { Channel } from "../../../api/driver";
 import { ZorroEvent, ZorroEventEnum } from "../../../api/events";
 import { loadFlag } from "../../../api/files";
 import { PatternIndex } from "../../../api/matrix";
@@ -7,8 +6,9 @@ import { theme } from "../../misc/theme";
 
 export class PatternEditor implements UIElement {
 	// various standard elements for the pattern editor
-	public element!:HTMLElement;
-	private scrollwrapper!:HTMLDivElement;
+	public element!: HTMLElement;
+	private scrollwrapper!: HTMLDivElement;
+	private highlight!: HTMLDivElement;
 
 	/**
 	 * The pattern index this editor is apart of
@@ -40,6 +40,16 @@ export class PatternEditor implements UIElement {
 		this.scrollwrapper.classList.add("patterneditorwrap");
 		this.element.appendChild(this.scrollwrapper);
 
+		// initialize the misc wrapper element
+		const wrap = document.createElement("div");
+		wrap.classList.add("patternextras");
+		this.element.appendChild(wrap);
+
+		// initialize the highlight element
+		this.highlight = document.createElement("div");
+		this.highlight.classList.add("highlight");
+		wrap.appendChild(this.highlight);
+
 		// load the theme before doing anything else
 		this.canvas = [];
 		await this.reloadTheme(true);
@@ -64,21 +74,7 @@ export class PatternEditor implements UIElement {
 			this.updateScrollerSize();
 
 			// reload the number of patterns that need to be visible
-			this.refreshPatternAmount();
-
-			// load the theme before doing anything else
-			await this.reloadTheme(false);
-
-			// initialize the misc wrapper element
-			const wrap = document.createElement("div");
-			wrap.classList.add("patternextras");
-			this.element.appendChild(wrap);
-
-			// initialize the highlight element
-			const h = document.createElement("div");
-			h.classList.add("highlight");
-			wrap.appendChild(h);
-			wrap.style.width = this.renderAreaWidth +"px";
+			await this.refreshPatternAmount();
 
 			// helper function for updating scrolling position and capping it
 			const scroll = (delta:number) => {
@@ -126,14 +122,14 @@ export class PatternEditor implements UIElement {
 				}
 
 				// create a new timeout in 50ms, to update scrolling size, reload canvases, and to call the scroll handler
-				timeout = setTimeout(() => {
+				timeout = setTimeout(async() => {
 					timeout = null;
 
 					// update the scrolling region size
 					this.updateScrollerSize();
 
 					// reload the number of patterns that need to be visible
-					this.refreshPatternAmount();
+					await this.refreshPatternAmount();
 
 					// call the special scroll handler, mainly to update the current position and to redraw canvases
 					scroll(0);
@@ -175,6 +171,11 @@ export class PatternEditor implements UIElement {
 	}
 
 	/**
+	 * The scrolling offset for the current row
+	 */
+	private scrollMiddle!:number;
+
+	/**
 	 * Function to update scrolling area size into memory
 	 */
 	private updateScrollerSize() {
@@ -182,6 +183,12 @@ export class PatternEditor implements UIElement {
 		const bounds = this.scrollwrapper.getBoundingClientRect();
 		this.scrollHeight = bounds.height - 30;
 		this.scrollWidth = bounds.width + 5;
+
+		// calculate the number of rows visible on half screen at once
+		this.scrollMiddle = 30 + (Math.floor(this.scrollHeight / this.dataHeight / 2.5) * this.dataHeight);
+
+		// update highlight to be at this location too
+		this.highlight.style.top = this.scrollMiddle +"px";
 	}
 
 	/**
@@ -240,7 +247,7 @@ export class PatternEditor implements UIElement {
 		this.channelElements = [];
 
 		// generating DOM for a single channel
-		const doChannel = (name:string, channel:Channel|undefined) => {
+		const doChannel = (name:string) => {
 			// do some regex hacking to remove all tabs and newlines. HTML whyyy
 			return /*html*/`
 				<div class="channelwrapper">
@@ -253,12 +260,12 @@ export class PatternEditor implements UIElement {
 		};
 
 		// create the row index column
-		this.scrollwrapper.innerHTML = doChannel("\u200B", undefined);
+		this.scrollwrapper.innerHTML = doChannel("\u200B");
 
 		// handle DOM generation for each channel and save it to scrollwrapper
 		this.scrollwrapper.innerHTML += this.index.channels.map((c) => {
 			// generate DOM for a single channel
-			return doChannel(c.name, c);
+			return doChannel(c.name);
 		}).join("");
 
 		// enable resize handlers and init styles
@@ -294,8 +301,8 @@ export class PatternEditor implements UIElement {
 
 					// invalidate and clear all canvas rows
 					this.canvas.forEach((c) => {
-						c.clear();
 						c.invalidateAll();
+						c.fillVoid();
 					});
 
 					// re-render all visible rows
@@ -383,6 +390,9 @@ export class PatternEditor implements UIElement {
 		// save the total width of the render area
 		this.renderAreaWidth = pos;
 
+		// update highlight to be at this location too
+		this.highlight.style.maxWidth = (this.renderAreaWidth - 4) +"px";
+
 		// inform canvases it has maybe changed
 		this.canvas.forEach((c) => c.updateChannelWidths());
 	}
@@ -424,17 +434,37 @@ export class PatternEditor implements UIElement {
 		if(document.querySelector(":focus") === this.element) {
 			// has focus, process the shortcut
 			switch(data.shift()) {
-				case "null": break;
+				case "null": {
+					if(this.derp) {
+						return false;
+					}
+
+					this.derp = true;
+					this.currentRow = 0;
+
+					const i = setInterval(() => {
+						this.handleScrolling();
+						this.currentRow ++;
+
+						if(this.currentRow >= this.index.matrixlen * this.index.patternlen) {
+							this.derp = false;
+							clearInterval(i);
+						}
+					}, 32);
+					break;
+				}
 			}
 		}
 
 		return false;
 	}
 
+	private derp = false;
+
 	/**
 	 * Helper function that updates the list of pattern canvases.
 	 */
-	private refreshPatternAmount() {
+	private async refreshPatternAmount() {
 		// calculate the amount of canvases needed to display everything
 		const amount = !this.drawPatternPreview ? 0 :
 			Math.ceil(((this.scrollHeight / this.dataHeight) + (this.visibleSafeHeight * 2)) / this.index.patternlen);
@@ -461,6 +491,9 @@ export class PatternEditor implements UIElement {
 
 				// tell to update canvas widths
 				x.updateChannelWidths();
+
+				// force update canvas theme
+				await x.reloadTheme();
 			}
 		}
 	}
@@ -480,9 +513,6 @@ export class PatternEditor implements UIElement {
 		// calculate which pattern is currently active
 		const pat = Math.max(0, Math.min(this.index.matrixlen - 1, Math.floor(this.currentRow / this.index.patternlen)));
 
-		// calculate the number of rows visible on screen at once
-		const rowsPerHalf = Math.ceil((this.scrollHeight - 30) / this.dataHeight / 2);
-
 		if(!this.drawPatternPreview) {
 			// draw only a single pattern!!
 			if(this.canvas[0].pattern !== pat) {
@@ -495,11 +525,14 @@ export class PatternEditor implements UIElement {
 
 			// update canvas y-position
 			const offsetTop = ((pat * this.index.patternlen) - this.currentRow);
-			this.canvas[0].element.style.top = ((offsetTop * this.dataHeight) + (this.scrollHeight / 2) + 15) +"px";
 
 			// request to render every visible row in this pattern
-			this.canvas[0].renderPattern(Math.max(0, -rowsPerHalf - this.visibleSafeHeight - offsetTop),
-				Math.min(this.index.patternlen, rowsPerHalf + this.visibleSafeHeight - offsetTop));
+			this.canvas[0].renderPattern(Math.max(0, -Math.ceil(this.scrollMiddle / this.dataHeight) - this.visibleSafeHeight - offsetTop),
+				Math.min(this.index.patternlen,
+					Math.ceil((this.scrollHeight - this.scrollMiddle) / this.dataHeight) + this.visibleSafeHeight - offsetTop));
+
+			// update element position
+			this.canvas[0].element.style.top = ((offsetTop * this.dataHeight) + this.scrollMiddle) +"px";
 			return;
 		}
 
@@ -510,7 +543,6 @@ export class PatternEditor implements UIElement {
 
 			// update canvas y-position
 			const offsetTop = ((r * this.index.patternlen) - this.currentRow);
-			cv.element.style.top = ((offsetTop * this.dataHeight) + (this.scrollHeight / 2) + 15) +"px";
 
 			// invalidate layout if it is not the same pattern or active status doesn't match
 			if(cv.pattern !== r || (r === pat) !== cv.active) {
@@ -525,13 +557,17 @@ export class PatternEditor implements UIElement {
 			// check if this pattern is visible
 			if(r >= 0 && r < this.index.matrixlen) {
 				// if yes, request to render every visible row in this pattern
-				cv.renderPattern(Math.max(0, -rowsPerHalf - this.visibleSafeHeight - offsetTop),
-					Math.min(this.index.patternlen, rowsPerHalf + this.visibleSafeHeight - offsetTop));
+				cv.renderPattern(Math.max(0, -Math.ceil(this.scrollMiddle / this.dataHeight) - this.visibleSafeHeight - offsetTop),
+					Math.min(this.index.patternlen,
+						Math.ceil((this.scrollHeight - this.scrollMiddle) / this.dataHeight) + this.visibleSafeHeight - offsetTop));
 
 			} else if(!cv.isClear){
 				// clear the pattern if neither visible nor cleared
 				cv.clear();
 			}
+
+			// update element position
+			cv.element.style.top = ((offsetTop * this.dataHeight) + this.scrollMiddle) +"px";
 		}
 	}
 
@@ -677,6 +713,13 @@ class PatternCanvas {
 	 */
 	public updateHoriz(parent:PatternEditor) {
 		this.element.style.left = -parent.horizScroll +"px";
+	}
+
+	/**
+	 * Helper command to fill the void left after channel data. This is useful for resizing channels
+	 */
+	public fillVoid() {
+		this.worker.postMessage({ command: "fillvoid", data: {}, });
 	}
 
 	/**

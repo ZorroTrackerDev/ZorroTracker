@@ -111,20 +111,22 @@
 .patterncanvas {
 	z-index: 10;
 	position: absolute;
+	pointer-events: none;
 	left: 0;
 }
 
 .patternextras {
-	left: 0; top: 0; bottom: 0;
-	z-index: 20;
+	left: 0; right: 0; top: 0; bottom: 0;
 	position: absolute;
 	pointer-events: none;
 
 	&> .highlight {
 		position: absolute;
-		left: 0px; right: 4px;
-		top: calc(50% - 1px);
-		height: @itemheight - 2;
-		border: 2px solid #888;
+		left: 0px; right: 0px;
+		height: @itemheight;
+	/*	background-color: #ff6767;*/
+		background-color: #dadada;
+   		mix-blend-mode: soft-light;
+		z-index: 20;
 	}
 }

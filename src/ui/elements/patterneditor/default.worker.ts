@@ -54,6 +54,11 @@ const handleMessage = (command:string, data:{ [key:string]: unknown }) => {
 			ctx.fillRect(0, 0, canvas.width, canvas.height);
 			break;
 
+		case "fillvoid":
+			ctx.fillStyle = "#000";
+			ctx.fillRect(renderWidth, 0, canvas.width - renderWidth, canvas.height);
+			break;
+
 		case "renderrange":
 			for(let i = data.start as number;i < (data.end as number);i ++) {
 				if(!rendered[i]) {

@@ -3,6 +3,7 @@ import { ZorroEvent, ZorroEventEnum, ZorroSenderTypes } from "./events";
 import { TrackerCommands } from "./commands";
 import { Project } from "../ui/misc/project";
 import { Channel } from "./driver";
+import { loadFlag } from "./files";
 
 /**
  * Class for a single pattern cell, which can only be used to store its immediate values.
@@ -257,8 +258,9 @@ export class PatternIndex {
 			this.matrix.push(new Uint8Array(256));
 		}
 
-		// TEMP: set random commands count
-		this.channels.forEach((c) => c.commands = Math.round(Math.random() * 7) + 1);
+		// initialize command count to 1 by default
+		const fx = Math.max(1, Math.min(8, loadFlag<number>("INITIAL_EFFECT_COUNT") ?? 1));
+		this.channels.forEach((c) => c.commands = fx);
 	}
 
 	private eventGet:ZorroSenderTypes[ZorroEventEnum.MatrixSet];

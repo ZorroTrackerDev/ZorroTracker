@@ -106,22 +106,7 @@ export class PatternEditor implements UIElement {
 			// add handler for vertical and horizontal scrolling
 			this.scrollwrapper.addEventListener("wheel", (e) => {
 				if(e.deltaX) {
-					// calculate the new scrolling position
-					const p = Math.max(0, Math.min(this.horizScroll + e.deltaX, this.renderAreaWidth - this.scrollWidth));
-
-					// check if the scrolling was actually allowed to move
-					if(p !== this.horizScroll) {
-						this.horizScroll = p;
-
-						// tell each canvas to update left offset
-						this.canvas.forEach((c) => c.updateHoriz(this));
-
-						// update every channel header too, to change their translateX values
-						for(let i = this.index.channels.length;i >= 0;--i){
-							(this.scrollwrapper.children[i] as HTMLDivElement)
-								.style.transform = "translateX(-"+ this.horizScroll +"px)"
-						}
-					}
+					this.scrollHoriz(e.deltaX);
 				}
 
 				if(e.deltaY) {
@@ -158,6 +143,35 @@ export class PatternEditor implements UIElement {
 			// initially handle scrolling, reloading, drawing, etc
 			this.handleScrolling();
 		});
+	}
+
+	/**
+	 * This defines which horizontal scroll position of channels and canvases
+	 */
+	public horizScroll = 0;
+
+	/**
+	 * Handle horizontal scrolling for the scroll wrapper
+	 *
+	 * @param amount The scrolling amount
+	 */
+	private scrollHoriz(amount:number) {
+		// calculate the new scrolling position
+		const p = Math.max(0, Math.min(this.horizScroll + amount, this.renderAreaWidth - this.scrollWidth));
+
+		// check if the scrolling was actually allowed to move
+		if(p !== this.horizScroll) {
+			this.horizScroll = p;
+
+			// tell each canvas to update left offset
+			this.canvas.forEach((c) => c.updateHoriz(this));
+
+			// update every channel header too, to change their translateX values
+			for(let i = this.index.channels.length;i >= 0;--i){
+				(this.scrollwrapper.children[i] as HTMLDivElement)
+					.style.transform = "translateX(-"+ this.horizScroll +"px)";
+			}
+		}
 	}
 
 	/**
@@ -218,9 +232,116 @@ export class PatternEditor implements UIElement {
 	}
 
 	/**
-	 * This defines which horizontal scroll position of channels and canvases
+	 * Helper function to initialize channel headers and channel positions
 	 */
-	public horizScroll = 0;
+	private initChannels() {
+		// delete any previous children
+		this.clearChildren(this.scrollwrapper);
+		this.channelElements = [];
+
+		// generating DOM for a single channel
+		const doChannel = (name:string, channel:Channel|undefined) => {
+			// do some regex hacking to remove all tabs and newlines. HTML whyyy
+			return /*html*/`
+				<div class="channelwrapper">
+					<div class="channelnamewrapper">
+						<label>${ name }</label>
+						<div class="channeldragarea"></div>
+					</div>
+				</div>
+			`.replace(/[\t|\r|\n]+/g, "");
+		};
+
+		// create the row index column
+		this.scrollwrapper.innerHTML = doChannel("\u200B", undefined);
+
+		// handle DOM generation for each channel and save it to scrollwrapper
+		this.scrollwrapper.innerHTML += this.index.channels.map((c) => {
+			// generate DOM for a single channel
+			return doChannel(c.name, c);
+		}).join("");
+
+		// enable resize handlers and init styles
+		for(let i = this.index.channels.length;i > 0; --i){
+			const chan = this.scrollwrapper.children[i] as HTMLDivElement;
+			const drag = chan.children[0].children[1] as HTMLDivElement;
+			let pointer = -1;
+
+			// initialize header size
+			this.setChannelHeaderSize(this.index.channels[i - 1]?.commands ?? 0, i - 1, chan);
+
+			// enable mouse down detection
+			drag.onpointerdown = (e) => {
+				drag.setPointerCapture(pointer = e.pointerId);
+				drag.onpointermove = move;
+
+				// enable mouse up detection
+				drag.onpointerup = up;
+				window.addEventListener("mouseup", up);
+			}
+
+			// handler for mouse movement
+			const move = (e:MouseEvent) => {
+				// fetch channel size
+				const sz = this.getClosestChannelSize(e.x - chan.getBoundingClientRect().x);
+
+				if(this.index.channels[i - 1].commands !== sz) {
+					// update channel header
+					this.setChannelHeaderSize(sz, i - 1, chan);
+
+					// update worker with data
+					this.refreshChannelWidth();
+
+					// invalidate and clear all canvas rows
+					this.canvas.forEach((c) => {
+						c.clear();
+						c.invalidateAll();
+					});
+
+					// re-render all visible rows
+					this.handleScrolling();
+				}
+			}
+
+			// handler for mouse release
+			const up = (e:MouseEvent|PointerEvent) => {
+				// @ts-expect-error
+				drag.releasePointerCapture(e.pointerId ?? pointer);
+				window.removeEventListener("mouseup", up);
+				document.body.setAttribute("style", "");
+
+				// fix horizontal scrolling
+				this.scrollHoriz(0);
+			}
+		}
+
+		// also refresh channel widths
+		this.refreshChannelWidth();
+	}
+
+	/**
+	 * The amount of elements per channel for each channel
+	 */
+	public channelElements!:number[];
+
+	/**
+	 * Function to update the channel header size
+	 *
+	 * @param width The number of commands this channel has
+	 * @param channel The channel to change
+	 * @param element The root element for this channel
+	 */
+	private setChannelHeaderSize(width:number, channel:number, element:HTMLDivElement) {
+		// update commands amount
+		this.index.channels[channel].commands = width;
+		this.channelElements[channel] = [ 3, 5, 7, 9, 11, 13, 15, 17, 19, ][width];
+
+		// update header element width and classes
+		element.style.width = this.channelWidths[width] +"px";
+
+		// @ts-expect-error This works you silly butt
+		element.classList = "channelwrapper"+ (width === 1 ? " dragright" : width === 8 ? " dragleft" : "");
+	}
 
 	/**
 	 * This is a list of all the channel x-positions from left. This helps canvases get lined up and with scrolling.
@@ -240,55 +361,7 @@ export class PatternEditor implements UIElement {
 	/**
 	 * This is the actual width of each canvas in pixels
 	 */
-	public canvasWidth = 4000;
-
-	/**
-	 * Array of channel width values that are accepted
-	 */
-	private channelWidths = [ 30, 107, 145, 183, 221, 259, 297, 335, 373, ];
-
-	/**
-	 * Helper function to initialize channel headers and channel positions
-	 */
-	private initChannels() {
-		// delete any previous children
-		this.clearChildren(this.scrollwrapper);
-		this.channelElements = [];
-
-		// generating DOM for a single channel
-		const doChannel = (name:string, channel:Channel|undefined) => {
-			if(channel){
-				this.channelElements.push([ 3, 5, 7, 9, 11, 13, 15, 17, 19, ][channel?.commands]);
-			}
-
-			// do some regex hacking to remove all tabs and newlines. HTML whyyy
-			return /*html*/`
-				<div class="channelwrapper${ (channel?.commands === 1 ? " dragright" : channel?.commands === 8 ? " dragleft" : "") }" style="width: ${ this.channelWidths[channel?.commands ?? 0] }px">
-					<div class="channelnamewrapper">
-						<label>${ name }</label>
-						<div class="channeldragarea"></div>
-					</div>
-				</div>
-			`.replace(/[\t|\r|\n]+/g, "");
-		};
-
-		// create the row index column
-		this.scrollwrapper.innerHTML = doChannel("\u200B", undefined);
-
-		// handle DOM generation for each channel and save it to scrollwrapper
-		this.scrollwrapper.innerHTML += this.index.channels.map((c) => {
-			// generate DOM for a single channel
-			return doChannel(c.name, c);
-		}).join("");
-
-		// also refresh channel widths
-		this.refreshChannelWidth();
-	}
-
-	/**
-	 * The amount of elements per channel for each channel
-	 */
-	public channelElements!:number[];
+	public canvasWidth = 6000;
 
 	/**
 	 * Helper function to update channel widths into position buffers
@@ -312,6 +385,32 @@ export class PatternEditor implements UIElement {
 
 		// inform canvases it has maybe changed
 		this.canvas.forEach((c) => c.updateChannelWidths());
+	}
+
+	/**
+	 * Array of channel width values that are accepted
+	 */
+	private channelWidths = [ 30, 107, 145, 183, 221, 259, 297, 335, 373, ];
+
+	/**
+	 * The amount of leeway before snapping to higher size
+	 */
+	private widthBias = 5;
+
+	/**
+	 * Helper function to get the closest channel commands count for the given channel size
+	 *
+	 * @param size The size we're checking
+	 */
+	private getClosestChannelSize(size:number) {
+		for(let i = 1;i < this.channelWidths.length;i ++) {
+			if(size < this.channelWidths[i] + this.widthBias){
+				return i;
+			}
+		}
+
+		// maximum size
+		return this.channelWidths.length - 1;
 	}
 
 	/**

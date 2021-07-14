@@ -1,5 +1,18 @@
 {
 	pattern: {
+		main: {
+			// Settings related to the focused row
+			focus: {
+				// the color used with blending mode to create the final output colors
+				// format: normal, highlight a, highlight b
+				color: [ "#dadada", "#00dada", "#dada00", ],
+
+				// the background blending mode for the colors. This allows you to change the color with less performance impact.
+				// see: https://developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode
+				// format: normal, highlight a, highlight b
+				blend: [ "soft-light", "soft-light", "difference", ],
+			}
+		},
 		worker: {
 			// Miscellaneous parameters that are used for pattern editor
 			params: {

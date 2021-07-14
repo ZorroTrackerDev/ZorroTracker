@@ -4,13 +4,37 @@ declare interface ThemeSettings {
 		 * Settings related to the worker
 		 */
 		worker?: WorkerThemeSettings,
+		/**
+		 * Settings related to other elements in the pattern editor
+		 */
+		main?: PatternEditorThemeSettings,
 	},
 }
 
 type WorkerThemeHighlight = [ string, string, string ];
 
 /**
- * Helper type to handle theme settings
+ * Helper type to handle theme settings related to the pattern editor
+ */
+declare interface PatternEditorThemeSettings {
+	/**
+	 * Settings related to the focused row
+	 */
+	focus?: {
+		/**
+		 * The color of the focused row. This is blended according to blending settings
+		 */
+		color?: WorkerThemeHighlight,
+		/**
+		 * The CSS blending mode for the row. This will allow you to create composite colors with little performance hit.
+		 * See: https://developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode
+		 */
+		blend?: WorkerThemeHighlight,
+	}
+}
+
+/**
+ * Helper type to handle theme settings related to the pattern editor workers
  */
 declare interface WorkerThemeSettings {
 	/**

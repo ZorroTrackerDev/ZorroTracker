@@ -9,7 +9,7 @@ export class PatternEditor implements UIElement {
 	// various standard elements for the pattern editor
 	public element!: HTMLElement;
 	private scrollwrapper!: HTMLDivElement;
-	private highlight!: HTMLDivElement;
+	private focusBar!: HTMLDivElement;
 
 	/**
 	 * The pattern index this editor is apart of
@@ -46,10 +46,10 @@ export class PatternEditor implements UIElement {
 		wrap.classList.add("patternextras");
 		this.element.appendChild(wrap);
 
-		// initialize the highlight element
-		this.highlight = document.createElement("div");
-		this.highlight.classList.add("highlight");
-		wrap.appendChild(this.highlight);
+		// initialize the focus bar element
+		this.focusBar = document.createElement("div");
+		this.focusBar.classList.add("focus");
+		wrap.appendChild(this.focusBar);
 
 		// load the theme before doing anything else
 		this.canvas = [];
@@ -193,7 +193,7 @@ export class PatternEditor implements UIElement {
 		this.scrollMiddle = 30 + (Math.floor(this.scrollHeight / this.dataHeight / 2.5) * this.dataHeight);
 
 		// update highlight to be at this location too
-		this.highlight.style.top = this.scrollMiddle +"px";
+		this.focusBar.style.top = this.scrollMiddle +"px";
 	}
 
 	/**
@@ -214,7 +214,7 @@ export class PatternEditor implements UIElement {
 	/**
 	 * The number of pixels for the height of each data element
 	 */
-	public dataHeight = 19;
+	public dataHeight = 25;
 
 	/**
 	 * Store the vertical scroll position of channel datas
@@ -415,7 +415,7 @@ export class PatternEditor implements UIElement {
 		this.renderAreaWidth = pos + 35;
 
 		// update highlight to be at this location too
-		this.highlight.style.maxWidth = (this.renderAreaWidth - 4) +"px";
+		this.focusBar.style.maxWidth = (this.renderAreaWidth - 4) +"px";
 
 		// inform canvases it has maybe changed
 		this.canvas.forEach((c) => c.updateChannelWidths());
@@ -640,6 +640,9 @@ export class PatternEditor implements UIElement {
 			// update canvas position
 			cv.element.style.top = top;
 		}
+
+		// update focus row settings for the current row
+		this.updateFocusRowData();
 	}
 
 	/**
@@ -670,6 +673,16 @@ export class PatternEditor implements UIElement {
 		// request every canvas to reload theme
 		const promises = [ ...this.canvas, ...this.rows, ].map((c) => c.reloadTheme());
 
+		// meanwhile, load some variables
+		this.dataHeight = theme?.pattern?.worker?.params?.rowHeight ?? 25;
+
+		// load the tables handling the focus bar colors
+		this.focusBarColorNormal = theme?.pattern?.main?.focus?.color ?? [ "#000", "#000", "#000", ];
+		this.focusBarBlendNormal = theme?.pattern?.main?.focus?.blend ?? [ "", "", "", ];
+
+		// update elements that use the row height directly
+		this.focusBar.style.height = this.dataHeight +"px";
+
 		if(!preload) {
 			// wait for them to finish
 			await Promise.all(promises);
@@ -680,6 +693,26 @@ export class PatternEditor implements UIElement {
 			// reload row graphics
 			this.rows.forEach((r) => r.render());
 		}
+	}
+
+	/**
+	 * The color and blend mode settings for the focus bar
+	 */
+	private focusBarColorNormal!: [ string, string, string, ];
+	private focusBarBlendNormal!: [ string, string, string, ];
+
+	/**
+	 * Helper function to update focus row details
+	 */
+	private updateFocusRowData() {
+		// calculate the current highlight ID
+		const row = this.currentRow % this.index.patternlen;
+		const hid = ((row % this.rowHighlights[0]) === 0 ? 2 : (row % this.rowHighlights[1]) === 0 ? 1 : 0);
+
+		// update background color and blend mode for this row
+		this.focusBar.style.backgroundColor = this.focusBarColorNormal[hid];
+		// @ts-expect-error This property does exist, but TypeScript doesn't recognize it
+		this.focusBar.style.mixBlendMode = this.focusBarBlendNormal[hid];
 	}
 }
 

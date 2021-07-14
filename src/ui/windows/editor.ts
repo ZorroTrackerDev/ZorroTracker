@@ -65,6 +65,7 @@ import { MIDI } from "../misc/MIDI";
 /* ipc communication */
 import "../../system/ipc/html editor";
 import { loadTheme, reloadTheme } from "../misc/theme";
+import { createBar } from "../elements/playbuttonsbar/main";
 
 async function loadMainShortcuts() {
 	// load all.ts asynchronously. This will setup our environment better than we can do here
@@ -349,7 +350,7 @@ async function editorLayout():Promise<true> {
 	_bot.id = "editor_bottom";
 	body.appendChild(_bot);
 
-
+	_top.appendChild(createBar());
 	_top.appendChild(await volumeSlider(SliderEnum.Horizontal | SliderEnum.Medium));
 
 	_top.appendChild(document.createElement("br"));

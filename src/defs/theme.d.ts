@@ -1,4 +1,7 @@
 declare interface ThemeSettings {
+	playbar?: {
+
+	},
 	pattern?: {
 		/**
 		 * Settings related to the worker

@@ -78,6 +78,9 @@ export class PatternEditor implements UIElement {
 			// reload the number of patterns that need to be visible
 			await this.refreshPatternAmount();
 
+			// clear all canvases
+			this.canvas.forEach((c) => c.fillVoid());
+
 			// helper function for updating scrolling position and capping it
 			const scroll = (delta:number) => {
 				// update the scrolling position based on delta

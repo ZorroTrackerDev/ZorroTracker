@@ -153,9 +153,6 @@ export class PatternCanvas extends EditorCanvasBase {
 		// set internal variables to default values
 		this.pattern = -1;
 		this.active = false;
-
-		// clear the canvas content
-		this.clear();
 	}
 
 	/**

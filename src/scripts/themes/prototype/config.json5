@@ -14,5 +14,9 @@
 
 	files: [										// the files that are included within this theme configuration
 		"pattern.json5",
-	]
+	],
+
+	svg: [											// the SVG file configurations
+		"svg.json5",
+	],
 }

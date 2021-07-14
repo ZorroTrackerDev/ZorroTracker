@@ -81,9 +81,9 @@
 		textVerticalOffset = theme?.font?.top ?? 0;
 		rowHeight = theme?.params?.rowHeight ?? 0;
 
-		clearColor = [
-			theme?.params?.backdrop ?? fallbackRow,
-			theme?.params?.recordbackdrop ?? fallbackRow,
+		borderColor = [
+			theme?.params?.border ?? fallbackRow,
+			theme?.params?.recordborder ?? fallbackRow,
 		];
 
 		backdropColors = [
@@ -184,7 +184,7 @@
 			ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 			// fill the border in too
-			ctx.fillStyle = clearColor[record ? 1 : 0];
+			ctx.fillStyle = borderColor[record ? 1 : 0];
 			ctx.fillRect(31, 0, 4, canvas.height);
 
 			for(let row = 0;row < patternLen;row ++) {
@@ -210,7 +210,7 @@
 	/**
 	 * The color that is displayed on a cleared pattern
 	 */
-	let clearColor: [ string, string, ];
+	let borderColor: [ string, string, ];
 
 	/**
 	 * The list of backdrop colors depending on which highlight is active (or none at all)

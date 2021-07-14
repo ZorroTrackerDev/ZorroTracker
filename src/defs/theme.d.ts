@@ -78,6 +78,16 @@ declare interface WorkerThemeSettings {
 		 * The color for the backdrop of the pattern editor in record mode mode
 		 */
 		recordbackdrop?: string,
+
+		/**
+		 * The color for the border of the pattern editor in display mode
+		 */
+		border?: string,
+
+		/**
+		 * The color for the border of the pattern editor in record mode mode
+		 */
+		recordborder?: string,
 	},
 	font?: {
 		/**

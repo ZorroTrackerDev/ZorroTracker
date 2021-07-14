@@ -49,12 +49,12 @@
 				break;
 
 			case "clear":
-				ctx.fillStyle = "#000";
+				ctx.fillStyle = clearColor[record ? 1 : 0];
 				ctx.fillRect(0, 0, canvas.width, canvas.height);
 				break;
 
 			case "fillvoid":
-				ctx.fillStyle = "#000";
+				ctx.fillStyle = clearColor[record ? 1 : 0];
 				ctx.fillRect(renderWidth, 0, canvas.width - renderWidth, canvas.height);
 				break;
 
@@ -110,6 +110,11 @@
 		clearColor = [
 			theme?.params?.backdrop ?? fallbackRow,
 			theme?.params?.recordbackdrop ?? fallbackRow,
+		];
+
+		borderColor = [
+			theme?.params?.border ?? fallbackRow,
+			theme?.params?.recordborder ?? fallbackRow,
 		];
 
 		backdropColors = [
@@ -264,7 +269,7 @@
 		ctx.fillRect(0, top, renderWidth, rowHeight);
 
 		// initialize border color
-		ctx.fillStyle = clearColor[record ? 1 : 0];
+		ctx.fillStyle = borderColor[record ? 1 : 0];
 
 		// loop for each channel position
 		channelPositionsRight.forEach((left) => {
@@ -332,6 +337,11 @@
 	 * The color that is displayed on a cleared pattern
 	 */
 	let clearColor: [ string, string, ];
+
+	/**
+	 * The color that is displayed at the borders of channels
+	 */
+	let borderColor: [ string, string, ];
 
 	/**
 	 * The list of backdrop colors depending on which highlight is active (or none at all)

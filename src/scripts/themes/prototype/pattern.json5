@@ -38,11 +38,17 @@
 				// The height of each pattern row in pixels
 				rowHeight: 19,
 
-				// color for patterns that are not visible, and other negative space
+				// color for patterns that are not visible, and other negative space when in display mode
 				backdrop: "#000000",
 
 				// color for patterns that are not visible, and other negative space when in record mode
 				recordbackdrop: "#100000",
+
+				// color for the borders between channels in display mode
+				border: "#000000",
+
+				// color for the borders between channels in record mode
+				recordborder: "#100000",
 			},
 			// font settings for pattern rows
 			font: {

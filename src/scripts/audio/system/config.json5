@@ -14,7 +14,7 @@
 		{ name: "AURORA☆FIELDS", url: "https://github.com/NatsumiFox", info: "The actual framework for implementing Audify into ZorroTracker" },
 	],
 
-	windows: "DIRECTSOUND",							// audio API on windows: DIRECTSOUND, WASAPI, ASIO, or null to guess the best API (not recommended)
+	windows: "WASAPI",								// audio API on windows: DIRECTSOUND, WASAPI, ASIO, or null to guess the best API (not recommended)
 	linux: "ALSA",									// audio API on linux: ALSA, OSS, PULSE, JACK, or null to guess the best API (not recommended)
 	macos: "CORE",									// audio API on macos: CORE, or null to guess the best API (not recommended)
 

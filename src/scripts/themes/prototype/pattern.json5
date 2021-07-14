@@ -1,16 +1,35 @@
 {
 	pattern: {
 		main: {
+			// settings related to the channel headers
+			header: {
+				// settings related to the resize handle for each channel header
+				resize: {
+					// the SVG d attribute of the path element, for the reisze handle. When possible, this is animated to transform the shapes neatly.
+					// See more about this attribute here: https://css-tricks.com/svg-path-syntax-illustrated-guide/
+					// format: minimum effect count, any other effect count, maximum effect count
+					path: [ "M20 50L20 25V75Z M60 50L40 25V75Z", "M20 50L40 25V75Z M80 50L60 25V75Z", "M40 50L60 25V75Z M80 50L80 25V75Z" ],
+				}
+			},
 			// Settings related to the focused row
 			focus: {
-				// the color used with blending mode to create the final output colors
+				// the color used with blending mode to create the final output colors in display mode
 				// format: normal, highlight a, highlight b
-				color: [ "#dadada", "#00dada", "#dada00", ],
+				color: [ "#3F7F427F", "#3F7F427F", "#3F7F427F", ],
 
-				// the background blending mode for the colors. This allows you to change the color with less performance impact.
+				// the background blending mode for the colors in display mode. This allows you to change the color with less performance impact.
 				// see: https://developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode
 				// format: normal, highlight a, highlight b
-				blend: [ "soft-light", "soft-light", "difference", ],
+				blend: [ "color-dodge", "color-dodge", "color-dodge", ],
+
+				// the color used with blending mode to create the final output colors in record mode
+				// format: normal, highlight a, highlight b
+				recordcolor: [ "#3F7F427F", "#3F7F427F", "#3F7F427F", ],
+
+				// the background blending mode for the colors in record mode. This allows you to change the color with less performance impact.
+				// see: https://developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode
+				// format: normal, highlight a, highlight b
+				recordblend: [ "soft-light", "soft-light", "soft-light", ],
 			}
 		},
 		worker: {
@@ -18,14 +37,20 @@
 			params: {
 				// The height of each pattern row in pixels
 				rowHeight: 19,
+
+				// color for patterns that are not visible, and other negative space
+				backdrop: "#000000",
+
+				// color for patterns that are not visible, and other negative space when in record mode
+				recordbackdrop: "#100000",
 			},
 			// font settings for pattern rows
 			font: {
 				// The source of this font. This can be a web URL or a local file
-				source: "url('%folder%RobotoMono.woff2')",
+				source: "url('%folder%RobotoMono-Medium.woff2')",
 
 				// The name of the font. This can be an arbitary string
-				name: "Roboto Mono",
+				name: "Roboto Mono Medium",
 
 				// CSS size of the font. This can be for example in pt, px, etc.
 				size: "10pt",
@@ -40,136 +65,237 @@
 
 				// text color for all elements
 				text: "#FF00FF",
-
-				// color for patterns that are not visible, and other negative space
-				clear: "#000000",
 			},
 			// row number settings
 			rownum: {
-				// when the pattern is inactive, these colors will be shown
+				// when the pattern is inactive, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				inactive: [ "#006868", "#686868", "#686868", ],
+				inactive: [ "#2C2C2C", "#303334", "#313A3C", ],
 
-				// when the pattern is active, these colors will be shown
+				// when the pattern is active, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				active: [ "#008a8a", "#8b8ba3", "#9c9b80", ],
+				active: [ "#666666", "#6F7679", "#72868C", ],
 
-				// when the pattern is inactive, these colors will be shown
+				// when the pattern is inactive, these background colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				inactivebg: [ "#001E1E", "#1E1E1E", "#1E1E1E", ],
+				inactivebg: [ "#0A0A0A", "#0E1113", "#10181B", ],
 
-				// when the pattern is active, these colors will be shown
+				// when the pattern is active, these background colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				activebg: [ "#002627", "#2e2e38", "#35362a", ],
+				activebg: [ "#191919", "#22292C", "#25393F", ],
+
+				// when the pattern is inactive, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordinactive: [ "#002C2C", "#303334", "#313A3C", ],
+
+				// when the pattern is active, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordactive: [ "#006666", "#6F7679", "#72868C", ],
+
+				// when the pattern is inactive, these background colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordinactivebg: [ "#000A0A", "#0E1113", "#10181B", ],
+
+				// when the pattern is active, these background colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordactivebg: [ "#001919", "#22292C", "#25393F", ],
 			},
 			// row background settings
 			background: {
-				// when the pattern is inactive, these colors will be shown
+				// when the pattern is inactive, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				inactive: [ "#1E1E1E", "#1E1E1E", "#1E1E1E", ],
+				inactive: [ "#101010", "#141718", "#151E21", ],
 
-				// when the pattern is active, these colors will be shown
+				// when the pattern is active, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				active: [ "#262627", "#2e2e38", "#35362a", ],
+				active: [ "#262626", "#2F3639", "#32464C", ],
+
+				// when the pattern is inactive, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordinactive: [ "#101010", "#141718", "#151E21", ],
+
+				// when the pattern is active, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordactive: [ "#262626", "#2F3639", "#32464C", ],
 			},
 			// note element settings
 			note: {
 				// the offset from the left side of the channel row to render this at
 				left: 3,
 
-				// when the pattern is inactive but not blank, these colors will be shown
+				// when the pattern is inactive but not blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				inactive: [ "#686868", "#686868", "#686868", ],
+				inactive: [ "#5E5E5E", "#616464", "#636464", ],
 
-				// when the pattern is inactive and blank, these colors will be shown
+				// when the pattern is inactive and blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				inactiveblank: [ "#404040", "#404040", "#404040", ],
+				inactiveblank: [ "#2E2E2E", "#323536", "#333C3F", ],
 
-				// when the pattern is active but not blank, these colors will be shown
+				// when the pattern is active but not blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				active: [ "#b7b7b7", "#a2a5ba", "#c6c99f", ],
+				active: [ "#D8D8D8", "#E1E6E6", "#E4E6E6", ],
 
-				// when the pattern is active and blank, these colors will be shown
+				// when the pattern is active and blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				activeblank: [ "#616161", "#63636e", "#706f60", ],
+				activeblank: [ "#6B6B6B", "#747B7E", "#778B91", ],
+
+				// when the pattern is inactive but not blank, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordinactive: [ "#5E5E5E", "#616464", "#636464", ],
+
+				// when the pattern is inactive and blank, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordinactiveblank: [ "#2E2E2E", "#323536", "#333C3F", ],
+
+				// when the pattern is active but not blank, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordactive: [ "#D8D8D8", "#E1E6E6", "#E4E6E6", ],
+
+				// when the pattern is active and blank, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordactiveblank: [ "#6B6B6B", "#747B7E", "#778B91", ],
 			},
 			// instrument element settings
 			instrument: {
 				// the offset from the left side of the channel row to render this at
 				left: 31,
 
-				// when the pattern is inactive but not blank, these colors will be shown
+				// when the pattern is inactive but not blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				inactive: [ "#686868", "#686868", "#686868", ],
+				inactive: [ "#3C484C", "#404F54", "#415659", ],
 
-				// when the pattern is inactive and blank, these colors will be shown
+				// when the pattern is inactive and blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				inactiveblank: [ "#404040", "#404040", "#404040", ],
+				inactiveblank: [ "#272F31", "#2B3639", "#2C3D42", ],
 
-				// when the pattern is active but not blank, these colors will be shown
+				// when the pattern is active but not blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				active: [ "#7e81a5", "#8590cc", "#a18abf", ],
+				active: [ "#8BA7B0", "#94B7C3", "#97C7CD", ],
 
-				// when the pattern is active and blank, these colors will be shown
+				// when the pattern is active and blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				activeblank: [ "#616161", "#63636e", "#706f60", ],
+				activeblank: [ "#5A6D72", "#637D85", "#668D98", ],
+
+				// when the pattern is inactive but not blank, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordinactive: [ "#3C484C", "#404F54", "#415659", ],
+
+				// when the pattern is inactive and blank, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordinactiveblank: [ "#272F31", "#2B3639", "#2C3D42", ],
+
+				// when the pattern is active but not blank, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordactive: [ "#8BA7B0", "#94B7C3", "#97C7CD", ],
+
+				// when the pattern is active and blank, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordactiveblank: [ "#5A6D72", "#637D85", "#668D98", ],
 			},
 			// volume element settings
 			volume: {
 				// the offset from the left side of the channel row to render this at
 				left: 50,
 
-				// when the pattern is inactive but not blank, these colors will be shown
+				// when the pattern is inactive but not blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				inactive: [ "#686868", "#686868", "#686868", ],
+				inactive: [ "#3D4D3E", "#415446", "#42594F", ],
 
-				// when the pattern is inactive and blank, these colors will be shown
+				// when the pattern is inactive and blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				inactiveblank: [ "#404040", "#404040", "#404040", ],
+				inactiveblank: [ "#273128", "#2B3840", "#2C3F38", ],
 
-				// when the pattern is active but not blank, these colors will be shown
+				// when the pattern is active but not blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				active: [ "#62ab4a", "#50ba7e", "#98bf4b", ],
+				active: [ "#8DB190", "#96C1A3", "#99CEB6", ],
 
-				// when the pattern is active and blank, these colors will be shown
+				// when the pattern is active and blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				activeblank: [ "#616161", "#63636e", "#706f60", ],
+				activeblank: [ "#5A725C", "#63826F", "#669282", ],
+
+				// when the pattern is inactive but not blank, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordinactive: [ "#3D4D3E", "#415446", "#42594F", ],
+
+				// when the pattern is inactive and blank, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordinactiveblank: [ "#273128", "#2B3840", "#2C3F38", ],
+
+				// when the pattern is active but not blank, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordactive: [ "#8DB190", "#96C1A3", "#99CEB6", ],
+
+				// when the pattern is active and blank, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordactiveblank: [ "#5A725C", "#63826F", "#669282", ],
 			},
 			// effect element settings
 			effect:	{
-				// when the pattern is inactive but not blank, these colors will be shown
+				// when the pattern is inactive but not blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				inactive: [ "#686868", "#686868", "#686868", ],
+				inactive: [ "#585858", "#5C5F61", "#5E6161", ],
 
-				// when the pattern is inactive and blank, these colors will be shown
+				// when the pattern is inactive and blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				inactiveblank: [ "#404040", "#404040", "#404040", ],
+				inactiveblank: [ "#2C2C2C", "#303334", "#313A3C", ],
 
-				// when the pattern is active but not blank, these colors will be shown
+				// when the pattern is active but not blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				active: [ "#b16f6f", "#b18c6f", "#bf8f6d", ],
+				active: [ "#CCCCCC", "#D5DCDF", "#D8DFDF", ],
 
-				// when the pattern is active and blank, these colors will be shown
+				// when the pattern is active and blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				activeblank: [ "#616161", "#63636e", "#706f60", ],
+				activeblank: [ "#666666", "#6F7679", "#72868C", ],
+
+				// when the pattern is inactive but not blank, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordinactive: [ "#585858", "#5C5F61", "#5E6161", ],
+
+				// when the pattern is inactive and blank, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordinactiveblank: [ "#2C2C2C", "#303334", "#313A3C", ],
+
+				// when the pattern is active but not blank, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordactive: [ "#CCCCCC", "#D5DCDF", "#D8DFDF", ],
+
+				// when the pattern is active and blank, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordactiveblank: [ "#666666", "#6F7679", "#72868C", ],
 			},
 			// effect value element settings
 			value: {
-				// when the pattern is inactive but not blank, these colors will be shown
+				// when the pattern is inactive but not blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				inactive: [ "#686868", "#686868", "#686868", ],
+				inactive: [ "#3C3C3C", "#404345", "#424A4D", ],
 
-				// when the pattern is inactive and blank, these colors will be shown
+				// when the pattern is inactive and blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				inactiveblank: [ "#404040", "#404040", "#404040", ],
+				inactiveblank: [ "#1E1E1E", "#222527", "#242C2F", ],
 
-				// when the pattern is active but not blank, these colors will be shown
+				// when the pattern is active but not blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				active: [ "#bba6a1", "#b8bba1", "#ccbaa7", ],
+				active: [ "#8C8C8C", "#959C9F", "#98ACB2", ],
 
-				// when the pattern is active and blank, these colors will be shown
+				// when the pattern is active and blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				activeblank: [ "#616161", "#63636e", "#706f60", ],
+				activeblank: [ "#474747", "#50575A", "#53676D", ],
+
+				// when the pattern is inactive but not blank, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordinactive: [ "#3C3C3C", "#404345", "#424A4D", ],
+
+				// when the pattern is inactive and blank, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordinactiveblank: [ "#1E1E1E", "#222527", "#242C2F", ],
+
+				// when the pattern is active but not blank, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordactive: [ "#8C8C8C", "#959C9F", "#98ACB2", ],
+
+				// when the pattern is active and blank, these colors will be shown in record mode
+				// format: normal, highlight a, highlight b
+				recordactiveblank: [ "#474747", "#50575A", "#53676D", ],
 			},
 
 			// the offset from the left side of the channel row to render each effect and effect value pairs at

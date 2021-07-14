@@ -54,8 +54,18 @@
 			case "render":
 				render();
 				break;
+
+			case "record":
+				record = data.status as boolean;
+				render();
+				break;
 		}
 	}
+
+	/**
+	 * The record status of this canvas
+	 */
+	let record = false;
 
 	/**
 	 * Load theme settings
@@ -70,10 +80,21 @@
 		// load some default values
 		textVerticalOffset = theme?.font?.top ?? 0;
 		rowHeight = theme?.params?.rowHeight ?? 0;
-		clearColor = theme?.fallback?.clear ?? fallbackRow;
 
-		backdropColors = (active ? theme?.rownum?.activebg : theme?.rownum?.inactivebg) ?? [ fallbackRow, fallbackRow, fallbackRow, ];
-		rowNumColors = (active ? theme?.rownum?.active : theme?.rownum?.inactive) ?? [ fallbackText, fallbackText, fallbackText, ];
+		clearColor = [
+			theme?.params?.backdrop ?? fallbackRow,
+			theme?.params?.recordbackdrop ?? fallbackRow,
+		];
+
+		backdropColors = [
+			...(active ? theme?.rownum?.activebg : theme?.rownum?.inactivebg) ?? [ fallbackRow, fallbackRow, fallbackRow, ],
+			...(active ? theme?.rownum?.recordactivebg : theme?.rownum?.recordinactivebg) ?? [ fallbackRow, fallbackRow, fallbackRow, ],
+		];
+
+		rowNumColors = [
+			...(active ? theme?.rownum?.active : theme?.rownum?.inactive) ?? [ fallbackText, fallbackText, fallbackText, ],
+			...(active ? theme?.rownum?.recordactive : theme?.rownum?.recordinactive) ?? [ fallbackText, fallbackText, fallbackText, ],
+		];
 
 		// request the font to be loaded
 		const font = new FontFace(theme?.font?.name ?? "Font", theme?.font?.source ?? "url()", {
@@ -159,11 +180,11 @@
 
 		} else {
 			// background fill the entire canvas with base color first
-			ctx.fillStyle = backdropColors[0];
+			ctx.fillStyle = backdropColors[record ? 3 : 0];
 			ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 			// fill the border in too
-			ctx.fillStyle = clearColor;
+			ctx.fillStyle = clearColor[record ? 1 : 0];
 			ctx.fillRect(31, 0, 4, canvas.height);
 
 			for(let row = 0;row < patternLen;row ++) {
@@ -171,7 +192,7 @@
 				const top = row * rowHeight;
 
 				// get the highlight ID
-				const hid = (row % highlights[0]) === 0 ? 2 : (row % highlights[1]) === 0 ? 1 : 0;
+				const hid = (record ? 3 : 0) + (row % highlights[0]) === 0 ? 2 : (row % highlights[1]) === 0 ? 1 : 0;
 
 				if(hid !== 0) {
 					// render the highlight color over this
@@ -189,7 +210,7 @@
 	/**
 	 * The color that is displayed on a cleared pattern
 	 */
-	let clearColor:string;
+	let clearColor: [ string, string, ];
 
 	/**
 	 * The list of backdrop colors depending on which highlight is active (or none at all)

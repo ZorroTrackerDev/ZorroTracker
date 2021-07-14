@@ -43,14 +43,6 @@
 			border-right: 4px solid black;
 			z-index: 11;
 
-			&.dragright > .channelnamewrapper > .channeldragarea > svg > path {
-				d: path("M20 50L20 25V75Z M60 50L40 25V75Z") !important;
-			}
-
-			&.dragleft > .channelnamewrapper > .channeldragarea > svg > path {
-				d: path("M40 50L60 25V75Z M80 50L80 25V75Z") !important;
-			}
-
 			&:not(:first-child) {
 				&> .channelnamewrapper {
 					&> .channeldragarea {
@@ -75,7 +67,6 @@
 
 							&> path {
 								transition: d .25s ease-in-out, fill .15s linear;
-								d: path("M20 50L40 25V75Z M80 50L60 25V75Z");
 							}
 						}
 					}

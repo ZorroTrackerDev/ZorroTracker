@@ -372,6 +372,11 @@ export class PatternEditor implements UIElement {
 
 		// @ts-expect-error This works you silly butt
 		element.classList = "channelwrapper"+ (width === 1 ? " dragright" : width === 8 ? " dragleft" : "");
+
+		// update SVG path element
+		const path = element.querySelector("path");
+		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+		path && path.setAttribute("d", (theme?.pattern?.main?.header?.resize?.path ?? [])[width === 1 ? 0 : width === 8 ? 2 : 1] ?? "");
 	}
 
 	/**
@@ -477,11 +482,29 @@ export class PatternEditor implements UIElement {
 					}, 32);
 					break;
 				}
+
+				case "record": {		// toggle record mode
+					this.recordMode = !this.recordMode;
+
+					// update canvas record state
+					this.canvas.forEach((c) => c.setRecord());
+					this.rows.forEach((c) => c.setRecord());
+					this.handleScrolling();
+
+					// make sure the focus row gets updated
+					this.updateFocusRowData();
+					break;
+				}
 			}
 		}
 
 		return false;
 	}
+
+	/**
+	 * Flag controlling whether the application is in record mode or not
+	 */
+	public recordMode = false;
 
 	private derp = false;
 
@@ -677,8 +700,15 @@ export class PatternEditor implements UIElement {
 		this.dataHeight = theme?.pattern?.worker?.params?.rowHeight ?? 25;
 
 		// load the tables handling the focus bar colors
-		this.focusBarColorNormal = theme?.pattern?.main?.focus?.color ?? [ "#000", "#000", "#000", ];
-		this.focusBarBlendNormal = theme?.pattern?.main?.focus?.blend ?? [ "", "", "", ];
+		this.focusBarColorNormal = [
+			...theme?.pattern?.main?.focus?.color ?? [ "#000", "#000", "#000", ],
+			...theme?.pattern?.main?.focus?.recordcolor ?? [ "#000", "#000", "#000", ],
+		];
+
+		this.focusBarBlendNormal = [
+			...theme?.pattern?.main?.focus?.blend ?? [ "", "", "", ],
+			...theme?.pattern?.main?.focus?.recordblend ?? [ "", "", "", ],
+		];
 
 		// update elements that use the row height directly
 		this.focusBar.style.height = this.dataHeight +"px";
@@ -698,8 +728,8 @@ export class PatternEditor implements UIElement {
 	/**
 	 * The color and blend mode settings for the focus bar
 	 */
-	private focusBarColorNormal!: [ string, string, string, ];
-	private focusBarBlendNormal!: [ string, string, string, ];
+	private focusBarColorNormal!: [ string, string, string,  string, string, string, ];
+	private focusBarBlendNormal!: [ string, string, string,  string, string, string, ];
 
 	/**
 	 * Helper function to update focus row details
@@ -707,7 +737,7 @@ export class PatternEditor implements UIElement {
 	private updateFocusRowData() {
 		// calculate the current highlight ID
 		const row = this.currentRow % this.index.patternlen;
-		const hid = ((row % this.rowHighlights[0]) === 0 ? 2 : (row % this.rowHighlights[1]) === 0 ? 1 : 0);
+		const hid = (this.recordMode ? 3 : 0) + ((row % this.rowHighlights[0]) === 0 ? 2 : (row % this.rowHighlights[1]) === 0 ? 1 : 0);
 
 		// update background color and blend mode for this row
 		this.focusBar.style.backgroundColor = this.focusBarColorNormal[hid];

@@ -90,4 +90,5 @@
 	"*layout.piano.octave2.E":			[ "KeyP" ],								/* shortcut for playing E on current octave +2 */
 
 	"layout.pattern.null":				[ "Enter" ],							/* TEST ONLY */
+	"layout.pattern.record":			[ "Space" ],							/* shortcut for toggling record mode */
 }

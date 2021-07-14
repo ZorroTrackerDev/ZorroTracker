@@ -67,15 +67,29 @@
 				break;
 
 			case "invalidate":
-				for(let i = data.start as number;i < (data.end as number);i ++){
-					rendered[i] = false;
-				}
+				invalidateRows(data.start as number, data.end as number);
 				break;
+
+			case "record":
+				record = data.status as boolean;
+				invalidateRows(0, patternLen);
+				break;
+		}
+	}
+
+	function invalidateRows(start:number, end:number) {
+		for(let i = start;i < end;i ++){
+			rendered[i] = false;
 		}
 	}
 
 	// the width of the render area of this canvas
 	let renderWidth = 0;
+
+	/**
+	 * The record status of this canvas
+	 */
+	let record = false;
 
 	/**
 	 * Load theme settings
@@ -92,13 +106,18 @@
 		// load some default values
 		textVerticalOffset = theme?.font?.top ?? 0;
 		rowHeight = theme?.params?.rowHeight ?? 0;
-		clearColor = theme?.fallback?.clear ?? fallbackRow;
 
-		backdropColors = [];
-		backdropColors.push(...(theme?.background?.active ?? fallback3Row), ...(theme?.background?.inactive ?? fallback3Row));
+		clearColor = [
+			theme?.params?.backdrop ?? fallbackRow,
+			theme?.params?.recordbackdrop ?? fallbackRow,
+		];
 
-		rowNumColors = [];
-		rowNumColors.push(...(theme?.rownum?.active ?? fallback3Text), ...(theme?.rownum?.inactive ?? fallback3Text));
+		backdropColors = [
+			...(theme?.background?.active ?? fallback3Row),
+			...(theme?.background?.inactive ?? fallback3Row),
+			...(theme?.background?.recordactive ?? fallback3Row),
+			...(theme?.background?.recordinactive ?? fallback3Row),
+		];
 
 		// reset element arrays
 		unsetColors = [];
@@ -109,8 +128,20 @@
 		for(const data of [ theme?.note, theme?.instrument, theme?.volume, ]) {
 			// load each array with values
 			channelElementOffsets.push(data?.left ?? 0);
-			unsetColors.push([ ...(data?.activeblank ?? fallback3Text), ...(data?.inactiveblank ?? fallback3Text), ]);
-			channelElementColors.push([ ...(data?.active ?? fallback3Text), ...(data?.inactive ?? fallback3Text), ]);
+
+			unsetColors.push([
+				...(data?.activeblank ?? fallback3Text),
+				...(data?.inactiveblank ?? fallback3Text),
+				...(data?.recordactiveblank ?? fallback3Text),
+				...(data?.recordinactiveblank ?? fallback3Text),
+			]);
+
+			channelElementColors.push([
+				...(data?.active ?? fallback3Text),
+				...(data?.inactive ?? fallback3Text),
+				...(data?.recordactive ?? fallback3Text),
+				...(data?.recordinactive ?? fallback3Text),
+			]);
 		}
 
 		// load effect elements data
@@ -119,8 +150,20 @@
 		for(const position of theme?.effectleft ?? []) {
 			// load each array with values
 			const data = theme ? theme[p & 1 ? "value" : "effect"] : undefined;
-			unsetColors.push([ ...(data?.activeblank ?? fallback3Text), ...(data?.inactiveblank ?? fallback3Text), ]);
-			channelElementColors.push([ ...(data?.active ?? fallback3Text), ...(data?.inactive ?? fallback3Text), ]);
+
+			unsetColors.push([
+				...(data?.activeblank ?? fallback3Text),
+				...(data?.inactiveblank ?? fallback3Text),
+				...(data?.recordactiveblank ?? fallback3Text),
+				...(data?.recordinactiveblank ?? fallback3Text),
+			]);
+
+			channelElementColors.push([
+				...(data?.active ?? fallback3Text),
+				...(data?.inactive ?? fallback3Text),
+				...(data?.recordactive ?? fallback3Text),
+				...(data?.recordinactive ?? fallback3Text),
+			]);
 
 			channelElementOffsets.push(position);
 			p++;
@@ -214,14 +257,14 @@
 		const top = row * rowHeight;
 
 		// get the highlight ID
-		const hid = (active ? 0 : 3) + ((row % highlights[0]) === 0 ? 2 : (row % highlights[1]) === 0 ? 1 : 0);
+		const hid = (record ? 6 : 0) + (active ? 0 : 3) + ((row % highlights[0]) === 0 ? 2 : (row % highlights[1]) === 0 ? 1 : 0);
 
 		// draw the background fill color
 		ctx.fillStyle = backdropColors[hid];
 		ctx.fillRect(0, top, renderWidth, rowHeight);
 
 		// initialize border color
-		ctx.fillStyle = clearColor;
+		ctx.fillStyle = clearColor[record ? 1 : 0];
 
 		// loop for each channel position
 		channelPositionsRight.forEach((left) => {
@@ -288,17 +331,12 @@
 	/**
 	 * The color that is displayed on a cleared pattern
 	 */
-	let clearColor:string;
+	let clearColor: [ string, string, ];
 
 	/**
 	 * The list of backdrop colors depending on which highlight is active (or none at all)
 	 */
 	let backdropColors:string[] = [];
-
-	/**
-	 * The list of row number colors depending on which highlight is active (or none at all)
-	 */
-	let rowNumColors:string[] = [];
 
 	/**
 	 * The list of unset dash colors for each element in the channel row depending on which highlight is active (or none at all)

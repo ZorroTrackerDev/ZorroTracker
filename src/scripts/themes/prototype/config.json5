@@ -6,9 +6,10 @@
 	name: "prototype theme",						// the user-friendly name of this script
 	version: "b1",									// the API version identifier. ZorroTracker will support some older versions as long as the API does not have breaking changes. Do not change this by yourself!
 	entry: "./",									// this should always be "./"
-	date: "2021/9/7",								// the date the theme configuration was created
+	date: "2021/7/14",								// the date the theme configuration was created
 	credits: [										// the credits of people who contributed to this audio handler
-		{ name: "AURORA☆FIELDS", url: "https://github.com/NatsumiFox", info: "Initial implementation of the theme" },
+		{ name: "Blast Brothers", url: "", info: "Most of the work behind the theme" },
+		{ name: "AURORA☆FIELDS", url: "https://github.com/NatsumiFox", info: "Initial implementation and modifcations" },
 	],
 
 	files: [										// the files that are included within this theme configuration

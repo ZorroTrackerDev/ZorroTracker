@@ -88,6 +88,14 @@ class EditorCanvasBase {
 			}, 1000);
 		});
 	}
+
+	/**
+	 * Helper function to update the record status of canvas
+	 */
+	public setRecord() {
+		// tell the worker to update record state
+		this.worker.postMessage({ command: "record", data: { status: this.parent.recordMode, }, });
+	}
 }
 
 export class RowsCanvas extends EditorCanvasBase {

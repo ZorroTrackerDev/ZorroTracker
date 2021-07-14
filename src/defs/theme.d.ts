@@ -11,12 +11,24 @@ declare interface ThemeSettings {
 	},
 }
 
-type WorkerThemeHighlight = [ string, string, string ];
-
 /**
  * Helper type to handle theme settings related to the pattern editor
  */
 declare interface PatternEditorThemeSettings {
+	/**
+	 * Settings related to the channel headers
+	 */
+	header?: {
+		/**
+		 * Settings related to the resize handle of a channerl header
+		 */
+		resize?: {
+			/**
+			 * The SVG d attribute for the path element of the SVG graphics display
+			 */
+			path?: [ string, string, string ],
+		}
+	},
 	/**
 	 * Settings related to the focused row
 	 */
@@ -30,8 +42,19 @@ declare interface PatternEditorThemeSettings {
 		 * See: https://developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode
 		 */
 		blend?: WorkerThemeHighlight,
+		/**
+		 * The color of the focused row. This is blended according to blending settings in record mode
+		 */
+		recordcolor?: WorkerThemeHighlight,
+		/**
+		 * The CSS blending mode for the row in record mode. This will allow you to create composite colors with little performance hit.
+		 * See: https://developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode
+		 */
+		recordblend?: WorkerThemeHighlight,
 	}
 }
+
+type WorkerThemeHighlight = [ string, string, string ];
 
 /**
  * Helper type to handle theme settings related to the pattern editor workers
@@ -45,6 +68,16 @@ declare interface WorkerThemeSettings {
 		 * The height of each pattern row in pixels
 		 */
 		rowHeight?: number,
+
+		/**
+		 * The color for the backdrop of the pattern editor in display mode
+		 */
+		backdrop?: string,
+
+		/**
+		 * The color for the backdrop of the pattern editor in record mode mode
+		 */
+		recordbackdrop?: string,
 	},
 	font?: {
 		/**
@@ -76,11 +109,6 @@ declare interface WorkerThemeSettings {
 		 * The CSS color of the text fallback
 		 */
 		text?: string,
-
-		/**
-		 * The color of a cleared pattern
-		 */
-		clear?: string,
 	},
 	/**
 	 * Settings for each row background
@@ -128,6 +156,14 @@ declare interface SimpleElementSettings {
 	 * The active color for text for an element that is set for different highlights
 	 */
 	active?: WorkerThemeHighlight,
+	/**
+	 * The inactive color for text for an element that is set, in record mode
+	 */
+	recordinactive?: WorkerThemeHighlight,
+	/**
+	 * The active color for text for an element that is set for different highlights in record mode
+	 */
+	recordactive?: WorkerThemeHighlight,
 }
 
 /**
@@ -142,6 +178,14 @@ declare interface RowNumElementSettings extends SimpleElementSettings {
 	 * The active background colors for a row
 	 */
 	activebg?: WorkerThemeHighlight,
+	/**
+	 * The inactive background colors for a row in record mode
+	 */
+	recordinactivebg?: WorkerThemeHighlight,
+	/**
+	 * The active background colors for a row in record mode
+	 */
+	recordactivebg?: WorkerThemeHighlight,
 }
 
 /**
@@ -160,4 +204,12 @@ declare interface ElementSettings extends SimpleElementSettings {
 	 * The active color for text for an element that is not set for different highlights
 	 */
 	activeblank?: WorkerThemeHighlight,
+	/**
+	 * The inactive color for text for an element that is not set, in record mode
+	 */
+	recordinactiveblank?: WorkerThemeHighlight,
+	/**
+	 * The active color for text for an element that is not set for different highlights in record mode
+	 */
+	recordactiveblank?: WorkerThemeHighlight,
 }

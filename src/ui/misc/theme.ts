@@ -158,6 +158,36 @@ export async function loadSVG(id:string): Promise<string|""> {
 	}
 }
 
+/**
+ * Function to traverse the input `path` in the input `object`. This will hopefully return the requested object
+ *
+ * @param path The path to traverse for this object
+ * @param object The object itself to inspect
+ * @returns The final object or `undefined` if failed to find it
+ */
+function applyPath(path:string, object:unknown): undefined|Record<string, unknown> {
+	// check if the input object is an actual object
+	if(!object || typeof object !== "object") {
+		return;
+	}
+
+	// copy the object for tree traversal
+	let obj = object as Record<string, unknown>;
+
+	// traverse through all of the path
+	for(const p of path.split(".")) {
+		// apply the child object
+		obj = obj[p] as Record<string, unknown>;
+
+		// check if the input object is an actual object
+		if(!obj || typeof obj !== "object") {
+			return;
+		}
+	}
+
+	return obj;
+}
+
 let css: HTMLStyleElement|undefined;
 
 /**
@@ -189,12 +219,11 @@ function pathToCSS(data:CSSPathHelp, element:string, object:Record<string, unkno
 	const e = element + data.element;
 
 	// prepare variables
+	const obj = applyPath(data.path, object);
 	let str = "";
 
 	// check if object child exists
-	if(object[data.path] && typeof object[data.path] === "object") {
-		const obj = object[data.path] as Record<string, unknown>;
-
+	if(obj) {
 		// check if CSS is defined
 		if(obj["css"]) {
 			str = convertToCSS(obj["css"] as CSSTheme, e);
@@ -260,6 +289,44 @@ const cssPath = [
 				element: ".active:hover",
 				path: "activehover",
 				child: _playbarChild,
+			},
+		],
+	},
+	{
+		element: ".patterneditorwrap>.channelwrapper",
+		path: "pattern.main.header",
+		child: [
+			{
+				element: "",
+				path: "main",
+			},
+			{
+				element: ":first-child",
+				path: "row",
+			},
+			{
+				element: ">.channelnamewrapper>label",
+				path: "label",
+			},
+			{
+				element: ">.channelnamewrapper>.channeldragarea",
+				path: "resize",
+				child: [
+					{
+						element: ">>svg>*",
+						path: "icon",
+					},
+				],
+			},
+			{
+				element: ">.channelnamewrapper>.channeldragarea:hover",
+				path: "resizehover",
+				child: [
+					{
+						element: ">>svg>*",
+						path: "icon",
+					},
+				],
 			},
 		],
 	},

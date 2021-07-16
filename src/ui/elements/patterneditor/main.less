@@ -40,7 +40,6 @@
 		&> .channelwrapper {
 			position: relative;
 			display: inline-block;
-			border-right: 4px solid black;
 			z-index: 11;
 
 			&:not(:first-child) {
@@ -55,10 +54,6 @@
 
 						filter: brightness(100%);
 						transition: filter .15s linear;
-
-						&:hover > svg > path {
-							fill: #c78a74;
-						}
 
 						&> svg {
 							width: 100%;
@@ -87,7 +82,6 @@
 
 				&> .channelnamewrapper {
 					width: 100%;
-					background: #613123;
 
 					&> .channeldragarea {
 						display: none;
@@ -98,17 +92,12 @@
 			&> .channelnamewrapper {
 				position: relative;
 				height: @labelheight;
-				background: #9e4216;
 				text-align: center;
-				border-bottom: 2px solid black;
 				z-index: 15;
 				width: 100%;
 
 				&> label {
 					height: 100%;
-					color: white;
-					font-family: 'Noto Sans', sans-serif;
-					font-size: 11pt;
 					font-weight: normal;
 					padding-right: @labelheight - 4px;
 				}

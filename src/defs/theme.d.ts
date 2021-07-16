@@ -58,14 +58,47 @@ declare interface PatternEditorThemeSettings {
 	 */
 	header?: {
 		/**
-		 * Settings related to the resize handle of a channerl header
+		 * Settings related to the main element for the channel header
+		 */
+		main?: CSSThemeObj,
+		/**
+		 * Settings related to the label element for the channel header
+		 */
+		label?: CSSThemeObj,
+		/**
+		 * Settings related to the resize handle of a channel header
 		 */
 		resize?: {
 			/**
 			 * The SVG d attribute for the path element of the SVG graphics display
 			 */
 			path?: [ string, string, string ],
-		}
+			/**
+			 * The CSS styles for the resize handle
+			 */
+			css: CSSTheme,
+			/**
+			 * Styles for the child elements inside of a SVG
+			 */
+			icon: CSSThemeObj,
+		},
+		/**
+		 * Settings related to the resize handle of a channel header when hovered
+		 */
+		resizehover?: {
+			/**
+			 * The CSS styles for the resize handle
+			 */
+			css: CSSTheme,
+			/**
+			 * Styles for the child elements inside of a SVG
+			 */
+			icon: CSSThemeObj,
+		},
+		/**
+		 * Settings related to the row header
+		 */
+		row?: CSSThemeObj,
 	},
 	/**
 	 * Settings related to the focused row

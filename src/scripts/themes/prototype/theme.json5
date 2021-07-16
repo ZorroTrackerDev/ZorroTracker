@@ -9,6 +9,57 @@
 					// See more about this attribute here: https://css-tricks.com/svg-path-syntax-illustrated-guide/
 					// format: minimum effect count, any other effect count, maximum effect count
 					path: [ "M20 50L20 25V75Z M60 50L40 25V75Z", "M20 50L40 25V75Z M80 50L60 25V75Z", "M40 50L60 25V75Z M80 50L80 25V75Z" ],
+
+					// CSS styles
+					css: {
+
+					},
+					// styles for the child elements inside of the SVG
+					icon: {
+						// CSS styles
+						css: {
+
+						}
+					},
+				},
+				// settings related to the resize handle for each channel header when hovered
+				resizehover: {
+					// CSS styles
+					css: {
+
+					},
+					// styles for the child elements inside of the SVG
+					icon: {
+						// CSS styles
+						css: {
+							fill: "#c78a74",
+						}
+					},
+				},
+				// settings related to the main element for the channel header
+				main: {
+					// CSS styles
+					css: {
+						"background-color": "#9e4216",
+						"border-bottom": "2px solid black",
+						"border-right": "4px solid black",
+					}
+				},
+				// settings related to the label of the channel
+				label: {
+					// CSS styles
+					css: {
+						color: "white",
+						"font-family": "'Noto Sans', sans-serif",
+						"font-size": "11pt",
+					}
+				},
+				// settings related to the row header
+				row: {
+					// CSS styles
+					css: {
+						"background-color": "#613123",
+					}
 				}
 			},
 			// Settings related to the focused row

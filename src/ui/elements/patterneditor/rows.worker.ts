@@ -185,7 +185,7 @@
 			const rc = (record ? 3 : 0);
 
 			// background fill the entire canvas with base color first
-			ctx.fillStyle = backdropColors[record ? 3 : 0];
+			ctx.fillStyle = backdropColors[rc];
 			ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 			// fill the border in too

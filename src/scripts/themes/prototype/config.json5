@@ -12,10 +12,6 @@
 		{ name: "AURORA☆FIELDS", url: "https://github.com/NatsumiFox", info: "Initial implementation and modifcations" },
 	],
 
-	files: [										// the files that are included within this theme configuration
-		"pattern.json5",
-	],
-
 	svg: [											// the SVG file configurations
 		"svg.json5",
 	],

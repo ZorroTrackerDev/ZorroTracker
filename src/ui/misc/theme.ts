@@ -21,13 +21,16 @@ export let theme:ThemeSettings;
  */
 export function loadTheme(config:ThemeConfig):void {
 	// load the theme files into an array
-	const data = loadFiles([ config.entry, ], config.files) as ThemeSettings[];
+	const th = loadFiles([ config.entry, ], [ "theme.json5", ])[0] as ThemeSettings;
 	const svg = loadFiles([ config.entry, ], config.svg) as { [key: string]: string }[];
 
 	// if nothing was loaded, abort
-	if(data.length === 0 || svg.length === 0){
+	if(!th || svg.length === 0){
 		return;
 	}
+
+	// copy theme object over last theme
+	theme = th;
 
 	// copy config
 	_cfg = config;
@@ -44,8 +47,8 @@ export function loadTheme(config:ThemeConfig):void {
 		}
 	}
 
-	// TODO: figure out how to merge it all
-	theme = data[0];
+	// generate CSS stylesheet for this theme
+	generateCSS();
 
 	// file all relative paths
 	fixItems<string>(_folder, (u) => u.replace("%folder%", path.join(config.entry).replace(/\\/g, "/")));
@@ -139,3 +142,110 @@ export function loadSVG(id:string): string|"" {
 		return "";
 	}
 }
+
+let css: HTMLStyleElement|undefined;
+
+/**
+ * Helper function to generate the CSS stylesheet for this theme
+ */
+function generateCSS() {
+	if(!css) {
+		// initialize the CSS stylesheet
+		css = document.createElement("style");
+		css.type = "text/css";
+		css.classList.add("theme");
+		document.getElementsByTagName("head")[0]?.appendChild(css);
+	}
+
+	// save the CSS text
+	css.innerHTML = cssPath.map((d) => pathToCSS(d, "", theme as Record<string, undefined>)).join("\n");
+}
+
+/**
+ * Helper function to convert CSS path to a CSS stylesheet part
+ *
+ * @param data The data element we should traverse
+ * @param element The element address we are currently at
+ * @param path The path address we are currently at
+ */
+type CSSPathHelp = { path: string, child?: CSSPathHelp[], element: string, };
+
+function pathToCSS(data:CSSPathHelp, element:string, object:Record<string, unknown>): string {
+	const e = element + data.element;
+
+	// prepare variables
+	let str = "";
+
+	// check if object child exists
+	if(object[data.path] && typeof object[data.path] === "object") {
+		const obj = object[data.path] as Record<string, unknown>;
+
+		// check if CSS is defined
+		if(obj["css"]) {
+			str = convertToCSS(obj["css"] as CSSTheme, e);
+		}
+
+		// apeend child data to string
+		if(data.child) {
+			str += data.child.map((d) => pathToCSS(d, e, obj)).join("\n");
+		}
+	}
+
+	return str;
+}
+
+/**
+ * Helper function to convert an object to a CSS theme
+ *
+ * @param data The CSS data to convert
+ * @param element The path to the element we're applying this theme to
+ * @returns The converted CSS code
+ */
+function convertToCSS(data:CSSTheme, element:string): string {
+	const entries = Object.entries(data).map(([ key, value, ]) => `${ key }:${ value }`);
+	return entries.length === 0 ? "" : element +"{"+ entries.join(";") +"}";
+}
+
+// children of the playbar types
+const _playbarChild = [
+	{
+		element: "",
+		path: "button",
+	},
+	{
+		element: ">svg>*",
+		path: "icon",
+	},
+];
+
+/**
+ * The tree containing all SVG stylesheet generation targets
+ */
+const cssPath = [
+	{
+		element: ".playbuttonsbar>button",
+		path: "playbar",
+		child: [
+			{
+				element: "",
+				path: "normal",
+				child: _playbarChild,
+			},
+			{
+				element: ":hover",
+				path: "hover",
+				child: _playbarChild,
+			},
+			{
+				element: ".active",
+				path: "active",
+				child: _playbarChild,
+			},
+			{
+				element: ".active:hover",
+				path: "activehover",
+				child: _playbarChild,
+			},
+		],
+	},
+];

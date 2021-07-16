@@ -308,5 +308,80 @@
 			// format: effect 1 offset, value 1 offset, effect 2 offset, value 2 offset, [...]
 			effectleft: [ 70, 87,  108, 125,  146, 163,  184, 201,  222, 239,  260, 277,  298, 315,  336, 353, ],
 		}
-	}
+	},
+	playbar: {
+		// styles for the normal state of the button
+		normal: {
+			// styles for the button itself
+			button: {
+				// CSS styles
+				css: {
+					border: "2px solid #0f0f0f",
+					"background-color": "#44454b",
+					transition: "background-color 0.2s ease-in-out",
+				}
+			},
+			// styles for the child elements inside of the SVG
+			icon: {
+				// CSS styles
+				css: {
+					stroke: "#dadada",
+					fill: "#dadada",
+					transition: "stroke 0.2s ease-in-out, fill 0.2s ease-in-out",
+				}
+			},
+		},
+		// styles for the hovered state of the button
+		hover: {
+			// styles for the button itself
+			button: {
+				// CSS styles
+				css: {
+					"background-color": "#4f5363",
+				}
+			},
+			// styles for the child elements inside of the SVG
+			icon: {
+				// CSS styles
+				css: {
+					stroke: "#9ba4fa",
+					fill: "#9ba4fa",
+				}
+			},
+		},
+		// styles for the active state of the button
+		active: {
+			// styles for the button itself
+			button: {
+				// CSS styles
+				css: {
+
+				}
+			},
+			// styles for the child elements inside of the SVG
+			icon: {
+				// CSS styles
+				css: {
+
+				}
+			},
+		},
+		// styles for the hovered and active state of the button
+		activehhover: {
+			// styles for the button itself
+			button: {
+				// CSS styles
+				css: {
+
+				}
+			},
+			// styles for the child elements inside of the SVG
+			icon: {
+				// CSS styles
+				css: {
+
+				}
+			},
+		},
+	},
 }

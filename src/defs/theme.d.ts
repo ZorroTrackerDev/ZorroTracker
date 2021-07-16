@@ -1,6 +1,27 @@
+/**
+ * Helper type for CSS declarations within the theme
+ */
+declare type CSSTheme = Record<string, string|number>;
+declare type CSSThemeObj = { css: CSSTheme };
+
 declare interface ThemeSettings {
 	playbar?: {
-
+		/**
+		 * The normal status for buttons that are not activated
+		 */
+		normal: PlaybarButtonsInfo,
+		/**
+		 * The hovered status for buttons that are not activated
+		 */
+		hover: PlaybarButtonsInfo,
+		/**
+		 * The normal status for buttons that are activated
+		 */
+		active: PlaybarButtonsInfo,
+		/**
+		 * The hovered status for buttons that are activated
+		 */
+		activehover: PlaybarButtonsInfo,
 	},
 	pattern?: {
 		/**
@@ -12,6 +33,20 @@ declare interface ThemeSettings {
 		 */
 		main?: PatternEditorThemeSettings,
 	},
+}
+
+/**
+ * Helper type for playbar buttons infos
+ */
+declare interface PlaybarButtonsInfo {
+	/**
+	 * Declarations for the button wrapper
+	 */
+	button: CSSThemeObj,
+	/**
+	 * Declarations for the SVG path element inside the button
+	 */
+	icon: CSSThemeObj,
 }
 
 /**

@@ -487,15 +487,7 @@ export class PatternEditor implements UIElement {
 				}
 
 				case "record": {		// toggle record mode
-					this.recordMode = !this.recordMode;
-
-					// update canvas record state
-					this.canvas.forEach((c) => c.setRecord());
-					this.rows.forEach((c) => c.setRecord());
-					this.handleScrolling();
-
-					// make sure the focus row gets updated
-					this.updateFocusRowData();
+					this.flipRecordMode();
 					break;
 				}
 			}
@@ -508,6 +500,37 @@ export class PatternEditor implements UIElement {
 	 * Flag controlling whether the application is in record mode or not
 	 */
 	public recordMode = false;
+
+	/**
+	 * Function to flip the record mode
+	 *
+	 * @returns The new record mode
+	 */
+	public flipRecordMode(): boolean {
+		this.recordMode = !this.recordMode;
+
+		// update canvas record state
+		this.rows.forEach((c) => c.setRecord());
+
+		this.canvas.forEach((c) => {
+			// set record status and reset the clear status. This makes sure the background is rendered
+			c.setRecord();
+			c.fillVoid();
+			c.isClear = false;
+		});
+
+		// update backdrop color
+		this.scrollwrapper.style.backgroundColor = this.backdropColors[this.recordMode ? 1 : 0];
+
+		// reload graphics
+		this.handleScrolling();
+
+		// make sure the focus row gets updated
+		this.updateFocusRowData();
+
+		// return the new record mode
+		return this.recordMode;
+	}
 
 	private derp = false;
 
@@ -693,6 +716,11 @@ export class PatternEditor implements UIElement {
 	}
 
 	/**
+	 * The colors for the backdrop of the scrollWrapper
+	 */
+	private backdropColors!: [ string, string, ];
+
+	/**
 	 * Helper function to inform that the theme was reloaded
 	 */
 	public async reloadTheme(preload:boolean):Promise<void> {
@@ -701,6 +729,15 @@ export class PatternEditor implements UIElement {
 
 		// meanwhile, load some variables
 		this.dataHeight = theme?.pattern?.worker?.params?.rowHeight ?? 25;
+
+		// load the tables for backdrop colors
+		this.backdropColors = [
+			theme?.pattern?.worker?.params?.backdrop ?? "#000",
+			theme?.pattern?.worker?.params?.recordbackdrop ?? "#000",
+		];
+
+		// update backdrop color
+		this.scrollwrapper.style.backgroundColor = this.backdropColors[this.recordMode ? 1 : 0];
 
 		// load the tables handling the focus bar colors
 		this.focusBarColorNormal = [

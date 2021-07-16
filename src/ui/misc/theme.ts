@@ -37,6 +37,7 @@ export function loadTheme(config:ThemeConfig):void {
 
 	// load SVG mappings
 	_svg = {};
+	_svgcache = {};
 
 	// run for each SVG file in config
 	for(const s of svg) {
@@ -120,12 +121,17 @@ const _folder = [
 let _svg:{ [key: string]: string, };
 
 /**
+ * cached SVG files for faster access
+ */
+let _svgcache:{ [key: string]: string, };
+
+/**
  * Function to load a SVG file based on its ID
  *
  * @param id The ID of the SVG to try to load
  * @returns The SVG data received or empty string if failed
  */
-export function loadSVG(id:string): string|"" {
+export async function loadSVG(id:string): Promise<string|""> {
 	// load file address and check if valid
 	const file = _svg[id];
 
@@ -133,9 +139,18 @@ export function loadSVG(id:string): string|"" {
 		return "";
 	}
 
+	// check if the SVG file is cached
+	if(_svgcache[id]) {
+		return _svgcache[id];
+	}
+
 	try {
+		// read and cache file contents
+		const data = (await fs.promises.readFile(file)).toString();
+		_svgcache[id] = data;
+
 		// read the file and return contents.
-		return fs.readFileSync(file).toString() ?? "";
+		return data ?? "";
 
 	} catch(ex) {
 		// uh oh, failed, just return empty

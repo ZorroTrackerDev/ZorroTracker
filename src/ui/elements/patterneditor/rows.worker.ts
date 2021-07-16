@@ -75,7 +75,9 @@
 	function setTheme(theme:WorkerThemeSettings|undefined){
 		// prepare some values
 		const fallbackRow = theme?.fallback?.backdrop ?? "#000000";
+		const fallback3Row = [ fallbackRow, fallbackRow, fallbackRow, ];
 		const fallbackText = theme?.fallback?.text ?? "#FF00FF";
+		const fallback3Text = [ fallbackText, fallbackText, fallbackText, ];
 
 		// load some default values
 		textVerticalOffset = theme?.font?.top ?? 0;
@@ -87,13 +89,13 @@
 		];
 
 		backdropColors = [
-			...(active ? theme?.rownum?.activebg : theme?.rownum?.inactivebg) ?? [ fallbackRow, fallbackRow, fallbackRow, ],
-			...(active ? theme?.rownum?.recordactivebg : theme?.rownum?.recordinactivebg) ?? [ fallbackRow, fallbackRow, fallbackRow, ],
+			...((active ? theme?.rownum?.activebg : theme?.rownum?.inactivebg) ?? fallback3Row),
+			...((active ? theme?.rownum?.recordactivebg : theme?.rownum?.recordinactivebg) ?? fallback3Row),
 		];
 
 		rowNumColors = [
-			...(active ? theme?.rownum?.active : theme?.rownum?.inactive) ?? [ fallbackText, fallbackText, fallbackText, ],
-			...(active ? theme?.rownum?.recordactive : theme?.rownum?.recordinactive) ?? [ fallbackText, fallbackText, fallbackText, ],
+			...((active ? theme?.rownum?.active : theme?.rownum?.inactive) ?? fallback3Text),
+			...((active ? theme?.rownum?.recordactive : theme?.rownum?.recordinactive) ?? fallback3Text),
 		];
 
 		// request the font to be loaded
@@ -179,6 +181,9 @@
 			fontWait = true;
 
 		} else {
+			// store the record offset
+			const rc = (record ? 3 : 0);
+
 			// background fill the entire canvas with base color first
 			ctx.fillStyle = backdropColors[record ? 3 : 0];
 			ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -192,7 +197,7 @@
 				const top = row * rowHeight;
 
 				// get the highlight ID
-				const hid = (record ? 3 : 0) + (row % highlights[0]) === 0 ? 2 : (row % highlights[1]) === 0 ? 1 : 0;
+				const hid = rc + ((row % highlights[0]) === 0 ? 2 : (row % highlights[1]) === 0 ? 1 : 0);
 
 				if(hid !== 0) {
 					// render the highlight color over this

@@ -26,31 +26,26 @@ export function createBar(): HTMLDivElement {
 	}
 
 	// reload graphics
-	reloadTheme();
-
+	reloadTheme().catch(console.error);
 	return target;
 }
 
 let target: HTMLDivElement|undefined;
 
 // listen to theme reloading
-// eslint-disable-next-line require-await
 ZorroEvent.addListener(ZorroEventEnum.LoadTheme, async() => {
-	console.log("load theme")
 	if(target) {
-		reloadTheme();
+		// update the theme and await for promises
+		await reloadTheme();
 	}
 });
 
 /**
  * Helper function to reload the theme
  */
-function reloadTheme() {
-	// loop for every button
-	for(let i = 0;i < buttonData.length;i ++) {
-		// run the theming function
-		buttonData[i].theme(target?.children[i] as HTMLButtonElement, i);
-	}
+function reloadTheme(): Promise<void[]> {
+	// run the theme function and return the promises as an array
+	return Promise.all(buttonData.map((d, i) => d.theme(target?.children[i] as HTMLButtonElement, i)));
 }
 
 /**
@@ -67,8 +62,8 @@ const buttonData = [
 		click: (e:MouseEvent) => {
 
 		},
-		theme: (e:HTMLButtonElement, index:number) => {
-			e.innerHTML = loadSVG(svgfile[index]);
+		theme: async(e:HTMLButtonElement, index:number) => {
+			e.innerHTML = await loadSVG(svgfile[index]);
 		},
 	},
 	{
@@ -76,8 +71,8 @@ const buttonData = [
 		click: (e:MouseEvent) => {
 
 		},
-		theme: (e:HTMLButtonElement, index:number) => {
-			e.innerHTML = loadSVG(svgfile[index]);
+		theme: async(e:HTMLButtonElement, index:number) => {
+			e.innerHTML = await loadSVG(svgfile[index]);
 		},
 	},
 	{
@@ -85,8 +80,8 @@ const buttonData = [
 		click: (e:MouseEvent) => {
 
 		},
-		theme: (e:HTMLButtonElement, index:number) => {
-			e.innerHTML = loadSVG(svgfile[index]);
+		theme: async(e:HTMLButtonElement, index:number) => {
+			e.innerHTML = await loadSVG(svgfile[index]);
 		},
 	},
 	{
@@ -94,9 +89,9 @@ const buttonData = [
 		click: (e:MouseEvent) => {
 
 		},
-		theme: (e:HTMLButtonElement, index:number) => {
+		theme: async(e:HTMLButtonElement, index:number) => {
 			console.log("load record", loadSVG(svgfile[index]))
-			e.innerHTML = loadSVG(svgfile[index]);
+			e.innerHTML = await loadSVG(svgfile[index]);
 		},
 	},
 ];

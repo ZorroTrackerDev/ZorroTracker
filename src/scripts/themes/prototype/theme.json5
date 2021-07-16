@@ -15,7 +15,7 @@
 			focus: {
 				// the color used with blending mode to create the final output colors in display mode
 				// format: normal, highlight a, highlight b
-				color: [ "#3F7F427F", "#3F7F427F", "#3F7F427F", ],
+				color: [ "#3E6E7C7F", "#3E6E7C7F", "#3E6E7C7F", ],
 
 				// the background blending mode for the colors in display mode. This allows you to change the color with less performance impact.
 				// see: https://developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode
@@ -29,7 +29,7 @@
 				// the background blending mode for the colors in record mode. This allows you to change the color with less performance impact.
 				// see: https://developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode
 				// format: normal, highlight a, highlight b
-				recordblend: [ "soft-light", "soft-light", "soft-light", ],
+				recordblend: [ "color-dodge", "color-dodge", "color-dodge", ],
 			}
 		},
 		worker: {
@@ -42,13 +42,13 @@
 				backdrop: "#000000",
 
 				// color for patterns that are not visible, and other negative space when in record mode
-				recordbackdrop: "#100000",
+				recordbackdrop: "#0F1E0F",
 
 				// color for the borders between channels in display mode
 				border: "#000000",
 
 				// color for the borders between channels in record mode
-				recordborder: "#100000",
+				recordborder: "#0F1E0F",
 			},
 			// font settings for pattern rows
 			font: {
@@ -84,27 +84,27 @@
 
 				// when the pattern is inactive, these background colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				inactivebg: [ "#0A0A0A", "#0E1113", "#10181B", ],
+				inactivebg: [ "#0A0A0A", "#ff0E1113", "#10181B", ],
 
 				// when the pattern is active, these background colors will be shown in display mode
 				// format: normal, highlight a, highlight b
-				activebg: [ "#191919", "#22292C", "#25393F", ],
+				activebg: [ "#191919", "#ff22292C", "#25393F", ],
 
 				// when the pattern is inactive, these colors will be shown in record mode
 				// format: normal, highlight a, highlight b
-				recordinactive: [ "#002C2C", "#303334", "#313A3C", ],
+				recordinactive: [ "#2C2C2C", "#303334", "#313A3C", ],
 
 				// when the pattern is active, these colors will be shown in record mode
 				// format: normal, highlight a, highlight b
-				recordactive: [ "#006666", "#6F7679", "#72868C", ],
+				recordactive: [ "#666666", "#6F7679", "#72868C", ],
 
 				// when the pattern is inactive, these background colors will be shown in record mode
 				// format: normal, highlight a, highlight b
-				recordinactivebg: [ "#000A0A", "#0E1113", "#10181B", ],
+				recordinactivebg: [ "#0A0A0A", "#0E1113", "#10181B", ],
 
 				// when the pattern is active, these background colors will be shown in record mode
 				// format: normal, highlight a, highlight b
-				recordactivebg: [ "#001919", "#22292C", "#25393F", ],
+				recordactivebg: [ "#191919", "#22292C", "#25393F", ],
 			},
 			// row background settings
 			background: {
@@ -307,7 +307,7 @@
 			// the offset from the left side of the channel row to render each effect and effect value pairs at
 			// format: effect 1 offset, value 1 offset, effect 2 offset, value 2 offset, [...]
 			effectleft: [ 70, 87,  108, 125,  146, 163,  184, 201,  222, 239,  260, 277,  298, 315,  336, 353, ],
-		}
+		},
 	},
 	playbar: {
 		// styles for the normal state of the button

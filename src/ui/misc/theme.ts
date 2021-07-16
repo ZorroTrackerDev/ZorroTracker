@@ -2,7 +2,7 @@ import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 import { loadFiles } from "../../api/files";
 import { ThemeConfig } from "../../api/theme";
 import path from "path";
-import fs from "fs";
+import { promises as fsp } from "fs";
 
 /**
  * The event dispatcher for LoadTheme event
@@ -146,7 +146,7 @@ export async function loadSVG(id:string): Promise<string|""> {
 
 	try {
 		// read and cache file contents
-		const data = (await fs.promises.readFile(file)).toString();
+		const data = (await fsp.readFile(file)).toString();
 		_svgcache[id] = data;
 
 		// read the file and return contents.

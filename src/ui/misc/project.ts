@@ -10,6 +10,7 @@ import { ipcEnum } from "../../system/ipc/ipc enum";
 import { WindowType } from "../../defs/windowtype";
 import { setTitle } from "../elements/toolbar/toolbar";
 import { Channel } from "../../api/driver";
+import { Tab } from "./tab";
 
 // load all the events
 const eventProject = ZorroEvent.createEvent(ZorroEventEnum.ProjectOpen);
@@ -32,9 +33,6 @@ const eventUpdate = ZorroEvent.createEvent(ZorroEventEnum.ModuleUpdate);
 export class Project {
 	public static readonly VERSION = ConfigVersion.b1;
 
-	/* The project that is currently being edited, or undefined if no project is loaded */
-	public static current:Project|undefined;
-
 	/**
 	 * Helper function to load a project based on project's configuration. This is used for sub-windows to aid editing
 	 *
@@ -42,27 +40,28 @@ export class Project {
 	 * @param modules The module config array
 	 */
 	public static loadInternal(config:ProjectConfig, modules:Module[]):void {
-		// initiate a new project with the data
-		Project.current = new Project("");
-		Project.current.modules = modules;
-		Project.current.config = config;
-		Project.current.setActiveModuleIndex(0).catch(console.error);
+		// create a blank project and make sure it doesn't bork
+		const p = new Project("");
+
+		if(!p) {
+			throw new Error("CAn't create a blank project. What???");
+		}
+
+		// initiate a new tab with the data
+		Tab.active = new Tab(p);
+		p.modules = modules;
+		p.config = config;
+		p.setActiveModuleIndex(0).catch(console.error);
 	}
 
 	/**
 	 * Function to create a project from with file path
 	 *
-	 * @returns null if failed to create the project correctly, or the project data
+	 * @returns Boolean indicating whether the project loading was not cancelled
 	 */
 	public static async setActiveProject(project:Project|undefined):Promise<boolean> {
-		// run the project open event
-		if((await eventProject(project)).event.canceled){
-			return false;
-		}
-
-		// if succesful, set the current project
-		Project.current = project;
-		return true;
+		// run the project open event and return result
+		return !(await eventProject(project)).event.canceled;
 	}
 
 	/**

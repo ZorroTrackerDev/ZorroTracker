@@ -66,6 +66,7 @@ import { MIDI } from "../misc/MIDI";
 import "../../system/ipc/html editor";
 import { loadTheme, reloadTheme } from "../misc/theme";
 import { createBar } from "../elements/playbuttonsbar/main";
+import { Tab } from "../misc/tab";
 
 async function loadMainShortcuts() {
 	// load all.ts asynchronously. This will setup our environment better than we can do here
@@ -101,13 +102,14 @@ async function loadMainShortcuts() {
 			// try to load the project
 			const p = await Project.loadProject(result);
 
-			if(!p){
+			// check if loaded and if was allowed to load
+			if(!p || !await Project.setActiveProject(p)){
 				removeTransition();
 				return false;
 			}
 
-			// save project as current
-			await Project.setActiveProject(p);
+			// create a tab for the project
+			Tab.active = new Tab(p);
 
 			// let all windows know about the loaded project
 			window.ipc.project?.init(p);
@@ -132,13 +134,14 @@ async function loadMainShortcuts() {
 			// try to load the project
 			const p = await Project.createProject();
 
-			if(!p){
+			// check if loaded and if was allowed to load
+			if(!p || !await Project.setActiveProject(p)){
 				removeTransition();
 				return false;
 			}
 
-			// save project as current
-			await Project.setActiveProject(p);
+			// create a tab for the project
+			Tab.active = new Tab(p);
 
 			// let all windows know about the loaded project
 			window.ipc.project?.init(p);
@@ -167,7 +170,7 @@ async function loadMainShortcuts() {
 		/* shortcut for doing a save action */
 		save: async() => {
 			try {
-				return await Project.current?.save(false) ?? false;
+				return await Tab.active?.project.save(false) ?? false;
 
 			} catch(ex)  {
 				console.error(ex);
@@ -179,7 +182,7 @@ async function loadMainShortcuts() {
 		/* shortcut for doing a save as action */
 		saveas: async() => {
 			try {
-				return await Project.current?.saveAs() ?? false;
+				return await Tab.active?.project.saveAs() ?? false;
 
 			} catch(ex)  {
 				console.error(ex);
@@ -230,19 +233,29 @@ window.ipc.ui.path().then(async() => {
 		try {
 			if((url?.length ?? 0) > 0) {
 				// attempt to load project
-				Project.current = await Project.loadProject(url as string);
+				const p = await Project.loadProject(url as string);
+
+				if(p) {
+					// load as a tab
+					Tab.active = new Tab(p);
+				}
 			}
 
 		} catch(ex) { /* ignore */ }
 	}
 
-	// if no valid project is loaded still, create a blank project
-	if(!Project.current) {
-		Project.current = await Project.createProject();
+	// if no valid tab is loaded, create a new tab with a blank project
+	if(!Tab.active) {
+		const p = await Project.createProject();
+
+		if(p) {
+			// load as a tab
+			Tab.active = new Tab(p);
+		}
 	}
 
 	// let the other windows know about this project
-	window.ipc.project?.init(Project.current);
+	window.ipc.project?.init(Tab.active?.project);
 
 	// load the editor
 	await fadeToLayout(editorLayout);
@@ -292,7 +305,7 @@ export async function loadToModule(index:number, func?:() => Promise<void>): Pro
 
 	if(!await fadeToLayout(async() => {
 		// set the active layout
-		await Project.current?.setActiveModuleIndex(index);
+		await Tab.active?.project.setActiveModuleIndex(index);
 
 		// if extra function added, then run it
 		if(func) {
@@ -326,7 +339,7 @@ async function editorLayout():Promise<true> {
 		throw new Error("Unable to load editor layout: parent element main_content not found!");
 	}
 
-	if(!Project.current) {
+	if(!Tab.active) {
 		throw new Error("Failed to load editorLayout: No project loaded.");
 	}
 
@@ -344,7 +357,7 @@ async function editorLayout():Promise<true> {
 	_top.id = "editor_top";
 	body.appendChild(_top);
 
-	_top.appendChild((matrixEditor = new MatrixEditor(Project.current.index)).element);
+	_top.appendChild((matrixEditor = new MatrixEditor(Tab.active?.project.index)).element);
 
 	const _bot = document.createElement("div");
 	_bot.id = "editor_bottom";
@@ -362,7 +375,7 @@ async function editorLayout():Promise<true> {
 	}
 
 	// load channel mute buttons
-	Project.current.index.channels.forEach((c) => {
+	Tab.active?.project.index.channels.forEach((c) => {
 		const b = document.createElement("label");
 		b.innerHTML = /*html*/`
 			<div style="white-space: nowrap; display: inline-block;">
@@ -378,7 +391,7 @@ async function editorLayout():Promise<true> {
 	_bot.appendChild((piano = await Piano.create()).element);
 
 	// add the pattern editor here
-	_bot.appendChild((patternEditor = new PatternEditor(Project.current.index)).element);
+	_bot.appendChild((patternEditor = new PatternEditor(Tab.active?.project.index)).element);
 	return true;
 }
 
@@ -399,14 +412,14 @@ ZorroEvent.addListener(ZorroEventEnum.Exit, async(event:ZorroEventObject) => {
  * @returns Boolean indicating whether or not user pressed the `cancel` button. `false` if the user did.
  */
 export async function askSavePopup():Promise<boolean> {
-	if(Project.current && Project.current.isDirty()) {
+	if(Tab.active?.project && Tab.active?.project.isDirty()) {
 		try {
 			// ask the user what to do
 			switch(await confirmationDialog({
 				color: PopupColors.Normal,
 				size: PopupSizes.Small,
 				html: /*html*/`
-					<h2>Do you want to save your changes to ${ createFilename(Project.current.getFilename(), "?") }</h2>
+					<h2>Do you want to save your changes to ${ createFilename(Tab.active?.project.getFilename(), "?") }</h2>
 					<p>Your changes <u>will</u> be lost if you don't save them.</p>
 				`, buttons: [
 					{ result: 0, float: "left", color: PopupColors.Caution, html: "Don't save", },
@@ -416,7 +429,7 @@ export async function askSavePopup():Promise<boolean> {
 			}) as number) {
 				case 2:						// ask the user to save.
 					// If there is a save-as dialog and user cancels, or save fails, pretend the cancel button was pressed.
-					return Project.current.save(false);
+					return Tab.active?.project.save(false);
 
 				case 0: return true;		// literally do nothing
 				default: return false;		// indicate as cancelling

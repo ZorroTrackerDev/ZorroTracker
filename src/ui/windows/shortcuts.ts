@@ -112,8 +112,11 @@ async function layout() {
 function loadShortcutTables() {
 	// helper function to convert layout path type to index
 	const getType = (fn:string) => {
-		if(fn.startsWith("layout.matrix")){
-			return "Matrix";
+		if(fn.startsWith("layout.pattern")){
+			return "Pattern editor";
+
+		} else if(fn.startsWith("layout.matrix")){
+			return "Matrix editor";
 
 		} else if(fn.includes("layout.piano")){
 			return "Piano";

@@ -90,7 +90,6 @@ const buttonData = [
 
 		},
 		theme: async(e:HTMLButtonElement, index:number) => {
-			console.log("load record", loadSVG(svgfile[index]))
 			e.innerHTML = await loadSVG(svgfile[index]);
 		},
 	},

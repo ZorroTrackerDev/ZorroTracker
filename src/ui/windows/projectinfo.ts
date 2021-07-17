@@ -27,6 +27,7 @@ window.preload = {};
 /* ipc communication */
 import "../../system/ipc/html";
 import "../../system/ipc/html sub";
+import { Tab } from "../misc/tab";
 
 // handler for project init
 ipcRenderer.on(ipcEnum.ProjectInit, (event, config:ProjectConfig, modules:Module[]) => {
@@ -109,8 +110,8 @@ async function projectInfoLayout():Promise<true> {
 		style: "width: fit-content; margin: 0 auto; margin-bottom: 40px;", width: "50vw",
 		getValue: (value:string, user:boolean) => {
 			// set the project name
-			if(user && Project.current) {
-				Project.current.config.name = value;
+			if(user && Tab.active) {
+				Tab.active.project.config.name = value;
 
 				// send request to update config
 				ipcRenderer.send(ipcEnum.ProjectSetName, value);
@@ -120,7 +121,7 @@ async function projectInfoLayout():Promise<true> {
 		},
 	});
 
-	name.setValue(Project.current?.config.name ?? "<invalid>");
+	name.setValue(Tab.active?.project.config.name ?? "<invalid>");
 	contain.appendChild(name.element);
 
 	// create a line
@@ -135,9 +136,9 @@ async function projectInfoLayout():Promise<true> {
 		type: OptionEnum.Medium, label: "Project sound driver", width: "200px", style: "display: inline-flex; margin-right: 20px;", items:
 		Object.entries(drivers).map(item => { return { text: item[1].name, value: item[1].uuid, } }),
 		getOption: (value) => {
-			if(Project.current) {
+			if(Tab.active) {
 				// set the driver
-				Project.current.config.driver = value;
+				Tab.active.project.config.driver = value;
 
 				// send request to update config
 				ipcRenderer.send(ipcEnum.ProjectSetDriver, value);
@@ -146,10 +147,10 @@ async function projectInfoLayout():Promise<true> {
 	});
 
 	line0.appendChild(driver.element);
-	driver.setOption(Project.current?.config.driver ?? "");
+	driver.setOption(Tab.active?.project.config.driver ?? "");
 
 	// add the module selector
-	contain.appendChild(new ModuleSelect(Project.current as Project).element);
+	contain.appendChild(new ModuleSelect(Tab.active?.project as Project).element);
 
 	// add the module editor
 	const line1 = document.createElement("div");
@@ -162,9 +163,9 @@ async function projectInfoLayout():Promise<true> {
 		style: "",
 		getValue: (value:string, user:boolean) => {
 			// set the project name
-			if(user && Project.current && Project.current.activeModuleIndex >= 0) {
-				Project.current.modules[Project.current.activeModuleIndex].name = value;
-				Project.current.changeModule();
+			if(user && Tab.active && Tab.active.project.activeModuleIndex >= 0) {
+				Tab.active.project.modules[Tab.active.project.activeModuleIndex].name = value;
+				Tab.active.project.changeModule();
 			}
 
 			return value;
@@ -181,9 +182,9 @@ async function projectInfoLayout():Promise<true> {
 		style: "",
 		getValue: (value:string, user:boolean) => {
 			// set the project name
-			if(user && Project.current && Project.current.activeModuleIndex >= 0) {
-				Project.current.modules[Project.current.activeModuleIndex].author = value;
-				Project.current.changeModule();
+			if(user && Tab.active && Tab.active.project.activeModuleIndex >= 0) {
+				Tab.active.project.modules[Tab.active.project.activeModuleIndex].author = value;
+				Tab.active.project.changeModule();
 			}
 
 			return value;
@@ -208,10 +209,10 @@ async function projectInfoLayout():Promise<true> {
 			}
 
 			// set the project name
-			if(user && Project.current && Project.current.activeModuleIndex >= 0) {
+			if(user && Tab.active && Tab.active.project.activeModuleIndex >= 0) {
 				// update value
-				Project.current.modules[Project.current.activeModuleIndex].index = v;
-				Project.current.changeModule();
+				Tab.active.project.modules[Tab.active.project.activeModuleIndex].index = v;
+				Tab.active.project.changeModule();
 			}
 
 			// convert correctly to string

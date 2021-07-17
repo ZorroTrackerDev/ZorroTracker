@@ -1,5 +1,5 @@
 /*
-	TVarious system flags are stored here. You can edit these to change the behavior of the application more to your liking.
+	Various system flags are stored here. You can edit these to change the behavior of the application more to your liking.
 	DO NOT remove any of these, instead just change them, or preferably, make your own file and link it via "files.json5"
 */
 

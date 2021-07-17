@@ -4,6 +4,7 @@ import { Module, Project } from "../../ui/misc/project";
 import { ipcEnum } from "./ipc enum";
 import { loadToModule } from "../../ui/windows/editor";
 import { _async } from "../../system/ipc/html";
+import { Tab } from "../../ui/misc/tab";
 
 // add some extra ipc functions
 window.ipc.rpc = {
@@ -37,24 +38,24 @@ window.ipc.project = {
  */
 // listen to requests to update project status
 ipcRenderer.on(ipcEnum.ProjectInit, () => {
-	window.ipc.project?.init(Project.current);
+	window.ipc.project?.init(Tab.active?.project);
 });
 
 // listen to requests to update project name
 ipcRenderer.on(ipcEnum.ProjectSetName, (event, name:string) => {
-	if(Project.current) {
+	if(Tab.active) {
 		// set name and mark as dirty
-		Project.current.config.name = name;
-		Project.current.dirty();
+		Tab.active.project.config.name = name;
+		Tab.active.project.dirty();
 	}
 });
 
 // listen to requests to update project driver
 ipcRenderer.on(ipcEnum.ProjectSetDriver, (event, uuid:string) => {
-	if(Project.current) {
+	if(Tab.active) {
 		// set name and mark as dirty. TODO: convert driver data
-		Project.current.config.driver = uuid;
-		Project.current.dirty();
+		Tab.active.project.config.driver = uuid;
+		Tab.active.project.dirty();
 
 		// set driver instance
 		window.ipc.audio?.setDriver(uuid);
@@ -67,27 +68,26 @@ ipcRenderer.on(ipcEnum.ProjectSelectModule, (event, index:number) => loadToModul
 // listen to requests to update module data
 ipcRenderer.on(ipcEnum.ProjectSetModule, (event, data:Module) => {
 	// ensure the module is valid
-	if(Project.current && Project.current.activeModuleIndex >= 0 && Project.current.activeModuleIndex < Project.current.modules.length) {
+	if(Tab.active && Tab.active.project.activeModuleIndex >= 0 && Tab.active.project.activeModuleIndex < Tab.active.project.modules.length) {
 		// set module data and request update
-		Project.current.modules[Project.current.activeModuleIndex] = data;
-		Project.current.changeModule();
+		Tab.active.project.modules[Tab.active.project.activeModuleIndex] = data;
+		Tab.active.project.changeModule();
 	}
 });
 
 // listen to requests to add new module with filename
 ipcRenderer.on(ipcEnum.ProjectAddModule, async(event, file:string) => {
 	// ensure the project is valid
-	if(Project.current) {
+	if(Tab.active) {
 		// create a new module and get its index
-		const m = await Project.current.addModule(file);
-		const ix = Project.current.getModuleIndexByFile(m.file);
-
+		const m = await Tab.active.project.addModule(file);
+		const ix = Tab.active.project.getModuleIndexByFile(m.file);
 
 		// switch to module by its index
 		// eslint-disable-next-line require-await
 		await loadToModule(ix, async() => {
 			// TEMP
-			Project.current?.index.setChannels(await window.ipc.driver.getChannels());
+			Tab.active?.project.index.setChannels(await window.ipc.driver.getChannels());
 		});
 	}
 });
@@ -95,20 +95,20 @@ ipcRenderer.on(ipcEnum.ProjectAddModule, async(event, file:string) => {
 // listen to requests to update module data
 ipcRenderer.on(ipcEnum.ProjectDeleteModule, async(event, index:number) => {
 	// delete the module and do nothin
-	await Project.current?.deleteModule(index);
+	await Tab.active?.project.deleteModule(index);
 });
 
 // listen to requests to update module data
 ipcRenderer.on(ipcEnum.ProjectCloneModule, async(event, index:number) => {
 	// ensure the project is valid
-	if(Project.current) {
+	if(Tab.active) {
 		// load the source module
-		const clone = Project.current.modules[index];
+		const clone = Tab.active.project.modules[index];
 
 		// create a new module and get its index
-		const mod = await Project.current.addModule();
+		const mod = await Tab.active.project.addModule();
 
 		// delete the module and do nothin
-		await Project.current.cloneModule(clone, mod);
+		await Tab.active.project.cloneModule(clone, mod);
 	}
 });

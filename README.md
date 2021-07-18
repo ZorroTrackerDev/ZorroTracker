@@ -10,6 +10,9 @@ Work in Progress Sega Mega Drive / Genesis Music Tracker created in Electron. Su
 ### A JavaScript error occurred in the main process
 If you get this error, its likely that you need to install [Visual C++](https://support.microsoft.com/en-us/topic/the-latest-supported-visual-c-downloads-2647da03-1eea-4433-9aff-95f26a218cc0). If that does not help, please contact the developers.
 
+### Infinite rotating circle at the start-up/"Chip is invalid" error
+If you get this error, its likely that you cloned this repository without the `--recursive` flag. If that does not help, please contact the developers.
+
 ### If the error is not listed here
 Look through the issues page, or create your own, with __as much detail as possible__ to recreating the issue.
 

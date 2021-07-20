@@ -66,7 +66,7 @@ import { MIDI } from "../misc/MIDI";
 import "../../system/ipc/html editor";
 import { loadTheme, reloadTheme } from "../misc/theme";
 import { createBar } from "../elements/playbuttonsbar/main";
-import { Tab } from "../misc/tab";
+import { PlayMode, Tab } from "../misc/tab";
 import { enableMediaKeys } from "../misc/media keys";
 
 async function loadMainShortcuts() {
@@ -190,6 +190,54 @@ async function loadMainShortcuts() {
 			}
 
 			return false;
+		},
+
+		/* shortcut for toggling record mode */
+		// eslint-disable-next-line require-await
+		record: async() => {
+			if(!Tab.active){
+				return false;
+			}
+
+			// toggle record mode
+			Tab.active.recordMode = !Tab.active.recordMode;
+			return true;
+		},
+
+		/* shortcut for enabling play mode */
+		// eslint-disable-next-line require-await
+		play: async() => {
+			if(!Tab.active || Tab.active.playMode === PlayMode.PlayAll){
+				return false;
+			}
+
+			// toggle play mode
+			Tab.active.playMode = PlayMode.PlayAll;
+			return true;
+		},
+
+		/* shortcut for enabling play pattern mode */
+		// eslint-disable-next-line require-await
+		playpattern: async() => {
+			if(!Tab.active || Tab.active.playMode === PlayMode.PlayPattern){
+				return false;
+			}
+
+			// toggle play mode
+			Tab.active.playMode = PlayMode.PlayPattern;
+			return true;
+		},
+
+		/* shortcut for disabling playback mode */
+		// eslint-disable-next-line require-await
+		stop: async() => {
+			if(!Tab.active || Tab.active.playMode === PlayMode.Stopped){
+				return false;
+			}
+
+			// toggle play mode
+			Tab.active.playMode = PlayMode.Stopped;
+			return true;
 		},
 	});
 }

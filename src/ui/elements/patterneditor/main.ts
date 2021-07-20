@@ -485,11 +485,6 @@ export class PatternEditor implements UIElement {
 					}, 32);
 					break;
 				}
-
-				case "record": {		// toggle record mode
-					this.tab.recordMode = !this.tab.recordMode;
-					break;
-				}
 			}
 		}
 

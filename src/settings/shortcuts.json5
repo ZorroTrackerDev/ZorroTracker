@@ -13,6 +13,11 @@
 	"ui.saveas":						[ "ctrl+shift+S" ],						/* shortcut for saving the project as another file */
 	"ui.new":							[ "ctrl+N" ],							/* shortcut for creating a new project */
 
+	"ui.play":							[ "Enter", "MediaPlayPause" ],			/* shortcut for playing back the entire track */
+	"ui.playpattern":					[ "Shift+Enter", "MediaTrackPrevious" ],/* shortcut for playing back the current pattern */
+	"ui.stop":							[ "Enter", "Shift+Enter", "MediaStop" ],/* shortcut for stopping playback */
+	"ui.record":						[ "Space" ],							/* shortcut for toggling record mode */
+
 	"layout.matrix.move.up":			[ "ArrowUp" ],							/* shortcut for moving to the pattern index above */
 	"layout.matrix.move.down":			[ "ArrowDown" ],						/* shortcut for moving to the pattern index below */
 	"layout.matrix.move.left":			[ "ArrowLeft" ],						/* shortcut for moving to the pattern index left */
@@ -89,6 +94,5 @@
 	"*layout.piano.octave2.D#":			[ "Digit0" ],							/* shortcut for playing D# on current octave +2 */
 	"*layout.piano.octave2.E":			[ "KeyP" ],								/* shortcut for playing E on current octave +2 */
 
-	"layout.pattern.null":				[ "Enter" ],							/* TEST ONLY */
-	"layout.pattern.record":			[ "Space" ],							/* shortcut for toggling record mode */
+	"layout.pattern.null":				[ "Shift+Space" ],						/* TEST ONLY */
 }

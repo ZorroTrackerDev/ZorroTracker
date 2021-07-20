@@ -171,7 +171,7 @@ export class PatternEditor implements UIElement {
 			this.canvas.forEach((c) => c.updateHoriz(this));
 
 			// update every channel header too, to change their translateX values
-			for(let i = this.tab.matrix.channels.length;i > 0;--i){
+			for(let i = this.tab.channels.length;i > 0;--i){
 				(this.scrollwrapper.children[i] as HTMLDivElement)
 					.style.transform = "translateX(-"+ this.horizScroll +"px)";
 			}
@@ -275,20 +275,20 @@ export class PatternEditor implements UIElement {
 		this.scrollwrapper.innerHTML = doChannel("\u200B");
 
 		// handle DOM generation for each channel and save it to scrollwrapper
-		this.scrollwrapper.innerHTML += this.tab.matrix.channels.map((c) => {
+		this.scrollwrapper.innerHTML += this.tab.channels.map((c) => {
 			// generate DOM for a single channel
-			return doChannel(c.name);
+			return doChannel(c.info.name);
 		}).join("");
 
 		// enable resize handlers and init styles
-		for(let i = this.tab.matrix.channels.length;i > 0; --i){
+		for(let i = this.tab.channels.length;i > 0; --i){
 			const chan = this.scrollwrapper.children[i] as HTMLDivElement;
 			const drag = chan.children[0].children[1] as HTMLDivElement;
 
 			let pos = -1, lastsize = -1, left = 0;
 
 			// initialize header size
-			this.setChannelHeaderSize(this.tab.matrix.channels[i - 1]?.commands ?? 0, i - 1, chan);
+			this.setChannelHeaderSize(this.tab.channels[i - 1]?.info.effects ?? 0, i - 1, chan);
 
 			// enable mouse down detection
 			drag.onpointerdown = (e) => {
@@ -300,7 +300,7 @@ export class PatternEditor implements UIElement {
 				pos = e.x;
 
 				// load the channel commands count for scrolling
-				lastsize = this.tab.matrix.channels[i - 1]?.commands ?? 0;
+				lastsize = this.tab.channels[i - 1]?.info.effects ?? 0;
 
 				// enable mouse button and movement detection
 				drag.onmousemove = move;
@@ -313,7 +313,7 @@ export class PatternEditor implements UIElement {
 				pos += e.movementX;
 				const sz = this.getClosestChannelSize(pos - left);
 
-				if(this.tab.matrix.channels[i - 1].commands !== sz) {
+				if(this.tab.channels[i - 1].info.effects !== sz) {
 					// update channel header size
 					this.setChannelHeaderSize(sz, i - 1, chan);
 
@@ -367,7 +367,7 @@ export class PatternEditor implements UIElement {
 	 */
 	private setChannelHeaderSize(width:number, channel:number, element:HTMLDivElement) {
 		// update commands amount
-		this.tab.matrix.channels[channel].commands = width;
+		this.tab.channels[channel].info.effects = width;
 		this.channelElements[channel] = [ 3, 5, 7, 9, 11, 13, 15, 17, 19, ][width];
 
 		// update header element width and classes
@@ -412,7 +412,7 @@ export class PatternEditor implements UIElement {
 		let pos = 0;
 
 		// update every channel header too, to change their translateX values
-		for(let i = 1;i <= this.tab.matrix.channels.length;i++){
+		for(let i = 1;i <= this.tab.channels.length;i++){
 			// update channel positions
 			this.channelPositionsLeft.push(pos);
 			pos += (this.scrollwrapper.children[i] as HTMLDivElement).offsetWidth;
@@ -538,7 +538,7 @@ export class PatternEditor implements UIElement {
 			for(let c = 0;c <= amount; c++) {
 				// generate the canvas class itself
 				const x = new PatternCanvas(this.dataHeight * this.tab.matrix.patternlen, this,
-					this.tab.matrix.patternlen, this.tab.matrix.channels.length);
+					this.tab.matrix.patternlen, this.tab.channels.length);
 
 				// update horizontal scrolling of the canvas
 				x.updateHoriz(this);

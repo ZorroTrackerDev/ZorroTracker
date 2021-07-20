@@ -1,6 +1,8 @@
+import { Channel } from "../../api/driver";
 import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 import { PatternIndex } from "../../api/matrix";
-import { Project } from "./project";
+import { WindowType } from "../../defs/windowtype";
+import { LoadSaveData, LoadType, Module, Project } from "./project";
 
 const tabRecordEvent = ZorroEvent.createEvent(ZorroEventEnum.TabRecordMode);
 const tabPlayModeEvent = ZorroEvent.createEvent(ZorroEventEnum.TabPlayMode);
@@ -21,13 +23,46 @@ export class Tab {
 	 */
 	constructor(project:Project) {
 		this._project = project;
-		this.matrix = project.matrix;
+
+		if(window.type === WindowType.Editor) {
+			// set the save and load handlers for the project
+			project.setDataHandlers((data:LoadSaveData<LoadType>, module:Module) => {
+				// set the channels
+				this.channels = module.channels?.map(c => { return {
+					info: c,
+					muted: false,
+				}}) ?? [];
+
+				// create the new matrix
+				this.matrix = new PatternIndex(this);
+
+				// load buffers for matrix and patterns files
+				const _mat = data.matrix(), _pat = data.patterns();
+
+				// load the data for the matrix
+				if(_mat && _pat) {
+					this.matrix.loadMatrix(_mat);
+					this.matrix.loadPatterns(_pat);
+				}
+
+			}, () => {
+				return {
+					patterns: this.matrix.savePatterns(),
+					matrix: this.matrix.saveMatrix(),
+				}
+			});
+		}
 	}
+
+	/**
+	 * The channels actgive in this tab
+	 */
+	public channels!:Channel[];
 
 	/**
 	 * The matrix that the current tab is using
 	 */
-	public matrix:PatternIndex;
+	public matrix!:PatternIndex;
 
 	/**
 	 * The project opened in this tab
@@ -35,7 +70,7 @@ export class Tab {
 	private _project:Project;
 
 	public get project():Project {
-		return this._project
+		return this._project;
 	}
 
 	/**

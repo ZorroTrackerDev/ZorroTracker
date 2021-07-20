@@ -45,7 +45,7 @@ export interface Driver {
 	 *
 	 * @returns The list of channels. The array order enforces the display order in the UI.
 	 */
-	getChannels:() => Channel[];
+	getChannels:() => DriverChannel[];
 
 	/**
 	 * Function to mute or unmute a channel based on its ID.
@@ -164,7 +164,7 @@ export type NoteReturnType = {
 	notes: Array<NoteData>,
 };
 
-export interface Channel {
+export interface DriverChannel {
 	/**
 	 * The channel ID. This can be anything, this only matters
 	 */
@@ -179,11 +179,25 @@ export interface Channel {
 	 * The type of the channel. This helps ZorroTracker use apprioriate elements for channel.
 	 */
 	type: ChannelType;
+}
+
+export interface ChannelInfo extends DriverChannel {
+	/**
+	 * How many effects are displayed
+	 */
+	effects: number,
+}
+
+export interface Channel {
+	/**
+	 * The channel info, containing some serialized fields
+	 */
+	info: ChannelInfo,
 
 	/**
-	 * How many commands are displayed
+	 * Boolean indicating whether the channel is muted
 	 */
-	commands: number,
+	muted: boolean,
 }
 
 export enum ChannelType {

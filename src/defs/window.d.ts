@@ -1,4 +1,4 @@
-import { Channel, ChannelType, DriverConfig, NoteReturnType } from "../api/driver";
+import { Channel, ChannelInfo, ChannelType, DriverConfig, NoteReturnType } from "../api/driver";
 import { ChipConfig } from "../api/chip";
 import { OpenDialogOptions, SaveDialogOptions } from "electron";
 import { Project } from "../ui/misc/project";
@@ -283,7 +283,7 @@ declare global {
 				 *
 				 * @returns The list of channels
 				 */
-				getChannels: () => Promise<Channel[]>,
+				getChannels: () => Promise<ChannelInfo[]>,
 
 				/**
 				 * Function for trying to enable a channel on the driver.

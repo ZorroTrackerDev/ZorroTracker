@@ -1,9 +1,7 @@
 import { Position } from "./ui";
 import { ZorroEvent, ZorroEventEnum, ZorroSenderTypes } from "./events";
 import { TrackerCommands } from "./commands";
-import { Project } from "../ui/misc/project";
-import { Channel } from "./driver";
-import { loadFlag } from "./files";
+import { Tab } from "../ui/misc/tab";
 
 /**
  * Class for a single pattern cell, which can only be used to store its immediate values.
@@ -133,7 +131,6 @@ import { loadFlag } from "./files";
  */
 export class PatternData {
 	public cells: PatternCell[];
-	public owner: Channel;
 	public edited = false;
 
 	/**
@@ -141,8 +138,7 @@ export class PatternData {
 	 */
 	public width = 8;
 
-	constructor(owner:Channel, cells:number){
-		this.owner = owner;
+	constructor(cells:number){
 		this.cells = [];
 
 		for(let i = cells;i > 0; --i){
@@ -200,14 +196,9 @@ export class PatternData {
  */
 export class PatternIndex {
 	/**
-	 * the project this PatternIndex is apart of.
+	 * the tab this matrix is apart of
 	 */
-	private project: Project;
-
-	/**
-	 * Stores the list of channels this pattern index stores
-	 */
-	public channels!: Channel[];
+	private tab: Tab;
 
 	/**
 	 * Stores a list of patterns per channel. Usage: patterns[channel][index]. `null` or `undefined` means the value is unused.
@@ -229,8 +220,8 @@ export class PatternIndex {
 	 */
 	public patternlen = 64;
 
-	constructor(project:Project) {
-		this.project = project;
+	constructor(tab:Tab) {
+		this.tab = tab;
 
 		// create events
 		this.eventMake = ZorroEvent.createEvent(ZorroEventEnum.PatternMake);
@@ -240,27 +231,16 @@ export class PatternIndex {
 		this.eventResize = ZorroEvent.createEvent(ZorroEventEnum.MatrixResize);
 		this.eventInsert = ZorroEvent.createEvent(ZorroEventEnum.MatrixInsert);
 		this.eventRemove = ZorroEvent.createEvent(ZorroEventEnum.MatrixRemove);
-	}
 
-	/**
-	 * Function to set the channels for this matrix
-	 *
-	 * @param channels The list of channels to set
-	 */
-	public setChannels(channels:Channel[]): void {
-		this.channels = channels;
+		// reset pattern and matrix datas
 		this.patterns = [];
 		this.matrix = [];
 
 		// initialize the patterns and matrix arrays to max values
-		for(let i = 0;i < channels.length;i ++){
+		for(let i = 0;i < tab.channels.length;i ++){
 			this.patterns.push(new Array(256));
 			this.matrix.push(new Uint8Array(256));
 		}
-
-		// initialize command count to 1 by default
-		const fx = Math.max(1, Math.min(8, loadFlag<number>("INITIAL_EFFECT_COUNT") ?? 1));
-		this.channels.forEach((c) => c.commands = fx);
 	}
 
 	private eventGet:ZorroSenderTypes[ZorroEventEnum.MatrixSet];
@@ -295,7 +275,7 @@ export class PatternIndex {
 	 * @returns The width of the matrix
 	 */
 	public getWidth(): number {
-		return this.channels.length;
+		return this.tab.channels.length;
 	}
 
 	/**
@@ -307,7 +287,7 @@ export class PatternIndex {
 	 */
 	public get(channel:number, index:number): number|null {
 		// check that index and channel are valid
-		if(index < 0 || index > 0xFF || channel < 0 || channel >= this.channels.length) {
+		if(index < 0 || index > 0xFF || channel < 0 || channel >= this.tab.channels.length) {
 			return null;
 		}
 
@@ -328,10 +308,10 @@ export class PatternIndex {
 		}
 
 		// generate a new data array to store stuff in
-		const ret = new Uint8Array(this.channels.length);
+		const ret = new Uint8Array(this.tab.channels.length);
 
 		// run through every channel in backwards order, copying the row data
-		for(let c = this.channels.length - 1;c >= 0;c --) {
+		for(let c = this.tab.channels.length - 1;c >= 0;c --) {
 			// send the get event for this cell and see what should happen
 			const _e = await this.eventGet(this, c, index, this.matrix[c][index]);
 
@@ -362,7 +342,7 @@ export class PatternIndex {
 
 		for(const c of columns) {
 			// run for each channel, and makre sure the channel is valid
-			if(c < 0 || c >= this.channels.length){
+			if(c < 0 || c >= this.tab.channels.length){
 				return null;
 			}
 
@@ -398,7 +378,7 @@ export class PatternIndex {
 	 */
 	public async set(channel:number, index:number, value:number): Promise<boolean> {
 		// check that index and channel are valid
-		if(value < 0 || value > 0xFF || index < 0 || index > 0xFF || channel < 0 || channel >= this.channels.length) {
+		if(value < 0 || value > 0xFF || index < 0 || index > 0xFF || channel < 0 || channel >= this.tab.channels.length) {
 			return false;
 		}
 
@@ -408,7 +388,7 @@ export class PatternIndex {
 		if(!_e.event.canceled) {
 			// set the value at channel and index and indicate success
 			this.matrix[channel][index] = _e.value ?? value;
-			this.project.dirty();
+			this.tab.project.dirty();
 			return true;
 		}
 
@@ -431,13 +411,13 @@ export class PatternIndex {
 		let ret = false;
 
 		// run through every channel in backwards order, replacing the row data
-		for(let c = this.channels.length - 1;c >= 0;c --) {
+		for(let c = this.tab.channels.length - 1;c >= 0;c --) {
 			const _e = await this.eventSet(this, c, index, data[c]);
 
 			// call the event and apply only if allowed
 			if(!_e.event.canceled) {
 				this.matrix[c][index] = _e.value ?? data[c];
-				this.project.dirty();
+				this.tab.project.dirty();
 				ret = true;
 			}
 		}
@@ -464,7 +444,7 @@ export class PatternIndex {
 
 		for(const c of columns) {
 			// run for each channel, and makre sure the channel is valid
-			if(c < 0 || c >= this.channels.length){
+			if(c < 0 || c >= this.tab.channels.length){
 				return false;
 			}
 
@@ -489,7 +469,7 @@ export class PatternIndex {
 
 					// copy the value from matrix
 					this.matrix[c][r] = _v;
-					this.project.dirty();
+					this.tab.project.dirty();
 				}
 			}
 		}
@@ -532,7 +512,7 @@ export class PatternIndex {
 	 * @returns Uint8Array containing the row data for each channel
 	 */
 	public generateRow(): Uint8Array {
-		const ret = new Uint8Array(this.channels.length);
+		const ret = new Uint8Array(this.tab.channels.length);
 
 		// loop through each channel
 		for(let c = 0;c < ret.length;c ++){
@@ -559,7 +539,7 @@ export class PatternIndex {
 	 */
 	public async insertRow(index:number, data:Uint8Array): Promise<boolean> {
 		// check that the index is valid, matrix can fit data, and the input data is the right size
-		if(index < 0 || index > this.matrixlen || this.matrixlen > 0xFF || data.length !== this.channels.length) {
+		if(index < 0 || index > this.matrixlen || this.matrixlen > 0xFF || data.length !== this.tab.channels.length) {
 			return false;
 		}
 
@@ -569,12 +549,12 @@ export class PatternIndex {
 		}
 
 		// check if we're allowed to resize
-		if((await this.eventResize(this, this.matrixlen + 1, this.channels.length)).event.canceled) {
+		if((await this.eventResize(this, this.matrixlen + 1, this.tab.channels.length)).event.canceled) {
 			return false;
 		}
 
 		// run through every channel in backwards order
-		for(let c = this.channels.length - 1;c >= 0;c --) {
+		for(let c = this.tab.channels.length - 1;c >= 0;c --) {
 			for(let x = this.matrixlen;x >= index; x--){
 				// shift entries down until we are at index
 				this.matrix[c][x + 1] = this.matrix[c][x];
@@ -607,12 +587,12 @@ export class PatternIndex {
 		}
 
 		// check if we're allowed to resize
-		if((await this.eventResize(this, this.matrixlen - 1, this.channels.length)).event.canceled) {
+		if((await this.eventResize(this, this.matrixlen - 1, this.tab.channels.length)).event.canceled) {
 			return false;
 		}
 
 		// run through every channel in backwards order
-		for(let c = this.channels.length - 1;c >= 0;c --) {
+		for(let c = this.tab.channels.length - 1;c >= 0;c --) {
 			// if this index was empty and not referenced elsewhere, remove it altogether
 			await this.trim(c, index);
 
@@ -627,7 +607,7 @@ export class PatternIndex {
 
 		// indicate there is 1 less entry in the matrix now and return success
 		this.matrixlen--;
-		this.project.dirty();
+		this.tab.project.dirty();
 		return true;
 	}
 
@@ -640,14 +620,14 @@ export class PatternIndex {
 	 */
 	public async makePatternsRow(data:Uint8Array, replace:boolean): Promise<boolean> {
 		// check that the input data is the right size
-		if(data.length !== this.channels.length){
+		if(data.length !== this.tab.channels.length){
 			return false;
 		}
 
 		let ret = true;
 
 		// make each pattern for each channel, while ANDing the return value with true
-		for(let c = this.channels.length - 1;c >= 0;c --) {
+		for(let c = this.tab.channels.length - 1;c >= 0;c --) {
 			ret = ret && await this.makePattern(c, data[c], replace);
 		}
 
@@ -664,7 +644,7 @@ export class PatternIndex {
 	 */
 	public async makePattern(channel:number, index:number, replace:boolean): Promise<boolean> {
 		// check that index and channel are valid
-		if(index < 0 || index > 0xFF || channel < 0 || channel >= this.channels.length) {
+		if(index < 0 || index > 0xFF || channel < 0 || channel >= this.tab.channels.length) {
 			return false;
 		}
 
@@ -679,8 +659,8 @@ export class PatternIndex {
 		}
 
 		// create a new pattern here and indicate success
-		this.patterns[channel][index] = new PatternData(this.channels[channel], this.patternlen);
-		this.project.dirty();
+		this.patterns[channel][index] = new PatternData(this.patternlen);
+		this.tab.project.dirty();
 		return true;
 	}
 
@@ -689,7 +669,7 @@ export class PatternIndex {
 	 */
 	public async trimAll(): Promise<void> {
 		// run through every channel in backwards order
-		for(let c = this.channels.length - 1;c >= 0;c --) {
+		for(let c = this.tab.channels.length - 1;c >= 0;c --) {
 			for(let x = 0xFF;x >= 0; x--){
 				// check if the pattern can be deleted
 				if(this.patterns[c][x]?.edited === false){
@@ -707,7 +687,7 @@ export class PatternIndex {
 					// if the pattern can be removed, then do so here.
 					if(remove && !(await this.eventTrim(this, c, x)).event.canceled) {
 						this.patterns[c][x] = null;
-						this.project.dirty();
+						this.tab.project.dirty();
 					}
 				}
 			}
@@ -746,7 +726,7 @@ export class PatternIndex {
 
 		// set this pattern as unused and indicate success
 		this.patterns[channel][check] = null;
-		this.project.dirty();
+		this.tab.project.dirty();
 		return true;
 	}
 
@@ -755,13 +735,14 @@ export class PatternIndex {
 	 *
 	 * @returns The data representing the current matrix
 	 */
-	public saveMatrix(): Uint8Array {
+	// eslint-disable-next-line require-await
+	public async saveMatrix(): Promise<Uint8Array> {
 		// prepare the output buffer
 		const h = this.getHeight();
 		const ret = new Uint8Array(h * this.getWidth());
 
 		// loop for each channel and each position
-		for(let c = 0;c < this.channels.length;c ++){
+		for(let c = 0;c < this.tab.channels.length;c ++){
 			for(let i = 0;i < this.matrixlen;i ++) {
 				// copy the byte at this cell
 				ret[(c * h) + i] = this.matrix[c][i];
@@ -779,7 +760,7 @@ export class PatternIndex {
 	 */
 	public loadMatrix(data:Buffer): boolean {
 		// get the data height for this matrix
-		const height = data.length / this.channels.length;
+		const height = data.length / this.tab.channels.length;
 
 		// if the data is not divisibly by channel count, then it is invalid!
 		if(height !== Math.round(height)) {
@@ -790,7 +771,7 @@ export class PatternIndex {
 		this.matrixlen = height;
 
 		// loop for each channel and each position
-		for(let c = 0;c < this.channels.length;c ++){
+		for(let c = 0;c < this.tab.channels.length;c ++){
 			for(let i = 0;i < height;i ++) {
 				// copy the byte at this cell
 				this.matrix[c][i] = data[(c * height) + i];
@@ -813,7 +794,7 @@ export class PatternIndex {
 		const chans:number[] = [];
 
 		// load each channel
-		for(let c = 0;c < this.channels.length;c ++){
+		for(let c = 0;c < this.tab.channels.length;c ++){
 			const ixs:number[] = [];
 
 			// loop for each index collecting its data
@@ -852,7 +833,7 @@ export class PatternIndex {
 		let index = 0;
 
 		// load each channel
-		for(let c = 0;c < this.channels.length;c ++){
+		for(let c = 0;c < this.tab.channels.length;c ++){
 			// loop for each index
 			for(let i = 0;i < 256;i ++){
 				if(data[index] === 0) {
@@ -862,7 +843,7 @@ export class PatternIndex {
 
 				} else {
 					// there is data here
-					this.patterns[c][i] = new PatternData(this.channels[c], 0);
+					this.patterns[c][i] = new PatternData(0);
 					index = (this.patterns[c][i] as PatternData).load(data, index);
 				}
 			}

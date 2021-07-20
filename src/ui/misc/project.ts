@@ -1,7 +1,6 @@
 import admZip from "adm-zip";
 import fs from "fs";
 import { ZorroEvent, ZorroEventEnum } from "../../api/events";
-import { PatternIndex } from "../../api/matrix";
 import { ConfigVersion } from "../../api/config";
 import { fserror, loadFlag } from "../../api/files";
 import { confirmationDialog, PopupColors, PopupSizes } from "../elements/popup/popup";
@@ -9,7 +8,7 @@ import { ipcRenderer } from "electron";
 import { ipcEnum } from "../../system/ipc/ipc enum";
 import { WindowType } from "../../defs/windowtype";
 import { setTitle } from "../elements/toolbar/toolbar";
-import { Channel } from "../../api/driver";
+import { ChannelInfo } from "../../api/driver";
 import { Tab } from "./tab";
 
 // load all the events
@@ -41,7 +40,7 @@ export class Project {
 	 */
 	public static loadInternal(config:ProjectConfig, modules:Module[]):void {
 		// create a blank project and make sure it doesn't bork
-		const p = new Project("");
+		const p = new Project("", new admZip());
 
 		if(!p) {
 			throw new Error("CAn't create a blank project. What???");
@@ -51,7 +50,7 @@ export class Project {
 		Tab.active = new Tab(p);
 		p.modules = modules;
 		p.config = config;
-		p.setActiveModuleIndex(0).catch(console.error);
+		p.setActiveModuleIndex(false, 0).catch(console.error);
 	}
 
 	/**
@@ -77,7 +76,7 @@ export class Project {
 		await window.ipc.audio?.setDriver(driver);
 
 		// initiate new project without settings
-		const project = new Project("");
+		const project = new Project("", new admZip());
 		project.modules = [];
 
 		// set project config to default value
@@ -92,8 +91,7 @@ export class Project {
 		// create a single default module
 		const m = await project.addModule();
 		m.name = "New module";
-		await project.setActiveModuleIndex(0);
-		project.data[m.file].matrix.setChannels(m.channels as Channel[]);
+		await project.setActiveModuleIndex(false, 0);
 
 		// mark this project as not dirty for now
 		project.clean();
@@ -113,9 +111,6 @@ export class Project {
 		console.info("Load project:", file);
 
 		try {
-			// create a new project
-			const project = new Project(file);
-
 			// create a new zip file
 			let zip:admZip;
 			try {
@@ -126,6 +121,9 @@ export class Project {
 				console.error("Failed to load project:", ex);
 				return;
 			}
+
+			// create a new project
+			const project = new Project(file, zip);
 
 			/**
 			 * Safe function to read file contents as JSON
@@ -201,61 +199,16 @@ export class Project {
 				project.modules = file as Module[];
 			}
 
-			/**
-			 * Safe function to read file contents as binary
-			 *
-			 * @param f The filename
-			 * @returns the JSON object
-			 */
-			const _dataSafe = (f:string) => {
-				// try to get the file, but if failed, return a null
-				const dat = zip.readFile(f);
-
-				if(!dat){
-					Project.projectError("Unable to locate file "+ f +". This project file might be corrupted.");
-					return;
-				}
-
-				return dat;
-			}
-
-			// laod all module datas
+			// check that all channels are valid
 			for(const m of project.modules) {
-				// initialize the module data
-				const x:ModuleData = {
-					matrix: new PatternIndex(project),
-				};
-
-				// load the matrix data
-				const _mat = _dataSafe("modules/"+ m.file +"/.matrix");
-
-				if(_mat === undefined) {
-					return;
-				}
-
-				// load the patterns data
-				const _pat = _dataSafe("modules/"+ m.file +"/.patterns");
-
-				if(_pat === undefined) {
-					return;
-				}
-
 				if(!Array.isArray(m.channels)) {
 					Project.projectError("Unable to load channel data for module. This project file might be corrupted");
 					return;
 				}
-
-				// set channels and prepare matrix and patterns
-				x.matrix.setChannels(m.channels as Channel[]);
-				x.matrix.loadMatrix(_mat);
-				x.matrix.loadPatterns(_pat);
-
-				// save into projecct
-				project.data[m.file] = x;
 			}
 
 			// set the first module as the active module
-			await project.setActiveModuleIndex(0);
+			await project.setActiveModuleIndex(false, 0);
 
 			// initialize the driver instance
 			window.ipc.audio?.setDriver(project.config.driver);
@@ -267,6 +220,53 @@ export class Project {
 			console.error("Failed to load project:", ex);
 			return undefined;
 		}
+	}
+
+	private loadHandler: undefined|(() => void);
+	private saveHandler: undefined|(() => Promise<void[]>);
+
+	/**
+	 * Function to set the load and save handlers for this project
+	 *
+	 * @param load The function to handle loading module data
+	 * @param save The function to handle saving module data
+	 */
+	public setDataHandlers(load:(data:LoadSaveData<LoadType>, module:Module) => void, save:() => LoadSaveData<SaveType>):void {
+		// load some variables used below
+		const module = () => this.modules[this.activeModuleIndex];
+		const file = () => "modules/"+ module().file +"/";
+
+		// helper function for the load handler to load a specific module filename
+		const readFile = (name:string) => {
+			const dat = this.zip.readFile(file() + name);
+
+			return dat;
+		};
+
+		// initialize a custom load handler
+		this.loadHandler = () => {
+			load({
+				patterns: () => readFile(".patterns"),
+				matrix: () => readFile(".matrix"),
+			}, module());
+		}
+
+		// helper function for the save handler to write a specific module filename
+		const writeFile = async(name:string, buffer:Promise<Uint8Array>) => {
+			return this.zip.addFile(file() + name, Buffer.from(await buffer));
+		};
+
+		// initialize a custom save handler
+		this.saveHandler = () => {
+			// run the save function
+			const data = save();
+
+			// write all files from the returned object
+			return Promise.all(Object.entries(data).map(([ key, value, ]) => writeFile("."+ key, value)));
+		}
+
+		// must cause to load the first time its called
+		this.loadHandler();
 	}
 
 	/**
@@ -307,16 +307,17 @@ export class Project {
 	 * Create a new `Project` with no data
 	 *
 	 * @param file The file to use for this project
+	 * @param zip The in-memory Zip file to use for this project
 	 */
-	constructor(file:string) {
+	constructor(file:string, zip:admZip) {
 		this.file = file;
-		this.data = {};
+		this.zip = zip;
 	}
 
+	private zip:admZip;
 	private file:string;
 	public config!:ProjectConfig;
 	public modules!:Module[];
-	public data:{ [key:string]: ModuleData };
 
 	/**
 	 * Helper function to get the file location of this project
@@ -410,35 +411,25 @@ export class Project {
 		window.isLoading = true;
 		console.info("Save project: "+ file);
 
-		// create a new zip file
-		const zip = new admZip();
-
 		{	// store project config to zip
 			const _json = JSON.stringify(this.config);
-			zip.addFile(".zorro", Buffer.alloc(_json.length, _json));
+			this.zip.addFile(".zorro", Buffer.alloc(_json.length, _json));
 		}
 
 		{	// store project modules to zip
 			const _json = JSON.stringify(this.modules);
-			zip.addFile(".modules", Buffer.alloc(_json.length, _json));
+			this.zip.addFile(".modules", Buffer.alloc(_json.length, _json));
 		}
 
-		{	// write all the modules
-			for (const [ key, value, ] of Object.entries(this.data)) {
-				// write this module
-				const _matrix = value.matrix.saveMatrix();
-				zip.addFile("modules/"+ key +"/.matrix", Buffer.from(_matrix.buffer));
-
-				const _patterns = await value.matrix.savePatterns();
-				zip.addFile("modules/"+ key +"/.patterns", Buffer.from(_patterns.buffer));
-
-			}
+		// save the individual module data
+		if(this.saveHandler) {
+			await this.saveHandler();
 		}
 
 		// atomic save the zip file (use a promise because stupid API)
 		return new Promise<void>((res, rej) => {
 			// write the zip file into disk
-			zip.writeZip(file + ".temp", (err) => {
+			this.zip.writeZip(file + ".temp", (err) => {
 				if(err) {
 					rej(err);
 				}
@@ -504,13 +495,18 @@ export class Project {
 		// get module filename and check if the event can continue
 		const file = this.modules[index].file;
 
-		if((await eventDelete(this, this.modules[index], this.data[file])).event.canceled){
+		if((await eventDelete(this, this.modules[index])).event.canceled){
 			return false;
 		}
 
 		// delete the module and its data
 		this.modules.splice(index, 1);
-		delete this.data[file];
+
+		// loop for all the filenames in the modules
+		for(const key of this.moduleFiles) {
+			// delete the file in the zip
+			this.zip.deleteFile("modules/"+ file +"/"+ key);
+		}
 
 		// if this module was currently active, set active module to nothing
 		if(this.activeModuleIndex === index){
@@ -522,7 +518,7 @@ export class Project {
 			}
 
 			// select this new position
-			await this.setActiveModuleIndex(target);
+			await this.setActiveModuleIndex(false, target);
 		}
 
 		// success!
@@ -546,9 +542,13 @@ export class Project {
 			channels: await window.ipc.driver.getChannels(),
 		}
 
+		// initialize command count to 1 by default
+		const fx = Math.max(1, Math.min(8, loadFlag<number>("INITIAL_EFFECT_COUNT") ?? 1));
+		data.channels.forEach((c) => c.effects = fx);
+
 		if(!file) {
 			// check if the data already exists. If so, try to generate a new one
-			while(this.data[data.file]) {
+			while(this.modules.find((m) => m.file === data.file)) {
 				data.file = Project.generateName();
 			}
 		}
@@ -557,16 +557,8 @@ export class Project {
 		this.modules.push(data);
 
 		if(window.type === WindowType.Editor) {
-			// set new module data
-			const mdata = {
-				// create an empty patternIndex
-				matrix: new PatternIndex(this),
-			};
-
-			this.data[data.file] = mdata;
-
 			// send the create event
-			eventCreate(this, data, mdata).catch(console.error);
+			eventCreate(this, data).catch(console.error);
 		}
 
 		// return the module name
@@ -575,7 +567,6 @@ export class Project {
 
 	/* The name of the currently active module */
 	public activeModuleIndex = -1;
-	private activeModuleFile = "";
 	private _dirty = false;
 
 	/**
@@ -619,13 +610,14 @@ export class Project {
 	/**
 	 * Function to set the active module by its filename.
 	 *
+	 * @param save Boolean to indicate whether to save the previous module data or not.
 	 * @param file The filename of the module to use
 	 * @returns Boolean indicating whether it was successful
 	 */
-	public setActiveModuleFile(file:string): Promise<boolean> {
+	public setActiveModuleFile(save:boolean, file:string): Promise<boolean> {
 		// get the module index and then run the code
 		const ix = this.getModuleIndexByFile(file);
-		return this.setActiveModuleIndex(ix);
+		return this.setActiveModuleIndex(save, ix);
 	}
 
 	/**
@@ -649,26 +641,34 @@ export class Project {
 	/**
 	 * Function to set the active module by its module index (not index setting, actual order).
 	 *
+	 * @param save Boolean to indicate whether to save the previous module data or not.
 	 * @param index The index order of the module to check. If not set, the current index will be used.
-	 * @param check If false, DO NOT ask to change module index. This is because the event is already being ran.
 	 * @returns Boolean indicating whether it was successful
 	 */
-	public async setActiveModuleIndex(index?:number): Promise<boolean> {
+	public async setActiveModuleIndex(save:boolean, index?:number): Promise<boolean> {
 		// decide the index to use
 		const ix = index ?? this.activeModuleIndex;
 
 		if(this.modules && ix >= -1 && ix < this.modules.length && await this.setActiveCheck(ix)){
+			// tell the UI to save data of the previous module
+			if(save && this.saveHandler) {
+				await this.saveHandler();
+			}
+
 			// set module selection index
 			this.activeModuleIndex = ix;
 
 			if(ix === -1) {
 				// special case for no selection
-				this.activeModuleFile = "";
 				return true;
 			}
 
+			// tell the UI to load this modules data
+			if(this.loadHandler) {
+				this.loadHandler();
+			}
+
 			// module found, set the active module
-			this.activeModuleFile = this.modules[ix].file;
 			this.updateTitle();
 			return true;
 		}
@@ -688,7 +688,7 @@ export class Project {
 		console.info("project select module", index, "-", this.modules[index]?.file ?? "<null>");
 
 		// send the select event if found, and returns its value
-		return !(await eventSelect(this, this.modules[index], index < 0 ? undefined : this.data[this.modules[index].file])).event.canceled;
+		return !(await eventSelect(this, this.modules[index])).event.canceled;
 	}
 
 	/**
@@ -701,39 +701,19 @@ export class Project {
 		}
 
 		if(window.type === WindowType.Editor) {
-			// check if module data exists
-			if(!this.data[this.activeModuleFile]) {
-				return;
-			}
-
 			// send the update event and ignore cancellation
-			eventUpdate(this, this.modules[this.activeModuleIndex], this.data[this.activeModuleFile]).catch(console.error);
+			eventUpdate(this, this.modules[this.activeModuleIndex]).catch(console.error);
 
 		} else {
 			// send request to update module data
 			ipcRenderer.send(ipcEnum.ProjectSetModule, this.modules[this.activeModuleIndex]);
 
 			// send the update event and ignore cancellation
-			eventUpdate(this, this.modules[this.activeModuleIndex], null).catch(console.error);
+			eventUpdate(this, this.modules[this.activeModuleIndex]).catch(console.error);
 		}
 
 		// update title in case it changed
 		this.updateTitle();
-	}
-
-	/* get the currently active module's object */
-	private get _moduleData() {
-		if(this.data[this.activeModuleFile]) {
-			// the currently active module exists
-			return this.data[this.activeModuleFile];
-		}
-
-		throw new Error("Unable to load module data: The active module "+ this.activeModuleFile +" does not exist.");
-	}
-
-	/* the Matrix for the current module */
-	public get matrix():PatternIndex {
-		return this._moduleData.matrix;
 	}
 
 	/**
@@ -750,22 +730,54 @@ export class Project {
 		destination.author = source.author;
 		destination.index = source.index;
 		destination.name = "clone of "+ source.name;
+		destination.channels = source.channels;
+		destination.type = source.type;
 
 		if(window.type === WindowType.Editor) {
-			// load the module datas
-			const sdata = this.data[source.file];
-			const ddata = this.data[destination.file];
+			if(this.saveHandler && source === this.modules[this.activeModuleIndex]) {
+				// need to save data first
+				await this.saveHandler();
+			}
 
-			// clone the all the data
-			ddata.matrix.setChannels(sdata.matrix.channels);
-			ret = ret && ddata.matrix.loadPatterns(Buffer.from(await sdata.matrix.savePatterns()));
-			ret = ret && ddata.matrix.loadMatrix(Buffer.from(sdata.matrix.saveMatrix()));
+			// loop for all the filenames in the modules
+			for(const key of this.moduleFiles) {
+				// read the source file
+				const data = this.zip.readFile("modules/"+ source.file +"/"+ key);
+				console.log(data?.length, key, source.file, destination.file)
+
+				if(data) {
+					// write to the destination file
+					this.zip.addFile("modules/"+ destination.file +"/"+ key, data);
+
+				} else {
+					// well we failed for some reason huh
+					ret = false;
+				}
+			}
 		}
 
 		// return whether everything was successful
 		return ret;
 	}
+
+	/**
+	 * An array of filenames each module holds
+	 */
+	private moduleFiles = [
+		".matrix", ".patterns",
+	];
 }
+
+/**
+ * Helper type to define how to represent data in load or save functions.
+ */
+export type LoadSaveData<T> = {
+	patterns: T,
+	matrix: T,
+};
+
+export type LoadType = () => Buffer|null;
+export type SaveType = Promise<Uint8Array>;
 
 export interface ZorroConfig {
 	/**
@@ -840,12 +852,5 @@ export interface Module {
 	/**
 	 * The channels defined if this is a Song or SFX type
 	 */
-	channels?: Channel[]
-}
-
-export interface ModuleData {
-	/**
-	 * The pattern matrix data
-	 */
-	matrix: PatternIndex,
+	channels?: ChannelInfo[]
 }

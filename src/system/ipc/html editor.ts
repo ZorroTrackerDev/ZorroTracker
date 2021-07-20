@@ -86,8 +86,7 @@ ipcRenderer.on(ipcEnum.ProjectAddModule, async(event, file:string) => {
 		// switch to module by its index
 		// eslint-disable-next-line require-await
 		await loadToModule(ix, async() => {
-			// TEMP
-			Tab.active?.project.matrix.setChannels(await window.ipc.driver.getChannels());
+
 		});
 	}
 });

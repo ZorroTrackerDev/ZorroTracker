@@ -357,7 +357,7 @@ export async function loadToModule(index:number, func?:() => Promise<void>): Pro
 
 	if(!await fadeToLayout(async() => {
 		// set the active layout
-		await Tab.active?.project.setActiveModuleIndex(index);
+		await Tab.active?.project.setActiveModuleIndex(true, index);
 
 		// if extra function added, then run it
 		if(func) {
@@ -425,19 +425,6 @@ async function editorLayout():Promise<true> {
 		e.id = "midi";
 		_top.appendChild(e);
 	}
-
-	// load channel mute buttons
-	Tab.active?.project.matrix.channels.forEach((c) => {
-		const b = document.createElement("label");
-		b.innerHTML = /*html*/`
-			<div style="white-space: nowrap; display: inline-block;">
-				<input type="checkbox" onchange="window.ipc.driver.mute({ id: ${ c.id }}, this.checked)" />
-				${ c.name }
-			</div>
-		`;
-
-		_top.appendChild(b);
-	});
 
 	// add the piano overlay
 	_bot.appendChild((piano = await Piano.create()).element);

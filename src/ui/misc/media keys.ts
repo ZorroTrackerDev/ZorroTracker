@@ -87,17 +87,19 @@ export async function enableMediaKeys(): Promise<void> {
  */
 // eslint-disable-next-line require-await
 async function updateMetadata() {
-	// set metadata based on the project
-	navigator.mediaSession.metadata = new MediaMetadata({
-		title: Tab.active?.project.modules[Tab.active.project.activeModuleIndex]?.name,
-		artist: Tab.active?.project.modules[Tab.active.project.activeModuleIndex]?.author,
-		album: Tab.active?.project.config.name,
-		artwork: [
-			{
-				src: iconData,
-			},
-		],
-	});
+	if(element) {
+		// set metadata based on the project
+		navigator.mediaSession.metadata = new MediaMetadata({
+			title: Tab.active?.project.modules[Tab.active.project.activeModuleIndex]?.name,
+			artist: Tab.active?.project.modules[Tab.active.project.activeModuleIndex]?.author,
+			album: Tab.active?.project.config.name,
+			artwork: [
+				{
+					src: iconData,
+				},
+			],
+		});
+	}
 }
 
 // when a new project is opened, update metadata

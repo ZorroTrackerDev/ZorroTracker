@@ -1,4 +1,4 @@
-import electron, { BrowserWindow, NodeEventEmitter } from "electron";
+import electron, { BrowserWindow } from "electron";
 import path from "path";
 import { create as IpcCreate, log } from "./system/ipc/editor";
 

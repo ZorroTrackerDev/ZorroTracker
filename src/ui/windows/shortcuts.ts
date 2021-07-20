@@ -180,6 +180,11 @@ const shortcutDescriptions: { [key:string]: string } = {
 	"ui.zoomout":						"Decrease the content size",
 	"ui.zoomreset":						"Reset the content size to 100%",
 
+	"ui.play":							"Play the full track",
+	"ui.playpattern":					"Play the current pattern",
+	"ui.stop":							"Stop playing",
+	"ui.record":						"Toggle record mode",
+
 	"window.projectinfo":				"Open project info window",
 	"window.shortcuts":					"Open shortcut editor window",
 

@@ -55,7 +55,7 @@ export class ModuleSelect {
 		}
 
 		// re-select the current module
-		project.setActiveModuleIndex().catch(console.error);
+		project.setActiveModuleIndex(false).catch(console.error);
 	}
 
 	private buttonFunc = [
@@ -68,7 +68,7 @@ export class ModuleSelect {
 			m.items.innerHTML += m.renderItem(index);
 
 			// set it as the active module
-			await m.project.setActiveModuleIndex(index);
+			await m.project.setActiveModuleIndex(false, index);
 
 			// reset event listeners
 			m.setEventListeners();
@@ -94,7 +94,7 @@ export class ModuleSelect {
 				ipcRenderer.send(ipcEnum.ProjectCloneModule, m.project.activeModuleIndex);
 
 				// set it as the active module
-				await m.project.setActiveModuleIndex(index);
+				await m.project.setActiveModuleIndex(false, index);
 
 				// tell the editor to change to this module
 				ipcRenderer.send(ipcEnum.ProjectSelectModule, m.project.activeModuleIndex);
@@ -249,7 +249,7 @@ export class ModuleSelect {
 			(this.items.children[i] as HTMLDivElement).onclick = async(event:MouseEvent) => {
 
 				// select this index when clicked
-				if(await this.project.setActiveModuleIndex(i)) {
+				if(await this.project.setActiveModuleIndex(false, i)) {
 					// if successful, set the selected element too
 					this.selection = (event.currentTarget as HTMLDivElement) ?? undefined;
 

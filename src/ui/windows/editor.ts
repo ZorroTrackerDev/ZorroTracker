@@ -67,6 +67,7 @@ import "../../system/ipc/html editor";
 import { loadTheme, reloadTheme } from "../misc/theme";
 import { createBar } from "../elements/playbuttonsbar/main";
 import { Tab } from "../misc/tab";
+import { enableMediaKeys } from "../misc/media keys";
 
 async function loadMainShortcuts() {
 	// load all.ts asynchronously. This will setup our environment better than we can do here
@@ -262,6 +263,9 @@ window.ipc.ui.path().then(async() => {
 
 	// initialize the MIDI input polling
 	MIDI.init();
+
+	// initialize media key functionality
+	await enableMediaKeys();
 
 	// init shortcut handler and remove the loading animation
 	initShortcutHandler();

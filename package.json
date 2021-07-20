@@ -40,6 +40,7 @@
 		"@types/jsdom": "^16.2.10",
 		"@types/node": "^15.0.0",
 		"@types/webmidi": "^2.0.5",
+		"@types/wicg-mediasession": "^1.1.2",
 		"@typescript-eslint/eslint-plugin": "^4.22.0",
 		"@typescript-eslint/parser": "^4.22.0",
 		"chromedriver": "^89.0.0",

@@ -8,6 +8,7 @@
 	CHIP: "9d8d2954-ad94-11eb-8529-0242ac130003",								/* The UUID of the chip to use for ZorroTracker */
 	DEFAULT_DRIVER: "ec6a4880-3c17-495f-b3d7-6b35dcc56493",						/* The UUID of the default driver to use for new projects. */
 	UNDO_STACK_SIZE: 100,														/* The size of the undo stack, how many steps away to remember undo data */
+	MEDIA_KEYS: false,															/* If true, ZorroTracker will ask your OS to control the program via the media keys */
 	DISCORD_RPC: true,															/* If true, the program will attempt to update the Discord RPC status. */
 	PIANO_DEFAULT_SIZE: 4,														/* The default amount of octaves in the piano */
 	PIANO_DEFAULT_POSITION: 0,													/* The default piano position. 0 = center, -1 = left, 1 = right */

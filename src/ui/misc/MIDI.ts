@@ -31,25 +31,24 @@ export class MIDI {
 	 * Function to start polling connected MIDI devices to allow listening to events.
 	 */
 	private static poll() {
+		// TEMP: load the div where the MIDI keyboard name is updated
+		const e = document.getElementById("midi") as HTMLDivElement;
+		e.innerText = "not found";
+
 		// start inspecting whether MIDI devices are connected every second
 		const it = setInterval(async() => {
-			const e = document.getElementById("midi") as HTMLDivElement;
-
 			// get the first valid MIDI device
 			const access = await navigator.requestMIDIAccess();
 			const target = access.inputs.entries().next().value as [ string, WebMidi.MIDIInput ];
 
-			// if nothing is found, just exit
-			if(!target) {
-				e.innerText = "not found";
-				return null;
+			// if nothing is found, ignore the following code
+			if(target) {
+				// found device, create instance and cancel the interval
+				MIDI.current = new MIDI(target[1]);
+				clearInterval(it);
+
+				e.innerText = target[1].name ?? "unknown";
 			}
-
-			// found device, create instance and cancel the interval
-			MIDI.current = new MIDI(target[1]);
-			clearInterval(it);
-
-			e.innerText = target[1].name ?? "unknown";
 
 		}, 1*1000);
 	}

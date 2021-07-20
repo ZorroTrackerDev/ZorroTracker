@@ -313,7 +313,7 @@ const cssPath = [
 				path: "resize",
 				child: [
 					{
-						element: ">>svg>*",
+						element: ">svg>*",
 						path: "icon",
 					},
 				],
@@ -323,7 +323,7 @@ const cssPath = [
 				path: "resizehover",
 				child: [
 					{
-						element: ">>svg>*",
+						element: ">svg>*",
 						path: "icon",
 					},
 				],

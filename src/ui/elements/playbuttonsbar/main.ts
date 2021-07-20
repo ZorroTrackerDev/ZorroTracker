@@ -1,4 +1,5 @@
 import { ZorroEvent, ZorroEventEnum } from "../../../api/events";
+import { PlayMode, Tab } from "../../misc/tab";
 import { loadSVG } from "../../misc/theme";
 
 /**
@@ -19,7 +20,7 @@ export function createBar(): HTMLDivElement {
 		target.appendChild(b);
 
 		// append the onclick listener
-		b.onmousedown = data.click;
+		b.onmouseup = data.click;
 
 		// set the tooltip
 		b.title = data.tooltip;
@@ -27,6 +28,9 @@ export function createBar(): HTMLDivElement {
 
 	// reload graphics
 	reloadTheme().catch(console.error);
+
+	// set stopped button to be active
+	setActive(0, true);
 	return target;
 }
 
@@ -60,16 +64,23 @@ const buttonData = [
 	{
 		tooltip: "Stop playback",
 		click: (e:MouseEvent) => {
-
+			// change playback mode to stopped
+			if(e.button === 0 && Tab.active) {
+				Tab.active.playMode = PlayMode.Stopped;
+			}
 		},
 		theme: async(e:HTMLButtonElement, index:number) => {
+			// load the icon for this element
 			e.innerHTML = await loadSVG(svgfile[index]);
 		},
 	},
 	{
 		tooltip: "Start playback",
 		click: (e:MouseEvent) => {
-
+			// change playback mode to play all
+			if(e.button === 0 && Tab.active) {
+				Tab.active.playMode = PlayMode.PlayAll;
+			}
 		},
 		theme: async(e:HTMLButtonElement, index:number) => {
 			e.innerHTML = await loadSVG(svgfile[index]);
@@ -78,7 +89,10 @@ const buttonData = [
 	{
 		tooltip: "Repeat pattern",
 		click: (e:MouseEvent) => {
-
+			// change playback mode to play pattern
+			if(e.button === 0 && Tab.active) {
+				Tab.active.playMode = PlayMode.PlayPattern;
+			}
 		},
 		theme: async(e:HTMLButtonElement, index:number) => {
 			e.innerHTML = await loadSVG(svgfile[index]);
@@ -87,10 +101,38 @@ const buttonData = [
 	{
 		tooltip: "Record mode",
 		click: (e:MouseEvent) => {
-
+			// flip record mode flag
+			if(e.button === 0 && Tab.active) {
+				Tab.active.recordMode = !Tab.active.recordMode;
+			}
 		},
 		theme: async(e:HTMLButtonElement, index:number) => {
 			e.innerHTML = await loadSVG(svgfile[index]);
 		},
 	},
 ];
+
+/**
+ * Function to update the active status of a single button
+ *
+ * @param position The position of the button to update
+ * @param active The active status of the button
+ */
+function setActive(position:number, active:boolean) {
+	// update the status of the `active` class
+	target?.children[position].classList[active ? "add" : "remove"]("active");
+}
+
+// listen to record mode changing
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.TabRecordMode, async(event, tab, mode) => {
+	setActive(3, mode);
+});
+
+// listen to record mode changing
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.TabPlayMode, async(event, tab, mode) => {
+	setActive(0, mode === PlayMode.Stopped);
+	setActive(1, mode === PlayMode.PlayAll);
+	setActive(2, mode === PlayMode.PlayPattern);
+});

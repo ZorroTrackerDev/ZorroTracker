@@ -1,4 +1,5 @@
 import { Module, ModuleData, Project } from "../ui/misc/project";
+import { PlayMode, Tab } from "../ui/misc/tab";
 import { PatternIndex } from "./matrix";
 import { ClipboardType } from "./ui";
 
@@ -133,6 +134,10 @@ export enum ZorroEventEnum {
 
 	LoadTheme,						// event that is ran when a new theme is loaded
 
+	SwitchTab,						// event that is ran when a new tab is activated
+	TabPlayMode,					// event that is ran when the playback mode was changed
+	TabRecordMode,					// event that is ran when the record mode was changed
+
 	ProjectOpen,					// event that is ran when a project is opened or created
 	SelectModule,					// event that is ran when a module is selected (as the active module)
 	ModuleUpdate,					// event that is ran when a module information is updated (such as its name)
@@ -180,44 +185,54 @@ type ZorroEventSenderHelper = keyof ZorroSenderTypes;
 /**
  * Different listener function types. Event listeners expects to use the following functions
  */
+
+type ZorroListenerReturn<T> = Promise<undefined|void|T>
+
 /* eslint-disable max-len*/
 export interface ZorroListenerTypes {
-	[ZorroEventEnum.Exit]: (event:ZorroEventObject) => Promise<undefined|void>,
-	[ZorroEventEnum.ClipboardGet]: (event:ZorroEventObject, type:ClipboardType) => Promise<string|undefined|void>,
-	[ZorroEventEnum.ClipboardSet]: (event:ZorroEventObject, type:ClipboardType, data:string) => Promise<string|undefined|void>,
+	[ZorroEventEnum.Exit]: (event:ZorroEventObject) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.ClipboardGet]: (event:ZorroEventObject, type:ClipboardType) => ZorroListenerReturn<string>,
+	[ZorroEventEnum.ClipboardSet]: (event:ZorroEventObject, type:ClipboardType, data:string) => ZorroListenerReturn<string>,
 
-	[ZorroEventEnum.LoadTheme]: (event:ZorroEventObject) => Promise<undefined|void>,
+	[ZorroEventEnum.LoadTheme]: (event:ZorroEventObject) => ZorroListenerReturn<void>,
 
-	[ZorroEventEnum.ProjectOpen]: (event:ZorroEventObject, project:Project|undefined) => Promise<undefined|void>,
-	[ZorroEventEnum.SelectModule]: (event:ZorroEventObject, project:Project, module:Module|undefined, data:ModuleData|undefined) => Promise<undefined|void>,
-	[ZorroEventEnum.ModuleUpdate]: (event:ZorroEventObject, project:Project, module:Module, data:ModuleData|null) => Promise<undefined|void>,
-	[ZorroEventEnum.ModuleCreate]: (event:ZorroEventObject, project:Project, module:Module, data:ModuleData) => Promise<undefined|void>,
-	[ZorroEventEnum.ModuleDelete]: (event:ZorroEventObject, project:Project, module:Module, data:ModuleData) => Promise<undefined|void>,
+	[ZorroEventEnum.TabPlayMode]: (event:ZorroEventObject, tab:Tab, mode:PlayMode) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.TabRecordMode]: (event:ZorroEventObject, tab:Tab, mode:boolean) => ZorroListenerReturn<void>,
 
-	[ZorroEventEnum.MatrixSet]: (event:ZorroEventObject, index:PatternIndex, channel:number, row:number, value:number) => Promise<number|undefined|void>,
-	[ZorroEventEnum.MatrixGet]: (event:ZorroEventObject, index:PatternIndex, channel:number, row:number, value:number) => Promise<number|undefined|void>,
-	[ZorroEventEnum.MatrixResize]: (event:ZorroEventObject, index:PatternIndex, height:number, width:number) => Promise<undefined|void>,
-	[ZorroEventEnum.MatrixInsert]: (event:ZorroEventObject, index:PatternIndex, row:number, data:Uint8Array) => Promise<undefined|void>,
-	[ZorroEventEnum.MatrixRemove]: (event:ZorroEventObject, index:PatternIndex, row:number) => Promise<undefined|void>,
+	[ZorroEventEnum.ProjectOpen]: (event:ZorroEventObject, project:Project|undefined) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.SelectModule]: (event:ZorroEventObject, project:Project, module:Module|undefined, data:ModuleData|undefined) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.ModuleUpdate]: (event:ZorroEventObject, project:Project, module:Module, data:ModuleData|null) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.ModuleCreate]: (event:ZorroEventObject, project:Project, module:Module, data:ModuleData) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.ModuleDelete]: (event:ZorroEventObject, project:Project, module:Module, data:ModuleData) => ZorroListenerReturn<void>,
 
-	[ZorroEventEnum.PatternTrim]: (event:ZorroEventObject, index:PatternIndex, channel:number, position:number) => Promise<undefined|void>,
-	[ZorroEventEnum.PatternMake]: (event:ZorroEventObject, index:PatternIndex, channel:number, position:number) => Promise<undefined|void>,
+	[ZorroEventEnum.MatrixSet]: (event:ZorroEventObject, index:PatternIndex, channel:number, row:number, value:number) => ZorroListenerReturn<number>,
+	[ZorroEventEnum.MatrixGet]: (event:ZorroEventObject, index:PatternIndex, channel:number, row:number, value:number) => ZorroListenerReturn<number>,
+	[ZorroEventEnum.MatrixResize]: (event:ZorroEventObject, index:PatternIndex, height:number, width:number) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.MatrixInsert]: (event:ZorroEventObject, index:PatternIndex, row:number, data:Uint8Array) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.MatrixRemove]: (event:ZorroEventObject, index:PatternIndex, row:number) => ZorroListenerReturn<void>,
 
-	[ZorroEventEnum.MidiNoteOn]: (event:ZorroEventObject, channel:number, note:number, velocity:number) => Promise<undefined|void>,
-	[ZorroEventEnum.MidiNoteOff]: (event:ZorroEventObject, channel:number, note:number, velocity:number) => Promise<undefined|void>,
+	[ZorroEventEnum.PatternTrim]: (event:ZorroEventObject, index:PatternIndex, channel:number, position:number) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.PatternMake]: (event:ZorroEventObject, index:PatternIndex, channel:number, position:number) => ZorroListenerReturn<void>,
+
+	[ZorroEventEnum.MidiNoteOn]: (event:ZorroEventObject, channel:number, note:number, velocity:number) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.MidiNoteOff]: (event:ZorroEventObject, channel:number, note:number, velocity:number) => ZorroListenerReturn<void>,
 }
-
-type ZorroSenderReturn<T> = Promise<{ event: ZorroEventObject, value: T|undefined }>
 
 /**
  * Different sender function types. Each emitter expects to use the following functions
  */
+
+type ZorroSenderReturn<T> = Promise<{ event: ZorroEventObject, value: T|undefined }>
+
 export interface ZorroSenderTypes {
 	[ZorroEventEnum.Exit]: () => ZorroSenderReturn<undefined>,
 	[ZorroEventEnum.ClipboardGet]: (type:ClipboardType) => ZorroSenderReturn<string>,
 	[ZorroEventEnum.ClipboardSet]: (type:ClipboardType, data:string) => ZorroSenderReturn<string>,
 
 	[ZorroEventEnum.LoadTheme]: () => ZorroSenderReturn<undefined>,
+
+	[ZorroEventEnum.TabPlayMode]: (tab:Tab, mode:PlayMode) => ZorroSenderReturn<undefined>,
+	[ZorroEventEnum.TabRecordMode]: (tab:Tab, mode:boolean) => ZorroSenderReturn<undefined>,
 
 	[ZorroEventEnum.ProjectOpen]: (project:Project|undefined) => ZorroSenderReturn<undefined>,
 	[ZorroEventEnum.SelectModule]: (project:Project, module:Module|undefined, data:ModuleData|undefined) => ZorroSenderReturn<undefined>,

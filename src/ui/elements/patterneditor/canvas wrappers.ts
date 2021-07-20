@@ -1,3 +1,4 @@
+import { Tab } from "../../misc/tab";
 import { theme } from "../../misc/theme";
 import { PatternEditor } from "./main";
 
@@ -94,7 +95,7 @@ class EditorCanvasBase {
 	 */
 	public setRecord() {
 		// tell the worker to update record state
-		this.worker.postMessage({ command: "record", data: { status: this.parent.recordMode, }, });
+		this.worker.postMessage({ command: "record", data: { status: Tab.active?.recordMode ?? false, }, });
 	}
 }
 

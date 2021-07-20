@@ -1,8 +1,6 @@
 import { tooltipShortcutText } from "../../../api/dom";
-import { PatternIndex as Matrix } from "../../../api/matrix";
 import { Bounds, clipboard, ClipboardType, Position, shortcutDirection, UIElement } from "../../../api/ui";
 import { Undo, UndoSource } from "../../../api/undo";
-import { Project } from "../../misc/project";
 import { Tab } from "../../misc/tab";
 import { standardButtons, pasteButtons, PatternIndexEditorButtonList } from "./buttons";
 
@@ -22,12 +20,18 @@ export class MatrixEditor implements UIElement {
 	private elbtns!:HTMLElement;
 	private elscroll!:HTMLElement;
 
-	// the matrix this editor is affecting
-	public index:Matrix;
+	/**
+	 * This is the tab that the pattern editor is working in
+	 */
+	private tab:Tab;
 
-	constructor(index:Matrix) {
-		// initialize the matrix.
-		this.index = index;
+	/**
+	 * Initialize this MatrixEditor instance
+	 *
+	 * @param index The Matrix this PatternEditor is targeting
+	 */
+	constructor(tab:Tab) {
+		this.tab = tab;
 		this.setLayout();
 	}
 
@@ -112,14 +116,14 @@ export class MatrixEditor implements UIElement {
 		}
 
 		// fill in rows
-		for(let r = 0; r < this.index.matrixlen;r ++) {
+		for(let r = 0; r < this.tab.matrix.matrixlen;r ++) {
 			if(await this.insertRowUI(r)) {
 				this.fixRowIndex(r);
 			}
 		}
 
 		// if the matrix is completely empty, insert a row here
-		if(this.index.matrixlen === 0) {
+		if(this.tab.matrix.matrixlen === 0) {
 			const dirty = Tab.active?.project.isDirty();
 			await this.insertRow(0);
 
@@ -213,7 +217,7 @@ export class MatrixEditor implements UIElement {
 		// herlp function to grab the position of the row we're requesting
 		const getPos = (r:number, position:"top"|"bottom") => {
 			// check that the row is valid
-			if(r >= -1 && this.index.getHeight() >= r){
+			if(r >= -1 && this.tab.matrix.getHeight() >= r){
 				// get the row bounding box
 				return this.elscroll.scrollTop - chanh +
 					this.elrows.children[r + MatrixEditor.FILLER_ROWS].getBoundingClientRect()[position];
@@ -319,15 +323,15 @@ export class MatrixEditor implements UIElement {
 
 				case "selall":
 					// select the entire matrix
-					return this.select(false, { x: 0, y: 0, w: this.index.getWidth() - 1, h: this.index.getHeight() - 1, });
+					return this.select(false, { x: 0, y: 0, w: this.tab.matrix.getWidth() - 1, h: this.tab.matrix.getHeight() - 1, });
 
 				case "selrow":
 					// select the entire row
-					return this.select(false, { x: 0, w: this.index.getWidth() - 1, });
+					return this.select(false, { x: 0, w: this.tab.matrix.getWidth() - 1, });
 
 				case "selcolumn":
 					// select the entire column
-					return this.select(false, { y: 0, h: this.index.getHeight() - 1, });
+					return this.select(false, { y: 0, h: this.tab.matrix.getHeight() - 1, });
 
 				case "scroll": {
 					// convert direction string to x/y offsets
@@ -396,7 +400,7 @@ export class MatrixEditor implements UIElement {
 		// helper function to execute the actual query
 		const _do = async(amt:number) => {
 			// load the region values and check if its valid
-			const values = await this.index.getRegion(rows, columns);
+			const values = await this.tab.matrix.getRegion(rows, columns);
 
 			if(!values) {
 				return false;
@@ -409,12 +413,12 @@ export class MatrixEditor implements UIElement {
 			}
 
 			// save the region and check if succeeded
-			if(!await this.index.setRegion(rows, columns, values)){
+			if(!await this.tab.matrix.setRegion(rows, columns, values)){
 				return false;
 			}
 
 			// make sure to trim all the unused patterns
-			await this.index.trimAll();
+			await this.tab.matrix.trimAll();
 
 			// re-render rows and fix indices
 			if(!await this.renderRows(rows)) {
@@ -461,7 +465,7 @@ export class MatrixEditor implements UIElement {
 		}
 
 		// load the region values and check if its valid
-		const values = await this.index.getRegion(rows, columns);
+		const values = await this.tab.matrix.getRegion(rows, columns);
 
 		if(!values) {
 			return false;
@@ -480,7 +484,7 @@ export class MatrixEditor implements UIElement {
 		// helper function for updating selection and other stuff
 		const help = async() => {
 			// make sure to trim all the unused patterns
-			await this.index.trimAll();
+			await this.tab.matrix.trimAll();
 
 			// re-render rows and fix indices
 			return this.renderRows(rows);
@@ -490,7 +494,7 @@ export class MatrixEditor implements UIElement {
 		return Undo.add({
 			source: UndoSource.Matrix,
 			undo: async() => {		// save the region and check if succeeded
-				if(!await this.index.setRegion(rows, columns, _vcopy)){
+				if(!await this.tab.matrix.setRegion(rows, columns, _vcopy)){
 					return false;
 				}
 
@@ -505,7 +509,7 @@ export class MatrixEditor implements UIElement {
 			},
 			redo: async() => {
 				// save the region and check if succeeded
-				if(!await this.index.setRegion(rows, columns, values)){
+				if(!await this.tab.matrix.setRegion(rows, columns, values)){
 					return false;
 				}
 
@@ -523,14 +527,14 @@ export class MatrixEditor implements UIElement {
 					// check the next column
 					let col = this.selection.x + Math.abs(this.selection.width) + 1, row = this.selection.y, mv = null;
 
-					const h = this.index.getWidth();
+					const h = this.tab.matrix.getWidth();
 					if(col >= h) {
 						// need to wrap back to the beginning (go to the row below)
 						col -= h;
 						row = this.selection.y + Math.abs(this.selection.height) + 1;
 
 						// wrap row address
-						const w = this.index.getHeight();
+						const w = this.tab.matrix.getHeight();
 						if(row >= w) {
 							row -= w;
 						}
@@ -562,7 +566,7 @@ export class MatrixEditor implements UIElement {
 
 		const swap = async (sel:number) => {
 			// swap the actual rows
-			if(!await this.index.swapRows(position, position + offset)) {
+			if(!await this.tab.matrix.swapRows(position, position + offset)) {
 				return false;
 			}
 
@@ -599,7 +603,7 @@ export class MatrixEditor implements UIElement {
 		}
 
 		// gather some basic variables to reference later
-		const size = this.index.getHeight();
+		const size = this.tab.matrix.getHeight();
 		let swapcol = (size - 1 + startY + (offY < 0 ? offY : 0)) % size;
 		let firstcol = (size + startY + (offY > 0 ? offY : 0)) % size;
 
@@ -625,8 +629,8 @@ export class MatrixEditor implements UIElement {
 		}
 
 		// collect the region information
-		const main = await this.index.getRegion(_rows, columns);
-		const swap = await this.index.getRegion([ swapcol, ], columns);
+		const main = await this.tab.matrix.getRegion(_rows, columns);
+		const swap = await this.tab.matrix.getRegion([ swapcol, ], columns);
 
 		// if we failed to gather the regions
 		if(!main || !swap) {
@@ -645,12 +649,12 @@ export class MatrixEditor implements UIElement {
 			source: UndoSource.Matrix,
 			undo: async() => {
 				// reset the first row region
-				if(!await this.index.setRegion([ swapcol, ], columns, swap)){
+				if(!await this.tab.matrix.setRegion([ swapcol, ], columns, swap)){
 					return false;
 				}
 
 				// reset the main data
-				if(!await this.index.setRegion(urows, columns, main)){
+				if(!await this.tab.matrix.setRegion(urows, columns, main)){
 					return false;
 				}
 
@@ -666,12 +670,12 @@ export class MatrixEditor implements UIElement {
 			},
 			redo: async() => {
 				// add the swap row data in already
-				if(!await this.index.setRegion([ firstcol, ], columns, swap)){
+				if(!await this.tab.matrix.setRegion([ firstcol, ], columns, swap)){
 					return false;
 				}
 
 				// add the region and check for failure
-				if(!await this.index.setRegion(_rows, columns, main)){
+				if(!await this.tab.matrix.setRegion(_rows, columns, main)){
 					return false;
 				}
 
@@ -704,7 +708,7 @@ export class MatrixEditor implements UIElement {
 
 		if(single) {
 			// check if we are selecting the last row already
-			if(startY === this.index.getHeight() - 1) {
+			if(startY === this.tab.matrix.getHeight() - 1) {
 				return false;
 			}
 
@@ -713,7 +717,7 @@ export class MatrixEditor implements UIElement {
 		}
 
 		// gather some basic variables to reference later
-		const size = this.index.getHeight();
+		const size = this.tab.matrix.getHeight();
 		let swapcol = (size + 1 + startY + (offY > 0 ? offY : 0)) % size;
 		let lastcol = (size + startY + (offY < 0 ? offY : 0)) % size;
 
@@ -739,8 +743,8 @@ export class MatrixEditor implements UIElement {
 		}
 
 		// collect the region information
-		const main = await this.index.getRegion(_rows, columns);
-		const swap = await this.index.getRegion([ swapcol, ], columns);
+		const main = await this.tab.matrix.getRegion(_rows, columns);
+		const swap = await this.tab.matrix.getRegion([ swapcol, ], columns);
 
 		// if we failed to gather the regions
 		if(!main || !swap) {
@@ -759,12 +763,12 @@ export class MatrixEditor implements UIElement {
 			source: UndoSource.Matrix,
 			undo: async() => {
 				// reset the first row region
-				if(!await this.index.setRegion([ swapcol, ], columns, swap)){
+				if(!await this.tab.matrix.setRegion([ swapcol, ], columns, swap)){
 					return false;
 				}
 
 				// reset the main data
-				if(!await this.index.setRegion(urows, columns, main)){
+				if(!await this.tab.matrix.setRegion(urows, columns, main)){
 					return false;
 				}
 
@@ -780,12 +784,12 @@ export class MatrixEditor implements UIElement {
 			},
 			redo: async() => {
 				// add the swap row data in already
-				if(!await this.index.setRegion([ lastcol, ], columns, swap)){
+				if(!await this.tab.matrix.setRegion([ lastcol, ], columns, swap)){
 					return false;
 				}
 
 				// add the region and check for failure
-				if(!await this.index.setRegion(_rows, columns, main)){
+				if(!await this.tab.matrix.setRegion(_rows, columns, main)){
 					return false;
 				}
 
@@ -902,11 +906,11 @@ export class MatrixEditor implements UIElement {
 
 		if(both) {
 			// handle moving selection
-			return this.select(false, { y: dir.y > 0 ? this.index.getHeight() - 1 : 0, h: 0, });
+			return this.select(false, { y: dir.y > 0 ? this.tab.matrix.getHeight() - 1 : 0, h: 0, });
 
 		} else {
 			// handle extending selection
-			return this.select(false, { h: (dir.y > 0 ? this.index.getHeight() - 1 : 0) - this.selection.y, });
+			return this.select(false, { h: (dir.y > 0 ? this.tab.matrix.getHeight() - 1 : 0) - this.selection.y, });
 		}
 	}
 
@@ -921,12 +925,12 @@ export class MatrixEditor implements UIElement {
 
 		return {
 			// apply x/y only if both = true
-			x: !both ? undefined : f1(this.selection.x + position.x, this.index.getWidth()),
-			y: !both ? undefined : f1(this.selection.y + position.y, this.index.getHeight()),
+			x: !both ? undefined : f1(this.selection.x + position.x, this.tab.matrix.getWidth()),
+			y: !both ? undefined : f1(this.selection.y + position.y, this.tab.matrix.getHeight()),
 
 			// apply w/h only if both = false
-			w: both ? undefined : f2(this.selection.width + position.x, this.index.getWidth()),
-			h: both ? undefined : f2(this.selection.height + position.y, this.index.getHeight()),
+			w: both ? undefined : f2(this.selection.width + position.x, this.tab.matrix.getWidth()),
+			h: both ? undefined : f2(this.selection.height + position.y, this.tab.matrix.getHeight()),
 		};
 	}
 
@@ -946,7 +950,7 @@ export class MatrixEditor implements UIElement {
 			if(index >= 0) {
 				z.onmouseup = async(event:MouseEvent) => {
 					// select the entire index
-					await this.select(null, { x: index, y: 0, w: 0, h: this.index.getHeight() - 1, });
+					await this.select(null, { x: index, y: 0, w: 0, h: this.tab.matrix.getHeight() - 1, });
 					event.preventDefault();
 				}
 			}
@@ -955,7 +959,7 @@ export class MatrixEditor implements UIElement {
 
 		// add each channel into the mix along with the insert button
 		const insert = _add("​", -1);
-		this.index.channels.forEach((channel, index) => _add(channel.name, index));
+		this.tab.matrix.channels.forEach((channel, index) => _add(channel.name, index));
 
 		// add class and title for the insert button
 		insert.classList.add("matrix_insert");
@@ -965,7 +969,7 @@ export class MatrixEditor implements UIElement {
 		insert.onmouseup = (event:MouseEvent) => {
 			switch(event.button) {
 				case 0:	{	// left button, generate a new row at the very bottom and scroll down to it
-					const h = this.index.getHeight();
+					const h = this.tab.matrix.getHeight();
 					return this.insertMax(h, h - 1);
 				}
 
@@ -1087,13 +1091,13 @@ export class MatrixEditor implements UIElement {
 		const oldrows = this.getSelection().rows;
 
 		// validate the positions
-		setPos(false, target.x, this.index.getWidth(), (pos:number) => this.selection.x = pos);
-		setPos(false, target.y, this.index.getHeight(), (pos:number) => this.selection.y = pos);
+		setPos(false, target.x, this.tab.matrix.getWidth(), (pos:number) => this.selection.x = pos);
+		setPos(false, target.y, this.tab.matrix.getHeight(), (pos:number) => this.selection.y = pos);
 
 		setPos(true, target instanceof Bounds ? target.width : target.w,
-			this.index.getWidth(), (pos:number) => this.selection.width = pos, this.pasteSize.x);
+			this.tab.matrix.getWidth(), (pos:number) => this.selection.width = pos, this.pasteSize.x);
 		setPos(true, target instanceof Bounds ? target.height : target.h,
-			this.index.getHeight(), (pos:number) => this.selection.height = pos, this.pasteSize.y);
+			this.tab.matrix.getHeight(), (pos:number) => this.selection.height = pos, this.pasteSize.y);
 
 		// if nothing was changed, return
 		if(!changed){
@@ -1160,7 +1164,7 @@ export class MatrixEditor implements UIElement {
 	 */
 	private getSelection() {
 		// get the height and width of the area
-		const w = this.index.getWidth(), h = this.index.getHeight();
+		const w = this.tab.matrix.getWidth(), h = this.tab.matrix.getHeight();
 
 		// helper function for wrapping offsets
 		const wrapOff = (size:number, off:number) => {
@@ -1265,15 +1269,15 @@ export class MatrixEditor implements UIElement {
 	 */
 	public async insertRow(position:number):Promise<boolean> {
 		// generate a new row in the pattern index object
-		const ixrow = this.index.generateRow();
+		const ixrow = this.tab.matrix.generateRow();
 
 		// generate new patterns at values
-		if(!await this.index.makePatternsRow(ixrow, false)) {
+		if(!await this.tab.matrix.makePatternsRow(ixrow, false)) {
 			return false;
 		}
 
 		// attempt to insert this new row at position. If it fails, return
-		if(!await this.index.insertRow(position, ixrow)){
+		if(!await this.tab.matrix.insertRow(position, ixrow)){
 			return false;
 		}
 
@@ -1290,7 +1294,7 @@ export class MatrixEditor implements UIElement {
 	private async insertRowUI(position:number):Promise<boolean> {
 		// insert a new row element based on the position
 		const row = document.createElement("div");
-		this.elrows.insertBefore(row, this.index.getHeight() <= position ? null : this.elrows.children[position + MatrixEditor.FILLER_ROWS]);
+		this.elrows.insertBefore(row, this.tab.matrix.getHeight() <= position ? null : this.elrows.children[position + MatrixEditor.FILLER_ROWS]);
 
 		// render the row at position
 		if(!await this.renderRow(position)){
@@ -1331,12 +1335,12 @@ export class MatrixEditor implements UIElement {
 	 * @returns boolean indicating success
 	 */
 	private async renderRow(position:number) {
-		const size = this.index.getSize();
+		const size = this.tab.matrix.getSize();
 		let rows:null|number[] = null, columns:null|number[] = null;
 		let psx = 0, psy = 0;
 
 		// get the row data and check if it's null (invalid row)
-		const data = await this.index.getRow(position);
+		const data = await this.tab.matrix.getRow(position);
 
 		if(data === null) {
 			return false;
@@ -1432,7 +1436,7 @@ export class MatrixEditor implements UIElement {
 
 						// enable selection mode and select the current node
 						this.selecting = false;
-						await this.select(null, { x: 0,  y: position, w: this.index.getWidth() - 1, h: 0, });
+						await this.select(null, { x: 0,  y: position, w: this.tab.matrix.getWidth() - 1, h: 0, });
 
 						// when we release the button, just stop selecting
 						this.documentDragFinish();
@@ -1468,7 +1472,7 @@ export class MatrixEditor implements UIElement {
 
 			} else if(this.selecting === false) {
 				// handle selecting rows
-				await this.select(null, { w: this.index.getWidth() - 1, h: extra as number - this.selection.y, });
+				await this.select(null, { w: this.tab.matrix.getWidth() - 1, h: extra as number - this.selection.y, });
 			}
 		}
 	}
@@ -1528,7 +1532,7 @@ export class MatrixEditor implements UIElement {
 	 * Function to fix the row indices, so they always are based on the position
 	 */
 	private fixRowIndices() {
-		for(let i = this.index.getHeight() - 1; i >= 0;i --) {
+		for(let i = this.tab.matrix.getHeight() - 1; i >= 0;i --) {
 			// fix the innertext of the first child of each row to be position
 			this.fixRowIndex(i);
 		}
@@ -1540,7 +1544,7 @@ export class MatrixEditor implements UIElement {
 	 * @param row The row index to update
 	 */
 	private fixRowIndex(row:number) {
-		if(row >= 0 && row < this.index.getHeight() && row < this.elrows.children.length - MatrixEditor.FILLER_ROWS) {
+		if(row >= 0 && row < this.tab.matrix.getHeight() && row < this.elrows.children.length - MatrixEditor.FILLER_ROWS) {
 			// fix the innerText of this row
 			this.byteToHTML((this.elrows.children[row + MatrixEditor.FILLER_ROWS].children[0] as HTMLDivElement), row);
 		}
@@ -1554,7 +1558,7 @@ export class MatrixEditor implements UIElement {
 	 */
 	private renderAt(row:number, channel:number) {
 		// get the actual value from the index and check if invalid
-		const byte = this.index.get(channel, row);
+		const byte = this.tab.matrix.get(channel, row);
 
 		if(byte === null) {
 			return;
@@ -1603,13 +1607,13 @@ export class MatrixEditor implements UIElement {
 		// generate columns
 		const cols:number[] = [];
 
-		for(let x = this.index.getWidth() - 1;x >= 0;x --){
+		for(let x = this.tab.matrix.getWidth() - 1;x >= 0;x --){
 			cols.unshift(x);
 		}
 
 		// clone the selection
 		const clone = this.selection.clone();
-		const data = await this.index.getRegion(rows, cols);
+		const data = await this.tab.matrix.getRegion(rows, cols);
 		let hasnullrow = false;
 
 		// if failed to fetch data, return
@@ -1622,7 +1626,7 @@ export class MatrixEditor implements UIElement {
 			source: UndoSource.Matrix,
 			undo: async() => {
 				// insert rows at correct positions
-				const nulldata = new Uint8Array(this.index.getWidth());
+				const nulldata = new Uint8Array(this.tab.matrix.getWidth());
 
 				for(let i = 0;i < rows.length;i ++) {
 					// special case because we need at least 1 row
@@ -1631,13 +1635,13 @@ export class MatrixEditor implements UIElement {
 					}
 
 					// try to add the row with some null data
-					if(!await this.index.insertRow(rows[i], nulldata)){
+					if(!await this.tab.matrix.insertRow(rows[i], nulldata)){
 						return false;
 					}
 				}
 
 				// push the actual data into the rows
-				if(!await this.index.setRegion(rows, cols, data)){
+				if(!await this.tab.matrix.setRegion(rows, cols, data)){
 					return false;
 				}
 
@@ -1679,7 +1683,7 @@ export class MatrixEditor implements UIElement {
 				}
 
 				// check if there are no rows anymore
-				if(this.index.getHeight() === 0){
+				if(this.tab.matrix.getHeight() === 0){
 					// insert a new row then
 					if(!await this.insertRow(0)){
 						return false;
@@ -1709,7 +1713,7 @@ export class MatrixEditor implements UIElement {
 	 */
 	public async deleteRow(position:number):Promise<boolean> {
 		// delete the row data from index, and bail if failed
-		if(!await this.index.deleteRow(position)) {
+		if(!await this.tab.matrix.deleteRow(position)) {
 			return false;
 		}
 
@@ -1755,10 +1759,10 @@ export class MatrixEditor implements UIElement {
 	 */
 	public async copyRow(source:number, destination:number):Promise<boolean> {
 		// get the source row from index
-		const ixrow = await this.index.getRow(source);
+		const ixrow = await this.tab.matrix.getRow(source);
 
 		// attempt to insert this new row at destination. If it fails, return
-		if(!ixrow || !await this.index.insertRow(destination, ixrow)){
+		if(!ixrow || !await this.tab.matrix.insertRow(destination, ixrow)){
 			return false;
 		}
 
@@ -1776,14 +1780,14 @@ export class MatrixEditor implements UIElement {
 		const str:string[] = [];
 
 		// get matrix size so we can wrap things properly
-		const msz = this.index.getSize();
+		const msz = this.tab.matrix.getSize();
 
 		// loop for all rows
 		for(let y = pos.y;y <= pos.y + pos.height;y++) {
 			const s:string[] = [];
 
 			// load the row data and check if its valid
-			const row = await this.index.getRow(y % msz.y);
+			const row = await this.tab.matrix.getRow(y % msz.y);
 
 			if(!row) {
 				return null;
@@ -1835,7 +1839,7 @@ export class MatrixEditor implements UIElement {
 			const rows = str?.trim().split("\n");
 
 			// if there are no rows, return
-			if(!rows || rows.length === 0 || rows.length > this.index.getHeight()){
+			if(!rows || rows.length === 0 || rows.length > this.tab.matrix.getHeight()){
 				return false;
 			}
 
@@ -1854,7 +1858,7 @@ export class MatrixEditor implements UIElement {
 				// check if we need to update the row length
 				if(rowlen < 0){
 					// check if there are no columns, bail
-					if(cols.length === 0 || rowlen > this.index.getWidth()){
+					if(cols.length === 0 || rowlen > this.tab.matrix.getWidth()){
 						return false;
 					}
 
@@ -1914,7 +1918,7 @@ export class MatrixEditor implements UIElement {
 		}
 
 		// load selection bounds
-		const size = this.index.getSize();
+		const size = this.tab.matrix.getSize();
 		const { startX, startY, offX, offY, rows, columns, } = this.getSelection();
 		const psx = startX + (offX < 0 ? offX : 0);
 		const psy = startY + (offY < 0 ? offY : 0);
@@ -1924,7 +1928,7 @@ export class MatrixEditor implements UIElement {
 		const selClone = this.selection.clone();
 
 		// load the selected area values
-		const data = await this.index.getRegion(rows, columns);
+		const data = await this.tab.matrix.getRegion(rows, columns);
 
 		if(!data) {
 			return false;
@@ -1934,7 +1938,7 @@ export class MatrixEditor implements UIElement {
 			source: UndoSource.Matrix,
 			undo: async() => {
 				// reset the selection data
-				if(!await this.index.setRegion(rows, columns, data)) {
+				if(!await this.tab.matrix.setRegion(rows, columns, data)) {
 					return false;
 				}
 
@@ -1950,7 +1954,7 @@ export class MatrixEditor implements UIElement {
 				// run through each row
 				for(let i = 0, y = 0;y <= Math.abs(offY);y ++){
 					// load the row data and check if valid
-					const row = await this.index.getRow((size.y + psy + y) % size.y);
+					const row = await this.tab.matrix.getRow((size.y + psy + y) % size.y);
 
 					if(!row) {
 						return false;
@@ -1962,13 +1966,13 @@ export class MatrixEditor implements UIElement {
 					}
 
 					// save the new row data
-					if(!await this.index.setRow((size.y + psy + y) % size.y, row)) {
+					if(!await this.tab.matrix.setRow((size.y + psy + y) % size.y, row)) {
 						return false;
 					}
 				}
 
 				// trim all unused indices
-				await this.index.trimAll();
+				await this.tab.matrix.trimAll();
 
 				// re-render all rows
 				if(!await this.renderRows(rows)) {

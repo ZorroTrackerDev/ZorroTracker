@@ -357,7 +357,7 @@ async function editorLayout():Promise<true> {
 	_top.id = "editor_top";
 	body.appendChild(_top);
 
-	_top.appendChild((matrixEditor = new MatrixEditor(Tab.active?.project.index)).element);
+	_top.appendChild((matrixEditor = new MatrixEditor(Tab.active)).element);
 
 	const _bot = document.createElement("div");
 	_bot.id = "editor_bottom";
@@ -375,7 +375,7 @@ async function editorLayout():Promise<true> {
 	}
 
 	// load channel mute buttons
-	Tab.active?.project.index.channels.forEach((c) => {
+	Tab.active?.project.matrix.channels.forEach((c) => {
 		const b = document.createElement("label");
 		b.innerHTML = /*html*/`
 			<div style="white-space: nowrap; display: inline-block;">
@@ -391,7 +391,7 @@ async function editorLayout():Promise<true> {
 	_bot.appendChild((piano = await Piano.create()).element);
 
 	// add the pattern editor here
-	_bot.appendChild((patternEditor = new PatternEditor(Tab.active?.project.index)).element);
+	_bot.appendChild((patternEditor = new PatternEditor(Tab.active)).element);
 	return true;
 }
 

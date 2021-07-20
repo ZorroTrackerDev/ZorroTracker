@@ -1,5 +1,6 @@
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../../api/events";
 import { PatternIndex } from "../../../api/matrix";
+import { Tab } from "../../misc/tab";
 import { MatrixEditor, editMode } from "./main";
 
 /**
@@ -213,12 +214,12 @@ export const standardButtons:PatternIndexEditorButtonList[] = [
 			{
 				svg: "",
 				tooltip: "The matrix length",
-				load: (element:HTMLDivElement, edit:MatrixEditor):void => {
+				load: (element:HTMLDivElement):void => {
 					// update the matrix resize element
 					_matrixResize = element;
 
 					// apply the text first time
-					element.innerHTML = "<div>Matrix: </div>"+ (edit.index.getHeight() - 1).toByte();
+					element.innerHTML = "<div>Matrix: </div>"+ ((Tab.active?.matrix.getHeight() ?? 1) - 1).toByte();
 				},
 			},
 		],

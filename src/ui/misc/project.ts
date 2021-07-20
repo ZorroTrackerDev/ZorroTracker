@@ -93,7 +93,7 @@ export class Project {
 		const m = await project.addModule();
 		m.name = "New module";
 		await project.setActiveModuleIndex(0);
-		project.data[m.file].index.setChannels(m.channels as Channel[]);
+		project.data[m.file].matrix.setChannels(m.channels as Channel[]);
 
 		// mark this project as not dirty for now
 		project.clean();
@@ -223,7 +223,7 @@ export class Project {
 			for(const m of project.modules) {
 				// initialize the module data
 				const x:ModuleData = {
-					index: new PatternIndex(project),
+					matrix: new PatternIndex(project),
 				};
 
 				// load the matrix data
@@ -246,9 +246,9 @@ export class Project {
 				}
 
 				// set channels and prepare matrix and patterns
-				x.index.setChannels(m.channels as Channel[]);
-				x.index.loadMatrix(_mat);
-				x.index.loadPatterns(_pat);
+				x.matrix.setChannels(m.channels as Channel[]);
+				x.matrix.loadMatrix(_mat);
+				x.matrix.loadPatterns(_pat);
 
 				// save into projecct
 				project.data[m.file] = x;
@@ -426,10 +426,10 @@ export class Project {
 		{	// write all the modules
 			for (const [ key, value, ] of Object.entries(this.data)) {
 				// write this module
-				const _matrix = value.index.saveMatrix();
+				const _matrix = value.matrix.saveMatrix();
 				zip.addFile("modules/"+ key +"/.matrix", Buffer.from(_matrix.buffer));
 
-				const _patterns = await value.index.savePatterns();
+				const _patterns = await value.matrix.savePatterns();
 				zip.addFile("modules/"+ key +"/.patterns", Buffer.from(_patterns.buffer));
 
 			}
@@ -560,7 +560,7 @@ export class Project {
 			// set new module data
 			const mdata = {
 				// create an empty patternIndex
-				index: new PatternIndex(this),
+				matrix: new PatternIndex(this),
 			};
 
 			this.data[data.file] = mdata;
@@ -731,9 +731,9 @@ export class Project {
 		throw new Error("Unable to load module data: The active module "+ this.activeModuleFile +" does not exist.");
 	}
 
-	/* the PatternIndex for the current module */
-	public get index():PatternIndex {
-		return this._moduleData.index;
+	/* the Matrix for the current module */
+	public get matrix():PatternIndex {
+		return this._moduleData.matrix;
 	}
 
 	/**
@@ -757,9 +757,9 @@ export class Project {
 			const ddata = this.data[destination.file];
 
 			// clone the all the data
-			ddata.index.setChannels(sdata.index.channels);
-			ret = ret && ddata.index.loadPatterns(Buffer.from(await sdata.index.savePatterns()));
-			ret = ret && ddata.index.loadMatrix(Buffer.from(sdata.index.saveMatrix()));
+			ddata.matrix.setChannels(sdata.matrix.channels);
+			ret = ret && ddata.matrix.loadPatterns(Buffer.from(await sdata.matrix.savePatterns()));
+			ret = ret && ddata.matrix.loadMatrix(Buffer.from(sdata.matrix.saveMatrix()));
 		}
 
 		// return whether everything was successful
@@ -845,7 +845,7 @@ export interface Module {
 
 export interface ModuleData {
 	/**
-	 * The pattern index data
+	 * The pattern matrix data
 	 */
-	index: PatternIndex,
+	matrix: PatternIndex,
 }

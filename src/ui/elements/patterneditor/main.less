@@ -49,7 +49,6 @@
 						right: 0; top: 0; bottom: 0;
 						width: @labelheight;
 						background-size: @labelheight @labelheight;
-						cursor: e-resize;
 						z-index: 12;
 
 						filter: brightness(100%);
@@ -99,6 +98,7 @@
 				&> label {
 					height: 100%;
 					padding-right: @labelheight - 4px;
+					pointer-events: none;
 				}
 			}
 		}

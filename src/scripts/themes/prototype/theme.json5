@@ -12,7 +12,7 @@
 
 					// CSS styles
 					css: {
-
+						cursor: "e-resize",
 					},
 					// styles for the child elements inside of the SVG
 					icon: {
@@ -43,17 +43,61 @@
 						"background-color": "#37535B",
 						"border-bottom": "2px solid black",
 						"border-right": "4px solid black",
-					}
+						cursor: "pointer",
+						transition: "background-color .1s linear",
+					},
+					// settings related to the label of the channel
+					label: {
+						// CSS styles
+						css: {
+							color: "#E4E4E4",
+							"font-family": "'Roboto Mono', monospace",
+							"font-size": "12pt",
+							"font-weight": "500",
+						}
+					},
 				},
-				// settings related to the label of the channel
-				label: {
+				// settings related to the main element for the channel header when hovered
+				mainhover: {
 					// CSS styles
 					css: {
-						color: "#E4E4E4",
-						"font-family": "'Roboto Mono', monospace",
-						"font-size": "12pt",
-						"font-weight": "500",
-					}
+						"background-color": "#376573",
+					},
+					// settings related to the label of the channel when hovered
+					label: {
+						// CSS styles
+						css: {
+
+						}
+					},
+				},
+				// settings related to the main element for the channel header when muted
+				muted: {
+					// CSS styles
+					css: {
+						"background-color": "#5b3738",
+					},
+					// settings related to the label of the channel when muted
+					label: {
+						// CSS styles
+						css: {
+
+						}
+					},
+				},
+				// settings related to the main element for the channel header when hovered and muted
+				mutedhover: {
+					// CSS styles
+					css: {
+						"background-color": "#73373a",
+					},
+					// settings related to the label of the channel when hovered and muted
+					label: {
+						// CSS styles
+						css: {
+
+						}
+					},
 				},
 				// settings related to the row header
 				row: {
@@ -61,7 +105,7 @@
 					css: {
 						"background-color": "#000000",
 					}
-				}
+				},
 			},
 			// Settings related to the focused row
 			focus: {

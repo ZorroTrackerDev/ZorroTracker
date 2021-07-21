@@ -239,6 +239,61 @@ async function loadMainShortcuts() {
 			Tab.active.playMode = PlayMode.Stopped;
 			return true;
 		},
+
+		/* shortcut for muting the selected channel */
+		muteselected: async() => {
+			if(!Tab.active || !Tab.active.selectedChannel || Tab.active.selectedChannel.muted){
+				return false;
+			}
+
+			// mute the selected channel
+			await Tab.active.setMute(Tab.active.selectedChannel, true);
+			return true;
+		},
+
+		/* shortcut for unmuting the selected channel */
+		unmuteselected: async() => {
+			if(!Tab.active || !Tab.active.selectedChannel || !Tab.active.selectedChannel.muted){
+				return false;
+			}
+
+			// unmute the selected channel
+			await Tab.active.setMute(Tab.active.selectedChannel, false);
+			return true;
+		},
+
+		/* shortcut for unmuting the selected channel */
+		soloselected: async() => {
+			if(!Tab.active || !Tab.active.selectedChannel || Tab.active.isSolo(Tab.active.selectedChannel)){
+				return false;
+			}
+
+			// solo the selected channel
+			await Tab.active.setSolo(Tab.active.selectedChannel);
+			return true;
+		},
+
+		/* shortcut for muting all channels */
+		muteall: async() => {
+			if(!Tab.active || !Tab.active.selectedChannel || Tab.active.allMute(true)){
+				return false;
+			}
+
+			// mute all channels
+			await Tab.active.setMuteAll(true);
+			return true;
+		},
+
+		/* shortcut for muting all channels */
+		unmuteall: async() => {
+			if(!Tab.active || !Tab.active.selectedChannel || Tab.active.allMute(false)){
+				return false;
+			}
+
+			// unmute all channels
+			await Tab.active.setMuteAll(false);
+			return true;
+		},
 	});
 }
 

@@ -262,6 +262,14 @@ const _playbarChild = [
 	},
 ];
 
+// children of the channel wrappers
+const _channelwrapperChild = [
+	{
+		element: ">.channelnamewrapper>label",
+		path: "label",
+	},
+];
+
 /**
  * The tree containing all SVG stylesheet generation targets
  */
@@ -299,14 +307,26 @@ const cssPath = [
 			{
 				element: "",
 				path: "main",
+				child: _channelwrapperChild,
+			},
+			{
+				element: ":hover",
+				path: "mainhover",
+				child: _channelwrapperChild,
+			},
+			{
+				element: ".muted",
+				path: "muted",
+				child: _channelwrapperChild,
+			},
+			{
+				element: ".muted:hover",
+				path: "mutedhover",
+				child: _channelwrapperChild,
 			},
 			{
 				element: ":first-child",
 				path: "row",
-			},
-			{
-				element: ">.channelnamewrapper>label",
-				path: "label",
 			},
 			{
 				element: ">.channelnamewrapper>.channeldragarea",

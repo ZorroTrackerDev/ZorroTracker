@@ -1,3 +1,4 @@
+import { Channel } from "../../../api/driver";
 import { ZorroEvent, ZorroEventEnum } from "../../../api/events";
 import { loadFlag } from "../../../api/files";
 import { UIElement } from "../../../api/ui";
@@ -247,6 +248,24 @@ export class PatternEditor implements UIElement {
 	}
 
 	/**
+	 * Function to update the mute state of a single channel
+	 *
+	 * @param channel The channel to update state for
+	 * @param state The actual state to update to
+	 */
+	public updateMute(channel:Channel, state:boolean): void {
+		// get index of the channel
+		for(let i = this.tab.channels.length;i > 0; --i) {
+			if(this.tab.channels[i - 1] === channel) {
+				// found the channel, update status
+				const chan = this.scrollwrapper.children[i] as HTMLDivElement;
+				chan.classList[state ? "add" : "remove"]("muted");
+				return;
+			}
+		}
+	}
+
+	/**
 	 * Helper function to initialize channel headers and channel positions
 	 */
 	private initChannels() {
@@ -288,7 +307,7 @@ export class PatternEditor implements UIElement {
 			let pos = -1, lastsize = -1, left = 0;
 
 			// initialize header size
-			this.setChannelHeaderSize(this.tab.channels[i - 1]?.info.effects ?? 0, i - 1, chan);
+			this.setChannelHeaderSize(this.tab.channels[i - 1]?.info.effects ?? 0, i - 1, this.tab.channels[i - 1].muted, chan);
 
 			// enable mouse down detection
 			drag.onpointerdown = (e) => {
@@ -315,7 +334,7 @@ export class PatternEditor implements UIElement {
 
 				if(this.tab.channels[i - 1].info.effects !== sz) {
 					// update channel header size
-					this.setChannelHeaderSize(sz, i - 1, chan);
+					this.setChannelHeaderSize(sz, i - 1, this.tab.channels[i - 1].muted, chan);
 
 					// update worker with data
 					this.refreshChannelWidth();
@@ -347,6 +366,33 @@ export class PatternEditor implements UIElement {
 				// fix horizontal scrolling just in case
 				this.scrollHoriz(0);
 			}
+
+			// handler for mouse clicks on the main channel itself
+			chan.onclick = async(e) => {
+				// check if this was a right click
+				if(e.button !== 0) {
+					return;
+				}
+
+				// fetch the channel to effect
+				const ch = this.tab.channels[i - 1];
+
+				if(e.detail > 1) {
+					// double click handling
+					if(this.tab.isSolo(ch)) {
+						// enable all channels
+						await this.tab.setMuteAll(false);
+
+					} else {
+						// make the channel go solo
+						await this.tab.setSolo(ch);
+					}
+
+				} else if(e.detail === 1) {
+					// single click handling
+					await this.tab.setMute(ch, !ch.muted);
+				}
+			};
 		}
 
 		// also refresh channel widths
@@ -365,7 +411,7 @@ export class PatternEditor implements UIElement {
 	 * @param channel The channel to change
 	 * @param element The root element for this channel
 	 */
-	private setChannelHeaderSize(width:number, channel:number, element:HTMLDivElement) {
+	private setChannelHeaderSize(width:number, channel:number, muted:boolean, element:HTMLDivElement) {
 		// update commands amount
 		this.tab.channels[channel].info.effects = width;
 		this.channelElements[channel] = [ 3, 5, 7, 9, 11, 13, 15, 17, 19, ][width];
@@ -374,7 +420,7 @@ export class PatternEditor implements UIElement {
 		element.style.width = this.channelWidths[width] +"px";
 
 		// @ts-expect-error This works you silly butt
-		element.classList = "channelwrapper"+ (width === 1 ? " dragright" : width === 8 ? " dragleft" : "");
+		element.classList = "channelwrapper"+ (muted ? " muted" : "") + (width === 1 ? " dragright" : width === 8 ? " dragleft" : "");
 
 		// update SVG path element
 		const path = element.querySelector("path");
@@ -785,5 +831,13 @@ ZorroEvent.addListener(ZorroEventEnum.LoadTheme, async() => {
 ZorroEvent.addListener(ZorroEventEnum.TabRecordMode, async() => {
 	if(_edit) {
 		_edit.changeRecordMode();
+	}
+});
+
+// listen to record mode changing
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.TabMute, async(event, tab, channel, state) => {
+	if(_edit) {
+		_edit.updateMute(channel, state);
 	}
 });

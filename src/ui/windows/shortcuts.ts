@@ -185,6 +185,12 @@ const shortcutDescriptions: { [key:string]: string } = {
 	"ui.stop":							"Stop playing",
 	"ui.record":						"Toggle record mode",
 
+	"ui.muteselected":					"Mute the currently selected channel",
+	"ui.unmuteselected":				"Unmute the currently selected channel",
+	"ui.muteall":						"Mute all channels",
+	"ui.unmuteall":						"Unmute all channels",
+	"ui.soloselected":					"Mute all but the selected channel",
+
 	"window.projectinfo":				"Open project info window",
 	"window.shortcuts":					"Open shortcut editor window",
 

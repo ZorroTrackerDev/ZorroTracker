@@ -95,4 +95,10 @@
 	"ui.playpattern":					[ "MediaTrackPrevious", "Shift+Enter" ],/* shortcut for playing back the current pattern */
 	"ui.stop":							[ "MediaStop", "Shift+Enter", "Enter" ],/* shortcut for stopping playback */
 	"ui.record":						[ "Space" ],							/* shortcut for toggling record mode */
+
+	"ui.muteselected":					[ "F9" ],								/* shortcut for muting selected channel */
+	"ui.unmuteselected":				[ "F9" ],								/* shortcut for unmuting selected channel */
+	"ui.soloselected":					[ "Shift+F9" ],							/* shortcut for muting selected channel */
+	"ui.muteall":						[ "F10" ],								/* shortcut for muting all channels */
+	"ui.unmuteall":						[ "Shift+F9", "F10" ],					/* shortcut for unmuting all channels */
 }

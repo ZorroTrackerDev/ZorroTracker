@@ -1,5 +1,6 @@
 import { Module, Project } from "../ui/misc/project";
 import { PlayMode, Tab } from "../ui/misc/tab";
+import { Channel } from "./driver";
 import { PatternIndex } from "./matrix";
 import { ClipboardType } from "./ui";
 
@@ -135,6 +136,7 @@ export enum ZorroEventEnum {
 	LoadTheme,						// event that is ran when a new theme is loaded
 
 	SwitchTab,						// event that is ran when a new tab is activated
+	TabMute,						// event that is ran when a mute state of the channel was updated
 	TabPlayMode,					// event that is ran when the playback mode was changed
 	TabRecordMode,					// event that is ran when the record mode was changed
 
@@ -196,6 +198,7 @@ export interface ZorroListenerTypes {
 
 	[ZorroEventEnum.LoadTheme]: (event:ZorroEventObject) => ZorroListenerReturn<void>,
 
+	[ZorroEventEnum.TabMute]: (event:ZorroEventObject, tab:Tab, channel:Channel, state:boolean) => ZorroListenerReturn<void>,
 	[ZorroEventEnum.TabPlayMode]: (event:ZorroEventObject, tab:Tab, mode:PlayMode) => ZorroListenerReturn<void>,
 	[ZorroEventEnum.TabRecordMode]: (event:ZorroEventObject, tab:Tab, mode:boolean) => ZorroListenerReturn<void>,
 
@@ -231,6 +234,7 @@ export interface ZorroSenderTypes {
 
 	[ZorroEventEnum.LoadTheme]: () => ZorroSenderReturn<undefined>,
 
+	[ZorroEventEnum.TabMute]: (tab:Tab, channel:Channel, state:boolean) => ZorroSenderReturn<undefined>,
 	[ZorroEventEnum.TabPlayMode]: (tab:Tab, mode:PlayMode) => ZorroSenderReturn<undefined>,
 	[ZorroEventEnum.TabRecordMode]: (tab:Tab, mode:boolean) => ZorroSenderReturn<undefined>,
 

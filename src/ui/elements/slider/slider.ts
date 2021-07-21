@@ -317,7 +317,7 @@ type SimpleSliderReturn = {
  * @param steps The number of possible steps to use
  * @param digits The number of digits in the output value
  * @param suffix The string or value to add to the end of the text field. This is also used when parsing input text
- * @param pos The function that is called when the value is updated. This lets you save the value in the slider
+ * @param post The function that is called when the value is updated. This lets you save the value in the slider
  * @returns And object containing the element, the label, and a function to set the value from code into the slider.
  */
 export function simpleSlider(type:SliderEnum, multiplier:number, steps:number, digits:number, suffix:string, post:(value:number) => void):
@@ -453,4 +453,250 @@ export async function volumeSlider(type:SliderEnum):Promise<Element> {
 
 	// return the slider element
 	return element;
+}
+
+/**
+ * Function to create a value, inside or outside the code. This also has an editable field where the user can input text.
+ * The calling code controls the range of the value.
+ *
+ * @param type The type of the value to create. There are various standard settings for size and direction
+ * @param functions List of different functions that are used by the value for updates and to pass information between the UI and code
+ * @returns An object containing the element, the label, and a function to set the value from code
+ */
+export function makeValue(type:SliderEnum, functions:SliderFunctions):SliderReturn {
+	// destructure the functions object for easier access
+	const { getValue, getValueOffset, toText, fromText, } = functions;
+
+	// create a div with class slider that will be our main element
+	const e = document.createElement("div");
+	e.classList.add("slider");
+
+	// set up the innerHTML of the element, containing all the sub-elements we are going to need
+	e.innerHTML = /*html*/`
+		<div class="slider_text">
+			<div class="slider_icon"></div>
+			<textarea class="slider_value" rows="1" wrap="off"></textarea>
+		</div>
+	`;
+
+	// add the size class into the div
+	switch(type & 0xFF) {
+		case SliderEnum.Small:	e.classList.add("slider_small"); break;
+		case SliderEnum.Medium:	e.classList.add("slider_medium"); break;
+		case SliderEnum.Large:	e.classList.add("slider_large"); break;
+	}
+
+	// add the direction class into the div
+	switch(type & 0xF00) {
+		case SliderEnum.Vertical:	e.classList.add("slider_vertical"); break;
+		case SliderEnum.Horizontal:	e.classList.add("slider_horizontal"); break;
+	}
+
+	// dump all the nodes we are going to reference later into these variables
+	const textNode = (e.children[0] as Element).children[1] as HTMLTextAreaElement;
+	const labelNode = (e.children[0] as Element).children[0] as HTMLDivElement;
+
+	// stores the last value held. Used when the user input is rejected.
+	let lastValue = 0;
+
+	/**
+	 * Function to set the UI text.
+	 *
+	 * @param value The value before calling `getValue`
+	 */
+	const _set = (value:number) => {
+		// convert the position according to caller, and save as the last valid value
+		const position = getValue(value);
+		lastValue = position;
+
+		// convert the value into text as well
+		textNode.value = toText(position);
+	}
+
+	/**
+	 * Function to set the UI with the new value via text, or arrow keys.
+	 *
+	 * @param value The value to update with, or null if an invalid value was found
+	 */
+	const _edit = (value:number|null) => {
+		// store the current selection and text length for later
+		const start = textNode.selectionStart, end = textNode.selectionEnd, len = textNode.value.length;
+
+		if(value !== null){
+			// update the UI with the new value
+			_set(value);
+
+		} else {
+			// invalid value, update with the last stored value (restore UI state)
+			_set(lastValue);
+		}
+
+		if(start === len && end === len){
+			// the caret was on the last character of the textbox, select it again
+			textNode.selectionStart = textNode.value.length;
+			textNode.selectionEnd = textNode.value.length;
+
+		} else {
+			// else just copy the selection over
+			textNode.selectionStart = start;
+			textNode.selectionEnd = end;
+		}
+	}
+
+	/**
+	 * Helper function to convert the text box text into a value, then handling updating the UI
+	 */
+	const _text = () => _edit(fromText(textNode.value));
+
+	/**
+	 * Function to handle the special arrow key stuff. This allows the user to change the value by different amounts, depending on the calling code.
+	 *
+	 * @param up Whether up arrow was pressed. False = down arrow.
+	 */
+	const arrow = (up:boolean) => _edit(getValueOffset(lastValue, up ? 1 : -1));
+
+	// handle clicking away from the edit box as updating the text content
+	textNode.onblur = _text;
+
+	// handle special keys in the edit box
+	textNode.onkeydown = function(event:KeyboardEvent) {
+		// disable shortcuts while writing to this textarea
+		event.stopPropagation();
+
+		switch(event.keyCode) {
+			case 13:		// Enter key handler
+				event.preventDefault();
+
+				// update text content
+				_text();
+				return false;
+
+			case 38:		// Arrow up handler
+				event.preventDefault();
+
+				// handle special arrow event
+				arrow(true);
+				return false;
+
+			case 40:		// Arrow down handler
+				event.preventDefault();
+
+				// handle special arrow event
+				arrow(false);
+				return false;
+		}
+	}
+
+	// return the main element, label element, and a function to edit the value
+	return { element: e, label: labelNode, setValue: _set, };
+}
+
+type SimpleValueReturn = {
+	/**
+	 * The value element.
+	 */
+	element: HTMLDivElement,
+
+	/**
+	 * The label element that should be controlled by the calling code.
+	 */
+	label: HTMLDivElement,
+
+	/**
+	 * Function to set the value in the UI. This can control the value from the calling code.
+	 * `getValue` and `toText` are called when this is used, so there is no need for special handling here.
+	 *
+	 * @param value The value as a string or a number
+	 * @param initial The value to use as the initial default value, if conversion fails
+	 */
+	setValue:(value:string, initial:number) => void,
+
+	/**
+	 * Function to set the range of accepted values for the value.
+	 *
+	 * @param min The minimum acceptable value. Can be positive or negative. Must be less than `max`
+	 * @param max The maximum acceptable value. Can be positive or negative. Must be more than `min`
+	 */
+	setRange:(min:number, max:number) => void,
+};
+
+/**
+ * Function to create a simple value input box that maps value from `from` to `to`. This code will handle everything else for you.
+ *
+ * @param type The type of the slider to create. There are various standard settings for size and direction
+ * @param suffix The string or value to add to the end of the text field. This is also used when parsing input text
+ * @param post The function that is called when the value is updated. This lets you save the value in the slider
+ * @returns And object containing the element, the label, and a function to set the value from code into the slider.
+ */
+export function simpleValue(type:SliderEnum, suffix:string, post:(value:number) => void): SimpleValueReturn {
+	// pre-defined min and max ranges
+	let _min = 0, _max = 1;
+
+	/**
+	 * function to handle limiting the input in steps
+	 *
+	 * @param v The input value
+	 * @returns The output value, after stepping is done
+	 */
+	const limit = (v:number) => {
+		return Math.round(Math.max(_min, Math.min(_max, v)));
+	}
+
+	/**
+	 * Convert string to value, also stepping it correctly
+	 *
+	 * @param value Input string value to be converted
+	 * @returns The converted value or null, if conversion failed
+	 */
+	const convert = (value:string) => {
+		// parse input as a float
+		let v:number|null = parseFloat(value);
+
+		// check for null and divide by the multiplier
+		v = isNaN(v) ? null : v;
+
+		if(v !== null) {
+			// limit the value and apply steps
+			v = limit(v);
+		}
+
+		// return value
+		return v;
+	}
+
+	// create the slider with the proper functions, and get the return value
+	const ret = makeValue(type, {
+		toText: (value) => {
+			// convert the value into a decimal with `digits` number of digits
+			return Math.round(value) + suffix;
+		},
+		fromText: (value:string) => {
+			// get the volume string, removing possible suffix
+			const volume = value.substring(0, value.length - (value.endsWith(suffix) ? suffix.length : 0));
+
+			// go to convert the value
+			return convert(volume);
+		},
+		getValue: (value:number) => {
+			// limit the value input
+			const v = limit(value);
+
+			// tell the caller about this change
+			post(v);
+			return v;
+		},
+		getValueOffset: (value:number, offset:number) => {
+			// add the offset correctly to value
+			return value + offset;
+		},
+	});
+
+	// return the values but make a special setValue function, to help converting strings to values.
+	return { element: ret.element, label: ret.label, setValue: (value: string|number, initial:number) => {
+		ret.setValue(convert(value ? value.toString() : "") ?? initial);
+
+	}, setRange: (min:number, max:number) => {
+		// update the min/max values
+		_min = min; _max = max;
+	}, };
 }

@@ -54,7 +54,7 @@ import { loadFlag, SettingsTypes } from "../../api/files";
 import { Project } from "../misc/project";
 import { clearChildren, fadeToLayout, loadTransition, removeTransition } from "../misc/layout";
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../api/events";
-import { volumeSlider, SliderEnum } from "../elements/slider/slider";
+import { volumeSlider, SliderEnum, makeSlider, simpleSlider, simpleValue } from "../elements/slider/slider";
 import { closePopups, confirmationDialog, createFilename, PopupColors, PopupSizes } from "../elements/popup/popup";
 import { Undo } from "../../api/undo";
 import { MatrixEditor } from "../elements/matrixeditor/main";
@@ -472,6 +472,56 @@ async function editorLayout():Promise<true> {
 
 	_top.appendChild(createBar());
 	_top.appendChild(await volumeSlider(SliderEnum.Horizontal | SliderEnum.Medium));
+
+	{
+		let s = simpleValue(SliderEnum.Horizontal | SliderEnum.Medium, "", () => {
+
+		});
+		_top.appendChild(s.element);
+		s.setRange(2, 256);
+		s.setValue("64", 64);
+
+		s.label.innerText = "Rows:";
+		s.label.style.width = "90px";
+		s.label.style.paddingLeft = "5px";
+		s.element.style.marginLeft = "10px";
+
+		s = simpleValue(SliderEnum.Horizontal | SliderEnum.Medium, "", () => {
+
+		});
+		_top.appendChild(s.element);
+		s.setRange(-4, 10);
+		s.setValue("3", 3);
+
+		s.label.innerText = "Octave:";
+		s.label.style.width = "90px";
+		s.label.style.paddingLeft = "5px";
+		s.element.style.marginLeft = "10px";
+
+		s = simpleValue(SliderEnum.Horizontal | SliderEnum.Medium, "", () => {
+
+		});
+		_top.appendChild(s.element);
+		s.setRange(1, 256);
+		s.setValue("4", 4);
+
+		s.label.innerText = "Highlight A:";
+		s.label.style.width = "90px";
+		s.label.style.paddingLeft = "5px";
+		s.element.style.marginLeft = "10px";
+
+		s = simpleValue(SliderEnum.Horizontal | SliderEnum.Medium, "", () => {
+
+		});
+		_top.appendChild(s.element);
+		s.setRange(1, 256);
+		s.setValue("16", 16);
+
+		s.label.innerText = "Highlight B:";
+		s.label.style.width = "90px";
+		s.label.style.paddingLeft = "5px";
+		s.element.style.marginLeft = "10px";
+	}
 
 	_top.appendChild(document.createElement("br"));
 

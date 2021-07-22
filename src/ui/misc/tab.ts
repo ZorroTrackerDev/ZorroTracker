@@ -1,4 +1,4 @@
-import { Channel } from "../../api/driver";
+import { Channel, ChannelType, NoteReturnType } from "../../api/driver";
 import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 import { PatternIndex } from "../../api/matrix";
 import { WindowType } from "../../defs/windowtype";
@@ -187,6 +187,27 @@ export class Tab {
 	public set playMode(mode:PlayMode) {
 		// tell the event system that the play mode was changed
 		tabPlayModeEvent(this, this._playMode = mode).catch(console.error);
+	}
+
+	/**
+	 * List of note info caches from the driver
+	 */
+	private notesCache:{ [key: number]: NoteReturnType } = {};
+
+	/**
+	 * Function to fetch the note cache data
+	 *
+	 * @param type The type of the channel to fetch
+	 * @returns The cache of note data
+	 */
+	public async getNotes(type:ChannelType): Promise<NoteReturnType> {
+		// if notes are not cached, fetch them first
+		if(!this.notesCache[type]) {
+			return this.notesCache[type] = await window.ipc.driver.getNotes(type);
+		}
+
+		// is cached, return
+		return this.notesCache[type];
 	}
 }
 

@@ -470,13 +470,13 @@ async function editorLayout():Promise<true> {
 	_bot.id = "editor_bottom";
 	body.appendChild(_bot);
 
-	_top.appendChild(await makeSettingsPane());
-
 	// add the piano overlay
-	_bot.appendChild((piano = await Piano.create()).element);
+	_bot.appendChild((piano = await Piano.create(Tab.active)).element);
 
 	// add the pattern editor here
 	_bot.appendChild((patternEditor = new PatternEditor(Tab.active)).element);
+
+	_top.appendChild(await makeSettingsPane());
 	return true;
 }
 
@@ -541,9 +541,18 @@ async function makeSettingsPane() {
 
 	{
 		// create the octave element
-		const { element, } = await valueBox([ -4, 10, ], 3, "Octave", () => {
-
+		const { element, setValue, setRange, } = await valueBox([ -100, 100, ], 3, "Octave", async(value:number) => {
+			if(piano) {
+				// update the octave value
+				await piano.setOctave(value, false);
+			}
 		});
+
+		// tell the piano how to inform when the octave is updated outside of the valuebox
+		piano?.onOctaveUpdate((value:number) => setValue(value.toString(), value));
+
+		// tell the piano how to inform when the octave is updated outside of the valuebox
+		piano?.onRangeUpdate(setRange);
 
 		// append it to the first pane
 		pane1.appendChild(element);

@@ -634,7 +634,13 @@ export async function makeValue(type:SliderEnum, functions:SliderFunctions):Prom
 	}
 
 	// return the main element, label element, and a function to edit the value
-	return { element: e, label: labelNode, setValue: _set, };
+	return { element: e, label: labelNode, setValue: (value:number) => {
+		// update last value assuming its correct
+		lastValue = value;
+
+		// convert the value into text as well
+		textNode.value = toText(value);
+	}, };
 }
 
 type SimpleValueReturn = {

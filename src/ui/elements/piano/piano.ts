@@ -1,30 +1,21 @@
-import { ChannelType, NoteReturnType } from "../../../api/driver";
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../../api/events";
 import { loadFlag } from "../../../api/files";
 import { UIElement } from "../../../api/ui";
+import { Tab } from "../../misc/tab";
 
 export class Piano implements UIElement {
-	/**
-	 * Cache note lists here
-	 */
-	public static notesCache:{ [key: number]: NoteReturnType } = {};
-
-	public static async create() : Promise<Piano> {
-		_piano = new Piano();
+	// eslint-disable-next-line require-await
+	public static async create(tab: Tab) : Promise<Piano> {
+		_piano = new Piano(tab);
 		_piano.width = loadFlag<number>("PIANO_DEFAULT_SIZE") ?? 2;
 		_piano.octave = loadFlag<number>("PIANO_DEFAULT_OCTAVE") ?? 3;
 		_piano.position = loadFlag<number>("PIANO_DEFAULT_POSITION") ?? 0;
-
-		// remember to cache FM notes
-		if(!this.notesCache[ChannelType.YM2612FM]) {
-			this.notesCache[ChannelType.YM2612FM] = await window.ipc.driver.getNotes(ChannelType.YM2612FM);
-		}
 
 		// update position
 		_piano.changePosition(0);
 
 		// redraw the inner elements based on size
-		_piano.redraw();
+		await _piano.redraw();
 
 		// finish initializing the piano
 		_piano.init();
@@ -55,7 +46,7 @@ export class Piano implements UIElement {
 
 				if(state) {
 					// fetch octave info
-					const octaveInfo = Piano.notesCache[ChannelType.YM2612FM].octave;
+					const octaveInfo = (await this.tab.getNotes(this.tab.selectedChannel.info.type)).octave;
 
 					// calculate the note
 					const n = octaveInfo.C0 + note + ((this.octave + octave) * octaveInfo.size);
@@ -109,13 +100,16 @@ export class Piano implements UIElement {
 		return false;
 	}
 
-	public element!: HTMLDivElement;
+	private tab: Tab;
+	public element: HTMLDivElement;
 	private position!: number;
 	private width!: number;
 	private octave!: number;
 
 	// create a new piano instance
-	constructor() {
+	constructor(tab:Tab) {
+		this.tab = tab;
+
 		// create the piano base element
 		this.element = document.createElement("div");
 		this.element.classList.add("pianowrapper");
@@ -150,33 +144,50 @@ export class Piano implements UIElement {
 	 *
 	 * @param offset The offset to apply to the size
 	 */
-	public changeSize(offset:number): boolean {
-		const { min, max, } = Piano.notesCache[ChannelType.YM2612FM].octave;
+	public async changeSize(offset:number): Promise<boolean> {
+		const { min, max, } = (await this.tab.getNotes(this.tab.selectedChannel.info.type)).octave;
 
 		// update size and cap it between 1 and max octaves
 		this.width = Math.max(1, Math.min((max - min + 1), this.width + offset));
 
 		// ensure the octave doesnt go out of range
-		this.changeOctave(0);
+		await this.changeOctave(0);
 
 		// redraw the piano
-		this.redraw();
+		await this.redraw();
 		return true;
 	}
 
 	/**
-	 * Helper function to change the size of the piano display
+	 * Helper function to set the current octave of the piano display
 	 *
-	 * @param offset The offset to apply to the size
+	 * @param value The new octave
+	 * @param update If set to false, do not update the function
 	 */
-	public changeOctave(offset:number): boolean {
-		const { min, max, } = Piano.notesCache[ChannelType.YM2612FM].octave;
+	public setOctave(value:number, update?:boolean): Promise<boolean> {
+		this.octave = value;
+		return this.changeOctave(0, update);
+	}
+
+	/**
+	 * Helper function to change the current octave of the piano display
+	 *
+	 * @param offset The offset to apply to the octave
+	 * @param update If set to false, do not update the function
+	 */
+	public async changeOctave(offset:number, update?:boolean): Promise<boolean> {
+		const { min, max, } = (await this.tab.getNotes(this.tab.selectedChannel.info.type)).octave;
 
 		// update octave and cap it between minimum and maximum octave
 		this.octave = Math.max(min, Math.min(max - 1, this.octave + offset));
 
+		// tell the outside function about the value
+		if(update !== false && this.octaveUpdateFunc) {
+			this.octaveUpdateFunc(this.octave);
+		}
+
 		// redraw the piano
-		this.redraw();
+		await this.redraw();
 		return true;
 	}
 
@@ -185,7 +196,7 @@ export class Piano implements UIElement {
 	 *
 	 * @returns An array depicting the minimum and maximum octaves to display. For example to only display octave 3, this will return [ 3, 3 ].
 	 */
-	private getOctaveRange() {
+	private async getOctaveRange(): Promise<[ number, number, ]> {
 		// just pretend to show an invalid octave range, if no piano would display.
 		if(this.width < 2) {
 			return [ 1, 0, ];
@@ -198,7 +209,7 @@ export class Piano implements UIElement {
 		const lw = Math.floor(this.width / 2), rw = Math.ceil(this.width / 2);
 
 		// fetch the minimum and maximum octaves
-		const { min, max, } = Piano.notesCache[ChannelType.YM2612FM].octave;
+		const { min, max, } = (await this.tab.getNotes(this.tab.selectedChannel.info.type)).octave;
 
 		// handle minimum and maximum octave
 		if(oc < min + lw) {
@@ -220,20 +231,55 @@ export class Piano implements UIElement {
 	}
 
 	/**
+	 * Helper function to update octave value outside of the piano
+	 */
+	private octaveUpdateFunc!: ((value:number) => void)|undefined;
+
+	/**
+	 * Helper functiom to handle octave update functions. Mainly for the textbox that can change octave too
+	 *
+	 * @param func The function to run when octave is updated
+	 */
+	public onOctaveUpdate(func:(value:number) => void): void {
+		this.octaveUpdateFunc = func;
+	}
+
+	/**
+	 * Helper function to update octave value outside of the piano
+	 */
+	private rangeUpdateFunc!: (() => Promise<void>)|undefined;
+
+	/**
+	 * Helper functiom to handle octave update functions. Mainly for the textbox that can change octave too
+	 *
+	 * @param func The function to run when octave is updated
+	 */
+	public onRangeUpdate(func:(min: number, max: number, ) => void): void {
+		// generate the range update function
+		this.rangeUpdateFunc = async() => {
+			const { min, max, } = (await this.tab.getNotes(this.tab.selectedChannel.info.type)).octave;
+			func(min, max - 1);
+		};
+
+		// run the function once, too
+		(this.rangeUpdateFunc as () => Promise<void>)().catch(console.error);
+	}
+
+	/**
 	 * Helper function to get relative note to start of current octave, mainly for MIDI devices.
 	 *
 	 * @param offset The note offset from the start of current octave
 	 * @returns the translated note
 	 */
-	public getRelativeNote(offset:number): number {
-		const octave = Piano.notesCache[ChannelType.YM2612FM].octave;
+	public async getRelativeNote(offset:number): Promise<number> {
+		const octave = (await this.tab.getNotes(this.tab.selectedChannel.info.type)).octave;
 		return ((this.octave + 1) * octave.size) + octave.C0 + offset;
 	}
 
 	/**
 	 * Redraw the piano keys
 	 */
-	public redraw(): void {
+	public async redraw(): Promise<void> {
 		// find the wrapper
 		const wrap = (this.element.children[0] as HTMLDivElement).children[0] as HTMLDivElement;
 
@@ -243,7 +289,7 @@ export class Piano implements UIElement {
 		}
 
 		// load note cache data
-		const cache = Piano.notesCache[ChannelType.YM2612FM];
+		const cache = await this.tab.getNotes(this.tab.selectedChannel.info.type);
 
 		// helper function to add a single key to the wrapper
 		const key = (note:number, parent:HTMLDivElement) => {
@@ -283,7 +329,7 @@ export class Piano implements UIElement {
 		}
 
 		// calculate which octaves to show
-		const [ ocMin, ocMax, ] = this.getOctaveRange();
+		const [ ocMin, ocMax, ] = await this.getOctaveRange();
 		const oc = ocMin * cache.octave.size;
 
 		// repeat for each octave
@@ -363,8 +409,8 @@ export class Piano implements UIElement {
 				pos = (Math.max(0.05, Math.min(0.8, pos)) * (1 / 0.8));
 
 				// calculate the note
-				const [ oct, ] = this.getOctaveRange();
-				const octaveInfo = Piano.notesCache[ChannelType.YM2612FM].octave;
+				const [ oct, ] = await this.getOctaveRange();
+				const octaveInfo = (await this.tab.getNotes(this.tab.selectedChannel.info.type)).octave;
 
 				note = octaveInfo.C0 + (octaveInfo.size * oct) + (parseInt(e.target.getAttribute("note") ?? "0", 10));
 
@@ -414,10 +460,10 @@ export class Piano implements UIElement {
 	 */
 	public async triggerNote(note:number, velocity:number):Promise<boolean> {
 		// check if this note exists
-		if(typeof Piano.notesCache[ChannelType.YM2612FM].notes[note]?.frequency === "number"){
+		if(typeof (await this.tab.getNotes(this.tab.selectedChannel.info.type)).notes[note]?.frequency === "number"){
 			if(await window.ipc.driver.pianoTrigger(note, velocity, 0)){
 				// add the active class
-				this.modNote("active", "add", note);
+				await this.modNote("active", "add", note);
 				return true;
 			}
 		}
@@ -432,10 +478,10 @@ export class Piano implements UIElement {
 	 */
 	public async releaseNote(note:number):Promise<boolean> {
 		// check if this note exists
-		if(typeof Piano.notesCache[ChannelType.YM2612FM].notes[note]?.frequency === "number"){
+		if(typeof (await this.tab.getNotes(this.tab.selectedChannel.info.type)).notes[note]?.frequency === "number"){
 			if(await window.ipc.driver.pianoRelease(note)){
 				// remove the active class
-				this.modNote("active", "remove", note);
+				await this.modNote("active", "remove", note);
 				return true;
 			}
 		}
@@ -450,12 +496,12 @@ export class Piano implements UIElement {
 	 * @param mode Whether to add or remove the class
 	 * @param note The note to check
 	 */
-	private modNote(name:string, mode:"add"|"remove", note:number) {
+	private async modNote(name:string, mode:"add"|"remove", note:number) {
 		// calculate which octaves are being displayed
-		const [ ocMin, ocMax, ] = this.getOctaveRange();
+		const [ ocMin, ocMax, ] = await this.getOctaveRange();
 
 		// fetch octave info
-		const octaveInfo = Piano.notesCache[ChannelType.YM2612FM].octave;
+		const octaveInfo = (await this.tab.getNotes(this.tab.selectedChannel.info.type)).octave;
 
 		// check if this note is on the piano
 		if(note > ocMin * octaveInfo.size && note - octaveInfo.C0 < ocMax * octaveInfo.size) {
@@ -487,7 +533,7 @@ const keys:number[] = Array(128);
 ZorroEvent.addListener(ZorroEventEnum.MidiNoteOn, async(event:ZorroEventObject, channel:number, note:number, velocity:number) => {
 	if(_piano) {
 		// get the relative note to trigger
-		const rn = _piano.getRelativeNote(note - 60);
+		const rn = await _piano.getRelativeNote(note - 60);
 
 		// attempt to trigger the note
 		if(await _piano.triggerNote(rn, velocity)) {

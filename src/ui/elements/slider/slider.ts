@@ -1,3 +1,5 @@
+import { loadSVG } from "../../misc/theme";
+
 /**
  * The enum bitfield that defines the type of the slider
  */
@@ -7,6 +9,9 @@ export enum SliderEnum {
 
 	// slider sizes
 	Small = 0x00, Medium = 0x01, Large = 0x02,
+
+	// various value buttons
+	PlusMinus = 0x1000,
 }
 
 type SliderFunctions = {
@@ -463,18 +468,19 @@ export async function volumeSlider(type:SliderEnum):Promise<Element> {
  * @param functions List of different functions that are used by the value for updates and to pass information between the UI and code
  * @returns An object containing the element, the label, and a function to set the value from code
  */
-export function makeValue(type:SliderEnum, functions:SliderFunctions):SliderReturn {
+export async function makeValue(type:SliderEnum, functions:SliderFunctions):Promise<SliderReturn> {
 	// destructure the functions object for easier access
 	const { getValue, getValueOffset, toText, fromText, } = functions;
 
 	// create a div with class slider that will be our main element
 	const e = document.createElement("div");
-	e.classList.add("slider");
+	e.classList.add("slider", "value");
 
 	// set up the innerHTML of the element, containing all the sub-elements we are going to need
 	e.innerHTML = /*html*/`
 		<div class="slider_text">
 			<div class="slider_icon"></div>
+			<div class="slider_buttons"></div>
 			<textarea class="slider_value" rows="1" wrap="off"></textarea>
 		</div>
 	`;
@@ -493,8 +499,48 @@ export function makeValue(type:SliderEnum, functions:SliderFunctions):SliderRetu
 	}
 
 	// dump all the nodes we are going to reference later into these variables
-	const textNode = (e.children[0] as Element).children[1] as HTMLTextAreaElement;
+	const buttonNode = (e.children[0] as Element).children[1] as HTMLDivElement;
+	const textNode = (e.children[0] as Element).children[2] as HTMLTextAreaElement;
 	const labelNode = (e.children[0] as Element).children[0] as HTMLDivElement;
+
+	// helper function to add a simple button with SVG
+	const addButton = async (graphic:string, tooltip:string, click:(e:MouseEvent) => unknown) => {
+		// create a new div with a loaded SVG as the graphic
+		const b = document.createElement("div");
+		b.innerHTML = await loadSVG(graphic);
+
+		// enable the tooltip for this button
+		b.title = tooltip;
+
+		// set the button onclick handler
+		b.onmouseup = click;
+
+		// finally, add this to the button list
+		buttonNode.appendChild(b);
+	}
+
+	// add the various buttons
+	switch(type & 0xF000) {
+		case SliderEnum.PlusMinus: {
+			// initialize amounts for the buttons
+			const amounts = [ 1, 32, 8, ];
+
+			// create the standard + button
+			await addButton("slider.button.+", "increase value", (e) => {
+				_edit(getValueOffset(lastValue, amounts[e.button]));
+				e.preventDefault();
+				return false;
+			});
+
+			// create the standard - button
+			await addButton("slider.button.-", "Decrease value", (e) => {
+				_edit(getValueOffset(lastValue, -amounts[e.button]));
+				e.preventDefault();
+				return false;
+			});
+			break;
+		}
+	}
 
 	// stores the last value held. Used when the user input is rejected.
 	let lastValue = 0;
@@ -628,7 +674,7 @@ type SimpleValueReturn = {
  * @param post The function that is called when the value is updated. This lets you save the value in the slider
  * @returns And object containing the element, the label, and a function to set the value from code into the slider.
  */
-export function simpleValue(type:SliderEnum, suffix:string, post:(value:number) => void): SimpleValueReturn {
+export async function simpleValue(type:SliderEnum, suffix:string, post:(value:number) => void): Promise<SimpleValueReturn> {
 	// pre-defined min and max ranges
 	let _min = 0, _max = 1;
 
@@ -665,7 +711,7 @@ export function simpleValue(type:SliderEnum, suffix:string, post:(value:number) 
 	}
 
 	// create the slider with the proper functions, and get the return value
-	const ret = makeValue(type, {
+	const ret = await makeValue(type, {
 		toText: (value) => {
 			// convert the value into a decimal with `digits` number of digits
 			return Math.round(value) + suffix;

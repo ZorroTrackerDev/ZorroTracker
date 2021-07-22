@@ -14,3 +14,32 @@
 	height: calc(100% - 200px);
 	overflow: hidden;
 }
+
+// the settings pane at the top row
+#settingspane {
+	display: inline-block;
+
+	&> div {
+		display: block;
+
+		&:first-child > .slider {
+			margin-left: 4px;
+		}
+
+		// each of the panes inside
+		&:last-child > div {
+			display: inline-block;
+			vertical-align: top;
+
+			&> * {
+				display: block;
+				width: max-content;
+				margin-top: 2px;
+			}
+
+			&:first-child {
+				margin-right: 4px;
+			}
+		}
+	}
+}

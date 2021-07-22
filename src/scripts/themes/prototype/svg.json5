@@ -3,4 +3,7 @@
 	"buttonbar.play": "./svg/buttonbar.play.svg",
 	"buttonbar.repeat": "./svg/buttonbar.repeat.svg",
 	"buttonbar.record": "./svg/buttonbar.record.svg",
+
+	"slider.button.+": "./svg/slider.button.+.svg",
+	"slider.button.-": "./svg/slider.button.-.svg",
 }

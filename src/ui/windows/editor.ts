@@ -54,7 +54,7 @@ import { loadFlag, SettingsTypes } from "../../api/files";
 import { Project } from "../misc/project";
 import { clearChildren, fadeToLayout, loadTransition, removeTransition } from "../misc/layout";
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../api/events";
-import { volumeSlider, SliderEnum, makeSlider, simpleSlider, simpleValue } from "../elements/slider/slider";
+import { volumeSlider, SliderEnum, simpleValue } from "../elements/slider/slider";
 import { closePopups, confirmationDialog, createFilename, PopupColors, PopupSizes } from "../elements/popup/popup";
 import { Undo } from "../../api/undo";
 import { MatrixEditor } from "../elements/matrixeditor/main";
@@ -470,66 +470,7 @@ async function editorLayout():Promise<true> {
 	_bot.id = "editor_bottom";
 	body.appendChild(_bot);
 
-	_top.appendChild(createBar());
-	_top.appendChild(await volumeSlider(SliderEnum.Horizontal | SliderEnum.Medium));
-
-	{
-		let s = simpleValue(SliderEnum.Horizontal | SliderEnum.Medium, "", () => {
-
-		});
-		_top.appendChild(s.element);
-		s.setRange(2, 256);
-		s.setValue("64", 64);
-
-		s.label.innerText = "Rows:";
-		s.label.style.width = "90px";
-		s.label.style.paddingLeft = "5px";
-		s.element.style.marginLeft = "10px";
-
-		s = simpleValue(SliderEnum.Horizontal | SliderEnum.Medium, "", () => {
-
-		});
-		_top.appendChild(s.element);
-		s.setRange(-4, 10);
-		s.setValue("3", 3);
-
-		s.label.innerText = "Octave:";
-		s.label.style.width = "90px";
-		s.label.style.paddingLeft = "5px";
-		s.element.style.marginLeft = "10px";
-
-		s = simpleValue(SliderEnum.Horizontal | SliderEnum.Medium, "", () => {
-
-		});
-		_top.appendChild(s.element);
-		s.setRange(1, 256);
-		s.setValue("4", 4);
-
-		s.label.innerText = "Highlight A:";
-		s.label.style.width = "90px";
-		s.label.style.paddingLeft = "5px";
-		s.element.style.marginLeft = "10px";
-
-		s = simpleValue(SliderEnum.Horizontal | SliderEnum.Medium, "", () => {
-
-		});
-		_top.appendChild(s.element);
-		s.setRange(1, 256);
-		s.setValue("16", 16);
-
-		s.label.innerText = "Highlight B:";
-		s.label.style.width = "90px";
-		s.label.style.paddingLeft = "5px";
-		s.element.style.marginLeft = "10px";
-	}
-
-	_top.appendChild(document.createElement("br"));
-
-	{
-		const e = document.createElement("div");
-		e.id = "midi";
-		_top.appendChild(e);
-	}
+	_top.appendChild(await makeSettingsPane());
 
 	// add the piano overlay
 	_bot.appendChild((piano = await Piano.create()).element);
@@ -537,6 +478,104 @@ async function editorLayout():Promise<true> {
 	// add the pattern editor here
 	_bot.appendChild((patternEditor = new PatternEditor(Tab.active)).element);
 	return true;
+}
+
+/**
+ * Helper function to make a settings pane in the top row
+ */
+async function makeSettingsPane() {
+	// create the base pane element
+	const e = document.createElement("div");
+	e.id = "settingspane";
+
+	// remove the middle click scroll thing... TEMP
+	e.addEventListener("mousedown", (e) => {
+		if(e.button === 1) {
+			e.preventDefault();
+		}
+	});
+
+	// the top and bottom panes
+	const top = document.createElement("div");
+	const bot = document.createElement("div");
+	e.appendChild(top);
+	e.appendChild(bot);
+
+	// add volume slider and buttons bar in the top row
+	top.appendChild(createBar());
+	top.appendChild(await volumeSlider(SliderEnum.Horizontal | SliderEnum.Medium));
+
+	// create the child panes. Create 2 of them
+	const pane1 = document.createElement("div");
+	const pane2 = document.createElement("div");
+	bot.appendChild(pane1);
+	bot.appendChild(pane2);
+
+	// make a helper function to generate all those value boxes
+	const valueBox = async(range:[ number, number, ], initial:number, label:string, change:(value:number) => void) => {
+		// create the value input box
+		const s = await simpleValue(SliderEnum.Horizontal | SliderEnum.Medium | SliderEnum.PlusMinus, "", change);
+
+		// initialize the range and value of the box
+		s.setRange(range[0], range[1]);
+		s.setValue(initial.toString(), initial);
+
+		// initialize the styles
+		s.label.style.width = "80px";
+		s.label.style.paddingLeft = "5px";
+		s.label.innerHTML = label;
+
+		// return the data
+		return s;
+	}
+
+	{
+		// create the row element
+		const { element, } = await valueBox([ 2, 256, ], 64, "Rows", () => {
+
+		});
+
+		// append it to the first pane
+		pane1.appendChild(element);
+	}
+
+	{
+		// create the octave element
+		const { element, } = await valueBox([ -4, 10, ], 3, "Octave", () => {
+
+		});
+
+		// append it to the first pane
+		pane1.appendChild(element);
+	}
+
+	{
+		// create the highlight a element
+		const { element, } = await valueBox([ 1, 256, ], 4, "Highlight A", () => {
+
+		});
+
+		// append it to the first pane
+		pane1.appendChild(element);
+	}
+
+	{
+		// create the highlight a element
+		const { element, } = await valueBox([ 1, 256, ], 16, "Highlight B", () => {
+
+		});
+
+		// append it to the first pane
+		pane1.appendChild(element);
+	}
+
+	{
+		const e = document.createElement("div");
+		e.id = "midi";
+		pane2.appendChild(e);
+	}
+
+	return e;
 }
 
 /**

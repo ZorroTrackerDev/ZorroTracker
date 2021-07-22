@@ -242,6 +242,9 @@ export class Piano implements UIElement {
 	 */
 	public onOctaveUpdate(func:(value:number) => void): void {
 		this.octaveUpdateFunc = func;
+
+		// initialize octave on load
+		func(this.octave);
 	}
 
 	/**

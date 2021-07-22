@@ -48,7 +48,7 @@ class EditorCanvasBase {
 		this.worker.postMessage({ command: "init", data: { canvas: offscreen, }, }, [ offscreen, ]);
 
 		// update highlight data to the worker
-		this.worker.postMessage({ command: "highlight", data: { values: parent.rowHighlights, }, });
+		this.updateHighlights();
 	}
 
 	/**
@@ -60,6 +60,13 @@ class EditorCanvasBase {
 
 		// tell the worker to close
 		this.worker.terminate();
+	}
+
+	/**
+	 * Helper function to update row highlights
+	 */
+	public updateHighlights(): void {
+		this.worker.postMessage({ command: "highlight", data: { values: this.parent.rowHighlights, }, });
 	}
 
 	/**

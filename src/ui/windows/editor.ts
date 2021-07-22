@@ -541,41 +541,53 @@ async function makeSettingsPane() {
 
 	{
 		// create the octave element
-		const { element, setValue, setRange, } = await valueBox([ -100, 100, ], 3, "Octave", async(value:number) => {
+		const { element, setValue, setRange, } = await valueBox([ -100, 100, ], 0, "Octave", async(value:number) => {
 			if(piano) {
 				// update the octave value
 				await piano.setOctave(value, false);
 			}
 		});
 
+		// tell the piano how to inform when the range is updated outside of the valuebox
+		piano?.onRangeUpdate(setRange);
+
 		// tell the piano how to inform when the octave is updated outside of the valuebox
 		piano?.onOctaveUpdate((value:number) => setValue(value.toString(), value));
 
-		// tell the piano how to inform when the octave is updated outside of the valuebox
-		piano?.onRangeUpdate(setRange);
-
 		// append it to the first pane
 		pane1.appendChild(element);
 	}
 
 	{
-		// create the highlight a element
-		const { element, } = await valueBox([ 1, 256, ], 4, "Highlight A", () => {
+		// load the initial value
+		const v = loadFlag<number>("HIGHLIGHT_A_DEFAULT") ?? 4;
 
+		// create the highlight a element
+		const { element, } = await valueBox([ 1, 256, ], v, "Highlight A", (value) => {
+			patternEditor?.changeHighlight(1, value);
 		});
 
 		// append it to the first pane
 		pane1.appendChild(element);
+
+		// force the update
+		patternEditor?.changeHighlight(1, v);
 	}
 
 	{
-		// create the highlight a element
-		const { element, } = await valueBox([ 1, 256, ], 16, "Highlight B", () => {
+		// load the initial value
+		const v = loadFlag<number>("HIGHLIGHT_B_DEFAULT") ?? 16;
 
+		// create the highlight b element
+		const { element, } = await valueBox([ 1, 256, ], v, "Highlight B", (value) => {
+			patternEditor?.changeHighlight(0, value);
 		});
 
 		// append it to the first pane
 		pane1.appendChild(element);
+
+		// force the update
+		patternEditor?.changeHighlight(0, v);
 	}
 
 	{

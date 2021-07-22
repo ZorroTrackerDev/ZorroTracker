@@ -67,10 +67,7 @@ export class PatternEditor implements UIElement {
 		this.drawPatternPreview = loadFlag<boolean>("PATTERN_PREVIEW") ?? true;
 
 		// load the row highlights
-		this.rowHighlights = [
-			loadFlag<number>("HIGHLIGHT_B_DEFAULT") ?? 16,
-			loadFlag<number>("HIGHLIGHT_A_DEFAULT") ?? 4,
-		];
+		this.rowHighlights = [ 256, 256, ];
 
 		requestAnimationFrame(async() => {
 			// initialize the scrolling region size
@@ -203,7 +200,29 @@ export class PatternEditor implements UIElement {
 	/**
 	 * The row highlight numbers for this pattern editor
 	 */
-	public rowHighlights!:[ number, number ];
+	public rowHighlights!: [ number, number ];
+
+	/**
+	 * Function to update the row highlights
+	 *
+	 * @param id The highlight ID to change
+	 * @param rows The number to set it to
+	 */
+	public changeHighlight(id:number, rows:number): void {
+		this.rowHighlights[id] = rows;
+
+		// update focus row settings for the current row
+		this.updateFocusRowData();
+
+		// tell canvases to update highlights
+		this.canvas.forEach((c) => c.updateHighlights());
+		this.rows.forEach((c) => c.updateHighlights());
+
+		// force canvases to redraw
+		this.canvas.forEach((c) => c.invalidateAll());
+		this.rows.forEach((c) => c.render());
+		this.handleScrolling();
+	}
 
 	/**
 	 * Whether to draw pattern previews at all

@@ -17,6 +17,7 @@
 	ROW_NUM_IN_HEX: false,														/* If true, row numbers will be in hexadecimal */
 	OPEN_PREVIOUS: true,														/* If true, the previous project will be opened if possible. Otherwise, always create an empty project. */
 	PATTERN_PREVIEW: true,														/* If true, pattern previews will also be rendered */
+	INITIAL_PATTERN_ROWS: 64,													/* The default size of each pattern */
 	INITIAL_EFFECT_COUNT: 1,													/* The amount of effects a channel starts out with */
 	HIGHLIGHT_A_DEFAULT: 4,														/* How often to highlight a row in the pattern editor. This is usually the beat highlight */
 	HIGHLIGHT_B_DEFAULT: 16,													/* How often to highlight a row in the pattern editor. This is usually the bar highlight. Takes precedence over A */

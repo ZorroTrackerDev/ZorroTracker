@@ -1,5 +1,5 @@
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../../api/events";
-import { PatternIndex } from "../../../api/matrix";
+import { Matrix } from "../../../api/matrix";
 import { Tab } from "../../misc/tab";
 import { MatrixEditor, editMode } from "./main";
 
@@ -338,7 +338,7 @@ let _matrixResize:HTMLDivElement|undefined;
  * Helper event listener for the MatrixResize event, so that the text element can be updated with correct number
  */
 // eslint-disable-next-line require-await
-ZorroEvent.addListener(ZorroEventEnum.MatrixResize, async(event:ZorroEventObject, index:PatternIndex, size:number) => {
+ZorroEvent.addListener(ZorroEventEnum.MatrixResize, async(event:ZorroEventObject, index:Matrix, size:number) => {
 	if(_matrixResize) {
 		_matrixResize.innerHTML = "<div>Matrix: </div>"+ (size - 1).toByte();
 	}

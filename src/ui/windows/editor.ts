@@ -51,7 +51,7 @@ window.preload = {
 import { addShortcutReceiver, doShortcut } from "../misc/shortcuts";
 import { loadDefaultToolbar } from "../elements/toolbar/toolbar";
 import { loadFlag, SettingsTypes } from "../../api/files";
-import { Project } from "../misc/project";
+import { Module, Project } from "../misc/project";
 import { clearChildren, fadeToLayout, loadTransition, removeTransition } from "../misc/layout";
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../api/events";
 import { volumeSlider, SliderEnum, simpleValue } from "../elements/slider/slider";
@@ -109,6 +109,11 @@ async function loadMainShortcuts() {
 				return false;
 			}
 
+			// dispose of the pattern editor
+			if(patternEditor) {
+				patternEditor.dispose();
+			}
+
 			// create a tab for the project
 			Tab.active = new Tab(p);
 
@@ -139,6 +144,11 @@ async function loadMainShortcuts() {
 			if(!p || !await Project.setActiveProject(p)){
 				removeTransition();
 				return false;
+			}
+
+			// dispose of the pattern editor
+			if(patternEditor) {
+				patternEditor.dispose();
 			}
 
 			// create a tab for the project
@@ -411,6 +421,11 @@ export async function loadToModule(index:number, func?:() => Promise<void>): Pro
 	Undo.clear();
 
 	if(!await fadeToLayout(async() => {
+		// dispose of the pattern editor
+		if(patternEditor) {
+			patternEditor.dispose();
+		}
+
 		// set the active layout
 		await Tab.active?.project.setActiveModuleIndex(true, index);
 
@@ -474,16 +489,24 @@ async function editorLayout():Promise<true> {
 	_bot.appendChild((piano = await Piano.create(Tab.active)).element);
 
 	// add the pattern editor here
-	_bot.appendChild((patternEditor = new PatternEditor(Tab.active)).element);
+	_bot.appendChild((patternEditor = (await PatternEditor.create(Tab.active))).element);
 
-	_top.appendChild(await makeSettingsPane());
+	_top.appendChild(await makeSettingsPane(Tab.active));
+
+	// reload module to update UI
+	requestAnimationFrame(async() => {
+		await Tab.active?.project.setActiveModuleIndex(false);
+	});
 	return true;
 }
+
+// load event dispatchers
+const projectPatternRows = ZorroEvent.createEvent(ZorroEventEnum.ProjectPatternRows);
 
 /**
  * Helper function to make a settings pane in the top row
  */
-async function makeSettingsPane() {
+async function makeSettingsPane(tab:Tab) {
 	// create the base pane element
 	const e = document.createElement("div");
 	e.id = "settingspane";
@@ -512,9 +535,9 @@ async function makeSettingsPane() {
 	bot.appendChild(pane2);
 
 	// make a helper function to generate all those value boxes
-	const valueBox = async(range:[ number, number, ], initial:number, label:string, change:(value:number) => void) => {
+	const valueBox = async(range:[ number, number, ], initial:number, label:string, settings:number, change:(value:number) => void) => {
 		// create the value input box
-		const s = await simpleValue(SliderEnum.Horizontal | SliderEnum.Medium | SliderEnum.PlusMinus, "", change);
+		const s = await simpleValue(SliderEnum.Horizontal | SliderEnum.Medium | SliderEnum.PlusMinus, "", settings, change);
 
 		// initialize the range and value of the box
 		s.setRange(range[0], range[1]);
@@ -530,18 +553,8 @@ async function makeSettingsPane() {
 	}
 
 	{
-		// create the row element
-		const { element, } = await valueBox([ 2, 256, ], 64, "Rows", () => {
-
-		});
-
-		// append it to the first pane
-		pane1.appendChild(element);
-	}
-
-	{
 		// create the octave element
-		const { element, setValue, setRange, } = await valueBox([ -100, 100, ], 0, "Octave", async(value:number) => {
+		const { element, setValue, setRange, label, } = await valueBox([ -100, 100, ], 0, "Octave", 0, async(value:number) => {
 			if(piano) {
 				// update the octave value
 				await piano.setOctave(value, false);
@@ -556,38 +569,86 @@ async function makeSettingsPane() {
 
 		// append it to the first pane
 		pane1.appendChild(element);
+
+		// make a title
+		label.title = "The current octave for the piano roll.";
 	}
 
 	{
-		// load the initial value
-		const v = loadFlag<number>("HIGHLIGHT_A_DEFAULT") ?? 4;
+		// create the row element
+		const { element, label, setValue, } = await valueBox([ 2, 256, ], 64, "Rows", 2, async(value:number) => {
+			// update everything with this new value
+			(tab.module as Module).patternRows = value;
+			await projectPatternRows(tab.project, tab.module as Module, value);
 
+			// project is now dirty!
+			tab.project.dirty();
+		});
+
+		// append it to the first pane
+		pane1.appendChild(element);
+
+		// make a title
+		label.title = "Number of rows per pattern.";
+
+		// add a new function for when a module loads
+		moduleLoadFunc.push(async(module) => {
+			// update textbox and pattern editor
+			setValue(module.patternRows.toString(), module.patternRows);
+			await projectPatternRows(tab.project, module, module.patternRows);
+		});
+	}
+
+	{
 		// create the highlight a element
-		const { element, } = await valueBox([ 1, 256, ], v, "Highlight A", (value) => {
+		const { element, label, setValue, } = await valueBox([ 1, 256, ], 1, "Highlight A", 1, (value) => {
+			// update pattern editor and module with the new value
 			patternEditor?.changeHighlight(1, value);
+			(tab.module as Module).highlights[1] = value;
+
+			// project is now dirty!
+			tab.project.dirty();
 		});
 
 		// append it to the first pane
 		pane1.appendChild(element);
 
 		// force the update
-		patternEditor?.changeHighlight(1, v);
+
+		// make a title
+		label.title = "Highlight every x rows. Usually for beats.";
+
+		// add a new function for when a module loads
+		moduleLoadFunc.push((module) => {
+			// update textbox and pattern editor
+			setValue(module.highlights[1].toString(), module.highlights[1]);
+			patternEditor?.changeHighlight(1, module.highlights[1]);
+		});
 	}
 
 	{
-		// load the initial value
-		const v = loadFlag<number>("HIGHLIGHT_B_DEFAULT") ?? 16;
-
 		// create the highlight b element
-		const { element, } = await valueBox([ 1, 256, ], v, "Highlight B", (value) => {
+		const { element, label, setValue, } = await valueBox([ 1, 256, ], 1, "Highlight B", 1, (value) => {
+			// update pattern editor and module with the new value
 			patternEditor?.changeHighlight(0, value);
+			(tab.module as Module).highlights[0] = value;
+
+			// project is now dirty!
+			tab.project.dirty();
 		});
 
 		// append it to the first pane
 		pane1.appendChild(element);
 
-		// force the update
-		patternEditor?.changeHighlight(0, v);
+		// make a title
+		label.title = "Highlight every x rows. Usually for bars.";
+
+		// add a new function for when a module loads
+		moduleLoadFunc.push((module) => {
+			// update textbox and pattern editor
+			setValue(module.highlights[0].toString(), module.highlights[0]);
+			patternEditor?.changeHighlight(0, module.highlights[0]);
+		});
 	}
 
 	{
@@ -598,6 +659,22 @@ async function makeSettingsPane() {
 
 	return e;
 }
+
+/**
+ * Various functions to be executed when a new module is loaded
+ */
+const moduleLoadFunc: ((module:Module) => (Promise<void>|void))[] = [];
+
+/**
+ * Event listener and handler for when a new module loads, which allows updating various values related to the module itself
+ */
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.SelectModule, async(event, project, module) => {
+	if(module) {
+		// run module functions
+		await Promise.all(moduleLoadFunc.map((f) => f(module)));
+	}
+});
 
 /**
  * Event listener and handler for program exit, making ABSOLUTELY SURE that the user saves their progress!!!

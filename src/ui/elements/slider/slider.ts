@@ -468,7 +468,7 @@ export async function volumeSlider(type:SliderEnum):Promise<Element> {
  * @param functions List of different functions that are used by the value for updates and to pass information between the UI and code
  * @returns An object containing the element, the label, and a function to set the value from code
  */
-export async function makeValue(type:SliderEnum, functions:SliderFunctions):Promise<SliderReturn> {
+export async function makeValue(type:SliderEnum, functions:SliderFunctions, settings:number):Promise<SliderReturn> {
 	// destructure the functions object for easier access
 	const { getValue, getValueOffset, toText, fromText, } = functions;
 
@@ -523,7 +523,7 @@ export async function makeValue(type:SliderEnum, functions:SliderFunctions):Prom
 	switch(type & 0xF000) {
 		case SliderEnum.PlusMinus: {
 			// initialize amounts for the buttons
-			const amounts = [ 1, 32, 8, ];
+			const amounts = [ [ 1, 4, 2, ], [ 1, 16, 4, ], [ 1, 64, 8, ], ][settings];
 
 			// create the standard + button
 			await addButton("slider.button.+", "increase value", (e) => {
@@ -680,7 +680,7 @@ type SimpleValueReturn = {
  * @param post The function that is called when the value is updated. This lets you save the value in the slider
  * @returns And object containing the element, the label, and a function to set the value from code into the slider.
  */
-export async function simpleValue(type:SliderEnum, suffix:string, post:(value:number) => void): Promise<SimpleValueReturn> {
+export async function simpleValue(type:SliderEnum, suffix:string, settings:number, post:(value:number) => void): Promise<SimpleValueReturn> {
 	// pre-defined min and max ranges
 	let _min = 0, _max = 1;
 
@@ -741,7 +741,7 @@ export async function simpleValue(type:SliderEnum, suffix:string, post:(value:nu
 			// add the offset correctly to value
 			return value + offset;
 		},
-	});
+	}, settings);
 
 	// return the values but make a special setValue function, to help converting strings to values.
 	return { element: ret.element, label: ret.label, setValue: (value: string|number, initial:number) => {

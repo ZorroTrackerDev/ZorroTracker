@@ -20,12 +20,28 @@ export class PatternEditor implements UIElement {
 	/**
 	 * Initialize this PatternEditor instance
 	 *
-	 * @param index The Matrix this PatternEditor is targeting
+	 * @param tab The tab that this pattern editor is targeting
 	 */
-	constructor(tab:Tab) {
+	private constructor(tab:Tab) {
 		this.tab = tab;
 		_edit = this;
-		this.setLayout().catch(console.error);
+	}
+
+	/**
+	 * Function to generate a new `PatternEditor` instance
+	 *
+	 * @param tab The tab this pattern editor is targeting
+	 * @returns The new PatternEditor
+	 */
+	public static async create(tab:Tab): Promise<PatternEditor> {
+		// load the editor itself
+		const p = new PatternEditor(tab);
+
+		// set its layout
+		await p.setLayout();
+
+		// and return the editor
+		return p;
 	}
 
 	/**
@@ -55,6 +71,7 @@ export class PatternEditor implements UIElement {
 		// load the theme before doing anything else
 		this.canvas = [];
 		this.rows = [];
+		console.log("reload theme layout")
 		await this.reloadTheme(true);
 
 		// initialize the channel layout for this editor
@@ -69,15 +86,9 @@ export class PatternEditor implements UIElement {
 		// load the row highlights
 		this.rowHighlights = [ 256, 256, ];
 
-		requestAnimationFrame(async() => {
+		requestAnimationFrame(() => {
 			// initialize the scrolling region size
 			this.updateScrollerSize();
-
-			// reload the number of patterns that need to be visible
-			await this.refreshPatternAmount();
-
-			// clear all canvases
-			this.canvas.forEach((c) => c.fillVoid());
 
 			// helper function for updating scrolling position and capping it
 			const scroll = (delta:number) => {
@@ -90,7 +101,7 @@ export class PatternEditor implements UIElement {
 
 				} else {
 					// calculate the maximum scrolling position
-					const max = (this.tab.matrix.matrixlen * this.tab.matrix.patternlen) - 1;
+					const max = (this.tab.matrix.matrixlen * (this.tab.module?.patternRows ?? 64)) - 1;
 
 					// check clamping scrolling position below last
 					if(this.currentRow > max) {
@@ -132,7 +143,7 @@ export class PatternEditor implements UIElement {
 					this.updateScrollerSize();
 
 					// reload the number of patterns that need to be visible
-					await this.refreshPatternAmount();
+					await this.refreshPatternAmount(false);
 
 					// update horizontal scrolling
 					this.scrollHoriz(0);
@@ -141,9 +152,6 @@ export class PatternEditor implements UIElement {
 					scroll(0);
 				}, 50);
 			});
-
-			// initially handle scrolling, reloading, drawing, etc
-			this.handleScrolling();
 		});
 	}
 
@@ -415,7 +423,7 @@ export class PatternEditor implements UIElement {
 		}
 
 		// also refresh channel widths
-		this.refreshChannelWidth();
+		requestAnimationFrame(() => this.refreshChannelWidth());
 	}
 
 	/**
@@ -520,6 +528,8 @@ export class PatternEditor implements UIElement {
 		return this.channelWidths.length - 1;
 	}
 
+	private derp = false;
+
 	/**
 	 * Function to receive shortcut events from the user.
 	 *
@@ -543,7 +553,7 @@ export class PatternEditor implements UIElement {
 						this.handleScrolling();
 						this.currentRow ++;
 
-						if(this.currentRow >= this.tab.matrix.matrixlen * this.tab.matrix.patternlen) {
+						if(this.currentRow >= this.tab.matrix.matrixlen * (this.tab.module?.patternRows ?? 64)) {
 							this.derp = false;
 							clearInterval(i);
 						}
@@ -580,17 +590,53 @@ export class PatternEditor implements UIElement {
 		this.updateFocusRowData();
 	}
 
-	private derp = false;
+	/**
+	 * Store pattern size of each pattern
+	 */
+	private patternLen = 64;
+
+	/**
+	 * Pseudo-variable that is the current active pattern
+	 */
+	private get activePattern() {
+		return Math.floor(this.currentRow / this.patternLen);
+	}
+
+	/**
+	 * Function to update the pattern editor with the new number of rows per pattern.
+	 *
+	 * @param rows The number of rows to update to
+	 */
+	public async setPatternRows(rows:number): Promise<void> {
+		// prepare some variables
+		const pat = this.activePattern, offs = this.currentRow % this.patternLen;
+		this.patternLen = rows;
+
+		// reload the number of patterns that need to be visible
+		await this.refreshPatternAmount(true);
+
+		// scroll to a different row based on the new size
+		this.currentRow = (pat * rows) + Math.min(offs, rows - 1);
+
+		// go to handle scrolling, reloading, drawing, etc
+		this.handleScrolling();
+	}
 
 	/**
 	 * Helper function that updates the list of pattern canvases.
+	 *
+	 * @param force If set, the update is forced regardless if amounts match
 	 */
-	private async refreshPatternAmount() {
+	private async refreshPatternAmount(force:boolean) {
+		const patternRows = this.patternLen;
+
 		// calculate the amount of canvases needed to display everything
 		const amount = !this.drawPatternPreview ? 0 :
-			Math.ceil(((this.scrollHeight / this.dataHeight) + (this.visibleSafeHeight * 2)) / this.tab.matrix.patternlen);
+			Math.ceil(((this.scrollHeight / this.dataHeight) + (this.visibleSafeHeight * 2)) / patternRows);
 
-		if((this.canvas?.length - 1) !== amount) {
+		console.log("refresh patterns", amount, this.canvas?.length)
+
+		if(force || (this.canvas?.length - 1) !== amount) {
 			// remove old canvases so everything can be updated
 			this.canvas?.forEach((c) => c.dispose());
 			this.rows?.forEach((c) => c.dispose());
@@ -602,8 +648,7 @@ export class PatternEditor implements UIElement {
 			// generate each canvas
 			for(let c = 0;c <= amount; c++) {
 				// generate the canvas class itself
-				const x = new PatternCanvas(this.dataHeight * this.tab.matrix.patternlen, this,
-					this.tab.matrix.patternlen, this.tab.channels.length);
+				const x = new PatternCanvas(this.dataHeight * patternRows, this, patternRows, this.tab.channels.length);
 
 				// update horizontal scrolling of the canvas
 				x.updateHoriz(this);
@@ -616,24 +661,27 @@ export class PatternEditor implements UIElement {
 				x.updateChannelWidths();
 
 				// force update canvas theme
+				console.log("refresh theme")
 				await x.reloadTheme();
 
+				// clear the canvas void
+				x.fillVoid();
+
 				// generate the rows as well (we need the same number of row canvases)
-				const y = new RowsCanvas(this.dataHeight * this.tab.matrix.patternlen, this, this.tab.matrix.patternlen, this.getRowNumber, c === 0);
+				const rows = this.patternLen;
+				const y = new RowsCanvas(this.dataHeight * rows, this, rows, this.getRowNumber, c === 0);
 
 				// add this canvas to the DOM
 				this.scrollwrapper.appendChild(y.element);
 				this.rows.push(y);
 
 				// force update canvas theme
+				console.log("refresh theme row")
 				await y.reloadTheme();
 
 				// reload graphics
 				y.render();
 			}
-
-			// make the first row canvas be above the rest
-			this.rows[0].element.style.zIndex = "12";
 		}
 	}
 
@@ -653,9 +701,10 @@ export class PatternEditor implements UIElement {
 	private handleScrolling() {
 		// load the range of patterns that are visible currently
 		const [ rangeMin, rangeMax, ] = this.getVisibleRange();
+		const patternRows = this.patternLen;
 
 		// calculate which pattern is currently active
-		const pat = Math.max(0, Math.min(this.tab.matrix.matrixlen - 1, Math.floor(this.currentRow / this.tab.matrix.patternlen)));
+		const pat = Math.max(0, Math.min(this.tab.matrix.matrixlen - 1, this.activePattern));
 
 		if(!this.drawPatternPreview) {
 			// draw only a single pattern!!
@@ -668,12 +717,11 @@ export class PatternEditor implements UIElement {
 			}
 
 			// update canvas y-position
-			const offsetTop = ((pat * this.tab.matrix.patternlen) - this.currentRow);
+			const offsetTop = ((pat * patternRows) - this.currentRow);
 
 			// request to render every visible row in this pattern
 			this.canvas[0].renderPattern(Math.max(0, -Math.ceil(this.scrollMiddle / this.dataHeight) - this.visibleSafeHeight - offsetTop),
-				Math.min(this.tab.matrix.patternlen,
-					Math.ceil((this.scrollHeight - this.scrollMiddle) / this.dataHeight) + this.visibleSafeHeight - offsetTop));
+				Math.min(patternRows, Math.ceil((this.scrollHeight - this.scrollMiddle) / this.dataHeight) + this.visibleSafeHeight - offsetTop));
 
 			// update element position
 			this.rows[0].element.style.top = this.canvas[0].element.style.top = ((offsetTop * this.dataHeight) + this.scrollMiddle) +"px";
@@ -682,7 +730,7 @@ export class PatternEditor implements UIElement {
 
 		// position all row elements
 		const rowoff = Math.ceil(((this.scrollMiddle / this.dataHeight) -
-			(this.currentRow % this.tab.matrix.patternlen)) / this.tab.matrix.patternlen);
+			(this.currentRow % patternRows)) / patternRows);
 
 		for(let r = 0;r < this.rows.length;r ++) {
 			const cr = this.rows[(this.rows.length + r - rowoff) % this.rows.length];
@@ -697,7 +745,7 @@ export class PatternEditor implements UIElement {
 			}
 
 			// calculate row y-position
-			const top = ((((ppos * this.tab.matrix.patternlen) - this.currentRow) * this.dataHeight) + this.scrollMiddle) +"px";
+			const top = ((((ppos * patternRows) - this.currentRow) * this.dataHeight) + this.scrollMiddle) +"px";
 
 			// update row position
 			cr.element.style.top = top;
@@ -709,7 +757,7 @@ export class PatternEditor implements UIElement {
 			const cv = this.canvas[(this.canvas.length + r) % this.canvas.length];
 
 			// calculate canvas y-position
-			const offsetTop = ((r * this.tab.matrix.patternlen) - this.currentRow);
+			const offsetTop = ((r * patternRows) - this.currentRow);
 			const top = ((offsetTop * this.dataHeight) + this.scrollMiddle) +"px";
 
 			// invalidate layout if it is not the same pattern or active status doesn't match
@@ -727,8 +775,7 @@ export class PatternEditor implements UIElement {
 			if(r >= 0 && r < this.tab.matrix.matrixlen) {
 				// if yes, request to render every visible row in this pattern
 				cv.renderPattern(Math.max(0, -Math.ceil(this.scrollMiddle / this.dataHeight) - this.visibleSafeHeight - offsetTop),
-					Math.min(this.tab.matrix.patternlen,
-						Math.ceil((this.scrollHeight - this.scrollMiddle) / this.dataHeight) + this.visibleSafeHeight - offsetTop));
+					Math.min(patternRows, Math.ceil((this.scrollHeight - this.scrollMiddle) / this.dataHeight) + this.visibleSafeHeight - offsetTop));
 
 
 			} else if(!cv.isClear){
@@ -758,10 +805,10 @@ export class PatternEditor implements UIElement {
 
 		return [
 			// load the start point of the range
-			Math.floor((this.currentRow - this.visibleSafeHeight - scroll) / this.tab.matrix.patternlen),
+			Math.floor((this.currentRow - this.visibleSafeHeight - scroll) / this.patternLen),
 
 			// load the end point of the range
-			Math.floor((this.currentRow + this.visibleSafeHeight + scroll) / this.tab.matrix.patternlen),
+			Math.floor((this.currentRow + this.visibleSafeHeight + scroll) / this.patternLen),
 		];
 	}
 
@@ -774,6 +821,7 @@ export class PatternEditor implements UIElement {
 	 * Helper function to inform that the theme was reloaded
 	 */
 	public async reloadTheme(preload:boolean):Promise<void> {
+		console.log("reload theme global", this.canvas?.length, this.rows?.length)
 		// request every canvas to reload theme
 		const promises = [ ...this.canvas, ...this.rows, ].map((c) => c.reloadTheme());
 
@@ -826,13 +874,22 @@ export class PatternEditor implements UIElement {
 	 */
 	private updateFocusRowData() {
 		// calculate the current highlight ID
-		const row = this.currentRow % this.tab.matrix.patternlen;
+		const row = this.currentRow % this.patternLen;
 		const hid = (this.tab.recordMode ? 3 : 0) + ((row % this.rowHighlights[0]) === 0 ? 2 : (row % this.rowHighlights[1]) === 0 ? 1 : 0);
 
 		// update background color and blend mode for this row
 		this.focusBar.style.backgroundColor = this.focusBarColorNormal[hid];
 		// @ts-expect-error This property does exist, but TypeScript doesn't recognize it
 		this.focusBar.style.mixBlendMode = this.focusBarBlendNormal[hid];
+	}
+
+	/**
+	 * Function to dispose of this pattern editor
+	 */
+	public dispose(): void {
+		// dispose all canvas workers
+		this.canvas.forEach((c) => c.dispose());
+		this.rows.forEach((c) => c.dispose());
 	}
 }
 
@@ -858,5 +915,12 @@ ZorroEvent.addListener(ZorroEventEnum.TabRecordMode, async() => {
 ZorroEvent.addListener(ZorroEventEnum.TabMute, async(event, tab, channel, state) => {
 	if(_edit) {
 		_edit.updateMute(channel, state);
+	}
+});
+
+// listen to number of pattern rows changing
+ZorroEvent.addListener(ZorroEventEnum.ProjectPatternRows, async(event, project, module, rows) => {
+	if(_edit) {
+		await _edit.setPatternRows(rows);
 	}
 });

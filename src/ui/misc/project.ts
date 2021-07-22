@@ -537,6 +537,8 @@ export class Project {
 			name: "",
 			author: "",
 			index: 0,		// TODO: Generate index
+			patternRows: loadFlag<number>("INITIAL_PATTERN_ROWS") ?? 64,
+			highlights: [ loadFlag<number>("HIGHLIGHT_B_DEFAULT") ?? 16, loadFlag<number>("HIGHLIGHT_A_DEFAULT") ?? 4, ] as [ number, number, ],
 			type: ZorroModuleType.Song,
 			lastDate: new Date(),
 			channels: await window.ipc.driver.getChannels(),
@@ -852,5 +854,15 @@ export interface Module {
 	/**
 	 * The channels defined if this is a Song or SFX type
 	 */
-	channels?: ChannelInfo[]
+	channels?: ChannelInfo[],
+
+	/**
+	 * The number of rows in each pattern
+	 */
+	patternRows: number,
+
+	/**
+	 * Highlight A and highlight B values
+	 */
+	highlights: [ number, number, ],
 }

@@ -158,7 +158,6 @@
 	/**
 	 * The number of rows in this pattern
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	let patternLen = 0;
 
 	/**

@@ -1,6 +1,6 @@
 import { Channel, ChannelType, NoteReturnType } from "../../api/driver";
 import { ZorroEvent, ZorroEventEnum } from "../../api/events";
-import { PatternIndex } from "../../api/matrix";
+import { Matrix } from "../../api/matrix";
 import { WindowType } from "../../defs/windowtype";
 import { LoadSaveData, LoadType, Module, Project } from "./project";
 
@@ -38,7 +38,7 @@ export class Tab {
 				this.selectedChannel = this.channels[0];
 
 				// create the new matrix
-				this.matrix = new PatternIndex(this);
+				this.matrix = new Matrix(this);
 
 				// load buffers for matrix and patterns files
 				const _mat = data.matrix(), _pat = data.patterns();
@@ -150,7 +150,7 @@ export class Tab {
 	/**
 	 * The matrix that the current tab is using
 	 */
-	public matrix!:PatternIndex;
+	public matrix!:Matrix;
 
 	/**
 	 * The project opened in this tab
@@ -159,6 +159,13 @@ export class Tab {
 
 	public get project():Project {
 		return this._project;
+	}
+
+	/**
+	 * Get the currently active module
+	 */
+	public get module():Module|undefined {
+		return this._project.modules[this._project.activeModuleIndex];
 	}
 
 	/**

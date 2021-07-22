@@ -1,7 +1,7 @@
 import { Module, Project } from "../ui/misc/project";
 import { PlayMode, Tab } from "../ui/misc/tab";
 import { Channel } from "./driver";
-import { PatternIndex } from "./matrix";
+import { Matrix } from "./matrix";
 import { ClipboardType } from "./ui";
 
 /**
@@ -141,6 +141,7 @@ export enum ZorroEventEnum {
 	TabRecordMode,					// event that is ran when the record mode was changed
 
 	ProjectOpen,					// event that is ran when a project is opened or created
+	ProjectPatternRows,				// event that is ran when the number of pattern rows are changed
 	SelectModule,					// event that is ran when a module is selected (as the active module)
 	ModuleUpdate,					// event that is ran when a module information is updated (such as its name)
 	ModuleCreate,					// event that is ran when a new module will be created
@@ -203,19 +204,20 @@ export interface ZorroListenerTypes {
 	[ZorroEventEnum.TabRecordMode]: (event:ZorroEventObject, tab:Tab, mode:boolean) => ZorroListenerReturn<void>,
 
 	[ZorroEventEnum.ProjectOpen]: (event:ZorroEventObject, project:Project|undefined) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.ProjectPatternRows]: (event:ZorroEventObject, project:Project, module:Module, rows:number) => ZorroListenerReturn<void>,
 	[ZorroEventEnum.SelectModule]: (event:ZorroEventObject, project:Project, module:Module|undefined) => ZorroListenerReturn<void>,
 	[ZorroEventEnum.ModuleUpdate]: (event:ZorroEventObject, project:Project, module:Module) => ZorroListenerReturn<void>,
 	[ZorroEventEnum.ModuleCreate]: (event:ZorroEventObject, project:Project, module:Module) => ZorroListenerReturn<void>,
 	[ZorroEventEnum.ModuleDelete]: (event:ZorroEventObject, project:Project, module:Module) => ZorroListenerReturn<void>,
 
-	[ZorroEventEnum.MatrixSet]: (event:ZorroEventObject, index:PatternIndex, channel:number, row:number, value:number) => ZorroListenerReturn<number>,
-	[ZorroEventEnum.MatrixGet]: (event:ZorroEventObject, index:PatternIndex, channel:number, row:number, value:number) => ZorroListenerReturn<number>,
-	[ZorroEventEnum.MatrixResize]: (event:ZorroEventObject, index:PatternIndex, height:number, width:number) => ZorroListenerReturn<void>,
-	[ZorroEventEnum.MatrixInsert]: (event:ZorroEventObject, index:PatternIndex, row:number, data:Uint8Array) => ZorroListenerReturn<void>,
-	[ZorroEventEnum.MatrixRemove]: (event:ZorroEventObject, index:PatternIndex, row:number) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.MatrixSet]: (event:ZorroEventObject, index:Matrix, channel:number, row:number, value:number) => ZorroListenerReturn<number>,
+	[ZorroEventEnum.MatrixGet]: (event:ZorroEventObject, index:Matrix, channel:number, row:number, value:number) => ZorroListenerReturn<number>,
+	[ZorroEventEnum.MatrixResize]: (event:ZorroEventObject, index:Matrix, height:number, width:number) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.MatrixInsert]: (event:ZorroEventObject, index:Matrix, row:number, data:Uint8Array) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.MatrixRemove]: (event:ZorroEventObject, index:Matrix, row:number) => ZorroListenerReturn<void>,
 
-	[ZorroEventEnum.PatternTrim]: (event:ZorroEventObject, index:PatternIndex, channel:number, position:number) => ZorroListenerReturn<void>,
-	[ZorroEventEnum.PatternMake]: (event:ZorroEventObject, index:PatternIndex, channel:number, position:number) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.PatternTrim]: (event:ZorroEventObject, index:Matrix, channel:number, position:number) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.PatternMake]: (event:ZorroEventObject, index:Matrix, channel:number, position:number) => ZorroListenerReturn<void>,
 
 	[ZorroEventEnum.MidiNoteOn]: (event:ZorroEventObject, channel:number, note:number, velocity:number) => ZorroListenerReturn<void>,
 	[ZorroEventEnum.MidiNoteOff]: (event:ZorroEventObject, channel:number, note:number, velocity:number) => ZorroListenerReturn<void>,
@@ -239,19 +241,20 @@ export interface ZorroSenderTypes {
 	[ZorroEventEnum.TabRecordMode]: (tab:Tab, mode:boolean) => ZorroSenderReturn<undefined>,
 
 	[ZorroEventEnum.ProjectOpen]: (project:Project|undefined) => ZorroSenderReturn<undefined>,
+	[ZorroEventEnum.ProjectPatternRows]: (project:Project, module:Module, rows:number) => ZorroSenderReturn<undefined>,
 	[ZorroEventEnum.SelectModule]: (project:Project, module:Module|undefined) => ZorroSenderReturn<undefined>,
 	[ZorroEventEnum.ModuleUpdate]: (project:Project, module:Module) => ZorroSenderReturn<undefined>,
 	[ZorroEventEnum.ModuleCreate]: (project:Project, module:Module) => ZorroSenderReturn<undefined>,
 	[ZorroEventEnum.ModuleDelete]: (project:Project, module:Module) => ZorroSenderReturn<undefined>,
 
-	[ZorroEventEnum.MatrixSet]: (index:PatternIndex, channel:number, row:number, value:number) => ZorroSenderReturn<number>,
-	[ZorroEventEnum.MatrixGet]: (index:PatternIndex, channel:number, row:number, value:number) => ZorroSenderReturn<number>,
-	[ZorroEventEnum.MatrixResize]: (index:PatternIndex, height:number, width:number) => ZorroSenderReturn<undefined>,
-	[ZorroEventEnum.MatrixInsert]: (index:PatternIndex, row:number, data:Uint8Array) => ZorroSenderReturn<undefined>,
-	[ZorroEventEnum.MatrixRemove]: (index:PatternIndex, row:number) => ZorroSenderReturn<undefined>,
+	[ZorroEventEnum.MatrixSet]: (index:Matrix, channel:number, row:number, value:number) => ZorroSenderReturn<number>,
+	[ZorroEventEnum.MatrixGet]: (index:Matrix, channel:number, row:number, value:number) => ZorroSenderReturn<number>,
+	[ZorroEventEnum.MatrixResize]: (index:Matrix, height:number, width:number) => ZorroSenderReturn<undefined>,
+	[ZorroEventEnum.MatrixInsert]: (index:Matrix, row:number, data:Uint8Array) => ZorroSenderReturn<undefined>,
+	[ZorroEventEnum.MatrixRemove]: (index:Matrix, row:number) => ZorroSenderReturn<undefined>,
 
-	[ZorroEventEnum.PatternTrim]: (index:PatternIndex, channel:number, position:number) => ZorroSenderReturn<undefined>,
-	[ZorroEventEnum.PatternMake]: (index:PatternIndex, channel:number, position:number) => ZorroSenderReturn<undefined>,
+	[ZorroEventEnum.PatternTrim]: (index:Matrix, channel:number, position:number) => ZorroSenderReturn<undefined>,
+	[ZorroEventEnum.PatternMake]: (index:Matrix, channel:number, position:number) => ZorroSenderReturn<undefined>,
 
 	[ZorroEventEnum.MidiNoteOn]: (channel:number, note:number, velocity:number) => ZorroSenderReturn<undefined>,
 	[ZorroEventEnum.MidiNoteOff]: (channel:number, note:number, velocity:number) => ZorroSenderReturn<undefined>,

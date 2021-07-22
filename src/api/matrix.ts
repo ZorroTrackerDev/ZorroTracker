@@ -138,10 +138,10 @@ export class PatternData {
 	 */
 	public width = 8;
 
-	constructor(cells:number){
+	constructor(){
 		this.cells = [];
 
-		for(let i = cells;i > 0; --i){
+		for(let i = 256;i > 0; --i){
 			this.cells.push(new PatternCell());
 		}
 	}
@@ -178,12 +178,8 @@ export class PatternData {
 
 		// process every cells one at a time
 		for(let i = cells;i >= 0; --i) {
-			// generate a new cell
-			const cd = new PatternCell();
-			this.cells.push(cd);
-
 			// load cell data
-			index = cd.load(data, index, this.width);
+			index = this.cells[i].load(data, index, this.width);
 		}
 
 		// return the new position
@@ -192,9 +188,9 @@ export class PatternData {
 }
 
 /**
- * Class to hold the pattern index of the song. Will be managed by both the PatternEditor instance and the wider program.
+ * Class to hold the pattern matrix of the song. Will be managed by both the PatternEditor instance and the wider program.
  */
-export class PatternIndex {
+export class Matrix {
 	/**
 	 * the tab this matrix is apart of
 	 */
@@ -214,11 +210,6 @@ export class PatternIndex {
 	 * Stores the length of the matrix. Values at greater offsets should always be set to 0. Allows to easily determine long the pattern matrix is.
 	 */
 	public matrixlen = 0;
-
-	/**
-	 * Stores the length of each row in number of cells
-	 */
-	public patternlen = 64;
 
 	constructor(tab:Tab) {
 		this.tab = tab;
@@ -659,7 +650,7 @@ export class PatternIndex {
 		}
 
 		// create a new pattern here and indicate success
-		this.patterns[channel][index] = new PatternData(this.patternlen);
+		this.patterns[channel][index] = new PatternData();
 		this.tab.project.dirty();
 		return true;
 	}
@@ -843,7 +834,7 @@ export class PatternIndex {
 
 				} else {
 					// there is data here
-					this.patterns[c][i] = new PatternData(0);
+					this.patterns[c][i] = new PatternData();
 					index = (this.patterns[c][i] as PatternData).load(data, index);
 				}
 			}

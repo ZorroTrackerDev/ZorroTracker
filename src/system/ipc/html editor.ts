@@ -84,10 +84,7 @@ ipcRenderer.on(ipcEnum.ProjectAddModule, async(event, file:string) => {
 		const ix = Tab.active.project.getModuleIndexByFile(m.file);
 
 		// switch to module by its index
-		// eslint-disable-next-line require-await
-		await loadToModule(ix, async() => {
-
-		});
+		await loadToModule(ix);
 	}
 });
 

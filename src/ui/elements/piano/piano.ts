@@ -1,29 +1,9 @@
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../../api/events";
 import { loadFlag } from "../../../api/files";
-import { UIElement } from "../../../api/ui";
+import { UIComponent, UIShortcutHandler } from "../../../api/ui";
 import { Tab } from "../../misc/tab";
 
-export class Piano implements UIElement {
-	// eslint-disable-next-line require-await
-	public static async create(tab: Tab) : Promise<Piano> {
-		_piano = new Piano(tab);
-		_piano.width = loadFlag<number>("PIANO_DEFAULT_SIZE") ?? 2;
-		_piano.octave = loadFlag<number>("PIANO_DEFAULT_OCTAVE") ?? 3;
-		_piano.position = loadFlag<number>("PIANO_DEFAULT_POSITION") ?? 0;
-
-		// update position
-		_piano.changePosition(0);
-
-		// redraw the inner elements based on size
-		await _piano.redraw();
-
-		// finish initializing the piano
-		_piano.init();
-
-		// return the piano
-		return _piano;
-	}
-
+export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	/**
 	 * Map strings to note numbers. This will allow the Piano to correctly release notes
 	 */
@@ -100,16 +80,21 @@ export class Piano implements UIElement {
 		return false;
 	}
 
-	private tab: Tab;
-	public element: HTMLDivElement;
+	public tab!: Tab;
+	public element!: HTMLDivElement;
 	private position!: number;
 	private width!: number;
 	private octave!: number;
 
 	// create a new piano instance
-	constructor(tab:Tab) {
-		this.tab = tab;
+	constructor() {
+		_piano = this;
+	}
 
+	/**
+	 * Function to initialize the piano component
+	 */
+	public init(): HTMLDivElement {
 		// create the piano base element
 		this.element = document.createElement("div");
 		this.element.classList.add("pianowrapper");
@@ -123,6 +108,17 @@ export class Piano implements UIElement {
 				e.preventDefault();
 			}
 		};
+
+		// load some flags
+		this.width = loadFlag<number>("PIANO_DEFAULT_SIZE") ?? 2;
+		this.octave = loadFlag<number>("PIANO_DEFAULT_OCTAVE") ?? 3;
+		this.position = loadFlag<number>("PIANO_DEFAULT_POSITION") ?? 0;
+
+		// update position
+		this.changePosition(0);
+
+		// return the main element for this piano
+		return this.element;
 	}
 
 	/**
@@ -377,9 +373,14 @@ export class Piano implements UIElement {
 	}
 
 	/**
-	 * Initialize the piano fully
+	 * Function to load the piano component
 	 */
-	public init(): void {
+	public async load(pass:number): Promise<boolean> {
+		// component loads in pass 2
+		if(pass !== 2) {
+			return pass < 2;
+		}
+
 		// load the wrapper div
 		const wrap = (this.element.children[0] as HTMLDivElement).children[0] as HTMLDivElement;
 		let cur:HTMLDivElement|undefined, note = 0;
@@ -453,6 +454,15 @@ export class Piano implements UIElement {
 			// do initial move event
 			await move(e);
 		}
+
+		// redraw the inner elements
+		await this.redraw();
+		return false;
+	}
+
+	public unload(): boolean {
+		// piano does not unload
+		return false;
 	}
 
 	/**

@@ -6,4 +6,5 @@
 
 	"slider.button.+": "./svg/slider.button.+.svg",
 	"slider.button.-": "./svg/slider.button.-.svg",
+	"slider.volume.icon": "./svg/slider.volume.icon.svg",
 }

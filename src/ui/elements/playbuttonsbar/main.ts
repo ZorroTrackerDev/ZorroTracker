@@ -1,138 +1,166 @@
 import { ZorroEvent, ZorroEventEnum } from "../../../api/events";
+import { UIComponent } from "../../../api/ui";
 import { PlayMode, Tab } from "../../misc/tab";
 import { loadSVG } from "../../misc/theme";
 
-/**
- * Generate the buttons bar and return the HTML for it
- *
- * @returns HTML element to append to the DOM
- */
-export function createBar(): HTMLDivElement {
-	// create the wrapper element
-	target = document.createElement("div");
-	target.classList.add("playbuttonsbar");
+export class PlayBar implements UIComponent<HTMLDivElement> {
+	public element!: HTMLDivElement;
+	public tab!:Tab;
 
-	// loop for every button
-	for(const data of buttonData) {
-		// create the button element
-		const b = document.createElement("button");
-		b.classList.add("playbuttonsbar");
-		target.appendChild(b);
-
-		// append the onclick listener
-		b.onmouseup = data.click;
-
-		// set the tooltip
-		b.title = data.tooltip;
+	constructor() {
+		target = this;
 	}
 
-	// reload graphics
-	reloadTheme().catch(console.error);
+	/**
+	 * Function to initialize the piano component
+	 */
+	public init(): HTMLDivElement {
+		// create the wrapper element
+		this.element = document.createElement("div");
+		this.element.classList.add("playbuttonsbar");
 
-	// set stopped button to be active
-	setActive(0, true);
-	return target;
+		// loop for every button
+		for(const data of this.buttonData) {
+			// create the button element
+			const b = document.createElement("button");
+			b.classList.add("playbuttonsbar");
+			this.element.appendChild(b);
+
+			// append the onclick listener
+			b.onmouseup = data.click;
+
+			// set the tooltip
+			b.title = data.tooltip;
+		}
+
+		return this.element;
+	}
+
+	/**
+	 * Function to dispose of this component
+	 */
+	public unload(): boolean {
+		return false;
+	}
+
+	/**
+	 * Function to load the component
+	 */
+	public async load(pass:number): Promise<boolean> {
+		// component loads in pass 0
+		if(pass !== 0) {
+			return false;
+		}
+
+		// reload graphics
+		await this.reloadTheme();
+
+		// set stopped button to be active
+		this.setActive(0, true);
+
+		return false;
+	}
+
+	/**
+	 * Helper function to reload the theme
+	 */
+	public reloadTheme(): Promise<void[]> {
+		// run the theme function and return the promises as an array
+		return Promise.all(this.buttonData.map((d, i) => d.theme(this, target?.element.children[i] as HTMLButtonElement, i)));
+	}
+
+	/**
+	 * The SVG file ID's for each button
+	 */
+	private svgfile = [ "buttonbar.stop", "buttonbar.play", "buttonbar.repeat", "buttonbar.record", ];
+
+	/**
+	 * The data for each button
+	 */
+	private buttonData = [
+		{
+			tooltip: "Stop playback",
+			click: (e:MouseEvent) => {
+				// change playback mode to stopped
+				if(e.button === 0 && Tab.active) {
+					Tab.active.playMode = PlayMode.Stopped;
+				}
+			},
+			theme: async(p:PlayBar, e:HTMLButtonElement, index:number) => {
+				// load the icon for this element
+				e.innerHTML = await loadSVG(p.svgfile[index]);
+			},
+		},
+		{
+			tooltip: "Start playback",
+			click: (e:MouseEvent) => {
+				// change playback mode to play all
+				if(e.button === 0 && Tab.active) {
+					Tab.active.playMode = PlayMode.PlayAll;
+				}
+			},
+			theme: async(p:PlayBar, e:HTMLButtonElement, index:number) => {
+				e.innerHTML = await loadSVG(p.svgfile[index]);
+			},
+		},
+		{
+			tooltip: "Repeat pattern",
+			click: (e:MouseEvent) => {
+				// change playback mode to play pattern
+				if(e.button === 0 && Tab.active) {
+					Tab.active.playMode = PlayMode.PlayPattern;
+				}
+			},
+			theme: async(p:PlayBar, e:HTMLButtonElement, index:number) => {
+				e.innerHTML = await loadSVG(p.svgfile[index]);
+			},
+		},
+		{
+			tooltip: "Record mode",
+			click: (e:MouseEvent) => {
+				// flip record mode flag
+				if(e.button === 0 && Tab.active) {
+					Tab.active.recordMode = !Tab.active.recordMode;
+				}
+			},
+			theme: async(p:PlayBar, e:HTMLButtonElement, index:number) => {
+				e.innerHTML = await loadSVG(p.svgfile[index]);
+			},
+		},
+	];
+
+	/**
+	 * Function to update the active status of a single button
+	 *
+	 * @param position The position of the button to update
+	 * @param active The active status of the button
+	 */
+	public setActive(position:number, active:boolean): void {
+		// update the status of the `active` class
+		this.element.children[position].classList[active ? "add" : "remove"]("active");
+	}
 }
 
-let target: HTMLDivElement|undefined;
+let target: PlayBar|undefined;
 
 // listen to theme reloading
 ZorroEvent.addListener(ZorroEventEnum.LoadTheme, async() => {
 	if(target) {
 		// update the theme and await for promises
-		await reloadTheme();
+		await target.reloadTheme();
 	}
 });
-
-/**
- * Helper function to reload the theme
- */
-function reloadTheme(): Promise<void[]> {
-	// run the theme function and return the promises as an array
-	return Promise.all(buttonData.map((d, i) => d.theme(target?.children[i] as HTMLButtonElement, i)));
-}
-
-/**
- * The SVG file ID's for each button
- */
-const svgfile = [ "buttonbar.stop", "buttonbar.play", "buttonbar.repeat", "buttonbar.record", ];
-
-/**
- * The data for each button
- */
-const buttonData = [
-	{
-		tooltip: "Stop playback",
-		click: (e:MouseEvent) => {
-			// change playback mode to stopped
-			if(e.button === 0 && Tab.active) {
-				Tab.active.playMode = PlayMode.Stopped;
-			}
-		},
-		theme: async(e:HTMLButtonElement, index:number) => {
-			// load the icon for this element
-			e.innerHTML = await loadSVG(svgfile[index]);
-		},
-	},
-	{
-		tooltip: "Start playback",
-		click: (e:MouseEvent) => {
-			// change playback mode to play all
-			if(e.button === 0 && Tab.active) {
-				Tab.active.playMode = PlayMode.PlayAll;
-			}
-		},
-		theme: async(e:HTMLButtonElement, index:number) => {
-			e.innerHTML = await loadSVG(svgfile[index]);
-		},
-	},
-	{
-		tooltip: "Repeat pattern",
-		click: (e:MouseEvent) => {
-			// change playback mode to play pattern
-			if(e.button === 0 && Tab.active) {
-				Tab.active.playMode = PlayMode.PlayPattern;
-			}
-		},
-		theme: async(e:HTMLButtonElement, index:number) => {
-			e.innerHTML = await loadSVG(svgfile[index]);
-		},
-	},
-	{
-		tooltip: "Record mode",
-		click: (e:MouseEvent) => {
-			// flip record mode flag
-			if(e.button === 0 && Tab.active) {
-				Tab.active.recordMode = !Tab.active.recordMode;
-			}
-		},
-		theme: async(e:HTMLButtonElement, index:number) => {
-			e.innerHTML = await loadSVG(svgfile[index]);
-		},
-	},
-];
-
-/**
- * Function to update the active status of a single button
- *
- * @param position The position of the button to update
- * @param active The active status of the button
- */
-function setActive(position:number, active:boolean) {
-	// update the status of the `active` class
-	target?.children[position].classList[active ? "add" : "remove"]("active");
-}
 
 // listen to record mode changing
 // eslint-disable-next-line require-await
 ZorroEvent.addListener(ZorroEventEnum.TabRecordMode, async(event, tab, mode) => {
-	setActive(3, mode);
+	target?.setActive(3, mode);
 });
 
 // listen to record mode changing
 // eslint-disable-next-line require-await
 ZorroEvent.addListener(ZorroEventEnum.TabPlayMode, async(event, tab, mode) => {
-	setActive(0, mode === PlayMode.Stopped);
-	setActive(1, mode === PlayMode.PlayAll);
-	setActive(2, mode === PlayMode.PlayPattern);
+	target?.setActive(0, mode === PlayMode.Stopped);
+	target?.setActive(1, mode === PlayMode.PlayAll);
+	target?.setActive(2, mode === PlayMode.PlayPattern);
 });

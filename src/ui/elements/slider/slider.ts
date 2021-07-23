@@ -1,3 +1,5 @@
+import { UIComponent } from "../../../api/ui";
+import { Tab } from "../../misc/tab";
 import { loadSVG } from "../../misc/theme";
 
 /**
@@ -392,15 +394,94 @@ export function simpleSlider(type:SliderEnum, multiplier:number, steps:number, d
 	}, };
 }
 
-/**
- * Create the standard volume slider for the UI.
- *
- * @param type Type of the slider to create
- * @returns Returns the finished element
- */
-export async function volumeSlider(type:SliderEnum):Promise<Element> {
+export type LoadUnloadFunc = (component:SliderComponent, pass:number) => boolean|Promise<boolean>;
+
+export class SliderComponent implements UIComponent<HTMLDivElement> {
+	// unused
+	public tab!:Tab;
+
+	/**
+	 * The slider element.
+	 */
+	public element: HTMLDivElement;
+
+	/**
+	 * The label element that should be controlled by the calling code.
+	 */
+	public label: HTMLDivElement;
+
+	/**
+	 * Function to set the slider value in the UI. This can control the slider from the calling code.
+	 * `getValue` and `toText` are called when this is used, so there is no need for special handling here.
+	 *
+	 * @param value The value as a string or a number, in units of multiplier
+	 * @param initial The value to use as the initial default value, if conversion fails
+	 */
+	public setValue:(value:string, initial:number) => void;
+
+	/**
+	 * Tthe loading function for this element
+	 */
+	private onload: LoadUnloadFunc;
+
+	/**
+	 * Tthe unloading function for this element
+	 */
+	private onunload: LoadUnloadFunc;
+
+	/**
+	 * Function to create a simple slider that maps value from `1.0` to `1.0*multiplier`. This differs from the normal slider function by
+	 * handling the values for you, only requiring you to save the value yourself. You can still set the value but it is not necessary preferred.
+	 *
+	 * @param type The type of the slider to create. There are various standard settings for size and direction
+	 * @param multiplier The multiplier of the value to use. This defines the scale of the slider in your code
+	 * @param steps The number of possible steps to use
+	 * @param digits The number of digits in the output value
+	 * @param suffix The string or value to add to the end of the text field. This is also used when parsing input text
+	 * @param post The function that is called when the value is updated. This lets you save the value in the slider
+	 * @param load The function that is called when this component loads. This is optional and a dud will be used if not provided
+	 * @param load The function that is called when this component unloads. This is optional and a dud will be used if not provided
+	 */
+	constructor(type:SliderEnum, multiplier:number, steps:number, digits:number, suffix:string, post:(value:number) => void,
+		load?:LoadUnloadFunc, unload?:LoadUnloadFunc) {
+		// initialize the slider element
+		const { element, setValue, label, } = simpleSlider(type, multiplier, steps, digits, suffix, post);
+
+		// dump all the returned values into this object
+		this.element = element;
+		this.label = label;
+		this.setValue = setValue;
+
+		// copy the load and unload functions (or generate duds)
+		this.onload = load ?? (() => false);
+		this.onunload = unload ?? (() => false);
+	}
+
+	/**
+	 * Handle the "real" init function
+	 */
+	public init(): HTMLDivElement {
+		return this.element;
+	}
+
+	/**
+	 * Function to load the component
+	 */
+	public load(pass:number): boolean|Promise<boolean> {
+		return this.onload(this, pass);
+	}
+
+	/**
+	 * Function to unload the component
+	 */
+	public unload(pass:number): boolean|Promise<boolean> {
+		return this.onunload(this, pass);
+	}
+}
+
+export function createVolumeSlider(type:SliderEnum): SliderComponent {
 	// create a simple slider element with range from 0 to 200%.
-	const { element, setValue, label, } = simpleSlider(type, 200, 2000, 1, "%", (volume:number) => {
+	const component = new SliderComponent(type, 200, 2000, 1, "%", (volume:number) => {
 		// update the volume on backend and cookies
 		window.ipc.audio?.volume(volume / 100);
 		window.ipc.cookie.set("main_volume", volume +"");
@@ -408,56 +489,43 @@ export async function volumeSlider(type:SliderEnum):Promise<Element> {
 		// get the appropriate class for the volume
 		if(volume > 120) {
 			// @ts-expect-error as it turns out, this is completely valid. But TypeScript won't like this anyway
-			label.classList = "volume_loud";
+			component.label.classList = "volume_loud";
 
 		} else if(volume > 80){
 			// @ts-expect-error as it turns out, this is completely valid. But TypeScript won't like this anyway
-			label.classList = "volume_3";
+			component.label.classList = "volume_3";
 
 		} else if(volume > 40){
 			// @ts-expect-error as it turns out, this is completely valid. But TypeScript won't like this anyway
-			label.classList = "volume_2";
+			component.label.classList = "volume_2";
 
 		} else if(volume > 0){
 			// @ts-expect-error as it turns out, this is completely valid. But TypeScript won't like this anyway
-			label.classList = "volume_1";
+			component.label.classList = "volume_1";
 
 		} else {
 			// @ts-expect-error as it turns out, this is completely valid. But TypeScript won't like this anyway
-			label.classList = "volume_mute";
+			component.label.classList = "volume_mute";
 		}
+	}, async() => {
+		// apply the default SVG object to the label
+		component.label.innerHTML = await loadSVG("slider.volume.icon");
+
+		// update the volume from cookies or default value
+		const cookie = await window.ipc.cookie.get("main_volume") ?? "";
+		component.setValue(cookie, 0.25);
+
+		// no more passes for us
+		return false;
 	});
 
-	// apply the default SVG object to the label
-	label.innerHTML = /*html*/`
-		<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" version="1.1">
-			<path fill="none" stroke="white" stroke-width="8" stroke-linejoin="round" d="
-				M 50 10
-				V 90
-
-				L 25 65
-				H 5
-				V 35
-				H 25
-				L 50 10
-
-				Z"/>
-			<path fill="none" stroke="white" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" />
-			<path fill="none" stroke="white" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" />
-			<path fill="none" stroke="white" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" />
-		</svg>
-	`;
-
 	// give the label an ID and default width
-	label.id = "main_volume_slider";
-	label.style.width = "1.3em";
-
-	// update the volume from cookies or default value
-	const cookie = await window.ipc.cookie.get("main_volume") ?? "";
-	setValue(cookie, 0.25);
+	component.label.id = "main_volume_slider";
+	component.label.style.width = "1.3em";
 
 	// return the slider element
-	return element;
+	return component;
+
 }
 
 /**
@@ -643,7 +711,7 @@ export async function makeValue(type:SliderEnum, functions:SliderFunctions, sett
 	}, };
 }
 
-type SimpleValueReturn = {
+export type SimpleValueReturn = {
 	/**
 	 * The value element.
 	 */

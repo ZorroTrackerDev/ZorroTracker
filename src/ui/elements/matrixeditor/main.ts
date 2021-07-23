@@ -1,6 +1,7 @@
 import { tooltipShortcutText } from "../../../api/dom";
-import { Bounds, clipboard, ClipboardType, Position, shortcutDirection, UIElement } from "../../../api/ui";
+import { Bounds, clipboard, ClipboardType, Position, shortcutDirection, UIComponent, UIShortcutHandler } from "../../../api/ui";
 import { Undo, UndoSource } from "../../../api/undo";
+import { clearChildren } from "../../misc/layout";
 import { Tab } from "../../misc/tab";
 import { standardButtons, pasteButtons, PatternIndexEditorButtonList } from "./buttons";
 
@@ -12,9 +13,9 @@ export enum editMode {
 /**
  * Class to interact between the UI and the Matrix entry. Helps manage UI integration and intercommunication
  */
-export class MatrixEditor implements UIElement {
+export class MatrixEditor implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	// various standard elements for the matrix editor
-	public element!:HTMLElement;
+	public element!:HTMLDivElement;
 	private elchans!:HTMLElement;
 	private elrows!:HTMLElement;
 	private elbtns!:HTMLElement;
@@ -23,22 +24,15 @@ export class MatrixEditor implements UIElement {
 	/**
 	 * This is the tab that the pattern editor is working in
 	 */
-	private tab:Tab;
-
-	/**
-	 * Initialize this MatrixEditor instance
-	 *
-	 * @param index The Matrix this PatternEditor is targeting
-	 */
-	constructor(tab:Tab) {
-		this.tab = tab;
-		this.setLayout();
-	}
+	public tab!:Tab;
 
 	// amount of filler rows at the top (fixes broken scroll behavior)
 	private static FILLER_ROWS = 1;
 
-	private setLayout() {
+	/**
+	 * Function to initialize the component
+	 */
+	public init(): HTMLDivElement {
 		// clear some flags
 		this.mode = editMode.Normal;
 		this.editing = false;
@@ -78,6 +72,19 @@ export class MatrixEditor implements UIElement {
 		// set editing left column
 		this.setEdit(false);
 
+		// return the main element
+		return this.element;
+	}
+
+	/**
+	 * Function to load the component
+	 */
+	public load(pass:number): boolean {
+		// component loads in pass 2
+		if(pass !== 2) {
+			return pass < 2;
+		}
+
 		// enable the channels
 		this.setChannels();
 
@@ -99,6 +106,16 @@ export class MatrixEditor implements UIElement {
 
 		// update the layout to comply with index
 		this.resetMatrixDisplay().catch(console.error);
+
+		// no moar passes
+		return false;
+	}
+
+	/**
+	 * Function to dispose of this component
+	 */
+	public unload(): boolean {
+		return false;
 	}
 
 	/**
@@ -940,6 +957,9 @@ export class MatrixEditor implements UIElement {
 	 * @param list List of channel names as string array
 	 */
 	private setChannels() {
+		// must clear all previous children
+		clearChildren(this.elchans);
+
 		// helper function to add a new element with text
 		const _add = (text:string, index:number) => {
 			const z = document.createElement("div");

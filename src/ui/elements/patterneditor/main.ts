@@ -1,117 +1,68 @@
 import { Channel } from "../../../api/driver";
 import { ZorroEvent, ZorroEventEnum } from "../../../api/events";
 import { loadFlag } from "../../../api/files";
-import { UIElement } from "../../../api/ui";
+import { UIComponent, UIShortcutHandler } from "../../../api/ui";
 import { Tab } from "../../misc/tab";
 import { theme } from "../../misc/theme";
 import { PatternCanvas, RowsCanvas } from "./canvas wrappers";
 
-export class PatternEditor implements UIElement {
+export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	// various standard elements for the pattern editor
-	public element!: HTMLElement;
+	public element!: HTMLDivElement;
 	private scrollwrapper!: HTMLDivElement;
 	private focusBar!: HTMLDivElement;
 
 	/**
 	 * This is the tab that the pattern editor is working in
 	 */
-	private tab:Tab;
+	public tab!:Tab;
 
 	/**
 	 * Initialize this PatternEditor instance
 	 *
 	 * @param tab The tab that this pattern editor is targeting
 	 */
-	private constructor(tab:Tab) {
-		this.tab = tab;
+	constructor() {
 		_edit = this;
 	}
 
 	/**
-	 * Function to generate a new `PatternEditor` instance
-	 *
-	 * @param tab The tab this pattern editor is targeting
-	 * @returns The new PatternEditor
+	 * Function to initialize the component
 	 */
-	public static async create(tab:Tab): Promise<PatternEditor> {
-		// load the editor itself
-		const p = new PatternEditor(tab);
+	public init(): Promise<HTMLDivElement> {
+		return new Promise((res, rej) => {
+			// generate the main element for this editor
+			this.element = document.createElement("div");
+			this.element.classList.add("patterneditor");
+			this.element.tabIndex = 0;
 
-		// set its layout
-		await p.setLayout();
+			// add the scrolling wrapper to the list
+			this.scrollwrapper = document.createElement("div");
+			this.scrollwrapper.classList.add("patterneditorwrap");
+			this.element.appendChild(this.scrollwrapper);
 
-		// and return the editor
-		return p;
-	}
+			// initialize the misc wrapper element
+			const wrap = document.createElement("div");
+			wrap.classList.add("patternextras");
+			this.element.appendChild(wrap);
 
-	/**
-	 * Helper function to initialize the layout for the pattern editor
-	 */
-	private async setLayout() {
-		// generate the main element for this editor
-		this.element = document.createElement("div");
-		this.element.classList.add("patterneditor");
-		this.element.tabIndex = 0;
+			// initialize the focus bar element
+			this.focusBar = document.createElement("div");
+			this.focusBar.classList.add("focus");
+			wrap.appendChild(this.focusBar);
 
-		// add the scrolling wrapper to the list
-		this.scrollwrapper = document.createElement("div");
-		this.scrollwrapper.classList.add("patterneditorwrap");
-		this.element.appendChild(this.scrollwrapper);
+			// load the theme before doing anything else
+			this.canvas = [];
+			this.rows = [];
 
-		// initialize the misc wrapper element
-		const wrap = document.createElement("div");
-		wrap.classList.add("patternextras");
-		this.element.appendChild(wrap);
+			// load the row number generator function
+			this.getRowNumber = loadFlag<boolean>("ROW_NUM_IN_HEX") ?? false;
 
-		// initialize the focus bar element
-		this.focusBar = document.createElement("div");
-		this.focusBar.classList.add("focus");
-		wrap.appendChild(this.focusBar);
+			// load the row number generator function
+			this.drawPatternPreview = loadFlag<boolean>("PATTERN_PREVIEW") ?? true;
 
-		// load the theme before doing anything else
-		this.canvas = [];
-		this.rows = [];
-		console.log("reload theme layout")
-		await this.reloadTheme(true);
-
-		// initialize the channel layout for this editor
-		this.initChannels();
-
-		// load the row number generator function
-		this.getRowNumber = loadFlag<boolean>("ROW_NUM_IN_HEX") ?? false;
-
-		// load the row number generator function
-		this.drawPatternPreview = loadFlag<boolean>("PATTERN_PREVIEW") ?? true;
-
-		// load the row highlights
-		this.rowHighlights = [ 256, 256, ];
-
-		requestAnimationFrame(() => {
-			// initialize the scrolling region size
-			this.updateScrollerSize();
-
-			// helper function for updating scrolling position and capping it
-			const scroll = (delta:number) => {
-				// update the scrolling position based on delta
-				this.currentRow = Math.round((delta * 0.03) + this.currentRow);
-
-				// check clamping scrolling position above 0th
-				if(this.currentRow <= 0) {
-					this.currentRow = 0;
-
-				} else {
-					// calculate the maximum scrolling position
-					const max = (this.tab.matrix.matrixlen * (this.tab.module?.patternRows ?? 64)) - 1;
-
-					// check clamping scrolling position below last
-					if(this.currentRow > max) {
-						this.currentRow = max;
-					}
-				}
-
-				// go to handle scrolling, reloading, drawing, etc
-				this.handleScrolling();
-			}
+			// load the row highlights
+			this.rowHighlights = [ 256, 256, ];
 
 			// add handler for vertical and horizontal scrolling
 			this.scrollwrapper.addEventListener("wheel", (e) => {
@@ -121,38 +72,127 @@ export class PatternEditor implements UIElement {
 
 				if(e.deltaY) {
 					// there is vertical movement, call the special scroll handler
-					scroll(e.deltaY);
+					this.scroll(e.deltaY);
 				}
 			}, { passive: false, });
 
-			// create a timeout object. This allows us to defer updating scrolling until the user has reasonably stopped scrolling.
-			let timeout:null|NodeJS.Timeout = null;
+			this.reloadTheme(true).then(() => {
+				// return the main element
+				res(this.element);
 
-			// when window resizes, make sure to change scroll position as well
-			window.addEventListener("resize", () => {
-				// if there was a previous timeout, clear it
-				if(timeout) {
-					clearTimeout(timeout);
-				}
+				requestAnimationFrame(() => {
+					// create a timeout object. This allows us to defer updating scrolling until the user has reasonably stopped scrolling.
+					let timeout:null|NodeJS.Timeout = null;
 
-				// create a new timeout in 50ms, to update scrolling size, reload canvases, and to call the scroll handler
-				timeout = setTimeout(async() => {
-					timeout = null;
+					// this makes so that when the width changes, not everything will be updated. This saves some cpu time
+					let height = this.element.offsetHeight;
 
-					// update the scrolling region size
-					this.updateScrollerSize();
+					// when window resizes, make sure to change scroll position as well
+					window.addEventListener("resize", () => {
+						// if there was a previous timeout, clear it
+						if(timeout) {
+							clearTimeout(timeout);
+						}
 
-					// reload the number of patterns that need to be visible
-					await this.refreshPatternAmount(false);
+						// create a new timeout in 50ms, to update scrolling size, reload canvases, and to call the scroll handler
+						timeout = setTimeout(async() => {
+							timeout = null;
 
-					// update horizontal scrolling
-					this.scrollHoriz(0);
+							// ignore this all if tab was not loaded
+							if(!this.tab) {
+								return;
+							}
 
-					// call the special scroll handler, mainly to update the current position and to redraw canvases
-					scroll(0);
-				}, 50);
+							// update scrolling size
+							this.updateScrollerSize();
+							this.scrollHoriz(0);
+
+							// check if height was changed at all
+							if(this.element.offsetHeight === height) {
+								return;
+							}
+
+							// update the scrolling region size
+							height = this.element.offsetHeight;
+
+							// reload the number of patterns that need to be visible
+							await this.refreshPatternAmount(false);
+
+							// call the special scroll handler, mainly to update the current position and to redraw canvases
+							this.scroll(0);
+						}, 50);
+					});
+				});
+			}).catch(rej);
+		});
+	}
+
+	// helper function for updating scrolling position and capping it
+	private scroll(delta:number) {
+		// update the scrolling position based on delta
+		this.currentRow = Math.round((delta * 0.03) + this.currentRow);
+
+		// check clamping scrolling position above 0th
+		if(this.currentRow <= 0) {
+			this.currentRow = 0;
+
+		} else {
+			// calculate the maximum scrolling position
+			const max = (this.tab.matrix.matrixlen * (this.tab.module?.patternRows ?? 64)) - 1;
+
+			// check clamping scrolling position below last
+			if(this.currentRow > max) {
+				this.currentRow = max;
+			}
+		}
+
+		// go to handle scrolling, reloading, drawing, etc
+		this.handleScrolling();
+	}
+
+	/**
+	 * Function to load the component
+	 */
+	public load(pass:number): boolean|Promise<boolean> {
+		// component loads in pass 2
+		if(pass !== 2) {
+			return pass < 2;
+		}
+
+		return new Promise((res, rej) => {
+			// reset some variables
+			this.currentRow = 0;
+
+			// initialize the channel layout for this editor
+			this.initChannels();
+
+			requestAnimationFrame(() => {
+				// initialize the scrolling region size
+				this.updateScrollerSize();
+
+				this.refreshPatternAmount(true).then(() => {
+					// forcibly apply scrolling effects
+					this.scroll(0);
+
+					// no moar passes
+					res(false);
+				}).catch(rej);
 			});
 		});
+	}
+
+	/**
+	 * Function to dispose of this component
+	 */
+	public unload(): boolean {
+		// back-up canvases and rows, then reset the arrays
+		const c = this.canvas, r = this.rows;
+		this.canvas = []; this.rows = [];
+
+		// dispose all workers
+		c?.forEach((w) => w.dispose());
+		r?.forEach((w) => w.dispose());
+		return false;
 	}
 
 	/**
@@ -634,16 +674,9 @@ export class PatternEditor implements UIElement {
 		const amount = !this.drawPatternPreview ? 0 :
 			Math.ceil(((this.scrollHeight / this.dataHeight) + (this.visibleSafeHeight * 2)) / patternRows);
 
-		console.log("refresh patterns", amount, this.canvas?.length)
-
 		if(force || (this.canvas?.length - 1) !== amount) {
 			// remove old canvases so everything can be updated
-			this.canvas?.forEach((c) => c.dispose());
-			this.rows?.forEach((c) => c.dispose());
-
-			// clear the canvas lists
-			this.canvas = [];
-			this.rows = [];
+			this.unload();
 
 			// generate each canvas
 			for(let c = 0;c <= amount; c++) {
@@ -661,7 +694,6 @@ export class PatternEditor implements UIElement {
 				x.updateChannelWidths();
 
 				// force update canvas theme
-				console.log("refresh theme")
 				await x.reloadTheme();
 
 				// clear the canvas void
@@ -676,7 +708,6 @@ export class PatternEditor implements UIElement {
 				this.rows.push(y);
 
 				// force update canvas theme
-				console.log("refresh theme row")
 				await y.reloadTheme();
 
 				// reload graphics
@@ -821,7 +852,6 @@ export class PatternEditor implements UIElement {
 	 * Helper function to inform that the theme was reloaded
 	 */
 	public async reloadTheme(preload:boolean):Promise<void> {
-		console.log("reload theme global", this.canvas?.length, this.rows?.length)
 		// request every canvas to reload theme
 		const promises = [ ...this.canvas, ...this.rows, ].map((c) => c.reloadTheme());
 
@@ -835,7 +865,7 @@ export class PatternEditor implements UIElement {
 		];
 
 		// update backdrop color
-		this.scrollwrapper.style.backgroundColor = this.backdropColors[this.tab.recordMode ? 1 : 0];
+		this.scrollwrapper.style.backgroundColor = this.backdropColors[this.tab?.recordMode ? 1 : 0];
 
 		// load the tables handling the focus bar colors
 		this.focusBarColorNormal = [
@@ -881,15 +911,6 @@ export class PatternEditor implements UIElement {
 		this.focusBar.style.backgroundColor = this.focusBarColorNormal[hid];
 		// @ts-expect-error This property does exist, but TypeScript doesn't recognize it
 		this.focusBar.style.mixBlendMode = this.focusBarBlendNormal[hid];
-	}
-
-	/**
-	 * Function to dispose of this pattern editor
-	 */
-	public dispose(): void {
-		// dispose all canvas workers
-		this.canvas.forEach((c) => c.dispose());
-		this.rows.forEach((c) => c.dispose());
 	}
 }
 

@@ -1,4 +1,5 @@
 import electron from "electron/main";
+import { Tab } from "../ui/misc/tab";
 import { ZorroEvent, ZorroEventEnum } from "./events";
 
 /**
@@ -159,6 +160,146 @@ export function shortcutDirection(direction:string|undefined): undefined|Positio
  */
 export interface UIElement extends UIShortcutHandler {
 	element:HTMLElement;
+}
+
+/**
+ * An interface for UI components that have some basic shared functions to facilitate UI loading in steps
+ */
+export interface UIComponent<T> {
+	/**
+	 * The main HTML element for this component
+	 */
+	element: T;
+
+	/**
+	 * The tab that this component is apart of
+	 */
+	tab: Tab,
+
+	/**
+	 * Simple function for initializing this component. This function *must* be possible to ran out of order! Also, must NOT use the `tab` property
+	 */
+	init: () => T|Promise<T>;
+
+	/**
+	 * The function that handles loading this component. This function *must* be possible to be ran out of order. Instead, it
+	 * should use the current pass to decide whether it can load. Previous passes can then load anything that this component depends on.
+	 *
+	 * @param pass This is the current pass number. In theory, there is no limit to this
+	 * @returns Boolean indicating whether the component requires another pass to load fully
+	 */
+	load: (pass:number) => boolean|Promise<boolean>;
+
+	/**
+	 * The function that handles unloading this component. This function *must* be possible to be ran out of order. Instead, it
+	 * should use the current pass to decide whether it can unload. Previous passes can then unload anything that this component depends on.
+	 *
+	 * @param pass This is the current pass number. In theory, there is no limit to this
+	 * @returns Boolean indicating whether the component requires another pass to unload fully
+	 */
+	unload: (pass:number) => boolean|Promise<boolean>;
+}
+
+/**
+ * Helper class to deal with UI components
+ */
+export class UIComponentStore<T extends UIComponent<HTMLElement>> {
+	/**
+	 * Stored components for this class
+	 */
+	public components: { [key:string]: T };
+
+	/**
+	 * Initialize this component store
+	 */
+	constructor() {
+		this.components = {};
+	}
+
+	/**
+	 * Function to get a specific component from stored components, cast to a specific type.
+	 * Warning: **This is an unsafe cast, use at your own risk!**
+	 *
+	 * @param name The name of the component to fetch
+	 * @returns `undefined` or the component requested, cast to `Y`
+	 */
+	public get<Y>(name:string): Y|undefined {
+		return this.components[name] as unknown as Y|undefined;
+	}
+
+	/**
+	 * Function to add a component to this component store
+	 *
+	 * @param component The component to add to this store
+	 * @returns The element of the component
+	 */
+	public addComponent<Y extends HTMLElement>(name:string, component:T): Y|Promise<Y> {
+		this.components[name] = component;
+
+		// initialize the component and return the element for it
+		return component.init() as Y|Promise<Y>;
+	}
+
+	/**
+	 * Function to tell all components to load. This will make sure all components will load at their own preferred way
+	 *
+	 * @param maxpass The maximum number of passes until an error will be thrown
+	 * @returns A promise that resolves once all the functions are completed
+	 */
+	public loadComponents(maxpass:number): Promise<void> {
+		return this.handleComponentFunc(maxpass, "load");
+	}
+
+	/**
+	 * Function to tell all components to unload. This will make sure all components will unload at their own preferred way
+	 *
+	 * @param maxpass The maximum number of passes until an error will be thrown
+	 * @returns A promise that resolves once all the functions are completed
+	 */
+	public unloadComponents(maxpass:number): Promise<void> {
+		return this.handleComponentFunc(maxpass, "unload");
+	}
+
+	/**
+	 * Function to tell all components to use a different tab internally. This should not directly lead to any side-effects.
+	 *
+	 * @param tab The tab to use for this function
+	 */
+	public setComponentTab(tab:Tab): void {
+		Object.values(this.components).forEach((c) => c.tab = tab);
+	}
+
+	/**
+	 * Helper function to actually execute the function calls and passes. This code handles all the hard work,
+	 * having the same algorithm for multiple similar functions.
+	 *
+	 * @param maxpass The maximum number of passes until an error will be thrown
+	 * @param func The name of the function to call
+	 * @returns A promise that resolves once all the functions are completed
+	 */
+	private async handleComponentFunc(maxpass:number, func:"load"|"unload"): Promise<void> {
+		let pass = -1;
+
+		// eslint-disable-next-line no-constant-condition
+		while(true) {
+			// increase the pass counter and make sure it doesnt go too high!
+			if(++pass > maxpass) {
+				throw new Error("Maximum UI load pass reached! This is an internal bug, please report to developers!");
+			}
+
+			// run each component update function
+			const _p = pass;
+			const promises = Object.values(this.components).map((c) => c[func](_p));
+
+			// await all the promises and see if any boolean was `true`
+			const result = (await Promise.all(promises)).reduce((a, b) => a || b, false);
+
+			// if all were false, bail out
+			if(!result) {
+				return;
+			}
+		}
+	}
 }
 
 /**

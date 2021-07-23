@@ -52,9 +52,9 @@ import { addShortcutReceiver, doShortcut } from "../misc/shortcuts";
 import { loadDefaultToolbar } from "../elements/toolbar/toolbar";
 import { loadFlag, SettingsTypes } from "../../api/files";
 import { Module, Project } from "../misc/project";
-import { clearChildren, fadeToLayout, loadTransition, removeTransition } from "../misc/layout";
+import { fadeToLayout, loadTransition, removeTransition } from "../misc/layout";
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../api/events";
-import { volumeSlider, SliderEnum, simpleValue } from "../elements/slider/slider";
+import { createVolumeSlider, simpleValue, SimpleValueReturn, SliderEnum } from "../elements/slider/slider";
 import { closePopups, confirmationDialog, createFilename, PopupColors, PopupSizes } from "../elements/popup/popup";
 import { Undo } from "../../api/undo";
 import { MatrixEditor } from "../elements/matrixeditor/main";
@@ -65,9 +65,103 @@ import { MIDI } from "../misc/MIDI";
 /* ipc communication */
 import "../../system/ipc/html editor";
 import { loadTheme, reloadTheme } from "../misc/theme";
-import { createBar } from "../elements/playbuttonsbar/main";
 import { PlayMode, Tab } from "../misc/tab";
 import { enableMediaKeys } from "../misc/media keys";
+import { UIComponent, UIComponentStore, UIShortcutHandler } from "../../api/ui";
+import { PlayBar } from "../elements/playbuttonsbar/main";
+
+// stored list of components active
+const components = new UIComponentStore();
+
+// request the appPath variable from main thread
+window.ipc.ui.path().then(async() => {
+	// TODO: Temporary code to initiate the audio system with an emulator and set volume. Bad!
+	window.ipc.audio?.setChip(loadFlag<string>("CHIP") ?? "");
+
+	// STEP 1: Load project and tab
+	if(loadFlag<boolean>("OPEN_PREVIOUS")) {
+		// get the cookie for the previously opened project
+		const url = await window.ipc.cookie.get("lastproject");
+
+		try {
+			// check if an url was provided
+			if((url?.length ?? 0) > 0) {
+				// attempt to load project
+				const p = await Project.loadProject(url as string);
+
+				if(p) {
+					// load as a tab
+					Tab.active = new Tab(p);
+				}
+			}
+
+		} catch(ex) { /* ignore */ }
+	}
+
+	// if no valid tab is loaded, create a new tab with a blank project
+	if(!Tab.active) {
+		const p = await Project.createProject();
+
+		if(p) {
+			// load as a tab
+			Tab.active = new Tab(p);
+		}
+	}
+
+	// let the other windows know about this project
+	window.ipc.project?.init(Tab.active?.project);
+
+	// STEP 2: Load shortcuts and toolbar
+	await loadMainShortcuts();
+	loadDefaultToolbar(true);
+
+	// STEP 3: load system theme
+	const themes = await window.ipc.theme.findAll();
+	const tcur = themes[loadFlag<string>("THEME") ?? "prototype"];
+
+	if(tcur) {
+		loadTheme(tcur);
+	}
+
+	// STEP 4: initialize the layout and components
+	await initLayout();
+
+	// STEP 5: initialize miscellaneous less important systems
+	initShortcutHandler();
+	MIDI.init();
+	await enableMediaKeys();
+
+	// enable discord RPC
+	if(loadFlag<boolean>("DISCORD_RPC")) {
+		// load Discord RPC integration
+		window.ipc.rpc?.init();
+		import("../misc/rpc").catch(console.error);
+	}
+
+	// STEP 6: make all the UI components load
+	components.setComponentTab(Tab.active as Tab);
+	await components.loadComponents(10);
+
+}).catch(console.error);
+
+// handler for receiving shortcuts
+function initShortcutHandler() {
+	// eslint-disable-next-line require-await
+	addShortcutReceiver("layout", async(data, e, state) => {
+		switch(data.shift()) {
+			case "matrix":
+				return components.get<UIShortcutHandler>("matrix")?.receiveShortcut(data, e, state) ?? false;
+
+			case "pattern":
+				return components.get<UIShortcutHandler>("editor")?.receiveShortcut(data, e, state) ?? false;
+
+			case "piano":
+				return components.get<UIShortcutHandler>("piano")?.receiveShortcut(data, e, state) ?? false;
+		}
+
+		return false;
+	});
+}
 
 async function loadMainShortcuts() {
 	// load all.ts asynchronously. This will setup our environment better than we can do here
@@ -109,16 +203,18 @@ async function loadMainShortcuts() {
 				return false;
 			}
 
-			// dispose of the pattern editor
-			if(patternEditor) {
-				patternEditor.dispose();
-			}
+			// unload all components properly
+			await components.unloadComponents(10);
 
 			// create a tab for the project
 			Tab.active = new Tab(p);
 
 			// let all windows know about the loaded project
 			window.ipc.project?.init(p);
+
+			// load all of the components with this new tab
+			components.setComponentTab(Tab.active as Tab);
+			await components.loadComponents(10);
 
 			// reload layout
 			await fadeToLayout(editorLayout);
@@ -146,16 +242,18 @@ async function loadMainShortcuts() {
 				return false;
 			}
 
-			// dispose of the pattern editor
-			if(patternEditor) {
-				patternEditor.dispose();
-			}
+			// unload all components properly
+			await components.unloadComponents(10);
 
 			// create a tab for the project
 			Tab.active = new Tab(p);
 
 			// let all windows know about the loaded project
 			window.ipc.project?.init(p);
+
+			// load all of the components with this new tab
+			components.setComponentTab(Tab.active as Tab);
+			await components.loadComponents(10);
 
 			// reload layout
 			await fadeToLayout(editorLayout);
@@ -307,109 +405,6 @@ async function loadMainShortcuts() {
 	});
 }
 
-// request the appPath variable from main thread
-window.ipc.ui.path().then(async() => {
-	// TODO: Temporary code to initiate the system theme
-	const themes = await window.ipc.theme.findAll();
-	const tcur = themes[loadFlag<string>("THEME") ?? "prototype"];
-
-	if(tcur) {
-		loadTheme(tcur);
-	}
-
-	// TODO: Temporary code to initiate the audio system with an emulator and set volume. Bad!
-	window.ipc.audio?.setChip(loadFlag<string>("CHIP") ?? "");
-
-	// create the loading animation
-	loadTransition();
-	await loadMainShortcuts();
-
-	/* load the menu */
-	loadDefaultToolbar(true);
-
-	// enable discord RPC
-	if(loadFlag<boolean>("DISCORD_RPC")) {
-		// load Discord RPC integration
-		window.ipc.rpc?.init();
-		import("../misc/rpc").catch(console.error);
-	}
-
-	// TEMP volume hack
-	setTimeout(() => {
-		volumeSlider(SliderEnum.Small).catch(console.error);
-	}, 100);
-
-	// check if we should attempt loading the previous project
-	if(loadFlag<boolean>("OPEN_PREVIOUS")) {
-		// get the cookie for the project
-		const url = await window.ipc.cookie.get("lastproject");
-
-		try {
-			if((url?.length ?? 0) > 0) {
-				// attempt to load project
-				const p = await Project.loadProject(url as string);
-
-				if(p) {
-					// load as a tab
-					Tab.active = new Tab(p);
-				}
-			}
-
-		} catch(ex) { /* ignore */ }
-	}
-
-	// if no valid tab is loaded, create a new tab with a blank project
-	if(!Tab.active) {
-		const p = await Project.createProject();
-
-		if(p) {
-			// load as a tab
-			Tab.active = new Tab(p);
-		}
-	}
-
-	// let the other windows know about this project
-	window.ipc.project?.init(Tab.active?.project);
-
-	// load the editor
-	await fadeToLayout(editorLayout);
-
-	// initialize the MIDI input polling
-	MIDI.init();
-
-	// initialize media key functionality
-	await enableMediaKeys();
-
-	// init shortcut handler and remove the loading animation
-	initShortcutHandler();
-	removeTransition();
-
-}).catch(console.error);
-
-// handler for receiving shortcuts
-let matrixEditor: MatrixEditor|undefined;
-let patternEditor: PatternEditor|undefined;
-let piano: Piano|undefined;
-
-// note, this is here just because in testing it might not actually exist!
-function initShortcutHandler() {
-	// eslint-disable-next-line require-await
-	addShortcutReceiver("layout", async(data, e, state) => {
-		switch(data.shift()) {
-			case "matrix":
-				return matrixEditor?.receiveShortcut(data, e, state) ?? false;
-
-			case "pattern":
-				return patternEditor?.receiveShortcut(data, e, state) ?? false;
-
-			case "piano":
-				return piano?.receiveShortcut(data, e, state) ?? false;
-		}
-
-		return false;
-	});
-}
-
 /**
  * Function to change the module and reload the editor
  *
@@ -420,12 +415,10 @@ export async function loadToModule(index:number, func?:() => Promise<void>): Pro
 	loadTransition();
 	Undo.clear();
 
-	if(!await fadeToLayout(async() => {
-		// dispose of the pattern editor
-		if(patternEditor) {
-			patternEditor.dispose();
-		}
+	// unload all components properly
+	await components.unloadComponents(10);
 
+	if(!await fadeToLayout(async() => {
 		// set the active layout
 		await Tab.active?.project.setActiveModuleIndex(true, index);
 
@@ -439,20 +432,23 @@ export async function loadToModule(index:number, func?:() => Promise<void>): Pro
 			return false;
 		}
 
-		// reload layout
-		await editorLayout();
-
 		return true;
 	})) {
 		return;
 	}
 
+	// load all of the components with this new tab
+	components.setComponentTab(Tab.active as Tab);
+	await components.loadComponents(10);
+
 	// only do if index >= 0
 	removeTransition();
 }
 
-// load the layout for this window
-async function editorLayout():Promise<true> {
+/**
+ * Helper function to initialize all the layout components for this screen
+ */
+async function initLayout() {
 	// load the editor parent element as `body`
 	const body = document.getElementById("main_content");
 
@@ -461,14 +457,9 @@ async function editorLayout():Promise<true> {
 		throw new Error("Unable to load editor layout: parent element main_content not found!");
 	}
 
-	if(!Tab.active) {
-		throw new Error("Failed to load editorLayout: No project loaded.");
-	}
-
-	clearChildren(body);
 	/**
 	 * -------------------------------------
-	 * matrix edit     | settings
+	 * matrix edit | settings | instruments
 	 * -------------------------------------
 	 * pattern edit
 	 *           piano (float)
@@ -479,202 +470,46 @@ async function editorLayout():Promise<true> {
 	_top.id = "editor_top";
 	body.appendChild(_top);
 
-	_top.appendChild((matrixEditor = new MatrixEditor(Tab.active)).element);
-
 	const _bot = document.createElement("div");
 	_bot.id = "editor_bottom";
 	body.appendChild(_bot);
 
-	// add the piano overlay
-	_bot.appendChild((piano = await Piano.create(Tab.active)).element);
+	// load all the standard components
+	_bot.appendChild(await components.addComponent("editor", new PatternEditor()));
+	_top.appendChild(await components.addComponent("matrix", new MatrixEditor()));
+	_bot.appendChild(await components.addComponent("piano", new Piano()));
 
-	// add the pattern editor here
-	_bot.appendChild((patternEditor = (await PatternEditor.create(Tab.active))).element);
-
-	_top.appendChild(await makeSettingsPane(Tab.active));
-
-	// reload module to update UI
-	requestAnimationFrame(async() => {
-		await Tab.active?.project.setActiveModuleIndex(false);
-	});
-	return true;
-}
-
-// load event dispatchers
-const projectPatternRows = ZorroEvent.createEvent(ZorroEventEnum.ProjectPatternRows);
-
-/**
- * Helper function to make a settings pane in the top row
- */
-async function makeSettingsPane(tab:Tab) {
 	// create the base pane element
-	const e = document.createElement("div");
-	e.id = "settingspane";
+	const _set = document.createElement("div");
+	_set.id = "settingspane";
+	_top.appendChild(_set);
 
 	// remove the middle click scroll thing... TEMP
-	e.addEventListener("mousedown", (e) => {
+	_set.addEventListener("mousedown", (e) => {
 		if(e.button === 1) {
 			e.preventDefault();
 		}
 	});
 
 	// the top and bottom panes
-	const top = document.createElement("div");
-	const bot = document.createElement("div");
-	e.appendChild(top);
-	e.appendChild(bot);
+	const stop = document.createElement("div");
+	const sbot = document.createElement("div");
+	_set.appendChild(stop);
+	_set.appendChild(sbot);
 
 	// add volume slider and buttons bar in the top row
-	top.appendChild(createBar());
-	top.appendChild(await volumeSlider(SliderEnum.Horizontal | SliderEnum.Medium));
+	stop.appendChild(await components.addComponent("playbar", new PlayBar()));
+	stop.appendChild(await components.addComponent("volume", createVolumeSlider(SliderEnum.Horizontal | SliderEnum.Medium)));
 
 	// create the child panes. Create 2 of them
-	const pane1 = document.createElement("div");
-	const pane2 = document.createElement("div");
-	bot.appendChild(pane1);
-	bot.appendChild(pane2);
-
-	// make a helper function to generate all those value boxes
-	const valueBox = async(range:[ number, number, ], initial:number, label:string, settings:number, change:(value:number) => void) => {
-		// create the value input box
-		const s = await simpleValue(SliderEnum.Horizontal | SliderEnum.Medium | SliderEnum.PlusMinus, "", settings, change);
-
-		// initialize the range and value of the box
-		s.setRange(range[0], range[1]);
-		s.setValue(initial.toString(), initial);
-
-		// initialize the styles
-		s.label.style.width = "80px";
-		s.label.style.paddingLeft = "5px";
-		s.label.innerHTML = label;
-
-		// return the data
-		return s;
-	}
-
-	{
-		// create the octave element
-		const { element, setValue, setRange, label, } = await valueBox([ -100, 100, ], 0, "Octave", 0, async(value:number) => {
-			if(piano) {
-				// update the octave value
-				await piano.setOctave(value, false);
-			}
-		});
-
-		// tell the piano how to inform when the range is updated outside of the valuebox
-		piano?.onRangeUpdate(setRange);
-
-		// tell the piano how to inform when the octave is updated outside of the valuebox
-		piano?.onOctaveUpdate((value:number) => setValue(value.toString(), value));
-
-		// append it to the first pane
-		pane1.appendChild(element);
-
-		// make a title
-		label.title = "The current octave for the piano roll.";
-	}
-
-	{
-		// create the row element
-		const { element, label, setValue, } = await valueBox([ 2, 256, ], 64, "Rows", 2, async(value:number) => {
-			// update everything with this new value
-			(tab.module as Module).patternRows = value;
-			await projectPatternRows(tab.project, tab.module as Module, value);
-
-			// project is now dirty!
-			tab.project.dirty();
-		});
-
-		// append it to the first pane
-		pane1.appendChild(element);
-
-		// make a title
-		label.title = "Number of rows per pattern.";
-
-		// add a new function for when a module loads
-		moduleLoadFunc.push(async(module) => {
-			// update textbox and pattern editor
-			setValue(module.patternRows.toString(), module.patternRows);
-			await projectPatternRows(tab.project, module, module.patternRows);
-		});
-	}
-
-	{
-		// create the highlight a element
-		const { element, label, setValue, } = await valueBox([ 1, 256, ], 1, "Highlight A", 1, (value) => {
-			// update pattern editor and module with the new value
-			patternEditor?.changeHighlight(1, value);
-			(tab.module as Module).highlights[1] = value;
-
-			// project is now dirty!
-			tab.project.dirty();
-		});
-
-		// append it to the first pane
-		pane1.appendChild(element);
-
-		// force the update
-
-		// make a title
-		label.title = "Highlight every x rows. Usually for beats.";
-
-		// add a new function for when a module loads
-		moduleLoadFunc.push((module) => {
-			// update textbox and pattern editor
-			setValue(module.highlights[1].toString(), module.highlights[1]);
-			patternEditor?.changeHighlight(1, module.highlights[1]);
-		});
-	}
-
-	{
-		// create the highlight b element
-		const { element, label, setValue, } = await valueBox([ 1, 256, ], 1, "Highlight B", 1, (value) => {
-			// update pattern editor and module with the new value
-			patternEditor?.changeHighlight(0, value);
-			(tab.module as Module).highlights[0] = value;
-
-			// project is now dirty!
-			tab.project.dirty();
-		});
-
-		// append it to the first pane
-		pane1.appendChild(element);
-
-		// make a title
-		label.title = "Highlight every x rows. Usually for bars.";
-
-		// add a new function for when a module loads
-		moduleLoadFunc.push((module) => {
-			// update textbox and pattern editor
-			setValue(module.highlights[0].toString(), module.highlights[0]);
-			patternEditor?.changeHighlight(0, module.highlights[0]);
-		});
-	}
-
-	{
-		const e = document.createElement("div");
-		e.id = "midi";
-		pane2.appendChild(e);
-	}
-
-	return e;
+	sbot.appendChild(await components.addComponent("settingsleft", new SettingsPanelLeft()));
+	sbot.appendChild(await components.addComponent("settingsright", new SettingsPanelRight()));
 }
 
-/**
- * Various functions to be executed when a new module is loaded
- */
-const moduleLoadFunc: ((module:Module) => (Promise<void>|void))[] = [];
-
-/**
- * Event listener and handler for when a new module loads, which allows updating various values related to the module itself
- */
-// eslint-disable-next-line require-await
-ZorroEvent.addListener(ZorroEventEnum.SelectModule, async(event, project, module) => {
-	if(module) {
-		// run module functions
-		await Promise.all(moduleLoadFunc.map((f) => f(module)));
-	}
-});
+// load the layout for this window
+async function editorLayout():Promise<true> {
+	return true;
+}
 
 /**
  * Event listener and handler for program exit, making ABSOLUTELY SURE that the user saves their progress!!!
@@ -724,5 +559,193 @@ export async function askSavePopup():Promise<boolean> {
 	} else {
 		// see if we can close the active popups
 		return closePopups();
+	}
+}
+
+// load event dispatchers
+const projectPatternRows = ZorroEvent.createEvent(ZorroEventEnum.ProjectPatternRows);
+
+/**
+ * Class for dealing with the left side of the settings pane
+ */
+class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
+	public element!:HTMLDivElement;
+	public tab!:Tab;
+
+	/**
+	 * Function to initialize the component
+	 */
+	public async init(): Promise<HTMLDivElement> {
+		// create the main element
+		this.element = document.createElement("div");
+
+		// make a helper function to generate all those value boxes
+		const valueBox = async(range:[ number, number, ], initial:number, label:string, settings:number, change:(value:number) => void) => {
+			// create the value input box
+			const s = await simpleValue(SliderEnum.Horizontal | SliderEnum.Medium | SliderEnum.PlusMinus, "", settings, change);
+
+			// initialize the range and value of the box
+			s.setRange(range[0], range[1]);
+			s.setValue(initial.toString(), initial);
+
+			// initialize the styles
+			s.label.style.width = "80px";
+			s.label.style.paddingLeft = "5px";
+			s.label.innerHTML = label;
+
+			// return the data
+			return s;
+		}
+
+		// create the octave element
+		this.octave = await valueBox([ -100, 100, ], 0, "Octave", 0, async(value:number) => {
+			const piano = components.get<Piano>("piano");
+
+			if(piano) {
+				// update the octave value
+				await piano.setOctave(value, false);
+			}
+		});
+
+		// make a title
+		this.octave.label.title = "The current octave for the piano roll.";
+
+		// create the row element
+		this.rows = await valueBox([ 2, 256, ], 64, "Rows", 2, async(value:number) => {
+			// update everything with this new value
+			(this.tab.module as Module).patternRows = value;
+			await projectPatternRows(this.tab.project, this.tab.module as Module, value);
+
+			// project is now dirty!
+			this.tab.project.dirty();
+		});
+
+		// make a title
+		this.rows.label.title = "Number of rows per pattern.";
+
+		// create the highlight a element
+		this.hla = await valueBox([ 1, 256, ], 1, "Highlight A", 1, (value) => {
+			// update pattern editor and module with the new value
+			components.get<PatternEditor>("editor")?.changeHighlight(1, value);
+			(this.tab.module as Module).highlights[1] = value;
+
+			// project is now dirty!
+			this.tab.project.dirty();
+		});
+
+		// make a title
+		this.hla.label.title = "Highlight every x rows. Usually for beats.";
+
+		// append it to the first pane
+
+		// create the highlight a element
+		this.hlb = await valueBox([ 1, 256, ], 1, "Highlight B", 1, (value) => {
+			// update pattern editor and module with the new value
+			components.get<PatternEditor>("editor")?.changeHighlight(0, value);
+			(this.tab.module as Module).highlights[0] = value;
+
+			// project is now dirty!
+			this.tab.project.dirty();
+		});
+
+		// make a title
+		this.hlb.label.title = "Highlight every x rows. Usually for bars.";
+
+		// append all items in order
+		this.element.appendChild(this.octave.element);
+		this.element.appendChild(this.rows.element);
+		this.element.appendChild(this.hla.element);
+		this.element.appendChild(this.hlb.element);
+
+		return this.element;
+	}
+
+	// these are the various elements that are loaded as settings
+	private octave!: SimpleValueReturn;
+	private rows!: SimpleValueReturn;
+	private hla!: SimpleValueReturn;
+	private hlb!: SimpleValueReturn;
+
+	/**
+	 * Function to load the component
+	 */
+	public async load(pass:number): Promise<boolean> {
+		// component loads in pass 1
+		if(pass !== 1) {
+			return pass < 1;
+		}
+
+		// prepare octave handler
+		const piano = components.get<Piano>("piano");
+
+		// tell the piano how to inform when the range is updated outside of the valuebox
+		piano?.onRangeUpdate(this.octave.setRange);
+
+		// tell the piano how to inform when the octave is updated outside of the valuebox
+		piano?.onOctaveUpdate((value:number) => this.octave.setValue(value.toString(), value));
+
+		// initialize rows element
+		this.rows.setValue((this.tab.module as Module).patternRows.toString(), (this.tab.module as Module).patternRows);
+		await projectPatternRows(this.tab.project, this.tab.module as Module, (this.tab.module as Module).patternRows);
+
+		// load editor element
+		const edit = components.get<PatternEditor>("editor");
+
+		// initialize highlight a element
+		this.hla.setValue((this.tab.module as Module).highlights[1].toString(), (this.tab.module as Module).highlights[1]);
+		edit?.changeHighlight(1, (this.tab.module as Module).highlights[1]);
+
+		// initialize highlight b element
+		this.hlb.setValue((this.tab.module as Module).highlights[0].toString(), (this.tab.module as Module).highlights[0]);
+		edit?.changeHighlight(0, (this.tab.module as Module).highlights[0]);
+		return false;
+	}
+
+	/**
+	 * Function to dispose of this component
+	 */
+	public unload(): boolean {
+		return false;
+	}
+}
+
+/**
+ * Class for dealing with the right side of the settings pane
+ */
+class SettingsPanelRight implements UIComponent<HTMLDivElement> {
+	public element!:HTMLDivElement;
+	public tab!:Tab;
+
+	/**
+	 * Function to initialize the component
+	 */
+	public init(): HTMLDivElement {
+		// create the main element
+		this.element = document.createElement("div");
+
+		// create the midi container
+		const midi = document.createElement("div");
+		midi.id = "midi";
+		this.element.appendChild(midi);
+		return this.element;
+	}
+
+	/**
+	 * Function to load the component
+	 */
+	public load(pass:number): boolean {
+		// component loads in pass 1
+		if(pass !== 1) {
+			return pass < 1;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Function to dispose of this component
+	 */
+	public unload(): boolean {
+		return false;
 	}
 }

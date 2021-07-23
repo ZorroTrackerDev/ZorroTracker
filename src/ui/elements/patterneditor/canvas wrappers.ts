@@ -55,7 +55,6 @@ class EditorCanvasBase {
 	 * Clear all the resources this PatternCanvas uses
 	 */
 	public dispose(): void {
-		console.log("dispose")
 		// remove the canvas from DOM
 		this.element.parentElement?.removeChild(this.element);
 

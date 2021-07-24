@@ -43,3 +43,25 @@
 		}
 	}
 }
+
+// special loading system
+#loadeditor {
+	position: absolute;
+	left: 0; top: 0;
+	right: 0; bottom: 0;
+	z-index: 1000;
+	pointer-events: all;
+	cursor: wait;
+
+	background: #111;
+	backdrop-filter: sepia(100%);
+
+	&.fade {
+		transition: background-color .33s ease-in-out, backdrop-filter .33s ease-in-out;
+	}
+
+	&.hide {
+		background: transparent;
+		backdrop-filter: sepia(0%);
+	}
+}

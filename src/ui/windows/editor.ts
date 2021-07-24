@@ -52,7 +52,6 @@ import { addShortcutReceiver, doShortcut } from "../misc/shortcuts";
 import { loadDefaultToolbar } from "../elements/toolbar/toolbar";
 import { loadFlag, SettingsTypes } from "../../api/files";
 import { Module, Project } from "../misc/project";
-import { fadeToLayout, loadTransition, removeTransition } from "../misc/layout";
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../api/events";
 import { createVolumeSlider, simpleValue, SimpleValueReturn, SliderEnum } from "../elements/slider/slider";
 import { closePopups, confirmationDialog, createFilename, PopupColors, PopupSizes } from "../elements/popup/popup";
@@ -78,7 +77,11 @@ window.ipc.ui.path().then(async() => {
 	// TODO: Temporary code to initiate the audio system with an emulator and set volume. Bad!
 	window.ipc.audio?.setChip(loadFlag<string>("CHIP") ?? "");
 
-	// STEP 1: Load project and tab
+	// STEP 1: Load shortcuts and toolbar
+	await loadMainShortcuts();
+	loadDefaultToolbar(true);
+
+	// STEP 2: Load project and tab
 	if(loadFlag<boolean>("OPEN_PREVIOUS")) {
 		// get the cookie for the previously opened project
 		const url = await window.ipc.cookie.get("lastproject");
@@ -111,36 +114,42 @@ window.ipc.ui.path().then(async() => {
 	// let the other windows know about this project
 	window.ipc.project?.init(Tab.active?.project);
 
-	// STEP 2: Load shortcuts and toolbar
-	await loadMainShortcuts();
-	loadDefaultToolbar(true);
+	requestAnimationFrame(() => {
+		requestAnimationFrame(async() => {
+			// make the loading bar fade in properly
+			document.getElementById("loadeditor")?.classList.add("fade");
 
-	// STEP 3: load system theme
-	const themes = await window.ipc.theme.findAll();
-	const tcur = themes[loadFlag<string>("THEME") ?? "prototype"];
+			// STEP 3: load system theme
+			const themes = await window.ipc.theme.findAll();
+			const tcur = themes[loadFlag<string>("THEME") ?? "prototype"];
 
-	if(tcur) {
-		loadTheme(tcur);
-	}
+			if(tcur) {
+				loadTheme(tcur);
+			}
 
-	// STEP 4: initialize the layout and components
-	await initLayout();
+			// STEP 4: initialize the layout and components
+			await initLayout();
 
-	// STEP 5: initialize miscellaneous less important systems
-	initShortcutHandler();
-	MIDI.init();
-	await enableMediaKeys();
+			// STEP 5: initialize miscellaneous less important systems
+			initShortcutHandler();
+			MIDI.init();
+			await enableMediaKeys();
 
-	// enable discord RPC
-	if(loadFlag<boolean>("DISCORD_RPC")) {
-		// load Discord RPC integration
-		window.ipc.rpc?.init();
-		import("../misc/rpc").catch(console.error);
-	}
+			// enable discord RPC
+			if(loadFlag<boolean>("DISCORD_RPC")) {
+				// load Discord RPC integration
+				window.ipc.rpc?.init();
+				import("../misc/rpc").catch(console.error);
+			}
 
-	// STEP 6: make all the UI components load
-	components.setComponentTab(Tab.active as Tab);
-	await components.loadComponents(10);
+			// STEP 6: make all the UI components load
+			components.setComponentTab(Tab.active as Tab);
+			await components.loadComponents(10);
+
+			// STEP 7: Hide loading block
+			disableLoading();
+		});
+	});
 
 }).catch(console.error);
 
@@ -191,15 +200,14 @@ async function loadMainShortcuts() {
 			}
 
 			// open loading animation
-			loadTransition();
 			Undo.clear();
+			await enableLoading();
 
 			// try to load the project
 			const p = await Project.loadProject(result);
 
 			// check if loaded and if was allowed to load
 			if(!p || !await Project.setActiveProject(p)){
-				removeTransition();
 				return false;
 			}
 
@@ -216,9 +224,8 @@ async function loadMainShortcuts() {
 			components.setComponentTab(Tab.active as Tab);
 			await components.loadComponents(10);
 
-			// reload layout
-			await fadeToLayout(editorLayout);
-			removeTransition();
+			// remove loading animation
+			disableLoading();
 			return true;
 		},
 
@@ -230,15 +237,14 @@ async function loadMainShortcuts() {
 			}
 
 			// open loading animation
-			loadTransition();
 			Undo.clear();
+			await enableLoading();
 
 			// try to load the project
 			const p = await Project.createProject();
 
 			// check if loaded and if was allowed to load
 			if(!p || !await Project.setActiveProject(p)){
-				removeTransition();
 				return false;
 			}
 
@@ -255,9 +261,8 @@ async function loadMainShortcuts() {
 			components.setComponentTab(Tab.active as Tab);
 			await components.loadComponents(10);
 
-			// reload layout
-			await fadeToLayout(editorLayout);
-			removeTransition();
+			// remove loading animation
+			disableLoading();
 			return true;
 		},
 
@@ -410,30 +415,19 @@ async function loadMainShortcuts() {
  *
  * @param index The module index to load to
  */
-export async function loadToModule(index:number, func?:() => Promise<void>): Promise<void> {
+export async function loadToModule(index:number): Promise<void> {
 	// open loading animation
-	loadTransition();
 	Undo.clear();
+	await enableLoading();
 
 	// unload all components properly
 	await components.unloadComponents(10);
 
-	if(!await fadeToLayout(async() => {
-		// set the active layout
-		await Tab.active?.project.setActiveModuleIndex(true, index);
+	// set the active module
+	await Tab.active?.project.setActiveModuleIndex(true, index);
 
-		// if extra function added, then run it
-		if(func) {
-			await func();
-		}
-
-		// if the index is negative then bail
-		if(index < 0) {
-			return false;
-		}
-
-		return true;
-	})) {
+	// if the index is negative then bail
+	if(index < 0) {
 		return;
 	}
 
@@ -441,8 +435,64 @@ export async function loadToModule(index:number, func?:() => Promise<void>): Pro
 	components.setComponentTab(Tab.active as Tab);
 	await components.loadComponents(10);
 
-	// only do if index >= 0
-	removeTransition();
+	// remove loading animation
+	disableLoading();
+}
+
+/**
+ * helper function to enable the loading animation
+ */
+function enableLoading() {
+	// get the target element
+	const el = document.getElementById("loadeditor");
+
+	if(!el) {
+		return;
+	}
+
+	// pre-emptively set to normal display
+	el.style.display = "";
+
+	// clear the previous timeout if applicable
+	if(loadTM) {
+		clearTimeout(loadTM);
+	}
+
+	// resolve this function in 210ms
+	return new Promise((res) => {
+		setTimeout(() => {
+			// start the hiding animation
+			el.classList.remove("hide");
+			setTimeout(res, 320);
+		}, 25);
+	});
+}
+
+/**
+ * helper function to disable the loading animation
+ */
+let loadTM: NodeJS.Timeout|undefined;
+
+function disableLoading() {
+	// get the target element
+	const el = document.getElementById("loadeditor");
+
+	if(!el) {
+		return;
+	}
+
+	// clear the previous timeout if applicable
+	if(loadTM) {
+		clearTimeout(loadTM);
+	}
+
+	// start the hiding animation
+	el.classList.add("hide");
+
+	// hide the entire element in 210ms
+	loadTM = setTimeout(() => {
+		el.style.display = "none";
+	}, 340);
 }
 
 /**
@@ -504,11 +554,6 @@ async function initLayout() {
 	// create the child panes. Create 2 of them
 	sbot.appendChild(await components.addComponent("settingsleft", new SettingsPanelLeft()));
 	sbot.appendChild(await components.addComponent("settingsright", new SettingsPanelRight()));
-}
-
-// load the layout for this window
-async function editorLayout():Promise<true> {
-	return true;
 }
 
 /**

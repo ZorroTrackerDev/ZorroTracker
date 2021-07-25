@@ -225,7 +225,10 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			}
 
 			// update visible channels
-			this.updateVisibleChannels();
+			if(this.updateVisibleChannels()) {
+				// if changed, also re-render to force channels to show up
+				this.handleScrolling();
+			}
 		}
 	}
 
@@ -537,12 +540,13 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	/**
 	 * The visible channels from left and right
 	 */
-	private visibleChannels!: [ number, number, ];
+	private visibleChannels: [ number, number, ] = [ 0, 0, ];
 
 	/**
 	 * Helper function to update currently visible channels
 	 */
 	private updateVisibleChannels() {
+		const last = this.visibleChannels;
 		this.visibleChannels = [ 0, 0, ];
 
 		// hotfix
@@ -573,7 +577,8 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 
 		this.visibleChannels[1] = ch;
 
-		console.log("visible", this.visibleChannels[0], this.visibleChannels[1])
+		// return a boolean indicating whether the visibles are still the same
+		return this.visibleChannels[0] !== last[0] || this.visibleChannels[1] !== last[1];
 	}
 
 	/**
@@ -873,10 +878,6 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			// calculate canvas y-position
 			const offsetTop = ((pat * patternRows) - this.currentRow);
 			const top = ((offsetTop * this.dataHeight) + this.scrollMiddle) +"px";
-
-			if(pat === this.activePattern) {
-				console.log(co, pat)
-			}
 
 			// invalidate layout if it is not the same pattern or active status doesn't match
 			if(cv.pattern !== pat || (pat === this.activePattern) !== cv.active) {

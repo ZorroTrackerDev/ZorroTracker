@@ -135,6 +135,33 @@ export class RowsCanvas extends EditorCanvasBase {
 	}
 }
 
+export type PatternChannelInfo = {
+	/**
+	 * The width of the channel data
+	 */
+	width: number,
+
+	/**
+	 * The left-position of this channel in the host canvas
+	 */
+	left: number,
+
+	/**
+	 * The right-position of this channel in the host canvas
+	 */
+	right: number,
+
+	/**
+	 * The array of elements to render
+	 */
+	elements: number[],
+
+	/**
+	 * The offsets of elements to render
+	 */
+	offsets: number[],
+}
+
 /**
  * Helper class for each pattern canvas
  */
@@ -153,6 +180,9 @@ export class PatternCanvas extends EditorCanvasBase {
 		// give canvas its class
 		this.element.classList.add("patterncanvas");
 
+		// store channel count
+		this.channels = channels;
+
 		// update a few variables to the worker
 		this.worker.postMessage({ command: "vars", data: {
 			channels, patternlen, dataHeight: parent.dataHeight, getRowNumber: parent.getRowNumber,
@@ -164,13 +194,11 @@ export class PatternCanvas extends EditorCanvasBase {
 	}
 
 	/**
-	 * Helper function to update channel widths for the canvas
+	 * Helper function to update some rendering info
 	 */
-	public updateChannelWidths(): void {
+	public updateRenderInfo(): void {
 		// update positional data to the worker
-		this.worker.postMessage({ command: "posi", data: {
-			right: this.parent.channelPositionsRight, left: this.parent.channelPositionsLeft,
-			elements: this.parent.channelElements,
+		this.worker.postMessage({ command: "renderinfo", data: {
 			width: this.parent.renderAreaWidth - 35,
 		}, });
 	}
@@ -217,21 +245,62 @@ export class PatternCanvas extends EditorCanvasBase {
 	}
 
 	/**
+	 * The channel count of this pattern
+	 */
+	private channels: number;
+
+	/**
+	 * Function to tell the worker its safe to init the channel canvases
+	 *
+	 * @param channel The channel to update now
+	 * @param info Channel information to update with
+	 */
+	public updateChannel(channel:number, info:PatternChannelInfo): void {
+		this.worker.postMessage({ command: "updatech", data: {
+			channel, ...info,
+		}, });
+	}
+
+	/**
 	 * Function to invalidate every row of the canvas
 	 */
 	public invalidateAll(): void {
-		this.invalidateRange(0, this.patternlen);
+		this.invalidateRows(0, this.patternlen);
 	}
 
 	/**
 	 * Invalidate a range of rows in the canvas
 	 *
-	 * @param start The start of the range to invalidate
-	 * @param end The end of the range to invalidate
+	 * @param start The start of the range of rows to invalidate
+	 * @param end The end of the range of rows to invalidate
 	 */
-	public invalidateRange(start:number, end:number): void {
+	public invalidateRows(start:number, end:number): void {
+		// send the invalidate command1
+		this.worker.postMessage({ command: "invalidate", data: { start, end, left: 0, right: this.channels, }, });
+	}
+
+	/**
+	 * Invalidate a range of channels in the canvas
+	 *
+	 * @param left The start of the range of channels to invalidate
+	 * @param right The end of the range of channels to invalidate
+	 */
+	public invalidateChannels(left:number, right:number): void {
 		// send the invalidate command
-		this.worker.postMessage({ command: "invalidate", data: { start, end, }, });
+		this.worker.postMessage({ command: "invalidate", data: { start: 0, end: this.patternlen, left, right, }, });
+	}
+
+	/**
+	 * Invalidate an area of the canvas
+	 *
+	 * @param start The start of the range of rows to invalidate
+	 * @param end The end of the range of rows to invalidate
+	 * @param left The start of the range of channels to invalidate
+	 * @param right The end of the range of channels to invalidate
+	 */
+	public invalidateArea(start:number, end:number, left:number, right:number): void {
+		// send the invalidate command
+		this.worker.postMessage({ command: "invalidate", data: { start, end, left, right, }, });
 	}
 
 	/**
@@ -239,12 +308,14 @@ export class PatternCanvas extends EditorCanvasBase {
 	 *
 	 * @param start The start of the range of rows to render
 	 * @param end The end of the range of rows to render
+	 * @param left The start of the range of channels to invalidate
+	 * @param right The end of the range of channels to invalidate
 	 */
-	public renderPattern(start:number, end:number): void {
+	public render(start:number, end:number, left:number, right:number): void {
 		// set the canvas as not cleared
 		this.isClear = false;
 
 		// send the command to render row
-		this.worker.postMessage({ command: "renderrange", data: { start, end, active: this.active, }, });
+		this.worker.postMessage({ command: "renderrange", data: { start, end, active: this.active, left, right, }, });
 	}
 }

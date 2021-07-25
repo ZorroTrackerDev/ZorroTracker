@@ -60,14 +60,14 @@ import { MatrixEditor } from "../elements/matrixeditor/main";
 import { Piano } from "../elements/piano/piano";
 import { PatternEditor } from "../elements/patterneditor/main";
 import { MIDI } from "../misc/MIDI";
-
-/* ipc communication */
-import "../../system/ipc/html editor";
 import { loadTheme, reloadTheme } from "../misc/theme";
 import { PlayMode, Tab } from "../misc/tab";
 import { enableMediaKeys } from "../misc/media keys";
 import { UIComponent, UIComponentStore, UIShortcutHandler } from "../../api/ui";
 import { PlayBar } from "../elements/playbuttonsbar/main";
+
+/* ipc communication */
+import "../../system/ipc/html editor";
 
 // stored list of components active
 const components = new UIComponentStore();

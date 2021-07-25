@@ -4,7 +4,7 @@ import { loadFlag } from "../../../api/files";
 import { UIComponent, UIShortcutHandler } from "../../../api/ui";
 import { Tab } from "../../misc/tab";
 import { theme } from "../../misc/theme";
-import { PatternCanvas, RowsCanvas } from "./canvas wrappers";
+import { PatternCanvas, PatternChannelInfo, RowsCanvas } from "./canvas wrappers";
 
 export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	// various standard elements for the pattern editor
@@ -173,6 +173,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 				this.refreshPatternAmount(true).then(() => {
 					// forcibly apply scrolling effects
 					this.scroll(0);
+					this.scrollHoriz(0);
 
 					// no moar passes
 					res(false);
@@ -218,9 +219,16 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 
 			// update every channel header too, to change their translateX values
 			for(let i = this.tab.channels.length;i > 0;--i){
-				(this.scrollwrapper.children[i] as HTMLDivElement)
-					.style.transform = "translateX(-"+ this.horizScroll +"px)";
+				const e = (this.scrollwrapper.children[i] as HTMLDivElement);
+
+				if(e) {
+					// only update if it was actually found
+					e.style.transform = "translateX(-"+ this.horizScroll +"px)";
+				}
 			}
+
+			// update visible channels
+			this.updateVisibleChannels();
 		}
 	}
 
@@ -338,7 +346,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	private initChannels() {
 		// delete any previous children
 		this.clearChildren(this.scrollwrapper);
-		this.channelElements = [];
+		this.channelInfo = [];
 
 		// generating DOM for a single channel
 		const doChannel = (name:string) => {
@@ -367,14 +375,17 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 		}).join("");
 
 		// enable resize handlers and init styles
-		for(let i = this.tab.channels.length;i > 0; --i){
-			const chan = this.scrollwrapper.children[i] as HTMLDivElement;
+		for(let i = 0;i < this.tab.channels.length; i++){
+			// initialize channel info with bogus statistics
+			this.channelInfo[i] = { width: 0, left: 0, right: 0, elements: [], offsets: [], };
+
+			const chan = this.scrollwrapper.children[i + 1] as HTMLDivElement;
 			const drag = chan.children[0].children[1] as HTMLDivElement;
 
 			let pos = -1, lastsize = -1, left = 0;
 
 			// initialize header size
-			this.setChannelHeaderSize(this.tab.channels[i - 1]?.info.effects ?? 0, i - 1, this.tab.channels[i - 1].muted, chan);
+			this.setChannelHeaderSize(this.tab.channels[i]?.info.effects ?? 0, i, this.tab.channels[i].muted, chan);
 
 			// enable mouse down detection
 			drag.onpointerdown = (e) => {
@@ -386,7 +397,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 				pos = e.x;
 
 				// load the channel commands count for scrolling
-				lastsize = this.tab.channels[i - 1]?.info.effects ?? 0;
+				lastsize = this.tab.channels[i]?.info.effects ?? 0;
 
 				// enable mouse button and movement detection
 				drag.onmousemove = move;
@@ -399,9 +410,9 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 				pos += e.movementX;
 				const sz = this.getClosestChannelSize(pos - left);
 
-				if(this.tab.channels[i - 1].info.effects !== sz) {
+				if(this.tab.channels[i].info.effects !== sz) {
 					// update channel header size
-					this.setChannelHeaderSize(sz, i - 1, this.tab.channels[i - 1].muted, chan);
+					this.setChannelHeaderSize(sz, i, this.tab.channels[i].muted, chan);
 
 					// update worker with data
 					this.refreshChannelWidth();
@@ -412,7 +423,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 
 					// invalidate and clear all canvas rows
 					this.canvas.forEach((c) => {
-						c.invalidateAll();
+						c.invalidateChannels(i, i + 1);
 						c.fillVoid();
 					});
 
@@ -442,7 +453,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 				}
 
 				// fetch the channel to effect
-				const ch = this.tab.channels[i - 1];
+				const ch = this.tab.channels[i];
 
 				if(e.detail > 1) {
 					// double click handling
@@ -467,11 +478,6 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	}
 
 	/**
-	 * The amount of elements per channel for each channel
-	 */
-	public channelElements!:number[];
-
-	/**
 	 * Function to update the channel header size
 	 *
 	 * @param width The number of commands this channel has
@@ -481,7 +487,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	private setChannelHeaderSize(width:number, channel:number, muted:boolean, element:HTMLDivElement) {
 		// update commands amount
 		this.tab.channels[channel].info.effects = width;
-		this.channelElements[channel] = [ 3, 5, 7, 9, 11, 13, 15, 17, 19, ][width];
+		this.updateElementRender(channel, width);
 
 		// update header element width and classes
 		element.style.width = this.channelWidths[width] +"px";
@@ -496,14 +502,82 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	}
 
 	/**
-	 * This is a list of all the channel x-positions from left. This helps canvases get lined up and with scrolling.
+	 * The element widths for each element
 	 */
-	public channelPositionsLeft!: number[];
+	private elementWidths!:number[];
 
 	/**
-	 * This is a list of all the channel x-positions from right. This helps canvases get lined up.
+	 * The element offsets for each element
 	 */
-	public channelPositionsRight!: number[];
+	private elementOffsets!:number[];
+
+	/**
+	 * Function to update channel element rendering info
+	 *
+	 * @param channel The channel to handle
+	 * @param effects The number of effects the channel has
+	 */
+	private updateElementRender(channel:number, effects:number) {
+		// total number of elements to render
+		const len = [ 3, 5, 7, 9, 11, 13, 15, 17, 19, ][effects];
+		let pos = 0;
+
+		// the actual data arrays
+		const els:number[] = this.channelInfo[channel].elements = [];
+		const off:number[] = this.channelInfo[channel].offsets = [];
+
+		// loop for each element
+		for(let i = 0;i < len;i ++) {
+			// push the element ID
+			els.push(i);
+
+			// calculate the offset
+			off.push(pos + this.elementOffsets[i]);
+			pos += this.elementWidths[i];
+		}
+	}
+
+	/**
+	 * The visible channels from left and right
+	 */
+	private visibleChannels!: [ number, number, ];
+
+	/**
+	 * Helper function to update currently visible channels
+	 */
+	private updateVisibleChannels() {
+		this.visibleChannels = [ 0, 0, ];
+
+		// hotfix
+		if(!this.channelInfo) {
+			return;
+		}
+
+		// find the leftmost channel
+		let ch = 0;
+
+		for(;ch < this.channelInfo.length - 1;ch++) {
+			// check if this channel is visible
+			if(this.channelInfo[ch].right - this.horizScroll >= 0) {
+				break;
+			}
+		}
+
+		this.visibleChannels[0] = ch;
+
+		// find the rightmost channel
+		for(;ch < this.channelInfo.length;ch++) {
+			// check if this channel is visible
+			if(this.channelInfo[ch].left - this.horizScroll >= this.scrollWidth - 39) {
+				// save the new channel
+				break;
+			}
+		}
+
+		this.visibleChannels[1] = ch;
+
+		console.log("visible", this.visibleChannels[0], this.visibleChannels[1])
+	}
 
 	/**
 	 * This is the total width of the render area
@@ -520,16 +594,18 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	 */
 	private refreshChannelWidth() {
 		// initialize channel position arrays
-		this.channelPositionsLeft = [];
-		this.channelPositionsRight = [];
 		let pos = 0;
 
 		// update every channel header too, to change their translateX values
-		for(let i = 1;i <= this.tab.channels.length;i++){
+		for(let i = 0;i < this.tab.channels.length;i++){
 			// update channel positions
-			this.channelPositionsLeft.push(pos);
-			pos += (this.scrollwrapper.children[i] as HTMLDivElement).offsetWidth;
-			this.channelPositionsRight.push(pos - 4);
+			this.channelInfo[i].left = pos;
+			this.channelInfo[i].width = (this.scrollwrapper.children[i + 1] as HTMLDivElement).offsetWidth;
+			pos += this.channelInfo[i].width;
+			this.channelInfo[i].right = pos - 4;
+
+			// update the worker on this as well
+			this.canvas?.forEach((c) => c.updateChannel(i, this.channelInfo[i]));
 		}
 
 		// save the total width of the render area
@@ -539,7 +615,10 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 		this.focusBar.style.maxWidth = (this.renderAreaWidth - 4) +"px";
 
 		// inform canvases it has maybe changed
-		this.canvas.forEach((c) => c.updateChannelWidths());
+		this.canvas.forEach((c) => c.updateRenderInfo());
+
+		// update visible channels
+		this.updateVisibleChannels();
 	}
 
 	/**
@@ -652,14 +731,16 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 		const pat = this.activePattern, offs = this.currentRow % this.patternLen;
 		this.patternLen = rows;
 
-		// reload the number of patterns that need to be visible
-		await this.refreshPatternAmount(true);
+		if(this.channelInfo) {
+			// reload the number of patterns that need to be visible
+			await this.refreshPatternAmount(true);
 
-		// scroll to a different row based on the new size
-		this.currentRow = (pat * rows) + Math.min(offs, rows - 1);
+			// scroll to a different row based on the new size
+			this.currentRow = (pat * rows) + Math.min(offs, rows - 1);
 
-		// go to handle scrolling, reloading, drawing, etc
-		this.handleScrolling();
+			// go to handle scrolling, reloading, drawing, etc
+			this.handleScrolling();
+		}
 	}
 
 	/**
@@ -691,13 +772,13 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 				this.canvas.push(x);
 
 				// tell to update canvas widths
-				x.updateChannelWidths();
+				x.updateRenderInfo();
 
 				// force update canvas theme
 				await x.reloadTheme();
 
-				// clear the canvas void
-				x.fillVoid();
+				// tell the canvases to generate channel data and clear themselves
+				this.channelInfo.forEach((c, ix) => x.updateChannel(ix, c));
 
 				// generate the rows as well (we need the same number of row canvases)
 				const rows = this.patternLen;
@@ -715,6 +796,11 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			}
 		}
 	}
+
+	/**
+	 * Various channel statistics
+	 */
+	private channelInfo!: PatternChannelInfo[];
 
 	/**
 	 * Container for each loaded canvas
@@ -751,8 +837,15 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			const offsetTop = ((pat * patternRows) - this.currentRow);
 
 			// request to render every visible row in this pattern
-			this.canvas[0].renderPattern(Math.max(0, -Math.ceil(this.scrollMiddle / this.dataHeight) - this.visibleSafeHeight - offsetTop),
-				Math.min(patternRows, Math.ceil((this.scrollHeight - this.scrollMiddle) / this.dataHeight) + this.visibleSafeHeight - offsetTop));
+			this.canvas[0].render(
+				// first row to draw
+				Math.max(0, -Math.ceil(this.scrollMiddle / this.dataHeight) - this.visibleSafeHeight - offsetTop),
+				// last row to draw
+				Math.min(patternRows, Math.ceil((this.scrollHeight - this.scrollMiddle) / this.dataHeight) + this.visibleSafeHeight - offsetTop),
+				// first channel to draw
+				Math.max(0, this.visibleChannels[0]),
+				// last channel to draw
+				Math.min(this.channelInfo.length, this.visibleChannels[1]));
 
 			// update element position
 			this.rows[0].element.style.top = this.canvas[0].element.style.top = ((offsetTop * this.dataHeight) + this.scrollMiddle) +"px";
@@ -805,8 +898,15 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			// check if this pattern is visible
 			if(r >= 0 && r < this.tab.matrix.matrixlen) {
 				// if yes, request to render every visible row in this pattern
-				cv.renderPattern(Math.max(0, -Math.ceil(this.scrollMiddle / this.dataHeight) - this.visibleSafeHeight - offsetTop),
-					Math.min(patternRows, Math.ceil((this.scrollHeight - this.scrollMiddle) / this.dataHeight) + this.visibleSafeHeight - offsetTop));
+				cv.render(
+					// first row to draw
+					Math.max(0, -Math.ceil(this.scrollMiddle / this.dataHeight) - this.visibleSafeHeight - offsetTop),
+					// last row to draw
+					Math.min(patternRows, Math.ceil((this.scrollHeight - this.scrollMiddle) / this.dataHeight) + this.visibleSafeHeight - offsetTop),
+					// first channel to draw
+					Math.max(0, this.visibleChannels[0]),
+					// last channel to draw
+					Math.min(this.channelInfo.length, this.visibleChannels[1]));
 
 
 			} else if(!cv.isClear){
@@ -857,6 +957,8 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 
 		// meanwhile, load some variables
 		this.dataHeight = theme?.pattern?.worker?.params?.rowHeight ?? 25;
+		this.elementWidths = theme?.pattern?.worker?.widths ?? [];
+		this.elementOffsets = theme?.pattern?.worker?.offsets ?? [];
 
 		// load the tables for backdrop colors
 		this.backdropColors = [

@@ -222,9 +222,6 @@
 			},
 			// note element settings
 			note: {
-				// the offset from the left side of the channel row to render this at
-				left: 3,
-
 				// when the pattern is inactive but not blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
 				inactive: [ "#494949", "#4C4D4D", "#4D4D4D", ],
@@ -259,9 +256,6 @@
 			},
 			// instrument element settings
 			instrument: {
-				// the offset from the left side of the channel row to render this at
-				left: 31,
-
 				// when the pattern is inactive but not blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
 				inactive: [ "#2F383C", "#313F43", "#354244", ],
@@ -296,9 +290,6 @@
 			},
 			// volume element settings
 			volume: {
-				// the offset from the left side of the channel row to render this at
-				left: 50,
-
 				// when the pattern is inactive but not blank, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
 				inactive: [ "#303C31", "#324338", "#35443C", ],
@@ -400,9 +391,16 @@
 				recordactiveblank: [ "#474747", "#4E5B5E", "#58747C", ],
 			},
 
-			// the offset from the left side of the channel row to render each effect and effect value pairs at
-			// format: effect 1 offset, value 1 offset, effect 2 offset, value 2 offset, [...]
-			effectleft: [ 70, 87,  108, 125,  146, 163,  184, 201,  222, 239,  260, 277,  298, 315,  336, 353, ],
+			// the total number of effect columns possible. This will also affect the following position arrays
+			fxnum: 8,
+
+			// the width of each element. This will be used to calculate the positions of each element.
+			// format: note, instrument, volume, effect, value, effect, value, [...]
+			widths: [ 28, 19, 19,  19, 19,  19, 19,  19, 19,  19, 19,  19, 19,  19, 19,  19, 19,  19, 19, ],
+
+			// the offset of each element. This is used for more precise positioning of each element. This will not affect element width.
+			// format: note, instrument, volume, effect, value, effect, value, [...]
+			offsets: [ 3, 3, 3,  4, 3,  4, 3,  4, 3,  4, 3,  4, 3,  4, 3,  4, 3,  4, 3, ],
 		},
 	},
 	playbar: {

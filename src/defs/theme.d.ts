@@ -220,9 +220,17 @@ declare interface WorkerThemeSettings {
 	 */
 	value?: ElementSettings,
 	/**
-	 * The left position(s) for drawing every effect and value
+	 * The max number of effects
 	 */
-	effectleft?: number[],
+	fxnum?: number,
+	/**
+	 * The widths of each possible element
+	 */
+	widths?: number[],
+	/**
+	 * The offsets of each possible element
+	 */
+	offsets?: number[],
 }
 
 /**
@@ -273,10 +281,6 @@ declare interface RowNumElementSettings extends SimpleElementSettings {
  * Helper type for different element settings
  */
 declare interface ElementSettings extends SimpleElementSettings {
-	/**
-	 * The left position(s) for drawing this symbol.
-	 */
-	left?: number,
 	/**
 	 * The inactive color for text for an element that is not set
 	 */

@@ -1,11 +1,51 @@
+type ChannelCanvasInfo = {
+	/**
+	 * The canvas that the channel is rendering on
+	 */
+	canvas: OffscreenCanvas,
+
+	/**
+	 * The rendering context for that canvas
+	 */
+	ctx: OffscreenCanvasRenderingContext2D,
+
+	/**
+	 * The width of the channel data
+	 */
+	width: number,
+
+	/**
+	 * The left-position of this channel in the host canvas
+	 */
+	left: number,
+
+	/**
+	 * The right-position of this channel in the host canvas
+	 */
+	right: number,
+
+	/**
+	 * The array of elements to render
+	 */
+	elements: number[],
+
+	/**
+	 * The offsets of elements to render
+	 */
+	offsets: number[],
+};
+
 /*
  * note: here is a little dirty way to make the worker not complain about duplicate declarations;
  * These will be in separate threads so it doesn't matter!
  */
 /* eslint-disable no-inner-declarations */
 {
-	let canvas:OffscreenCanvas;
-	let ctx:OffscreenCanvasRenderingContext2D;
+	let canvas: OffscreenCanvas;
+	let mainctx: OffscreenCanvasRenderingContext2D;
+
+	// the channel canvases and contexts
+	const channels: ChannelCanvasInfo[] = [];
 
 	// handler for received mesages from PatternCanvas instance
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,11 +59,12 @@
 				// did we get a context?
 				if(!_ctx) {
 					console.error("Where is my context!!!");
+					(self as unknown as DedicatedWorkerGlobalScope).close();
 					return;
 				}
 
 				// save the context
-				ctx = _ctx;
+				mainctx = _ctx;
 				break;
 			}
 
@@ -31,13 +72,20 @@
 				// initialize some standard variables
 				channelCount = data.channels as number;
 				patternLen = data.patternlen as number;
+
+				// generate the rendered array
+				for(let c = 0;c < channelCount;c ++) {
+					rendered[c] = [];
+
+					for(let r = 0;r < patternLen;r ++) {
+						// set every cell to false, meaning it needs to render
+						rendered[c][r] = false;
+					}
+				}
 				break;
 
-			case "posi":
-				channelPositionsLeft = data.left as number[];
-				channelPositionsRight = data.right as number[];
+			case "renderinfo":
 				renderWidth = data.width as number;
-				elementCount = data.elements as number[];
 				break;
 
 			case "highlight":
@@ -48,38 +96,125 @@
 				setTheme(data as unknown as WorkerThemeSettings);
 				break;
 
+			case "updatech": {
+				const i = data.channel as number;
+
+				// check if channel was not initialized or if the width is different
+				if(!channels[i] || channels[i].width !== data.width) {
+					// create the canvas and find its context
+					let c:OffscreenCanvas;
+
+					if(!channels[i]) {
+						// generate a fully new canvas
+						c = new OffscreenCanvas(data.width as number, patternLen * rowHeight);
+
+					} else {
+						// forcibly resize it
+						c = channels[i].canvas;
+						c.width = data.width as number;
+					}
+
+					const _ctx = c.getContext("2d");
+
+					// did we get a context?
+					if(!_ctx) {
+						console.error("Where is my context for ch"+ i +"!!!");
+						(self as unknown as DedicatedWorkerGlobalScope).close();
+						return;
+					}
+
+					// clear the channel canvas with backdrop and update font
+					_ctx.fillStyle = clearColor[record ? 1 : 0];
+					_ctx.fillRect(0, 0, c.width, c.height);
+					_ctx.font = fontinfo;
+
+					// save the canvas info object
+					channels[i] = {
+						canvas: c,
+						ctx: _ctx,
+						width: data.width as number,
+						left: data.left as number,
+						right: data.right as number,
+						elements: data.elements as number[],
+						offsets: data.offsets as number[],
+					};
+
+					// invalidate everything
+					invalidateArea(0, patternLen, i, i + 1);
+				} else {
+					// only certain properties need updating
+					channels[i] = {
+						canvas: channels[i].canvas,
+						ctx: channels[i].ctx,
+						width: data.width as number,
+						left: data.left as number,
+						right: data.right as number,
+						elements: data.elements as number[],
+						offsets: data.offsets as number[],
+					};
+
+					// need to stamp again
+					stamp(i);
+				}
+				break;
+			}
+
 			case "clear":
-				ctx.fillStyle = clearColor[record ? 1 : 0];
-				ctx.fillRect(0, 0, canvas.width, canvas.height);
+				channels.forEach((c, ix) => {
+					c.ctx.fillStyle = clearColor[record ? 1 : 0];
+					c.ctx.fillRect(0, 0, c.canvas.width, c.canvas.height);
+					stamp(ix);
+				});
 				break;
 
 			case "fillvoid":
-				ctx.fillStyle = clearColor[record ? 1 : 0];
-				ctx.fillRect(renderWidth, 0, canvas.width - renderWidth, canvas.height);
+				mainctx.fillStyle = clearColor[record ? 1 : 0];
+				mainctx.fillRect(renderWidth, 0, canvas.width - renderWidth, canvas.height);
 				break;
 
 			case "renderrange":
-				for(let i = data.start as number;i < (data.end as number);i ++) {
-					if(!rendered[i]) {
-						renderRow(i, data.active as boolean);
+				// loop for all channels on the canvas
+				for(let c = data.left as number;c < (data.right as number);c ++) {
+					let render = false;
+
+					// loop for all rows in the channel
+					for(let i = data.start as number;i < (data.end as number);i ++) {
+						// check if this was already rendered correctly
+						if(!rendered[c][i]) {
+							// if not, render and indicate stamping is needed
+							renderRow(i, c, data.active as boolean);
+							render = true;
+						}
+					}
+
+					// if this channel was rendered, stamp it as well
+					if(render) {
+						stamp(c);
 					}
 				}
 				break;
 
 			case "invalidate":
-				invalidateRows(data.start as number, data.end as number);
+				invalidateArea(data.start as number, data.end as number, data.left as number, data.right as number);
 				break;
 
 			case "record":
 				record = data.status as boolean;
-				invalidateRows(0, patternLen);
+				invalidateArea(0, patternLen, 0, channelCount);
 				break;
 		}
 	}
 
-	function invalidateRows(start:number, end:number) {
-		for(let i = start;i < end;i ++){
-			rendered[i] = false;
+	/**
+	 * Function to invalidate an area at once
+	 */
+	function invalidateArea(start:number, end:number, left:number, right:number) {
+		// loop for all channels on the canvas
+		for(let c = left;c < right;c ++) {
+			// loop for all the defined rows
+			for(let i = start;i < end;i ++){
+				rendered[c][i] = false;
+			}
 		}
 	}
 
@@ -127,13 +262,10 @@
 		// reset element arrays
 		unsetColors = [];
 		channelElementColors = [];
-		channelElementOffsets = [];
 
 		// load element data
 		for(const data of [ theme?.note, theme?.instrument, theme?.volume, ]) {
 			// load each array with values
-			channelElementOffsets.push(data?.left ?? 0);
-
 			unsetColors.push([
 				...(data?.activeblank ?? fallback3Text),
 				...(data?.inactiveblank ?? fallback3Text),
@@ -150,9 +282,7 @@
 		}
 
 		// load effect elements data
-		let p = 0;
-
-		for(const position of theme?.effectleft ?? []) {
+		for(let p = 0;p < ((theme?.fxnum ?? 0) * 2);p ++) {
 			// load each array with values
 			const data = theme ? theme[p & 1 ? "value" : "effect"] : undefined;
 
@@ -169,9 +299,6 @@
 				...(data?.recordactive ?? fallback3Text),
 				...(data?.recordinactive ?? fallback3Text),
 			]);
-
-			channelElementOffsets.push(position);
-			p++;
 		}
 
 		// request the font to be loaded
@@ -184,13 +311,8 @@
 			// add to the global font stack
 			(self as unknown as WorkerGlobalScope).fonts.add(f);
 
-			// set context font status
-			ctx.font = theme?.font?.size +" '"+ f.family +"'";
-
-			// invalidate every row
-			for(let i = 0;i < rendered.length;i ++){
-				rendered[i] = false;
-			}
+			// update the font text
+			fontinfo = theme?.font?.size +" '"+ f.family +"'";
 
 			// tell we are done loading the theme
 			postMessage("theme");
@@ -198,22 +320,34 @@
 			// reload all rows that were requested
 			const _f = fontLoaded;
 			fontLoaded = null;
-			_f?.forEach((f) => renderRow(f[0], f[1]));
+			_f?.forEach((f) => renderRow(f[0], f[1], f[2]));
 		}).catch(console.error);
 	}
+
+	let fontinfo = "";
 
 	// receive messages from PatternCanvas
 	onmessage = (e) => handleMessage(e.data.command, e.data.data);
 
 	/**
+	 * Function to stamp the canvas graphics onto the main canvas
+	 *
+	 * @param channel The channel ID to stamp on the canvas
+	 */
+	function stamp(channel:number) {
+		// simply draw the canvas graphic on top of the main canvas
+		mainctx.drawImage(channels[channel].canvas, channels[channel].left, 0);
+	}
+
+	/**
 	 * Boolean indicating whether the font is loaded. Any font rendering is disallowed before font is loaded
 	 */
-	let fontLoaded:null|[ number, boolean, ][] = [];
+	let fontLoaded:null|[ number, number, boolean, ][] = [];
 
 	/**
 	 * This bitfield determines which rows are rendered already, so they can't be re-rendered
 	 */
-	const rendered:boolean[] = [];
+	const rendered:boolean[][] = [];
 
 	/**
 	 * The row highlight numbers for this pattern
@@ -237,97 +371,78 @@
 	let rowHeight = 0;
 
 	/**
-	 * This is a list of all the channel x-positions from left. This helps canvases get lined up and with scrolling.
-	 */
-	let channelPositionsLeft:number[];
-
-	/**
-	 * This is a list of all the channel x-positions from right. This helps canvases get lined up.
-	 */
-	let channelPositionsRight:number[];
-
-	/**
-	 * The number of elements per channel
-	 */
-	let elementCount:number[];
-
-	/**
 	 * Function to render a single row of graphics
 	 *
 	 * @param row The row number to render
 	 * @param active The active status of this row
 	 */
-	function renderRow(row:number, active:boolean) {
+	function renderRow(row:number, channel:number, active:boolean) {
 		// the top position of this row
 		const top = row * rowHeight;
 
 		// get the highlight ID
 		const hid = (record ? 6 : 0) + (active ? 0 : 3) + ((row % highlights[0]) === 0 ? 2 : (row % highlights[1]) === 0 ? 1 : 0);
 
+		// grab the appropriate context
+		const cd = channels[channel];
+		const ctx = cd.ctx;
+
 		// draw the background fill color
 		ctx.fillStyle = backdropColors[hid];
-		ctx.fillRect(0, top, renderWidth, rowHeight);
+		ctx.fillRect(0, top, cd.width, rowHeight);
 
 		// initialize border color
 		ctx.fillStyle = borderColor[record ? 1 : 0];
 
-		// loop for each channel position
-		channelPositionsRight.forEach((left) => {
-			// draw the border
-			ctx.fillRect(left, top, 4, rowHeight);
-		});
+		// draw the border
+		ctx.fillRect(cd.width - 4, top, 4, rowHeight);
 
 		if(fontLoaded !== null) {
 			// font not loaded, instead add to the load queue
 			if(fontLoaded.findIndex((d) => d[0] === row) < 0) {
-				fontLoaded.push([ row, active, ]);
+				fontLoaded.push([ row, channel, active, ]);
 			}
 
 		} else {
 			// font loaded, run normally
-			rendered[row] = true;
+			rendered[channel][row] = true;
 
-			// loop for every channel
-			for(let c = 0;c < channelCount;c ++) {
-				// load the channel position
-				const left = channelPositionsLeft[c];
-
-				// render each channel element
-				for(let i = 0;i < elementCount[c];i ++){
-					// some dummy code to generate text for this row
-					if(c & 1) {
-						let text = "";
-						switch(i) {
-							case 0: text = "C#6";break;
-							case 1: text = "2F"; break;
-							case 2: text = "11"; break;
-							case 3: text = "WQ"; break;
-							case 4: text = "DD"; break;
-							case 5: text = "0Z"; break;
-							case 6: text = "00"; break;
-							case 7: text = "RR"; break;
-							case 8: text = "FF"; break;
-							case 9: text = "PE"; break;
-							case 10:text = "30"; break;
-							case 11:text = "OO"; break;
-							case 12:text = "00"; break;
-							case 13:text = "AF"; break;
-							case 14:text = "97"; break;
-							case 15:text = "WW"; break;
-							case 16:text = "66"; break;
-							case 17:text = "II"; break;
-							case 18:text = "11"; break;
-						}
-
-						// render the element with text
-						ctx.fillStyle = channelElementColors[i][hid];
-						ctx.fillText(text, left + channelElementOffsets[i], top + textVerticalOffset);
-
-					} else {
-						// render the element with blanks
-						ctx.fillStyle = unsetColors[i][hid];
-						ctx.fillText(i === 0 ? "---" : "--", left + channelElementOffsets[i], top + textVerticalOffset);
+			// render each channel element
+			for(let i = 0;i < cd.elements.length;i ++){
+				const e = cd.elements[i];
+				// some dummy code to generate text for this row
+				if(channel & 1) {
+					let text = "";
+					switch(e) {
+						case 0: text = "C#6";break;
+						case 1: text = "2F"; break;
+						case 2: text = "11"; break;
+						case 3: text = "WQ"; break;
+						case 4: text = "DD"; break;
+						case 5: text = "0Z"; break;
+						case 6: text = "00"; break;
+						case 7: text = "RR"; break;
+						case 8: text = "FF"; break;
+						case 9: text = "PE"; break;
+						case 10:text = "30"; break;
+						case 11:text = "OO"; break;
+						case 12:text = "00"; break;
+						case 13:text = "AF"; break;
+						case 14:text = "97"; break;
+						case 15:text = "WW"; break;
+						case 16:text = "66"; break;
+						case 17:text = "II"; break;
+						case 18:text = "11"; break;
 					}
+
+					// render the element with text
+					ctx.fillStyle = channelElementColors[e][hid];
+					ctx.fillText(text, cd.offsets[i], top + textVerticalOffset);
+
+				} else {
+					// render the element with blanks
+					ctx.fillStyle = unsetColors[e][hid];
+					ctx.fillText(i === 0 ? "---" : "--", cd.offsets[i], top + textVerticalOffset);
 				}
 			}
 		}
@@ -352,11 +467,6 @@
 	 * The list of unset dash colors for each element in the channel row depending on which highlight is active (or none at all)
 	 */
 	let unsetColors:string[][] = [];
-
-	/**
-	 * The horizontal offsets for each element in the channel row
-	 */
-	let channelElementOffsets:number[] = [];
 
 	/**
 	 * The colors for each element in the channel row depending on which highlight is active (or none at all)

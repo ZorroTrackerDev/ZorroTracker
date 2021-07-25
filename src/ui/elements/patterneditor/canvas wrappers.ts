@@ -104,6 +104,14 @@ class EditorCanvasBase {
 		// tell the worker to update record state
 		this.worker.postMessage({ command: "record", data: { status: Tab.active?.recordMode ?? false, }, });
 	}
+
+	/**
+	 * Helper function to update the record status of canvas
+	 */
+	public setRowCount(patternlen:number) {
+		// tell the worker to update record state
+		this.worker.postMessage({ command: "setrowcount", data: { patternlen: this.patternlen = patternlen, }, });
+	}
 }
 
 export class RowsCanvas extends EditorCanvasBase {

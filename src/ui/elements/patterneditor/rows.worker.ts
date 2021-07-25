@@ -46,6 +46,12 @@
 				setTheme(data as unknown as WorkerThemeSettings);
 				break;
 
+			case "setrowcount":
+				// update internal variables
+				patternLen = data.patternlen as number;
+				canvas.height = patternLen * rowHeight;
+				break;
+
 			case "clear":
 				ctx.fillStyle = "#000";
 				ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -108,8 +114,8 @@
 			// add to the global font stack
 			(self as unknown as WorkerGlobalScope).fonts.add(f);
 
-			// set context font status
-			ctx.font = theme?.font?.size +" '"+ f.family +"'";
+			// update the font text
+			ctx.font = fontinfo = theme?.font?.size +" '"+ f.family +"'";
 
 			// invalidate every row
 			for(let i = 0;i < rendered.length;i ++){
@@ -128,6 +134,9 @@
 
 		}).catch(console.error);
 	}
+
+	// the font info data
+	let fontinfo = "";
 
 	// receive messages from PatternCanvas
 	onmessage = (e) => handleMessage(e.data.command, e.data.data);

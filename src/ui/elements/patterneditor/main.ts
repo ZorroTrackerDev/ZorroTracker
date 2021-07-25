@@ -115,9 +115,6 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 							// update the scrolling region size
 							height = this.element.offsetHeight;
 
-							// reload the number of patterns that need to be visible
-							await this.refreshPatternAmount(false);
-
 							// call the special scroll handler, mainly to update the current position and to redraw canvases
 							this.scroll(0);
 						}, 50);
@@ -170,7 +167,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 				// initialize the scrolling region size
 				this.updateScrollerSize();
 
-				this.refreshPatternAmount(true).then(() => {
+				this.refreshPatternAmount().then(() => {
 					// forcibly apply scrolling effects
 					this.scroll(0);
 					this.scrollHoriz(0);
@@ -656,7 +653,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	 * @returns Whether the shortcut was executed
 	 */
 	// eslint-disable-next-line require-await
-	public async receiveShortcut(data:string[], e:KeyboardEvent|undefined, state:boolean|undefined):Promise<boolean> {
+	public async receiveShortcut(data:string[]):Promise<boolean> {
 		if(document.querySelector(":focus") === this.element) {
 			// has focus, process the shortcut
 			switch(data.shift()) {
@@ -732,8 +729,13 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 		this.patternLen = rows;
 
 		if(this.channelInfo) {
-			// reload the number of patterns that need to be visible
-			await this.refreshPatternAmount(true);
+			// update row counts for all canvases
+			this.canvas.forEach((c) => c.setRowCount(rows));
+			this.rows.forEach((c) => c.setRowCount(rows));
+
+			// reload theme
+			await this.reloadTheme(false);
+			this.rows.forEach((c) => c.render());
 
 			// scroll to a different row based on the new size
 			this.currentRow = (pat * rows) + Math.min(offs, rows - 1);
@@ -745,22 +747,16 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 
 	/**
 	 * Helper function that updates the list of pattern canvases.
-	 *
-	 * @param force If set, the update is forced regardless if amounts match
 	 */
-	private async refreshPatternAmount(force:boolean) {
+	private async refreshPatternAmount() {
 		const patternRows = this.patternLen;
 
 		// calculate the amount of canvases needed to display everything
-		const amount = !this.drawPatternPreview ? 0 :
-			Math.ceil(((this.scrollHeight / this.dataHeight) + (this.visibleSafeHeight * 2)) / patternRows);
+		const amount = !this.drawPatternPreview ? 1 : 3;
 
-		if(force || (this.canvas?.length - 1) !== amount) {
-			// remove old canvases so everything can be updated
-			this.unload();
-
+		if((this.canvas?.length - 1) !== amount) {
 			// generate each canvas
-			for(let c = 0;c <= amount; c++) {
+			for(let c = 0;c < amount; c++) {
 				// generate the canvas class itself
 				const x = new PatternCanvas(this.dataHeight * patternRows, this, patternRows, this.tab.channels.length);
 
@@ -816,17 +812,12 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	 * Handle scrolling. This updates each canvas position, graphics, active canvas, etc
 	 */
 	private handleScrolling() {
-		// load the range of patterns that are visible currently
-		const [ rangeMin, rangeMax, ] = this.getVisibleRange();
 		const patternRows = this.patternLen;
-
-		// calculate which pattern is currently active
-		const pat = Math.max(0, Math.min(this.tab.matrix.matrixlen - 1, this.activePattern));
 
 		if(!this.drawPatternPreview) {
 			// draw only a single pattern!!
-			if(this.canvas[0].pattern !== pat) {
-				this.canvas[0].pattern = pat;
+			if(this.canvas[0].pattern !== this.activePattern) {
+				this.canvas[0].pattern = this.activePattern;
 				this.canvas[0].active = true;
 
 				// invalidate every row in pattern
@@ -834,7 +825,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			}
 
 			// update canvas y-position
-			const offsetTop = ((pat * patternRows) - this.currentRow);
+			const offsetTop = ((this.activePattern * patternRows) - this.currentRow);
 
 			// request to render every visible row in this pattern
 			this.canvas[0].render(
@@ -853,14 +844,11 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 		}
 
 		// position all row elements
-		const rowoff = Math.ceil(((this.scrollMiddle / this.dataHeight) -
-			(this.currentRow % patternRows)) / patternRows);
-
 		for(let r = 0;r < this.rows.length;r ++) {
-			const cr = this.rows[(this.rows.length + r - rowoff) % this.rows.length];
+			const cr = this.rows[(this.rows.length + r - 1) % this.rows.length];
 
 			// calculate target pattern
-			const ppos = r - rowoff + pat;
+			const ppos = r - 1 + this.activePattern;
 
 			if(ppos < 0 || ppos >= this.tab.matrix.matrixlen) {
 				// hide row if out of bounds
@@ -876,27 +864,32 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 		}
 
 		// run for each visible patterns
-		for(let r = rangeMin;r <= rangeMax; r++) {
-			// load the canvas that represents this pattern
-			const cv = this.canvas[(this.canvas.length + r) % this.canvas.length];
+		for(let r = 0;r < this.canvas.length; r++) {
+			// load some variables beforehand
+			const co = (this.canvas.length + r + (this.activePattern % this.canvas.length)) % this.canvas.length;
+			const pat = this.activePattern + r - 1;
+			const cv = this.canvas[co];
 
 			// calculate canvas y-position
-			const offsetTop = ((r * patternRows) - this.currentRow);
+			const offsetTop = ((pat * patternRows) - this.currentRow);
 			const top = ((offsetTop * this.dataHeight) + this.scrollMiddle) +"px";
 
+			if(pat === this.activePattern) {
+				console.log(co, pat)
+			}
+
 			// invalidate layout if it is not the same pattern or active status doesn't match
-			if(cv.pattern !== r || (r === pat) !== cv.active) {
+			if(cv.pattern !== pat || (pat === this.activePattern) !== cv.active) {
 				// update pattern status
-				cv.active = r === pat;
-				cv.pattern = r;
+				cv.active = pat === this.activePattern;
+				cv.pattern = pat;
 
 				// invalidate every row in pattern
 				cv.invalidateAll();
 			}
 
-
 			// check if this pattern is visible
-			if(r >= 0 && r < this.tab.matrix.matrixlen) {
+			if(pat >= 0 && pat < this.tab.matrix.matrixlen) {
 				// if yes, request to render every visible row in this pattern
 				cv.render(
 					// first row to draw
@@ -927,21 +920,6 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	 * This is used so that the user doesn't see the pattern rows drawing.
 	 */
 	private visibleSafeHeight = 7;
-
-	/**
-	 * Helper function to get the visible range of patterns
-	 */
-	private getVisibleRange() {
-		const scroll = this.scrollHeight / this.dataHeight / 2;
-
-		return [
-			// load the start point of the range
-			Math.floor((this.currentRow - this.visibleSafeHeight - scroll) / this.patternLen),
-
-			// load the end point of the range
-			Math.floor((this.currentRow + this.visibleSafeHeight + scroll) / this.patternLen),
-		];
-	}
 
 	/**
 	 * The colors for the backdrop of the scrollWrapper

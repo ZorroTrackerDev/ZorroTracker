@@ -96,6 +96,23 @@ type ChannelCanvasInfo = {
 				setTheme(data as unknown as WorkerThemeSettings);
 				break;
 
+			case "setrowcount":
+				// update internal variables
+				fontLoaded = [];
+				patternLen = data.patternlen as number;
+				canvas.height = patternLen * rowHeight;
+
+				// update each channel canvases too
+				channels.forEach((c) => {
+					c.canvas.height = patternLen * rowHeight;
+					c.ctx = c.canvas.getContext("2d") as OffscreenCanvasRenderingContext2D;
+					c.ctx.font = fontinfo;
+				});
+
+				// update the invalidated area
+				invalidateArea(0, patternLen, 0, channelCount);
+				break;
+
 			case "updatech": {
 				const i = data.channel as number;
 
@@ -324,6 +341,7 @@ type ChannelCanvasInfo = {
 		}).catch(console.error);
 	}
 
+	// the font info data
 	let fontinfo = "";
 
 	// receive messages from PatternCanvas

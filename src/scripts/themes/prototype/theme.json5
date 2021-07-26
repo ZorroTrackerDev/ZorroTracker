@@ -128,6 +128,36 @@
 				recordblend: [ "screen", "screen", "screen", ],
 			}
 		},
+		extras: {
+			// settings related to the currently "focused row" (the one which is being played or in the middle of the screen)
+			focus: {
+				// CSS styles
+				css: {
+
+				}
+			},
+			// settings related to the cursor element (highlights the element currently under the cursor)
+			cursor: {
+				// CSS styles
+				css: {
+					"background-color": "#d4333380",
+				}
+			},
+			// settings related to currently selected element (single element selection)
+			single: {
+				// CSS styles
+				css: {
+
+				}
+			},
+			// settings related to currently selected area (multiple element selection)
+			multi: {
+				// CSS styles
+				css: {
+
+				}
+			},
+		},
 		worker: {
 			// Miscellaneous parameters that are used for pattern editor
 			params: {
@@ -398,9 +428,17 @@
 			// format: note, instrument, volume, effect, value, effect, value, [...]
 			widths: [ 28, 19, 19,  19, 19,  19, 19,  19, 19,  19, 19,  19, 19,  19, 19,  19, 19,  19, 19, ],
 
-			// the offset of each element. This is used for more precise positioning of each element. This will not affect element width.
+			// the offsets of each element. This is used for more precise positioning of each element. This will not affect element width.
 			// format: note, instrument, volume, effect, value, effect, value, [...]
 			offsets: [ 3, 3, 3,  4, 3,  4, 3,  4, 3,  4, 3,  4, 3,  4, 3,  4, 3,  4, 3, ],
+
+			// the selection width of each element.This is used for positioning of the selection highlight.
+			// format: note, instrument, volume, effect, value, effect, value, [...]
+			selwidths: [ 29, 20, 19,  20, 20,  20, 20,  20, 20,  20, 20,  20, 20,  20, 20,  20, 20,  20, 20, ],
+
+			// the selection offsets of each element. This is in addition to the normal offsets property. This is used for positioning of the selection highlight.
+			// format: note, instrument, volume, effect, value, effect, value, [...]
+			seloffsets: [ -3, -2, -1,  -2, -1,  -2, -1,  -2, -1,  -2, -1,  -2, -1,  -2, -1,  -2, -1,  -2, -1, ],
 		},
 	},
 	playbar: {

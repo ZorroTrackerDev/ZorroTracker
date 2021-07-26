@@ -5,12 +5,16 @@ import { Tab } from "../../misc/tab";
 import { theme } from "../../misc/theme";
 import { PatternChannelInfo } from "./canvas wrappers";
 import { PatternEditorScrollManager } from "./scroll manager";
+import { PatternEditorSelectionManager } from "./selection manager";
 
 export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	// various standard elements for the pattern editor
 	public element!: HTMLDivElement;
 	public scrollwrapper!: HTMLDivElement;
 	public focusBar!: HTMLDivElement;
+	public singleSelection!: HTMLDivElement;
+	public multiSelection!: HTMLDivElement;
+	public cursor!: HTMLDivElement;
 
 	/**
 	 * This is the tab that the pattern editor is working in
@@ -23,13 +27,21 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	public scrollManager:PatternEditorScrollManager;
 
 	/**
+	 * The selection manager instance for this class
+	 */
+	public selectionManager:PatternEditorSelectionManager;
+
+	/**
 	 * Initialize this PatternEditor instance
 	 *
 	 * @param tab The tab that this pattern editor is targeting
 	 */
 	constructor() {
 		_edit = this;
+
+		// initialize managers
 		this.scrollManager = new PatternEditorScrollManager(this);
+		this.selectionManager = new PatternEditorSelectionManager(this);
 	}
 
 	/**
@@ -57,12 +69,30 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			this.focusBar.classList.add("focus");
 			wrap.appendChild(this.focusBar);
 
+			// initialize the cursor element
+			this.cursor = document.createElement("div");
+			this.cursor.classList.add("cursor");
+			wrap.appendChild(this.cursor);
+
+			// initialize the single selection element
+			this.singleSelection = document.createElement("div");
+			this.singleSelection.classList.add("singleselection");
+			wrap.appendChild(this.singleSelection);
+
+			// initialize the multi selection element
+			this.multiSelection = document.createElement("div");
+			this.multiSelection.classList.add("multiselection");
+			wrap.appendChild(this.multiSelection);
+
+			// initialize the theme
 			this.reloadTheme(true).then(() => {
 				// return the main element
 				res(this.element);
 
 				requestAnimationFrame(() => {
+					// initialize children
 					this.scrollManager.init();
+					this.selectionManager.init();
 				});
 			}).catch(rej);
 		});
@@ -79,6 +109,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 
 		// initialize the channel layout for this editor
 		this.initChannels();
+		this.selectionManager.load();
 		return this.scrollManager.load();
 	}
 
@@ -372,6 +403,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 		this.scrollwrapper.style.backgroundColor = this.backdropColors[this.tab?.recordMode ? 1 : 0];
 
 		// tell the child to reload the theme
+		this.selectionManager.reloadTheme();
 		return this.scrollManager.reloadTheme(preload);
 	}
 }

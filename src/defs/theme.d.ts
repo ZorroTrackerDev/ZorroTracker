@@ -32,6 +32,10 @@ declare interface ThemeSettings {
 		 * Settings related to other elements in the pattern editor
 		 */
 		main?: PatternEditorThemeSettings,
+		/**
+		 * Settings related to the extra elements for the pattern editor
+		 */
+		extras?: PatternEdtiorExtraThemeSettings,
 	},
 }
 
@@ -47,6 +51,28 @@ declare interface PlaybarButtonsInfo {
 	 * Declarations for the SVG path element inside the button
 	 */
 	icon: CSSThemeObj,
+}
+
+/**
+ * Helper type to handle theme settings related to extra elements in the pattern editor
+ */
+declare interface PatternEdtiorExtraThemeSettings {
+	/**
+	 * Declarations for the currently focused element
+	 */
+	focus: CSSThemeObj,
+	/**
+	 * Declarations for the currently cursor element
+	 */
+	cursor: CSSThemeObj,
+	/**
+	 * Declarations for the single selection element
+	 */
+	single: CSSThemeObj,
+	/**
+	 * Declarations for the multi selection element
+	 */
+	multi: CSSThemeObj,
 }
 
 /**
@@ -231,6 +257,14 @@ declare interface WorkerThemeSettings {
 	 * The offsets of each possible element
 	 */
 	offsets?: number[],
+	/**
+	 * The selection widths of each possible element
+	 */
+	selwidths?: number[],
+	/**
+	 * The selection offsets of each possible element
+	 */
+	seloffsets?: number[],
 }
 
 /**

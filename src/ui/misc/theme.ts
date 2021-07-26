@@ -350,4 +350,26 @@ const cssPath = [
 			},
 		],
 	},
+	{
+		element: ".patternextras",
+		path: "pattern.extras",
+		child: [
+			{
+				element: ">.focus",
+				path: "focus",
+			},
+			{
+				element: ">.cursor",
+				path: "cursor",
+			},
+			{
+				element: ">.multiselection",
+				path: "multi",
+			},
+			{
+				element: ">.singleselection",
+				path: "single",
+			},
+		],
+	},
 ];

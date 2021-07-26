@@ -200,7 +200,7 @@ export class PatternEditorScrollManager {
 	/**
 	 * The scrolling offset for the current row
 	 */
-	private scrollMiddle!:number;
+	public scrollMiddle!:number;
 
 	/**
 	 * Function to update scrolling area size into memory
@@ -212,7 +212,7 @@ export class PatternEditorScrollManager {
 		this.scrollWidth = bounds.width + 5;
 
 		// calculate the number of rows visible on half screen at once
-		this.scrollMiddle = 30 + (Math.floor(this.scrollHeight / this.dataHeight / 2.5) * this.dataHeight);
+		this.scrollMiddle = 30 + (Math.floor(this.scrollHeight / this.rowHeight / 2.5) * this.rowHeight);
 
 		// update highlight to be at this location too
 		this.parent.focusBar.style.top = this.scrollMiddle +"px";
@@ -248,7 +248,7 @@ export class PatternEditorScrollManager {
 	/**
 	 * The element widths for each element
 	 */
-	private elementWidths!:number[];
+	public elementWidths!:number[];
 
 	/**
 	 * The element offsets for each element
@@ -349,7 +349,7 @@ export class PatternEditorScrollManager {
 	/**
 	 * The number of pixels for the height of each data element
 	 */
-	public dataHeight = 25;
+	public rowHeight = 25;
 
 	/**
 	 * The visible channels from left and right
@@ -417,7 +417,7 @@ export class PatternEditorScrollManager {
 			// generate each canvas
 			for(let c = 0;c < amount; c++) {
 				// generate the canvas class itself
-				const x = new PatternCanvas(this.dataHeight * patternRows, this.parent, patternRows, this.parent.tab.channels.length);
+				const x = new PatternCanvas(this.rowHeight * patternRows, this.parent, patternRows, this.parent.tab.channels.length);
 
 				// update horizontal scrolling of the canvas
 				x.updateHoriz(this);
@@ -437,7 +437,7 @@ export class PatternEditorScrollManager {
 
 				// generate the rows as well (we need the same number of row canvases)
 				const rows = this.parent.patternLen;
-				const y = new RowsCanvas(this.dataHeight * rows, this.parent, rows, this.getRowNumber, c === 0);
+				const y = new RowsCanvas(this.rowHeight * rows, this.parent, rows, this.getRowNumber, c === 0);
 
 				// add this canvas to the DOM
 				this.parent.scrollwrapper.appendChild(y.element);
@@ -516,16 +516,16 @@ export class PatternEditorScrollManager {
 			// request to render every visible row in this pattern
 			this.canvas[0].render(
 				// first row to draw
-				Math.max(0, -Math.ceil(this.scrollMiddle / this.dataHeight) - this.visibleSafeHeight - offsetTop),
+				Math.max(0, -Math.ceil(this.scrollMiddle / this.rowHeight) - this.visibleSafeHeight - offsetTop),
 				// last row to draw
-				Math.min(patternRows, Math.ceil((this.scrollHeight - this.scrollMiddle) / this.dataHeight) + this.visibleSafeHeight - offsetTop),
+				Math.min(patternRows, Math.ceil((this.scrollHeight - this.scrollMiddle) / this.rowHeight) + this.visibleSafeHeight - offsetTop),
 				// first channel to draw
 				Math.max(0, this.visibleChannels[0]),
 				// last channel to draw
 				Math.min(this.parent.channelInfo.length, this.visibleChannels[1]));
 
 			// update element position
-			this.rows[0].element.style.top = this.canvas[0].element.style.top = ((offsetTop * this.dataHeight) + this.scrollMiddle) +"px";
+			this.rows[0].element.style.top = this.canvas[0].element.style.top = ((offsetTop * this.rowHeight) + this.scrollMiddle) +"px";
 			return;
 		}
 
@@ -543,7 +543,7 @@ export class PatternEditorScrollManager {
 			}
 
 			// calculate row y-position
-			const top = ((((ppos * patternRows) - this.currentRow) * this.dataHeight) + this.scrollMiddle) +"px";
+			const top = ((((ppos * patternRows) - this.currentRow) * this.rowHeight) + this.scrollMiddle) +"px";
 
 			// update row position
 			cr.element.style.top = top;
@@ -558,7 +558,7 @@ export class PatternEditorScrollManager {
 
 			// calculate canvas y-position
 			const offsetTop = ((pat * patternRows) - this.currentRow);
-			const top = ((offsetTop * this.dataHeight) + this.scrollMiddle) +"px";
+			const top = ((offsetTop * this.rowHeight) + this.scrollMiddle) +"px";
 
 			// invalidate layout if it is not the same pattern or active status doesn't match
 			if(cv.pattern !== pat || (pat === this.parent.activePattern) !== cv.active) {
@@ -575,9 +575,9 @@ export class PatternEditorScrollManager {
 				// if yes, request to render every visible row in this pattern
 				cv.render(
 					// first row to draw
-					Math.max(0, -Math.ceil(this.scrollMiddle / this.dataHeight) - this.visibleSafeHeight - offsetTop),
+					Math.max(0, -Math.ceil(this.scrollMiddle / this.rowHeight) - this.visibleSafeHeight - offsetTop),
 					// last row to draw
-					Math.min(patternRows, Math.ceil((this.scrollHeight - this.scrollMiddle) / this.dataHeight) + this.visibleSafeHeight - offsetTop),
+					Math.min(patternRows, Math.ceil((this.scrollHeight - this.scrollMiddle) / this.rowHeight) + this.visibleSafeHeight - offsetTop),
 					// first channel to draw
 					Math.max(0, this.visibleChannels[0]),
 					// last channel to draw
@@ -625,7 +625,7 @@ export class PatternEditorScrollManager {
 		const promises = [ ...this.canvas, ...this.rows, ].map((c) => c.reloadTheme());
 
 		// meanwhile, load some variables
-		this.dataHeight = theme?.pattern?.worker?.params?.rowHeight ?? 25;
+		this.rowHeight = theme?.pattern?.worker?.params?.rowHeight ?? 25;
 		this.elementWidths = theme?.pattern?.worker?.widths ?? [];
 		this.elementOffsets = theme?.pattern?.worker?.offsets ?? [];
 
@@ -641,7 +641,7 @@ export class PatternEditorScrollManager {
 		];
 
 		// update elements that use the row height directly
-		this.parent.focusBar.style.height = this.dataHeight +"px";
+		this.parent.focusBar.style.height = this.rowHeight +"px";
 
 		if(!preload) {
 			// wait for them to finish

@@ -194,7 +194,7 @@ export class PatternCanvas extends EditorCanvasBase {
 
 		// update a few variables to the worker
 		this.worker.postMessage({ command: "vars", data: {
-			channels, patternlen, dataHeight: parent.scrollManager.dataHeight, getRowNumber: parent.scrollManager.getRowNumber,
+			channels, patternlen, dataHeight: parent.scrollManager.rowHeight, getRowNumber: parent.scrollManager.getRowNumber,
 		}, });
 
 		// set internal variables to default values

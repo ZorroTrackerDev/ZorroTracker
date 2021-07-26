@@ -671,7 +671,7 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 		// create the highlight a element
 		this.hla = await valueBox([ 1, 256, ], 1, "Highlight A", 1, (value) => {
 			// update pattern editor and module with the new value
-			components.get<PatternEditor>("editor")?.changeHighlight(1, value);
+			components.get<PatternEditor>("editor")?.scrollManager?.changeHighlight(1, value);
 			(this.tab.module as Module).highlights[1] = value;
 
 			// project is now dirty!
@@ -686,7 +686,7 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 		// create the highlight a element
 		this.hlb = await valueBox([ 1, 256, ], 1, "Highlight B", 1, (value) => {
 			// update pattern editor and module with the new value
-			components.get<PatternEditor>("editor")?.changeHighlight(0, value);
+			components.get<PatternEditor>("editor")?.scrollManager?.changeHighlight(0, value);
 			(this.tab.module as Module).highlights[0] = value;
 
 			// project is now dirty!
@@ -738,11 +738,11 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 
 		// initialize highlight a element
 		this.hla.setValue((this.tab.module as Module).highlights[1].toString(), (this.tab.module as Module).highlights[1]);
-		edit?.changeHighlight(1, (this.tab.module as Module).highlights[1]);
+		edit?.scrollManager?.changeHighlight(1, (this.tab.module as Module).highlights[1]);
 
 		// initialize highlight b element
 		this.hlb.setValue((this.tab.module as Module).highlights[0].toString(), (this.tab.module as Module).highlights[0]);
-		edit?.changeHighlight(0, (this.tab.module as Module).highlights[0]);
+		edit?.scrollManager?.changeHighlight(0, (this.tab.module as Module).highlights[0]);
 		return false;
 	}
 

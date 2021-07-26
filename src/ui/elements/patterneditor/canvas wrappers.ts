@@ -1,6 +1,7 @@
 import { Tab } from "../../misc/tab";
 import { theme } from "../../misc/theme";
 import { PatternEditor } from "./main";
+import { PatternEditorScrollManager } from "./scroll manager";
 
 /**
  * Some helper functions that apply to all types of canvases
@@ -66,7 +67,7 @@ class EditorCanvasBase {
 	 * Helper function to update row highlights
 	 */
 	public updateHighlights(): void {
-		this.worker.postMessage({ command: "highlight", data: { values: this.parent.rowHighlights, }, });
+		this.worker.postMessage({ command: "highlight", data: { values: this.parent.scrollManager.rowHighlights, }, });
 	}
 
 	/**
@@ -183,7 +184,7 @@ export class PatternCanvas extends EditorCanvasBase {
 	 * @param channels The number of channels in the project
 	 */
 	constructor(height:number, parent:PatternEditor, patternlen:number, channels:number) {
-		super(parent, patternlen, "../elements/patterneditor/channels.worker.js", parent.canvasWidth, height);
+		super(parent, patternlen, "../elements/patterneditor/channels.worker.js", parent.scrollManager.canvasWidth, height);
 
 		// give canvas its class
 		this.element.classList.add("patterncanvas");
@@ -193,7 +194,7 @@ export class PatternCanvas extends EditorCanvasBase {
 
 		// update a few variables to the worker
 		this.worker.postMessage({ command: "vars", data: {
-			channels, patternlen, dataHeight: parent.dataHeight, getRowNumber: parent.getRowNumber,
+			channels, patternlen, dataHeight: parent.scrollManager.dataHeight, getRowNumber: parent.scrollManager.getRowNumber,
 		}, });
 
 		// set internal variables to default values
@@ -207,7 +208,7 @@ export class PatternCanvas extends EditorCanvasBase {
 	public updateRenderInfo(): void {
 		// update positional data to the worker
 		this.worker.postMessage({ command: "renderinfo", data: {
-			width: this.parent.renderAreaWidth - 35,
+			width: this.parent.scrollManager.renderAreaWidth - 35,
 		}, });
 	}
 
@@ -229,7 +230,7 @@ export class PatternCanvas extends EditorCanvasBase {
 	/**
 	 * Update horizontal scrolling of canvas
 	 */
-	public updateHoriz(parent:PatternEditor): void {
+	public updateHoriz(parent:PatternEditorScrollManager): void {
 		this.element.style.left = (35 - parent.horizScroll) +"px";
 	}
 

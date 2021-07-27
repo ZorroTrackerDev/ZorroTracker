@@ -1,4 +1,4 @@
-import { Bounds } from "../../../api/ui";
+import { Bounds, Position } from "../../../api/ui";
 import { theme } from "../../misc/theme";
 import { PatternEditor } from "./main";
 
@@ -58,9 +58,9 @@ export class PatternEditorSelectionManager {
 	 */
 	public init(): void {
 		// initialize the selections to default values
-		this.parent.scrollwrapper.addEventListener("pointermove", (e) => this.pointerMove(e));
-		this.parent.scrollwrapper.addEventListener("pointerleave", (e) => this.pointerLeave(e));
-		this.parent.scrollwrapper.addEventListener("pointerenter", (e) => this.pointerEnter(e));
+		this.parent.scrollwrapper.addEventListener("pointermove", (e) => this.pointerMove( { x: e.offsetX, y: e.offsetY, }));
+		this.parent.scrollwrapper.addEventListener("pointerleave", () => this.pointerLeave());
+		this.parent.scrollwrapper.addEventListener("pointerenter", () => this.pointerEnter());
 	}
 
 	/**
@@ -98,35 +98,62 @@ export class PatternEditorSelectionManager {
 	}
 
 	/**
+	 * Function that is ran when any vertical or horizontal scrolling is applied to the parent
+	 */
+	public scroll(): void {
+		// force cursor position to update
+		this.pointerMove(this.lastCursor);
+	}
+
+	/**
+	 * Boolean indicating if the cursor is in bounds of the parent
+	 */
+	private cursorInBounds = true;
+
+	/**
 	 * Function to track the mouse cursor leaving the element
 	 */
-	private pointerLeave(e:PointerEvent) {
-
+	private pointerLeave() {
+		// set cursor out of bounds and position the cursor element
+		this.cursorInBounds = false;
+		this.setBounds(new Bounds(-10000, -10000), this.parent.cursor);
 	}
 
 	/**
 	 * Function to track the mouse cursor entering the element
 	 */
-	private pointerEnter(e:PointerEvent) {
-
+	private pointerEnter() {
+		this.cursorInBounds = true;
 	}
+
+	/**
+	 * The last cursor position
+	 */
+	private lastCursor:Position = { x: -10000, y: -10000, };
 
 	/**
 	 * Function to track the mouse cursor to show the mouse highlighter
 	 */
-	private pointerMove(e:PointerEvent) {
+	private pointerMove(cursor:Position) {
+		// ignore the cursor when out of bounds
+		if(!this.cursorInBounds) {
+			return;
+		}
+
+		this.lastCursor = cursor;
+
 		// find the currently targeted element
-		const r = this.findElementAt(e.offsetX - 35 + this.parent.scrollManager.horizScroll,
-			e.offsetY - this.parent.scrollManager.scrollMiddle + ((this.parent.scrollManager.currentRow) * this.rowHeight));
+		const r = this.findElementAt(cursor.x - 35 + this.parent.scrollManager.horizScroll,
+			cursor.y - this.parent.scrollManager.scrollMiddle + ((this.parent.scrollManager.currentRow) * this.rowHeight));
 
 		// find the on-screen position for the cursor
-		const p = this.getElementBounds(r);
+		const b = cursor.x < 35 ? this.getRowNumberBounds(r) : this.getElementBounds(r);
 
-		this.parent.cursor.style.top = p.top +"px";
-		this.parent.cursor.style.left = p.left +"px";
+		// update the bounds for the cursor
+		this.setBounds(b, this.parent.cursor);
 
-		this.parent.cursor.style.width = p.width +"px";
-		this.parent.cursor.style.height = p.height +"px";
+		// update the z-index
+		this.parent.cursor.style.zIndex = cursor.x < 35 ? "31" : "24";
 	}
 
 	/**
@@ -183,7 +210,8 @@ export class PatternEditorSelectionManager {
 	 * Function to get the element bounds on-screen
 	 */
 	private getElementBounds(data:SingleSelection): Bounds {
-		if(data.pattern < 0 || data.channel < 0 || data.channel >= this.parent.tab.channels.length) {
+		if(data.pattern < 0 || data.pattern >= this.parent.tab.matrix.matrixlen
+			|| data.channel < 0 || data.channel >= this.parent.tab.channels.length) {
 			// invalid channel or pattern
 			return new Bounds(-10000, -10000);
 		}
@@ -200,5 +228,32 @@ export class PatternEditorSelectionManager {
 			this.selectionWidths[element],
 			this.rowHeight
 		);
+	}
+
+	/**
+	 * Function to get the row number bounds on-screen
+	 */
+	private getRowNumberBounds(data:SingleSelection): Bounds {
+		if(data.pattern < 0 || data.pattern >= this.parent.tab.matrix.matrixlen) {
+			// invalid pattern
+			return new Bounds(-10000, -10000);
+		}
+
+		// row bounds
+		return new Bounds(
+			// eslint-disable-next-line
+			0, ((((data.pattern * this.parent.patternLen) + data.row) - this.parent.scrollManager.currentRow) * this.rowHeight) + this.parent.scrollManager.scrollMiddle,
+			31, this.rowHeight
+		);
+	}
+
+	/**
+	 * Update the boundaries of a single HTML element
+	 */
+	private setBounds(b:Bounds, e:HTMLElement) {
+		e.style.top = b.top +"px";
+		e.style.left = b.left +"px";
+		e.style.width = b.width +"px";
+		e.style.height = b.height +"px";
 	}
 }

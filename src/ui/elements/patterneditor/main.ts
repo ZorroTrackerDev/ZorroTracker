@@ -1,9 +1,8 @@
-import { Channel } from "../../../api/driver";
-import { ZorroEvent, ZorroEventEnum } from "../../../api/events";
 import { UIComponent, UIShortcutHandler } from "../../../api/ui";
 import { Tab } from "../../misc/tab";
 import { theme } from "../../misc/theme";
 import { PatternChannelInfo } from "./canvas wrappers";
+import { PatternEditorEventManager } from "./event manager";
 import { PatternEditorScrollManager } from "./scroll manager";
 import { PatternEditorSelectionManager } from "./selection manager";
 
@@ -32,14 +31,18 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	public selectionManager:PatternEditorSelectionManager;
 
 	/**
+	 * The event manager instance for this class
+	 */
+	public eventManager:PatternEditorEventManager;
+
+	/**
 	 * Initialize this PatternEditor instance
 	 *
 	 * @param tab The tab that this pattern editor is targeting
 	 */
 	constructor() {
-		_edit = this;
-
 		// initialize managers
+		this.eventManager = new PatternEditorEventManager(this);
 		this.scrollManager = new PatternEditorScrollManager(this);
 		this.selectionManager = new PatternEditorSelectionManager(this);
 	}
@@ -130,24 +133,6 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 		// remove all children
 		while(element.children.length > 0){
 			element.removeChild(element.children[0]);
-		}
-	}
-
-	/**
-	 * Function to update the mute state of a single channel
-	 *
-	 * @param channel The channel to update state for
-	 * @param state The actual state to update to
-	 */
-	public updateMute(channel:Channel, state:boolean): void {
-		// get index of the channel
-		for(let i = this.tab.channels.length;i > 0; --i) {
-			if(this.tab.channels[i - 1] === channel) {
-				// found the channel, update status
-				const chan = this.scrollwrapper.children[i] as HTMLDivElement;
-				chan.classList[state ? "add" : "remove"]("muted");
-				return;
-			}
 		}
 	}
 
@@ -347,17 +332,6 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	}
 
 	/**
-	 * Function to update the record mode of the pattern editor
-	 */
-	public changeRecordMode(): void {
-		// update backdrop color
-		this.scrollwrapper.style.backgroundColor = this.backdropColors[this.tab.recordMode ? 1 : 0];
-
-		// tell the scroll manager about it too
-		this.scrollManager.changeRecordMode();
-	}
-
-	/**
 	 * Store pattern size of each pattern
 	 */
 	public patternLen = 64;
@@ -370,72 +344,17 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	}
 
 	/**
-	 * Function to update the pattern editor with the new number of rows per pattern.
-	 *
-	 * @param rows The number of rows to update to
-	 */
-	public setPatternRows(rows:number): Promise<void> {
-		this.patternLen = rows;
-		return this.scrollManager.setPatternRows(rows);
-	}
-
-	/**
 	 * Various channel statistics
 	 */
 	public channelInfo!: PatternChannelInfo[];
 
 	/**
-	 * The colors for the backdrop of the scrollWrapper
-	 */
-	private backdropColors!: [ string, string, ];
-
-	/**
 	 * Helper function to inform that the theme was reloaded
 	 */
 	public reloadTheme(preload:boolean):Promise<void> {
-		// load the tables for backdrop colors
-		this.backdropColors = [
-			theme?.pattern?.worker?.params?.backdrop ?? "#000",
-			theme?.pattern?.worker?.params?.recordbackdrop ?? "#000",
-		];
-
-		// update backdrop color
-		this.scrollwrapper.style.backgroundColor = this.backdropColors[this.tab?.recordMode ? 1 : 0];
-
 		// tell the child to reload the theme
+		this.eventManager.reloadTheme();
 		this.selectionManager.reloadTheme();
 		return this.scrollManager.reloadTheme(preload);
 	}
 }
-
-let _edit:PatternEditor|undefined;
-
-// listen to theme reloading
-ZorroEvent.addListener(ZorroEventEnum.LoadTheme, async() => {
-	if(_edit) {
-		await _edit.reloadTheme(false);
-	}
-});
-
-// listen to record mode changing
-// eslint-disable-next-line require-await
-ZorroEvent.addListener(ZorroEventEnum.TabRecordMode, async() => {
-	if(_edit) {
-		_edit.changeRecordMode();
-	}
-});
-
-// listen to record mode changing
-// eslint-disable-next-line require-await
-ZorroEvent.addListener(ZorroEventEnum.TabMute, async(event, tab, channel, state) => {
-	if(_edit) {
-		_edit.updateMute(channel, state);
-	}
-});
-
-// listen to number of pattern rows changing
-ZorroEvent.addListener(ZorroEventEnum.ProjectPatternRows, async(event, project, module, rows) => {
-	if(_edit) {
-		await _edit.setPatternRows(rows);
-	}
-});

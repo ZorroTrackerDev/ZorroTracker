@@ -133,10 +133,14 @@ export class PatternEditorScrollManager {
 	/**
 	 * The width of the scrolling region
 	 */
-	private scrollWidth!: number;
+	private scrollWidth = 0;
 
-	// helper function for updating scrolling position and capping it
-	private scroll(delta:number) {
+	/**
+	 * Helper function for updating scrolling position and capping it
+	 *
+	 * @param delta The amount to scroll by. It's typical to use 0 to ensure scrolling is correct while not moving intentionally.
+	 */
+	public scroll(delta:number): void {
 		// update the scrolling position based on delta
 		this.currentRow = Math.round((delta * 0.03) + this.currentRow);
 
@@ -155,13 +159,16 @@ export class PatternEditorScrollManager {
 		}
 
 		// go to handle scrolling, reloading, drawing, etc
-		this.handleScrolling();
+		this.updatePositionAndGraphics();
+
+		// tell the selection manager to update scrolling
+		this.parent.selectionManager.scroll();
 	}
 
 	/**
 	 * This defines which horizontal scroll position of channels and canvases
 	 */
-	public horizScroll = 0;
+	public horizScroll = -1;
 
 	/**
 	 * Handle horizontal scrolling for the scroll wrapper
@@ -179,6 +186,9 @@ export class PatternEditorScrollManager {
 			// tell each canvas to update left offset
 			this.canvas.forEach((c) => c.updateHoriz(this));
 
+			// tell the selection manager to update scrolling
+			this.parent.selectionManager.scroll();
+
 			// update every channel header too, to change their translateX values
 			for(let i = this.parent.tab.channels.length;i > 0;--i){
 				const e = (this.parent.scrollwrapper.children[i] as HTMLDivElement);
@@ -192,7 +202,7 @@ export class PatternEditorScrollManager {
 			// update visible channels
 			if(this.updateVisibleChannels()) {
 				// if changed, also re-render to force channels to show up
-				this.handleScrolling();
+				this.updatePositionAndGraphics();
 			}
 		}
 	}
@@ -242,7 +252,9 @@ export class PatternEditorScrollManager {
 		// force canvases to redraw
 		this.canvas.forEach((c) => c.invalidateAll());
 		this.rows.forEach((c) => c.render());
-		this.handleScrolling();
+
+		// reload graphics
+		this.doGraphicsLater();
 	}
 
 	/**
@@ -301,7 +313,7 @@ export class PatternEditorScrollManager {
 		});
 
 		// re-render all visible rows
-		this.handleScrolling();
+		this.updatePositionAndGraphics();
 	}
 
 	/**
@@ -398,7 +410,7 @@ export class PatternEditorScrollManager {
 	/**
 	 * This is the total width of the render area
 	 */
-	public renderAreaWidth!: number;
+	public renderAreaWidth = 0;
 
 	/**
 	 * This is the actual width of each canvas in pixels
@@ -458,8 +470,10 @@ export class PatternEditorScrollManager {
 	 * @param rows The number of rows to update to
 	 */
 	public async setPatternRows(rows:number): Promise<void> {
+		this.parent.patternLen = rows;
+
 		// prepare some variables
-		const pat = this.parent.activePattern, offs = this.currentRow % this.parent.patternLen;
+		const pat = this.parent.activePattern, offs = this.currentRow % rows;
 
 		if(this.parent.channelInfo) {
 			// update row counts for all canvases
@@ -474,7 +488,7 @@ export class PatternEditorScrollManager {
 			this.currentRow = (pat * rows) + Math.min(offs, rows - 1);
 
 			// go to handle scrolling, reloading, drawing, etc
-			this.handleScrolling();
+			this.updatePositionAndGraphics();
 		}
 	}
 
@@ -497,7 +511,14 @@ export class PatternEditorScrollManager {
 	/**
 	 * Handle scrolling. This updates each canvas position, graphics, active canvas, etc
 	 */
-	private handleScrolling() {
+	private updatePositionAndGraphics(): void {
+		// clear any previous timeouts
+		if(this.graphicsTimeout) {
+			clearTimeout(this.graphicsTimeout);
+			this.graphicsTimeout = undefined;
+		}
+
+		// backup the number of pattern rows
 		const patternRows = this.parent.patternLen;
 
 		if(!this.drawPatternPreview) {
@@ -598,6 +619,45 @@ export class PatternEditorScrollManager {
 	}
 
 	/**
+	 * Helper function to inform us that a pattern index was updated, and to make sure that the display is accurate
+	 *
+	 * @param channel The channel that is affected
+	 * @param position The position index that is affected
+	 */
+	public patternChanged(channel:number, position:number): void {
+		let render = false;
+
+		// ensure that the pattern is actually visible currently
+		for(const c of this.canvas) {
+			if(c.pattern === position) {
+				// if this has the same pattern, invalidate the affected channel
+				c.invalidateChannels(channel, channel + 1);
+				render = true;
+			}
+		}
+
+		// if anything was affected, then render a bit later
+		if(render) {
+			this.doGraphicsLater();
+		}
+	}
+
+	/**
+	 * Timeout for graphics rendering. Can be used to track when graphics are trying to update a bit later
+	 */
+	private graphicsTimeout:NodeJS.Timeout|undefined;
+
+	/**
+	 * Helper function to update graphics later and to avoid too many update calls in too short time
+	 */
+	private doGraphicsLater() {
+		this.graphicsTimeout = setTimeout(() => {
+			// clear timeout and update graphics
+			this.updatePositionAndGraphics();
+		}, 15);
+	}
+
+	/**
 	 * The color and blend mode settings for the focus bar
 	 */
 	private focusBarColorNormal!: [ string, string, string,  string, string, string, ];
@@ -647,8 +707,8 @@ export class PatternEditorScrollManager {
 			// wait for them to finish
 			await Promise.all(promises);
 
-			// handle scrolling
-			this.handleScrolling();
+			// reload graphics
+			this.doGraphicsLater();
 
 			// reload row graphics
 			this.rows.forEach((r) => r.render());
@@ -670,7 +730,7 @@ export class PatternEditorScrollManager {
 		});
 
 		// reload graphics
-		this.handleScrolling();
+		this.doGraphicsLater();
 
 		// make sure the focus row gets updated
 		this.updateFocusRowData();

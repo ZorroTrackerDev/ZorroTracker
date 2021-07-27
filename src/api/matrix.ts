@@ -446,7 +446,7 @@ export class Matrix {
 				}
 
 				// check if we can set the value
-				const _e = await this.eventSet(this, c, index, values[index]);
+				const _e = await this.eventSet(this, c, r, values[index]);
 				index++;
 
 				if(!_e.event.canceled) {

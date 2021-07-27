@@ -40,7 +40,7 @@
 		&> .channelwrapper {
 			position: relative;
 			display: inline-block;
-			z-index: 11;
+			z-index: 40;
 
 			&:not(:first-child) {
 				&> .channelnamewrapper {
@@ -49,7 +49,7 @@
 						right: 0; top: 0; bottom: 0;
 						width: @labelheight;
 						background-size: @labelheight @labelheight;
-						z-index: 12;
+						z-index: 41;
 
 						filter: brightness(100%);
 						transition: filter .15s linear;
@@ -77,7 +77,7 @@
 
 			&:first-child {
 				width: @rowwidth + 4;
-				z-index: 16;
+				z-index: 42;
 
 				&> .channelnamewrapper {
 					width: 100%;
@@ -107,14 +107,14 @@
 
 .patterncanvas {
 	left: 0;
-	z-index: 10;
+	z-index: 20;
 	position: absolute;
 	pointer-events: none;
 }
 
 .rowscanvas {
 	left: 0;
-	z-index: 11;
+	z-index: 30;
 	position: absolute;
 	pointer-events: none;
 }
@@ -127,21 +127,20 @@
 	&> .focus {
 		position: absolute;
 		left: 0px; right: 0px;
-		z-index: 20;
+		z-index: 21;
 	}
 
 	&> .multiselection {
 		position: absolute;
-		z-index: 21;
+		z-index: 22;
 	}
 
 	&> .singleselection {
 		position: absolute;
-		z-index: 22;
+		z-index: 23;
 	}
 
 	&> .cursor {
 		position: absolute;
-		z-index: 23;
 	}
 }

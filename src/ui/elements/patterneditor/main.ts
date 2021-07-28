@@ -213,6 +213,9 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 					// update scroll manager
 					this.scrollManager.changeChannelSize(i, (sz - lastsize) * 38);
 					lastsize = sz;
+
+					// tell the selection manager to update selection
+					this.selectionManager.handleChannelResize();
 				}
 			}
 

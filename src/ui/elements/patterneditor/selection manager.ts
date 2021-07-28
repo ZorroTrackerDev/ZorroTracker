@@ -1,3 +1,4 @@
+import { loadFlag } from "../../../api/files";
 import { Bounds, Position } from "../../../api/ui";
 import { theme } from "../../misc/theme";
 import { PatternEditor } from "./main";
@@ -28,6 +29,9 @@ export class PatternEditorSelectionManager {
 
 	constructor(parent:PatternEditor) {
 		this.parent = parent;
+		this.edgeScrollDelay = loadFlag<number>("EDGE_SCROLL_DELAY") ?? 400;
+		this.edgeScrollAmount = loadFlag<number>("EDGE_SCROLL_AMOUNT") ?? 80;
+		this.doEdgeScrolling = loadFlag<boolean>("EDGE_SCROLL_ENABLED") ?? true;
 	}
 
 	/**
@@ -140,6 +144,9 @@ export class PatternEditorSelectionManager {
 			// take the hold class from the cursor
 			this.parent.cursor.classList.remove("hold");
 
+			// stop edge scrolling
+			this.clearEdgeScroll();
+
 			// if no preview was set, just ignore this all
 			if(!this.preview) {
 				return;
@@ -226,6 +233,7 @@ export class PatternEditorSelectionManager {
 	private pointerLeave() {
 		// set cursor out of bounds
 		this.cursorInBounds = false;
+		this.clearEdgeScroll();
 
 		if(!this.preview) {
 			// if not selecting with the cursor, then hide the cursor
@@ -264,6 +272,9 @@ export class PatternEditorSelectionManager {
 
 			// update the z-index
 			this.parent.cursor.style.zIndex = "24";
+
+			// check for extra scrolling via edges
+			this.checkEdgeScroll(cursor.x);
 
 		} else {
 			// apply single-selection
@@ -335,7 +346,7 @@ export class PatternEditorSelectionManager {
 
 		} else if(data.channel >= this.parent.tab.channels.length){
 			data.channel = this.parent.tab.channels.length - 1;
-			data.element = 0;
+			data.element = this.parent.channelInfo[data.channel].elements.length - 1;
 		}
 
 		// return the mutated object
@@ -490,6 +501,26 @@ export class PatternEditorSelectionManager {
 	}
 
 	/**
+	 * Helper function to handle channel resize event
+	 */
+	public handleChannelResize(): void {
+		// remove multi-selection
+		this.clearMultiSelection();
+
+		// update the single selection to be in bounds
+		if(this.single) {
+			// calculate the new element
+			const e = Math.min(this.single.element, this.parent.channelInfo[this.single.channel].elements.length - 1);
+
+			if(this.single.element !== e) {
+				// if the element changed, then update boundaries
+				this.single.element = e;
+				this.scroll();
+			}
+		}
+	}
+
+	/**
 	 * Helper function to handle matrix resize event
 	 */
 	public handleMatrixResize(): void {
@@ -512,5 +543,68 @@ export class PatternEditorSelectionManager {
 		// set the object itself far away and height to 0
 		this.parent.multiSelection.style.top = "-10000px";
 		this.parent.multiSelection.style.height = "0px";
+	}
+
+	/**
+	 * The width of the edge in pixels
+	 */
+	private edgeWidth = 50;
+
+	/**
+	 * When edge scrolling, this will tell which edge to use.
+	 */
+	private whichEdge: 1|-1 = 1;
+
+	/**
+	 * The interval which will trigger edge scrolling when enabled
+	 */
+	private edgeInterval: undefined|NodeJS.Timeout;
+
+	/**
+	 * Helper function to clear edge scrolling by setting an invalid x-position
+	 */
+	private clearEdgeScroll() {
+		this.checkEdgeScroll(-1);
+	}
+
+	/**
+	 * Some flags loaded from the flags file for edge scrolling
+	 */
+	private edgeScrollDelay = 400;
+	private edgeScrollAmount = 80;
+	private doEdgeScrolling = false;
+
+	/**
+	 * Helper function to deal with edge scrolling
+	 */
+	private checkEdgeScroll(x:number) {
+		// helper function to reset the interval to none if enabled in the first place
+		const resetInterval = () => {
+			if(this.edgeInterval) {
+				clearInterval(this.edgeInterval);
+				this.edgeInterval = undefined;
+			}
+		}
+
+		// calculate scroll direction
+		const scroll = (x < 0) ? 0 : (x <= this.edgeWidth + 35) ? -1 : (x >= this.parent.scrollManager.scrollWidth - this.edgeWidth) ? 1 : 0;
+
+		if(!this.doEdgeScrolling || scroll === 0) {
+			// no scroll, clear the interval if enabled
+			resetInterval();
+			return;
+
+		} else if(scroll !== this.whichEdge) {
+			// if the edge and scroll aren't the same, then update it and clear the interval
+			this.whichEdge = scroll;
+			resetInterval();
+		}
+
+		// if interval is not started, start it
+		if(!this.edgeInterval) {
+			this.edgeInterval = setInterval(() => {
+				this.parent.scrollManager.scrollHoriz(this.whichEdge * this.edgeScrollAmount, false);
+			}, this.edgeScrollDelay);
+		}
 	}
 }

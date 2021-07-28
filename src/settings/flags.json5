@@ -21,4 +21,7 @@
 	INITIAL_EFFECT_COUNT: 1,													/* The amount of effects a channel starts out with */
 	HIGHLIGHT_A_DEFAULT: 4,														/* How often to highlight a row in the pattern editor. This is usually the beat highlight */
 	HIGHLIGHT_B_DEFAULT: 16,													/* How often to highlight a row in the pattern editor. This is usually the bar highlight. Takes precedence over A */
+	EDGE_SCROLL_ENABLED: true,													/* Whether edge scrolling is enabled at all. For accessibility reasons, you may wish to disable edge scrolling altogether. */
+	EDGE_SCROLL_DELAY: 400,														/* How quickly edge scrolling happens on the pattern editor. 400 milliseconds is thought to be a good default. For accessibility reasons, you may wish to change this. */
+	EDGE_SCROLL_AMOUNT: 80,														/* How far edge scrolling scrolls at once in the pattern editor. 8+ pixels is thought to be a good default. */
 }

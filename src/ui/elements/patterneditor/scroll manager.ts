@@ -203,7 +203,7 @@ export class PatternEditorScrollManager {
 	/**
 	 * The width of the scrolling region
 	 */
-	private scrollWidth = 0;
+	public scrollWidth = 0;
 
 	/**
 	 * Helper function for updating scrolling position and capping it

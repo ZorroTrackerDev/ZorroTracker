@@ -62,9 +62,18 @@ declare interface PatternEdtiorExtraThemeSettings {
 	 */
 	focus: CSSThemeObj,
 	/**
-	 * Declarations for the currently cursor element
+	 * Settings related to the cursor element
 	 */
-	cursor: CSSThemeObj,
+	cursor: {
+		/**
+		 * The CSS styles for the cursor element
+		 */
+		css: CSSTheme,
+		/**
+		 * Declarations for when the cursor element is held down
+		 */
+		hold: CSSThemeObj,
+	},
 	/**
 	 * Declarations for the single selection element
 	 */

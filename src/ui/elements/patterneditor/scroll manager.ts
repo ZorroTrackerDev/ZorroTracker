@@ -65,9 +65,14 @@ export class PatternEditorScrollManager {
 					return;
 				}
 
-				// update scrolling size
+				// update horizontal scrolling and visible channels
 				this.updateScrollerSize();
 				this.scrollHoriz(0);
+
+				if(this.updateVisibleChannels()) {
+					// if visible channels changed, then we must also re-render
+					this.doGraphicsLater();
+				}
 
 				// check if height was changed at all
 				if(this.parent.element.offsetHeight === height) {
@@ -377,7 +382,7 @@ export class PatternEditorScrollManager {
 
 		// hotfix
 		if(!this.parent.channelInfo) {
-			return;
+			return false;
 		}
 
 		// find the leftmost channel

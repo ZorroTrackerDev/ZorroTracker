@@ -361,6 +361,12 @@ const cssPath = [
 			{
 				element: ">.cursor",
 				path: "cursor",
+				child: [
+					{
+						element: ".hold",
+						path: "hold",
+					},
+				],
 			},
 			{
 				element: ">.multiselection",

@@ -141,6 +141,15 @@
 				// CSS styles
 				css: {
 					"background-color": "#d4333380",
+				},
+				// special class for the when the mouse button is held down, highlighting the new selection area (that will be applied when mouse button is released)
+				hold: {
+					// CSS styles
+					css: {
+						"background-color": "#f25c5c30",
+						border: "3px solid #96111180",
+						"box-sizing": "border-box",
+					}
 				}
 			},
 			// settings related to currently selected element (single element selection)

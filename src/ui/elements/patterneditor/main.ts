@@ -226,7 +226,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 				drag.onmousemove = null;
 
 				// fix horizontal scrolling just in case
-				this.scrollManager.scrollHoriz(0);
+				this.scrollManager.scrollHoriz(0, false);
 			}
 
 			// handler for mouse clicks on the main channel itself

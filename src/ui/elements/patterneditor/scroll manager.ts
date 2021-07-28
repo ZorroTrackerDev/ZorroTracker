@@ -33,7 +33,7 @@ export class PatternEditorScrollManager {
 		// add handler for vertical and horizontal scrolling
 		this.parent.scrollwrapper.addEventListener("wheel", (e) => {
 			if(e.deltaX) {
-				this.scrollHoriz(e.deltaX);
+				this.scrollHoriz(e.deltaX, false);
 			}
 
 			if(e.deltaY) {
@@ -41,7 +41,6 @@ export class PatternEditorScrollManager {
 				this.scroll(e.deltaY);
 			}
 		}, { passive: false, });
-
 
 		// create a timeout object. This allows us to defer updating scrolling until the user has reasonably stopped scrolling.
 		let timeout:null|NodeJS.Timeout = null;
@@ -67,7 +66,7 @@ export class PatternEditorScrollManager {
 
 				// update horizontal scrolling and visible channels
 				this.updateScrollerSize();
-				this.scrollHoriz(0);
+				this.scrollHoriz(0, false);
 
 				if(this.updateVisibleChannels()) {
 					// if visible channels changed, then we must also re-render
@@ -103,7 +102,7 @@ export class PatternEditorScrollManager {
 				this.refreshPatternAmount().then(() => {
 					// forcibly apply scrolling effects
 					this.scroll(0);
-					this.scrollHoriz(0);
+					this.scrollHoriz(0, false);
 
 					// no moar passes
 					res(false);
@@ -126,9 +125,75 @@ export class PatternEditorScrollManager {
 	}
 
 	/**
+	 * The bias in pixels for how much extra to show when scrolling something to view
+	 */
+	private channelVisibleBias = 50;
+
+	/**
+	 * Helper function to ensure all the following are visible. Rows are absolute rows, not relative to patterns
+	 *
+	 * @param row1 The first row to make visible
+	 * @param row2 The second row to make visible
+	 * @param channel1 The first channel to make visible
+	 * @param channel2 The second channel to make visible
+	 */
+	public ensureVisible(row1:number, row2:number, channel1:number, channel2:number): void {
+		// calculate the boundaries of the visibility check
+		const left = Math.min(channel1, channel2), right = Math.max(channel1, channel2);
+		/* ignore top/bottom for now! :( const bottom = Math.max(row1, row2), top = Math.min(row1, row2);*/
+
+		// get the real area
+		const lp = Math.max(0, this.getChannelBounds(left).l - this.channelVisibleBias);
+		const rp = Math.min(this.renderAreaWidth, this.getChannelBounds(right).r + this.channelVisibleBias + 35);
+
+		// back-up the old scrolling
+		const old = this.horizScroll;
+
+		// check if the horizontal scrolling is too far left
+		if(this.horizScroll > lp) {
+			// if so, clamp the position immediately
+			this.horizScroll = lp;
+		}
+
+		// check if the horizontal scrolling is too far right
+		if(this.horizScroll < rp - this.scrollWidth) {
+			// if so, clamp the position immediately
+			this.horizScroll = rp - this.scrollWidth;
+		}
+
+		if(this.horizScroll !== old) {
+			// force-update scrolling related info.
+			this.scrollHoriz(0, true);
+		}
+	}
+
+	private getChannelBounds(channel:number) {
+		// get the channel info object
+		const ch = this.parent.channelInfo[channel];
+
+		// if this is an invalid channel, just return invalid values
+		if(!ch) {
+			return { l: -10000, w: 0, r: -10000, };
+		}
+
+		// return the real coordinates
+		return { l: ch.left, w: ch.width, r: ch.right, };
+	}
+
+	/**
 	 * Store the vertical scroll position of channel datas
 	 */
 	public currentRow = 0;
+
+	/**
+	 * Helper function to update the current row
+	 *
+	 * @param row The row to set as the current row
+	 */
+	public changeCurrentRow(row:number): void {
+		this.currentRow = row;
+		this.scroll(0);
+	}
 
 	/**
 	 * The height of the scrolling region
@@ -179,13 +244,14 @@ export class PatternEditorScrollManager {
 	 * Handle horizontal scrolling for the scroll wrapper
 	 *
 	 * @param amount The scrolling amount
+	 * @param force If the horizontal scrolling is forced regardless of previous scroll. Useful for code that sets the scrolling itself
 	 */
-	public scrollHoriz(amount:number): void {
+	public scrollHoriz(amount:number, force:boolean): void {
 		// calculate the new scrolling position
 		const p = Math.max(0, Math.min(this.horizScroll + amount, this.renderAreaWidth - this.scrollWidth));
 
 		// check if the scrolling was actually allowed to move
-		if(p !== this.horizScroll) {
+		if(force || p !== this.horizScroll) {
 			this.horizScroll = p;
 
 			// tell each canvas to update left offset
@@ -309,7 +375,7 @@ export class PatternEditorScrollManager {
 		this.refreshChannelWidth();
 
 		// scroll to follow cursor and update size
-		this.scrollHoriz(scroll);
+		this.scrollHoriz(scroll, false);
 
 		// invalidate and clear all canvas rows
 		this.canvas.forEach((c) => {
@@ -475,10 +541,9 @@ export class PatternEditorScrollManager {
 	 * @param rows The number of rows to update to
 	 */
 	public async setPatternRows(rows:number): Promise<void> {
-		this.parent.patternLen = rows;
-
 		// prepare some variables
-		const pat = this.parent.activePattern, offs = this.currentRow % rows;
+		const pat = this.parent.activePattern, offs = this.currentRow % this.parent.patternLen;
+		this.parent.patternLen = rows;
 
 		if(this.parent.channelInfo) {
 			// update row counts for all canvases

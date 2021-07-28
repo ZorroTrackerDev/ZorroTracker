@@ -94,9 +94,11 @@ export class PatternEditorSelectionManager {
 		// force cursor position to update
 		this.pointerMove(this.lastCursor);
 
-		// fix single selection position
-		const bs = this.getElementBounds(this.single);
-		this.setBounds(bs, this.parent.singleSelection);
+		if(this.single) {
+			// fix single selection position
+			const bs = this.getElementBounds(this.single);
+			this.setBounds(bs, this.parent.singleSelection);
+		}
 
 		if(this.multi) {
 			// fix multi selection position
@@ -148,16 +150,30 @@ export class PatternEditorSelectionManager {
 				// single mode
 				this.single = (this.preview as MultiSelection)[0];
 
+				// clear the preview selection
+				this.preview = null;
+
+				// tell the scrolling manager to change the current row
+				const row = (this.single.pattern * this.parent.patternLen) + this.single.row;
+				this.parent.scrollManager.changeCurrentRow(row);
+
+				// tell the scrolling manager to make channels visible
+				this.parent.scrollManager.ensureVisible(row, row, this.single.channel, this.single.channel);
+
 			} else {
 				// multi mode
 				this.multi = this.preview as MultiSelection;
+
+				// clear the preview selection
+				this.preview = null;
+
+				// tell the scrolling manager to make channels visible
+				const row = (this.multi[1].pattern * this.parent.patternLen) + this.multi[1].row;
+				this.parent.scrollManager.ensureVisible(row, row, this.multi[1].channel, this.multi[1].channel);
+
+				// update scrolling anyway
+				this.scroll();
 			}
-
-			// clear the preview selection
-			this.preview = null;
-
-			// update positions by scrolling
-			this.scroll();
 		}
 	}
 
@@ -474,9 +490,22 @@ export class PatternEditorSelectionManager {
 	}
 
 	/**
+	 * Helper function to handle matrix resize event
+	 */
+	public handleMatrixResize(): void {
+		// remove multi-selection
+		this.clearMultiSelection();
+
+		// update the single selection to be in bounds
+		if(this.single) {
+			this.single.row = Math.min(this.single.row, this.parent.tab.matrix.matrixlen - 1);
+		}
+	}
+
+	/**
 	 * Helper function to clear the multi selection object
 	 */
-	private clearMultiSelection() {
+	public clearMultiSelection(): void {
 		// clear selection
 		this.multi = null;
 

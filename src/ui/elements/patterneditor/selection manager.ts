@@ -93,6 +93,16 @@ export class PatternEditorSelectionManager {
 	public scroll(): void {
 		// force cursor position to update
 		this.pointerMove(this.lastCursor);
+
+		// fix single selection position
+		const bs = this.getElementBounds(this.single);
+		this.setBounds(bs, this.parent.singleSelection);
+
+		if(this.multi) {
+			// fix multi selection position
+			const bm = this.getMultiBounds(this.multi);
+			this.setBounds(bm, this.parent.multiSelection);
+		}
 	}
 
 	/**
@@ -125,11 +135,56 @@ export class PatternEditorSelectionManager {
 	private pointerUp(e:PointerEvent) {
 		// MUST be right click!
 		if((e.buttons & 1) === 0) {
-			this.preview = null;
-
 			// take the hold class from the cursor
 			this.parent.cursor.classList.remove("hold");
+
+			// if no preview was set, just ignore this all
+			if(!this.preview) {
+				return;
+			}
+
+			// check whether to create multi or single selection
+			if(this.arePositionsEqual(...(this.preview as MultiSelection))) {
+				// single mode
+				this.single = (this.preview as MultiSelection)[0];
+
+			} else {
+				// multi mode
+				this.multi = this.preview as MultiSelection;
+			}
+
+			// clear the preview selection
+			this.preview = null;
+
+			// update positions by scrolling
+			this.scroll();
 		}
+	}
+
+	/**
+	 * Helepr function to check if all selections are equal
+	 *
+	 * @param d1 The first selection to check
+	 * @param d2 The second selection to check
+	 * @returns Boolean indicating if selections are equal
+	 */
+	private arePositionsEqual(...data:SingleSelection[]): boolean {
+		// special case: if 1 or 0 elements in an array, it is always equal
+		if(data.length < 2) {
+			return true;
+		}
+
+		// loop for every selection except first one
+		for(let s = 1;s < data.length;s ++) {
+			// check if any property does not match. If so, then return false
+			if(data[s].channel !== data[0].channel || data[s].pattern !== data[0].pattern ||
+				data[s].row !== data[0].row || data[s].element !== data[0].element) {
+				return false;
+			}
+		}
+
+		// everything matched, return true
+		return true;
 	}
 
 	/**

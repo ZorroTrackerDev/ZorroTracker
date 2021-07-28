@@ -156,14 +156,16 @@
 			single: {
 				// CSS styles
 				css: {
-
+					"background-color": "#5e73c480",
 				}
 			},
 			// settings related to currently selected area (multiple element selection)
 			multi: {
 				// CSS styles
 				css: {
-
+					"background-color": "#81868c40",
+					border: "3px solid #b7bfc960",
+					"box-sizing": "border-box",
 				}
 			},
 		},

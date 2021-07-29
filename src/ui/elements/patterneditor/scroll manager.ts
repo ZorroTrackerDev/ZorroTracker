@@ -33,12 +33,13 @@ export class PatternEditorScrollManager {
 		// add handler for vertical and horizontal scrolling
 		this.parent.scrollwrapper.addEventListener("wheel", (e) => {
 			if(e.deltaX) {
-				this.parent.selectionManager.moveSingle(Math.round(e.deltaX / 25), 0);
+				// there is horizontal movement, call the special scroll handler
+				this.parent.selectionManager.moveSingle(Math.round(e.deltaX * 0.03), 0, false);
 			}
 
 			if(e.deltaY) {
 				// there is vertical movement, call the special scroll handler
-				this.verticalScroll(e.deltaY);
+				this.parent.selectionManager.moveSingle(0, Math.round(e.deltaY * 0.03), false);
 			}
 		}, { passive: false, });
 
@@ -155,7 +156,7 @@ export class PatternEditorScrollManager {
 		// check if the horizontal scrolling is too far right
 		} else if(opos + this.scrollWidth <= rp) {
 			// if so, clamp the position immediately
-			this.horizChannel += 2 + right - this.getLastVisibleChannel();
+			this.horizChannel += 1 + right - this.getLastVisibleChannel();
 		}
 
 		if(this.horizChannel !== old) {

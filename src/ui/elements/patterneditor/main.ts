@@ -5,6 +5,7 @@ import { PatternChannelInfo } from "./canvas wrappers";
 import { PatternEditorEventManager } from "./event manager";
 import { PatternEditorScrollManager } from "./scroll manager";
 import { PatternEditorSelectionManager } from "./selection manager";
+import { PatternEditorShortcuts } from "./shortcut handler";
 
 export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	// various standard elements for the pattern editor
@@ -18,22 +19,27 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	/**
 	 * This is the tab that the pattern editor is working in
 	 */
-	public tab!:Tab;
+	public tab!: Tab;
 
 	/**
 	 * The scroll manager instance for this class
 	 */
-	public scrollManager:PatternEditorScrollManager;
+	public scrollManager: PatternEditorScrollManager;
 
 	/**
 	 * The selection manager instance for this class
 	 */
-	public selectionManager:PatternEditorSelectionManager;
+	public selectionManager: PatternEditorSelectionManager;
 
 	/**
 	 * The event manager instance for this class
 	 */
-	public eventManager:PatternEditorEventManager;
+	public eventManager: PatternEditorEventManager;
+
+	/**
+	 * The shortcuts manager for this class
+	 */
+	public shortcuts: PatternEditorShortcuts;
 
 	/**
 	 * Initialize this PatternEditor instance
@@ -42,9 +48,20 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	 */
 	constructor() {
 		// initialize managers
+		this.shortcuts = new PatternEditorShortcuts(this);
 		this.eventManager = new PatternEditorEventManager(this);
 		this.scrollManager = new PatternEditorScrollManager(this);
 		this.selectionManager = new PatternEditorSelectionManager(this);
+	}
+
+	/**
+	 * Function to receive shortcut events from the user.
+	 *
+	 * @param shortcut Array of strings representing the shotcut data
+	 * @returns Whether the shortcut was executed
+	 */
+	public receiveShortcut(data:string[]):Promise<boolean> {
+		return this.shortcuts.receiveShortcut(data);
 	}
 
 	/**
@@ -308,26 +325,6 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 
 		// maximum size
 		return this.channelWidths.length - 1;
-	}
-
-	/**
-	 * Function to receive shortcut events from the user.
-	 *
-	 * @param shortcut Array of strings representing the shotcut data
-	 * @returns Whether the shortcut was executed
-	 */
-	// eslint-disable-next-line require-await
-	public async receiveShortcut(data:string[]):Promise<boolean> {
-		if(document.querySelector(":focus") === this.element) {
-			// has focus, process the shortcut
-			switch(data.shift()) {
-				case "null": {
-					break;
-				}
-			}
-		}
-
-		return false;
 	}
 
 	/**

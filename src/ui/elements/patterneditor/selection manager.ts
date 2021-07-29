@@ -93,14 +93,22 @@ export class PatternEditorSelectionManager {
 	/**
 	 * Helper function to move the single selection by some amount automatically
 	 */
-	public moveSingle(x:number, y:number): void {
+	public moveSingle(x:number, y:number, wrap:boolean): void {
 		// find the new element id
-		let elm = x + this.single.element;
+		let elm = x + this.single.element, vscrl = false;
 
 		// check if we need to go to the previous channel
 		while(elm < 0) {
 			// wrap channels if needed
 			if(--this.single.channel < 0){
+
+				if(!wrap) {
+					// if wrapping is disabled, cap it instead
+					this.single.channel = 0;
+					elm = 0;
+					break;
+				}
+
 				this.single.channel = this.parent.channelInfo.length - 1;
 			}
 
@@ -113,6 +121,14 @@ export class PatternEditorSelectionManager {
 
 			// wrap channels if needed
 			if(++this.single.channel >= this.parent.channelInfo.length){
+
+				if(!wrap) {
+					// if wrapping is disabled, cap it instead
+					this.single.channel = this.parent.channelInfo.length - 1;
+					elm = this.parent.channelInfo[this.single.channel].elements.length - 1;
+					break;
+				}
+
 				this.single.channel = 0;
 			}
 		}
@@ -120,11 +136,46 @@ export class PatternEditorSelectionManager {
 		// save the element now
 		this.single.element = elm;
 
+		// check if vertical scrolling is possible
+		if(wrap || (y < 0 && this.single.pattern + this.single.row > 0) ||
+			(y > 0 && (this.single.pattern < this.parent.tab.matrix.matrixlen - 1 || this.single.row < this.parent.patternLen - 1))) {
+				vscrl = true;
+
+				// get the absolute row from selection
+				let r = (this.single.pattern * this.parent.patternLen) + this.single.row + y;
+
+				// if wrapping is disabled, make sure this works correctly
+				const ttl = this.parent.tab.matrix.matrixlen * this.parent.patternLen;
+
+				if(!wrap && y < 0 && r < 0) {
+					r = 0;
+
+				} else if(!wrap && y > 0 && r >= ttl){
+					r = ttl - 1;
+				}
+
+				// wrap it
+				r = (ttl + r) % ttl;
+
+				// save it back
+				this.single.row = r % this.parent.patternLen;
+				this.single.pattern = Math.floor(r / this.parent.patternLen);
+
+				// set parents current row to this as well
+				this.parent.scrollManager.currentRow = r;
+			}
+
 		// ensure the channel is visible
 		this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
 
-		// update graphics
-		this.scroll();
+		if(!vscrl) {
+			// update graphics
+			this.scroll();
+
+		} else {
+			// immediately do vertical scrolling on the parent
+			this.parent.scrollManager.verticalScroll(0);
+		}
 	}
 
 	/**

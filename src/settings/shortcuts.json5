@@ -82,7 +82,10 @@
 	"*layout.piano.octave2.D#":			[ "Digit0" ],							/* shortcut for playing D# on current octave +2 */
 	"*layout.piano.octave2.E":			[ "KeyP" ],								/* shortcut for playing E on current octave +2 */
 
-	"layout.pattern.null":				[ "Shift+Space" ],						/* TEST ONLY */
+	"layout.pattern.ss.move.up":		[ "ArrowUp" ],							/* shortcut for moving the selection up */
+	"layout.pattern.ss.move.down":		[ "ArrowDown" ],						/* shortcut for moving the selection down */
+	"layout.pattern.ss.move.left":		[ "ArrowLeft" ],						/* shortcut for moving the selection left */
+	"layout.pattern.ss.move.right":		[ "ArrowRight" ],						/* shortcut for moving the selection right */
 
 	"ui.open":							[ "ctrl+O" ],							/* shortcut for opening a file or a project */
 	"ui.undo":							[ "ctrl+Z" ],							/* shortcut for undoing a change */

@@ -231,7 +231,6 @@ export class PatternCanvas extends EditorCanvasBase {
 	 * Update horizontal scrolling of canvas
 	 */
 	public updateHoriz(parent:PatternEditorScrollManager): void {
-		console.log("scrollhoriz", parent.horizScroll)
 		this.element.style.left = (35 - parent.horizScroll) +"px";
 	}
 

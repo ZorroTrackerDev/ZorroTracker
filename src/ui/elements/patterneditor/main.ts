@@ -211,7 +211,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 					this.setChannelHeaderSize(sz, i, this.tab.channels[i].muted, chan);
 
 					// update scroll manager
-					this.scrollManager.changeChannelSize(i, (sz - lastsize) * 38);
+					this.scrollManager.changeChannelSize(i, (sz - lastsize) * 2);
 					lastsize = sz;
 
 					// tell the selection manager to update selection
@@ -229,7 +229,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 				drag.onmousemove = null;
 
 				// fix horizontal scrolling just in case
-				this.scrollManager.scrollHoriz(0, false);
+				this.scrollManager.horizontalScroll(0, false);
 			}
 
 			// handler for mouse clicks on the main channel itself

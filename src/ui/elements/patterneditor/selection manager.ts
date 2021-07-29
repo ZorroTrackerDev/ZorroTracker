@@ -381,8 +381,10 @@ export class PatternEditorSelectionManager {
 
 					// check if the channel is too far to the right, and if so, we found the channel
 				} else if(this.parent.channelInfo[channel + 1].left > point.x){
-					// store the x-offset within the channel
-					xoff = point.x - this.parent.channelInfo[channel].left;
+					if(channel >= 0){
+						// store the x-offset within the channel
+						xoff = point.x - this.parent.channelInfo[channel].left;
+					}
 					break;
 				}
 			}
@@ -422,13 +424,25 @@ export class PatternEditorSelectionManager {
 	}
 
 	/**
+	 * Function to calculate the absolute left of the element
+	 *
+	 * @param data The selection to use for calculations
+	 * @returns The screen position for the left of the element
+	 */
+	public getElementLeftAbsolute(data:{ channel:number, element:number }) : number {
+		const element = this.parent.channelInfo[data.channel].elements[data.element];
+		const base = this.parent.channelInfo[data.channel].left + this.parent.channelInfo[data.channel].offsets[data.element];
+		return base + this.selectionOffsets[element];
+	}
+
+	/**
 	 * Function to calculate the left of the element
 	 *
 	 * @param data The selection to use for calculations
 	 * @param element The calculated element ID
 	 * @returns The screen position for the left of the element
 	 */
-	private getElementLeft(data:SingleSelection, element:number) : number {
+	public getElementLeft(data:{ channel:number, element:number }, element:number) : number {
 		const base = this.parent.channelInfo[data.channel].left + this.parent.channelInfo[data.channel].offsets[data.element];
 		return base + this.selectionOffsets[element] - this.parent.scrollManager.horizScroll + 35;
 	}
@@ -439,7 +453,7 @@ export class PatternEditorSelectionManager {
 	 * @param data The selection to use for calculations
 	 * @returns The screen position for the top of the element
 	 */
-	private getElementTop(data:SingleSelection) : number {
+	private getElementTop(data:{ pattern:number, row:number }) : number {
 		const row = ((data.pattern * this.parent.patternLen) + data.row) - this.parent.scrollManager.currentRow;
 		return (row * this.rowHeight) + this.parent.scrollManager.scrollMiddle;
 	}
@@ -603,7 +617,7 @@ export class PatternEditorSelectionManager {
 		// if interval is not started, start it
 		if(!this.edgeInterval) {
 			this.edgeInterval = setInterval(() => {
-				this.parent.scrollManager.scrollHoriz(this.whichEdge * this.edgeScrollAmount, false);
+				this.parent.scrollManager.horizontalScroll(this.whichEdge * this.edgeScrollAmount, false);
 			}, this.edgeScrollDelay);
 		}
 	}

@@ -96,7 +96,7 @@ ZorroEvent.addListener(ZorroEventEnum.ProjectPatternRows, async(event, project, 
 ZorroEvent.addListener(ZorroEventEnum.MatrixResize, async() => {
 	setTimeout(() => {
 		// reload the graphics after the matrix resize event is accepted
-		manager?.parent.scrollManager.scroll(0);
+		manager?.parent.scrollManager.verticalScroll(0);
 	}, 1);
 });
 

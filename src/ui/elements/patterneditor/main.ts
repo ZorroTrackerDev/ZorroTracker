@@ -178,7 +178,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			const chan = this.scrollwrapper.children[i + 1] as HTMLDivElement;
 			const drag = chan.children[0].children[1] as HTMLDivElement;
 
-			let pos = -1, lastsize = -1, left = 0;
+			let pos = -1, left = 0;
 
 			// initialize header size
 			this.setChannelHeaderSize(this.tab.channels[i]?.info.effects ?? 0, i, this.tab.channels[i].muted, chan);
@@ -191,9 +191,6 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 				// reset the channel header position and mouse position
 				left = chan.getBoundingClientRect().x;
 				pos = e.x;
-
-				// load the channel commands count for scrolling
-				lastsize = this.tab.channels[i]?.info.effects ?? 0;
 
 				// enable mouse button and movement detection
 				drag.onmousemove = move;
@@ -211,8 +208,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 					this.setChannelHeaderSize(sz, i, this.tab.channels[i].muted, chan);
 
 					// update scroll manager
-					this.scrollManager.changeChannelSize(i, (sz - lastsize) * 2);
-					lastsize = sz;
+					this.scrollManager.changeChannelSize(i);
 
 					// tell the selection manager to update selection
 					this.selectionManager.handleChannelResize();

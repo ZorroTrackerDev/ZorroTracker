@@ -29,8 +29,7 @@ export class PatternEditorSelectionManager {
 
 	constructor(parent:PatternEditor) {
 		this.parent = parent;
-		this.edgeScrollDelay = loadFlag<number>("EDGE_SCROLL_DELAY") ?? 400;
-		this.edgeScrollAmount = loadFlag<number>("EDGE_SCROLL_AMOUNT") ?? 80;
+		this.edgeScrollDelay = loadFlag<number>("EDGE_SCROLL_DELAY") ?? 800;
 		this.doEdgeScrolling = loadFlag<boolean>("EDGE_SCROLL_ENABLED") ?? true;
 	}
 
@@ -524,13 +523,10 @@ export class PatternEditorSelectionManager {
 		// update the single selection to be in bounds
 		if(this.single) {
 			// calculate the new element
-			const e = Math.min(this.single.element, this.parent.channelInfo[this.single.channel].elements.length - 1);
+			this.single.element =Math.min(this.single.element, this.parent.channelInfo[this.single.channel].elements.length - 1);
 
-			if(this.single.element !== e) {
-				// if the element changed, then update boundaries
-				this.single.element = e;
-				this.scroll();
-			}
+			// update scrolling anyway
+			this.scroll();
 		}
 	}
 
@@ -562,7 +558,7 @@ export class PatternEditorSelectionManager {
 	/**
 	 * The width of the edge in pixels
 	 */
-	private edgeWidth = 50;
+	private edgeWidth = 20;
 
 	/**
 	 * When edge scrolling, this will tell which edge to use.
@@ -584,8 +580,7 @@ export class PatternEditorSelectionManager {
 	/**
 	 * Some flags loaded from the flags file for edge scrolling
 	 */
-	private edgeScrollDelay = 400;
-	private edgeScrollAmount = 80;
+	private edgeScrollDelay = 800;
 	private doEdgeScrolling = false;
 
 	/**
@@ -617,7 +612,7 @@ export class PatternEditorSelectionManager {
 		// if interval is not started, start it
 		if(!this.edgeInterval) {
 			this.edgeInterval = setInterval(() => {
-				this.parent.scrollManager.horizontalScroll(this.whichEdge * this.edgeScrollAmount, false);
+				this.parent.scrollManager.horizontalScroll(this.whichEdge, false);
 			}, this.edgeScrollDelay);
 		}
 	}

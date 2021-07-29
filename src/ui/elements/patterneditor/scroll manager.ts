@@ -33,7 +33,7 @@ export class PatternEditorScrollManager {
 		// add handler for vertical and horizontal scrolling
 		this.parent.scrollwrapper.addEventListener("wheel", (e) => {
 			if(e.deltaX) {
-				this.horizontalScroll(Math.round(e.deltaX / 25), false);
+				this.horizontalScroll(Math.round(e.deltaX / 100), false);
 			}
 
 			if(e.deltaY) {
@@ -127,7 +127,7 @@ export class PatternEditorScrollManager {
 	/**
 	 * The bias in elements for how much extra to show when scrolling something to view
 	 */
-	private channelVisibleBias = 2;
+	private channelVisibleBias = 50 + 35;
 
 	/**
 	 * Helper function to ensure all the following are visible. Rows are absolute rows, not relative to patterns
@@ -143,91 +143,43 @@ export class PatternEditorScrollManager {
 		/* ignore top/bottom for now! :( const bottom = Math.max(row1, row2), top = Math.min(row1, row2);*/
 
 		// get the real area
-		const lp = Math.max(0, this.getChannelBounds(left).l - this.channelVisibleBias);
-		const rp = Math.min(this.renderAreaWidth, this.getChannelBounds(right).r + this.channelVisibleBias);
+		const lp = Math.max(0, this.parent.channelInfo[left].left - this.channelVisibleBias);
+		const rp = Math.min(this.renderAreaWidth, this.parent.channelInfo[right].right + this.channelVisibleBias);
 
 		// back-up the old scrolling
-		const old = this.horizElement;
+		const old = this.horizChannel, opos = this.parent.channelInfo[this.horizChannel].left;
 
 		// check if the horizontal scrolling is too far left
-		if(this.horizElement > lp) {
+		if(opos > lp) {
 			// if so, clamp the position immediately
-			this.horizElement = lp;
-		}
+			this.horizChannel = left - 1;
 
 		// check if the horizontal scrolling is too far right
-		const last = this.getLastVisibleElementFrom(this.horizElement);
-
-		if(last <= rp) {
+		} else if(opos + this.scrollWidth <= rp) {
 			// if so, clamp the position immediately
-			this.horizElement += rp - last + 1;
+			this.horizChannel += 2 + right - this.getLastVisibleChannel();
 		}
 
-		if(this.horizElement !== old) {
+		if(this.horizChannel !== old) {
 			// force-update scrolling related info.
 			this.horizontalScroll(0, true);
 		}
 	}
 
 	/**
-	 * Helper function to get the channel bounds in elements
+	 * Helper function to get the last visible channel currently
 	 */
-	private getChannelBounds(channel:number) {
-		// get the channel info object
-		const ch = this.parent.channelInfo[channel];
-		const cp = this.getChannelElementPosition(channel);
+	private getLastVisibleChannel() {
+		let ch = this.horizChannel;
 
-		// if this is an invalid channel, just return invalid values
-		if(!ch) {
-			return { l: -10000, w: 0, r: -10000, };
-		}
-
-		// return the real coordinates
-		return { l: cp, w: ch.elements.length, r: cp + ch.elements.length, };
-	}
-
-	/**
-	 * Helper function to get the channels absolute element position
-	 */
-	private getChannelElementPosition(channel:number) {
-		let pos = 0;
-
-		for(let c = 0;c < channel;c ++) {
-			pos += this.parent.channelInfo[c].elements.length;
-		}
-
-		return pos;
-	}
-
-	/**
-	 * Helper function to get the last visible element from this element position
-	 */
-	private getLastVisibleElementFrom(element:number) {
-		let el = 0;
-
-		// loop for every channel
-		for(let c = 0;c < this.parent.channelInfo.length;c ++) {
-			if(el + this.parent.channelInfo[c].offsets.length < element) {
-				// just skip it all now
-				el += this.parent.channelInfo[c].offsets.length;
-
-			} else {
-				const left = this.parent.channelInfo[c].left - this.horizScroll + 35;
-
-				// loop for all elements here as well
-				for(let i = 0;i < this.parent.channelInfo[c].offsets.length;i ++) {
-					// check if finally out of bounds, if so, we found the target
-					if(left + this.parent.channelInfo[c].offsets[i] > this.scrollWidth) {
-						return el;
-					}
-
-					el++;
-				}
+		// loop for all the channels after the current channel, looking for which one starts too far
+		for(;ch < this.parent.channelInfo.length;ch ++) {
+			if(this.parent.channelInfo[ch].left - this.horizScroll >= this.scrollWidth - 35) {
+				return ch - 1;
 			}
 		}
 
-		// whatever, the last element is the target now
-		return el;
+		return ch - 1;
 	}
 
 	/**
@@ -293,7 +245,7 @@ export class PatternEditorScrollManager {
 	/**
 	 * This defines which is the leftmost element currently
 	 */
-	public horizElement = -1;
+	public horizChannel = -1;
 
 	/**
 	 * Handle horizontal scrolling for the scroll wrapper
@@ -303,12 +255,12 @@ export class PatternEditorScrollManager {
 	 */
 	public horizontalScroll(amount:number, force:boolean): void {
 		// calculate the new scrolling position
-		const p = Math.max(0, Math.min(this.horizElement + amount, this.maxHorizontalScroll));
+		const p = Math.max(0, Math.min(this.horizChannel + amount, this.maxHorizontalScroll));
 
 		// check if the scrolling was actually allowed to move
-		if(force || p !== this.horizElement) {
-			this.horizElement = p;
-			this.horizScroll = this.getAbsoluteElementLeft(this.horizElement);
+		if(force || p !== this.horizChannel) {
+			this.horizChannel = p;
+			this.horizScroll = this.parent.channelInfo ? this.parent.channelInfo[this.horizChannel].left : 0;
 
 			// tell each canvas to update left offset
 			this.canvas.forEach((c) => c.updateHoriz(this));
@@ -332,35 +284,6 @@ export class PatternEditorScrollManager {
 				this.updatePositionAndGraphics();
 			}
 		}
-	}
-
-	/**
-	 * Helper function to get the position of an element by its absolute position.
-	 *
-	 * @param element The absolute element to find position of
-	 * @returns The left position of this element
-	 */
-	private getAbsoluteElementLeft(element:number): number {
-		// for the first and all under 0 elements, just return 0
-		if(element <= 0) {
-			return 0;
-		}
-
-		// find which channel this element is in
-		let e = element;
-
-		for(let c = 0;c < this.parent.channelInfo.length;c ++) {
-			if(e < this.parent.channelInfo[c].elements.length) {
-				// found the precise channel now, calculate its position
-				return this.parent.selectionManager.getElementLeftAbsolute({ channel: c, element: e, });
-			}
-
-			// subtract the element count from absolute element
-			e -= this.parent.channelInfo[c].elements.length;
-		}
-
-		// just return the furthest position along
-		return this.parent.channelInfo[this.parent.channelInfo.length - 1].right;
 	}
 
 	/**
@@ -390,31 +313,25 @@ export class PatternEditorScrollManager {
 	private maxHorizontalScroll = 0;
 
 	/**
-	 * Helper function to calculate which column is the furthest scrolling is allowed
+	 * Helper function to calculate which channel is the furthest scrolling is allowed
 	 */
 	private findMaxHorizontalScroll() {
-		// first, find the maximum horizontal scrolling to even allow in the first place
-		const maxscroll = this.renderAreaWidth - this.scrollWidth;
-
 		// if not even wide enough to scroll, result is 0
-		if(maxscroll <= 0 || this.scrollWidth === 0) {
+		if(this.scrollWidth === 0 || this.renderAreaWidth <= this.scrollWidth) {
 			this.maxHorizontalScroll = 0;
 			return;
 		}
 
-		// brute-force to find the right element. TODO: Make better code ffs!!!
-		let el = 1;
+		// find out which channel is the last visible channel that allows us to fully see all channels when scrolled
+		let ch = 1;
 
-		while(this.getAbsoluteElementLeft(el) < maxscroll) {
-			el++;
-
-			// in case this somehow breaks, this will bail us out
-			if(el > 256) {
-				return
+		for(;ch < this.parent.channelInfo.length; ch++) {
+			if(this.renderAreaWidth - this.parent.channelInfo[ch].left < this.scrollWidth) {
+				break;
 			}
 		}
 
-		this.maxHorizontalScroll = el;
+		this.maxHorizontalScroll = ch;
 	}
 
 	/**
@@ -488,12 +405,12 @@ export class PatternEditorScrollManager {
 	 * @param channel The channel to change the size for
 	 * @param scroll How much to scroll
 	 */
-	public changeChannelSize(channel:number, scroll:number): void {
+	public changeChannelSize(channel:number): void {
 		// update worker with data
 		this.refreshChannelWidth();
 
 		// scroll to follow cursor and update size
-		this.horizontalScroll(scroll, false);
+		this.ensureVisible(0, 0, channel, channel);
 
 		// invalidate and clear all canvas rows
 		this.canvas.forEach((c) => {

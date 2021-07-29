@@ -91,6 +91,43 @@ export class PatternEditorSelectionManager {
 	}
 
 	/**
+	 * Helper function to move the single selection by some amount automatically
+	 */
+	public moveSingle(x:number, y:number): void {
+		// find the new element id
+		let elm = x + this.single.element;
+
+		// check if we need to go to the previous channel
+		while(elm < 0) {
+			// wrap channels if needed
+			if(--this.single.channel < 0){
+				this.single.channel = this.parent.channelInfo.length - 1;
+			}
+
+			elm += this.parent.channelInfo[this.single.channel].elements.length;
+		}
+
+		// check if we need to go to the next channel
+		while(elm >= this.parent.channelInfo[this.single.channel].elements.length) {
+			elm -= this.parent.channelInfo[this.single.channel].elements.length;
+
+			// wrap channels if needed
+			if(++this.single.channel >= this.parent.channelInfo.length){
+				this.single.channel = 0;
+			}
+		}
+
+		// save the element now
+		this.single.element = elm;
+
+		// ensure the channel is visible
+		this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
+
+		// update graphics
+		this.scroll();
+	}
+
+	/**
 	 * Function that is ran when any vertical or horizontal scrolling is applied to the parent
 	 */
 	public scroll(): void {
@@ -164,7 +201,7 @@ export class PatternEditorSelectionManager {
 				this.parent.scrollManager.changeCurrentRow(row);
 
 				// tell the scrolling manager to make channels visible
-				this.parent.scrollManager.ensureVisible(row, row, this.single.channel, this.single.channel);
+				this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
 
 			} else {
 				// multi mode
@@ -174,8 +211,7 @@ export class PatternEditorSelectionManager {
 				this.preview = null;
 
 				// tell the scrolling manager to make channels visible
-				const row = (this.multi[1].pattern * this.parent.patternLen) + this.multi[1].row;
-				this.parent.scrollManager.ensureVisible(row, row, this.multi[1].channel, this.multi[1].channel);
+				this.parent.scrollManager.ensureVisibleChannel(this.multi[1].channel, this.multi[1].channel);
 
 				// update scrolling anyway
 				this.scroll();

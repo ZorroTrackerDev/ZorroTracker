@@ -33,7 +33,7 @@ export class PatternEditorScrollManager {
 		// add handler for vertical and horizontal scrolling
 		this.parent.scrollwrapper.addEventListener("wheel", (e) => {
 			if(e.deltaX) {
-				this.horizontalScroll(Math.round(e.deltaX / 100), false);
+				this.parent.selectionManager.moveSingle(Math.round(e.deltaX / 25), 0);
 			}
 
 			if(e.deltaY) {
@@ -130,14 +130,12 @@ export class PatternEditorScrollManager {
 	private channelVisibleBias = 50 + 35;
 
 	/**
-	 * Helper function to ensure all the following are visible. Rows are absolute rows, not relative to patterns
+	 * Helper function to ensure the channel is visible.
 	 *
-	 * @param row1 The first row to make visible
-	 * @param row2 The second row to make visible
 	 * @param channel1 The first channel to make visible
 	 * @param channel2 The second channel to make visible
 	 */
-	public ensureVisible(row1:number, row2:number, channel1:number, channel2:number): void {
+	public ensureVisibleChannel(channel1:number, channel2:number): void {
 		// calculate the boundaries of the visibility check
 		const left = Math.min(channel1, channel2), right = Math.max(channel1, channel2);
 		/* ignore top/bottom for now! :( const bottom = Math.max(row1, row2), top = Math.min(row1, row2);*/
@@ -410,7 +408,7 @@ export class PatternEditorScrollManager {
 		this.refreshChannelWidth();
 
 		// scroll to follow cursor and update size
-		this.ensureVisible(0, 0, channel, channel);
+		this.ensureVisibleChannel(channel, channel);
 
 		// invalidate and clear all canvas rows
 		this.canvas.forEach((c) => {

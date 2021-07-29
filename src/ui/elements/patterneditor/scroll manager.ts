@@ -277,12 +277,20 @@ export class PatternEditorScrollManager {
 				}
 			}
 
+			// update the width of the focus bar
+			this.updateFocusWidth();
+
 			// update visible channels
 			if(this.updateVisibleChannels()) {
 				// if changed, also re-render to force channels to show up
 				this.updatePositionAndGraphics();
 			}
 		}
+	}
+
+	private updateFocusWidth() {
+		// update highlight to be at this location too
+		this.parent.focusBar.style.maxWidth = (this.renderAreaWidth - this.horizScroll - 4) +"px";
 	}
 
 	/**
@@ -307,6 +315,9 @@ export class PatternEditorScrollManager {
 
 		// find how far we can scroll before we have issues
 		this.findMaxHorizontalScroll();
+
+		// update the width of the focus bar
+		this.updateFocusWidth();
 	}
 
 	private maxHorizontalScroll = 0;
@@ -443,9 +454,6 @@ export class PatternEditorScrollManager {
 		// save the total width of the render area
 		this.renderAreaWidth = pos + 35;
 
-		// update highlight to be at this location too
-		this.parent.focusBar.style.maxWidth = (this.renderAreaWidth - 4) +"px";
-
 		// find how far we can scroll before we have issues
 		this.findMaxHorizontalScroll();
 
@@ -454,6 +462,9 @@ export class PatternEditorScrollManager {
 
 		// update visible channels
 		this.updateVisibleChannels();
+
+		// update the width of the focus bar
+		this.updateFocusWidth();
 	}
 
 	/**

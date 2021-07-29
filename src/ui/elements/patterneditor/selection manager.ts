@@ -199,6 +199,11 @@ export class PatternEditorSelectionManager {
 	}
 
 	/**
+	 * If true, the row number is being held down
+	 */
+	private rowHold = false;
+
+	/**
 	 * Function to handling mouse button being pressed
 	 */
 	private pointerDown(e:PointerEvent) {
@@ -219,6 +224,13 @@ export class PatternEditorSelectionManager {
 
 			// clear multiselection
 			this.clearMultiSelection();
+
+		} else if(e.offsetX < 35) {
+			// special hold mode when clicking the row numbers
+			this.rowHold = true;
+
+			// clear multiselection
+			this.clearMultiSelection();
 		}
 	}
 
@@ -236,6 +248,19 @@ export class PatternEditorSelectionManager {
 
 			// if no preview was set, just ignore this all
 			if(!this.preview) {
+				if(this.rowHold && e.offsetX < 35) {
+					// actually, the row is being held down, update single selection
+					const x = this.findElementAt(this.getAbsolutePointer({ x: 36, y: e.offsetY, }));
+					this.single.row = x.row;
+					this.single.pattern = x.pattern;
+
+					// tell the scrolling manager to change the current row
+					const row = (this.single.pattern * this.parent.patternLen) + this.single.row;
+					this.parent.scrollManager.changeCurrentRow(row);
+
+					// disable row hold mode
+					this.rowHold = false;
+				}
 				return;
 			}
 
@@ -361,6 +386,10 @@ export class PatternEditorSelectionManager {
 
 			// check for extra scrolling via edges
 			this.checkEdgeScroll(cursor.x);
+
+		} else if(this.rowHold && cursor.x >= 35){
+			// if in row hold mode but mouse is not on a row number, hide cursor
+			this.setBounds(new Bounds(-10000, -10000), this.parent.cursor);
 
 		} else {
 			// apply single-selection

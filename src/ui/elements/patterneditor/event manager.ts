@@ -84,11 +84,12 @@ ZorroEvent.addListener(ZorroEventEnum.TabMute, async(event, tab, channel, state)
 
 // listen to number of pattern rows changing
 ZorroEvent.addListener(ZorroEventEnum.ProjectPatternRows, async(event, project, module, rows) => {
-	// handle selection
-	manager?.parent.selectionManager.handleMatrixResize();
-
 	// handle scrolling
 	await manager?.parent.scrollManager.setPatternRows(rows);
+
+	// handle selection
+	manager?.parent.selectionManager.handleMatrixResize();
+	manager?.parent.selectionManager.scroll();
 });
 
 // listen to matrix being resized
@@ -97,6 +98,10 @@ ZorroEvent.addListener(ZorroEventEnum.MatrixResize, async() => {
 	setTimeout(() => {
 		// reload the graphics after the matrix resize event is accepted
 		manager?.parent.scrollManager.verticalScroll(0);
+
+		// handle selection
+		manager?.parent.selectionManager.handleMatrixResize();
+		manager?.parent.selectionManager.scroll();
 	}, 1);
 });
 

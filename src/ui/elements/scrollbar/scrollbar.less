@@ -1,0 +1,31 @@
+.scrollbar {
+	background: black;
+	position: absolute;
+	z-index: 1100;
+
+	&.corner {
+		background: #222222;
+	}
+
+	&> div {
+		position: absolute;
+		background: #666666;
+		pointer-events: none;
+	}
+
+	&:hover > div {
+		background: #888888;
+	}
+
+	&:active > div {
+		background: #aaaaaa;
+	}
+
+	&.vertical > div {
+		width: 100%;
+	}
+
+	&.horizontal > div {
+		height: 100%;
+	}
+}

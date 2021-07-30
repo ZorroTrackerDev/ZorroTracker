@@ -142,7 +142,7 @@ export class PatternEditorSelectionManager {
 				vscrl = true;
 
 				// get the absolute row from selection
-				let r = (this.single.pattern * this.parent.patternLen) + this.single.row + y;
+				let r = (this.single.pattern * this.parent.patternLen) + this.single.row + Math.round(y);
 
 				// if wrapping is disabled, make sure this works correctly
 				const ttl = this.parent.tab.matrix.matrixlen * this.parent.patternLen;
@@ -189,6 +189,10 @@ export class PatternEditorSelectionManager {
 			// fix single selection position
 			const bs = this.getElementBounds(this.single);
 			this.setBounds(bs, this.parent.singleSelection);
+
+			// update scrollbars too
+			this.parent.horizontalBar.setPosition(1);
+			this.parent.verticalBar.setPosition(this.single.row);
 		}
 
 		if(this.multi) {
@@ -655,7 +659,8 @@ export class PatternEditorSelectionManager {
 
 		// update the single selection to be in bounds
 		if(this.single) {
-			this.single.row = Math.min(this.single.row, this.parent.tab.matrix.matrixlen - 1);
+			this.single.row = Math.min(this.single.row, this.parent.patternLen - 1);
+			this.single.pattern = Math.min(this.single.pattern, this.parent.tab.matrix.matrixlen - 1);
 		}
 	}
 

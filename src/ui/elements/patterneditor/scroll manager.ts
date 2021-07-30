@@ -43,6 +43,10 @@ export class PatternEditorScrollManager {
 			}
 		}, { passive: false, });
 
+		// update scrollbars
+	//	this.parent.horizontalBar.setMultiplier(5);
+		this.parent.verticalBar.setMultiplier(5);
+
 		// create a timeout object. This allows us to defer updating scrolling until the user has reasonably stopped scrolling.
 		let timeout:null|NodeJS.Timeout = null;
 
@@ -99,6 +103,9 @@ export class PatternEditorScrollManager {
 			requestAnimationFrame(() => {
 				// initialize the scrolling region size
 				this.updateScrollerSize();
+
+				// update scrollbars
+				this.parent.verticalBar.setValues(this.parent.patternLen);
 
 				this.refreshPatternAmount().then(() => {
 					// forcibly apply scrolling effects
@@ -592,6 +599,9 @@ export class PatternEditorScrollManager {
 		// prepare some variables
 		const pat = this.parent.activePattern, offs = this.currentRow % this.parent.patternLen;
 		this.parent.patternLen = rows;
+
+		// update the vertical scrollbar
+		this.parent.verticalBar.setValues(rows);
 
 		if(this.parent.channelInfo) {
 			// update row counts for all canvases

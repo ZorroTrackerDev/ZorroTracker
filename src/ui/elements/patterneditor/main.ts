@@ -1,6 +1,7 @@
 import { UIComponent, UIShortcutHandler } from "../../../api/ui";
 import { Tab } from "../../misc/tab";
 import { theme } from "../../misc/theme";
+import { makeScrollbar, makeScrollbarCorner, ScrollbarReturn } from "../scrollbar/scrollbar";
 import { PatternChannelInfo } from "./canvas wrappers";
 import { PatternEditorEventManager } from "./event manager";
 import { PatternEditorScrollManager } from "./scroll manager";
@@ -15,6 +16,12 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	public singleSelection!: HTMLDivElement;
 	public multiSelection!: HTMLDivElement;
 	public cursor!: HTMLDivElement;
+
+	/**
+	 * The scrollbars for this element
+	 */
+	public horizontalBar!: ScrollbarReturn;
+	public verticalBar!: ScrollbarReturn;
 
 	/**
 	 * This is the tab that the pattern editor is working in
@@ -103,6 +110,25 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			this.multiSelection = document.createElement("div");
 			this.multiSelection.classList.add("multiselection");
 			wrap.appendChild(this.multiSelection);
+
+			// initialize the scrollbars
+			this.verticalBar = makeScrollbar({
+				top: "28px", bottom: "12px", right: "0px", width: "12px", class: [ "patternscroll", ], vertical: true, move: (row) => {
+					if(this.selectionManager.single) {
+						// update the row of the single selection
+						this.selectionManager.single.row = row;
+						this.selectionManager.moveSingle(0, 0.00001, false);
+					}
+				},
+			});
+			this.horizontalBar = makeScrollbar({
+				height: "12px", bottom: "0px", right: "12px", left: "0px", class: [ "patternscroll", ], vertical: false, move: () => 0,
+			});
+			this.element.appendChild(this.verticalBar.element);
+			this.element.appendChild(this.horizontalBar.element);
+			this.element.appendChild(makeScrollbarCorner({
+				height: "12px", bottom: "0px", width: "12px", right: "0px", class: [ "patternscroll", ],
+			}));
 
 			// initialize the theme
 			this.reloadTheme(true).then(() => {

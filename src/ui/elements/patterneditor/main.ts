@@ -117,12 +117,14 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 					if(this.selectionManager.single) {
 						// update the row of the single selection
 						this.selectionManager.single.row = row;
-						this.selectionManager.moveSingle(0, 0.00001, false);
+						this.selectionManager.moveSingle(0, 0.00001, true);
 					}
 				},
 			});
 			this.horizontalBar = makeScrollbar({
-				height: "12px", bottom: "0px", right: "12px", left: "0px", class: [ "patternscroll", ], vertical: false, move: () => 0,
+				height: "12px", bottom: "0px", right: "12px", left: "0px", class: [ "patternscroll", ], vertical: false, move: (elm) => {
+					this.selectionManager.setSingleElement(elm);
+				},
 			});
 			this.element.appendChild(this.verticalBar.element);
 			this.element.appendChild(this.horizontalBar.element);

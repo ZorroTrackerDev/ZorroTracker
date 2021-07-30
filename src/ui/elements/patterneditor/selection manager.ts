@@ -63,6 +63,9 @@ export class PatternEditorSelectionManager {
 		// initialize the selections to default values
 		this.multi = null;
 		this.single = { channel: 0, element: 0, pattern: 0, row: 0, };
+
+		// set the number of values
+		this.parent.horizontalBar.setValues(this.getTotalElements());
 	}
 
 	/**
@@ -88,6 +91,46 @@ export class PatternEditorSelectionManager {
 		this.rowHeight = theme?.pattern?.worker?.params?.rowHeight ?? 25;
 		this.selectionWidths = theme?.pattern?.worker?.selwidths ?? [];
 		this.selectionOffsets = theme?.pattern?.worker?.seloffsets ?? [];
+	}
+
+	/**
+	 * Helper function to find the total number of elements in the pattern editor
+	 *
+	 * @returns The total number of elements
+	 */
+	public getTotalElements(): number {
+		return this.parent.channelInfo.reduce((p, c) => p + c.elements.length, 0);
+	}
+
+	/**
+	 * Helper function to find the absolute element for the single selection
+	 *
+	 * @returns The absolute element number for the selection
+	 */
+	public getSingleElement(): number {
+		// special case to check if single is valid??
+		if(!this.single) {
+			return 0;
+		}
+
+		// load the element number in the last channel
+		let el = this.single.element;
+
+		// loop for each channel to find the element
+		for(let ch = this.single.channel - 1;ch >= 0; --ch) {
+			el += this.parent.channelInfo[ch].elements.length;
+		}
+
+		return el;
+	}
+
+	/**
+	 * Set the absolute element for the channel, and refreshing scrolling
+	 *
+	 * @param element The element number to move to
+	 */
+	public setSingleElement(element:number): void {
+		this.moveSingle(element - this.getSingleElement(), 0, false);
 	}
 
 	/**
@@ -191,7 +234,7 @@ export class PatternEditorSelectionManager {
 			this.setBounds(bs, this.parent.singleSelection);
 
 			// update scrollbars too
-			this.parent.horizontalBar.setPosition(1);
+			this.parent.horizontalBar.setPosition(this.getSingleElement());
 			this.parent.verticalBar.setPosition(this.single.row);
 		}
 
@@ -212,7 +255,7 @@ export class PatternEditorSelectionManager {
 	 */
 	private pointerDown(e:PointerEvent) {
 		// MUST be right click!
-		if(e.button !== 0) {
+		if(e.button !== 0 || e.target !== e.currentTarget) {
 			return;
 		}
 
@@ -642,8 +685,11 @@ export class PatternEditorSelectionManager {
 
 		// update the single selection to be in bounds
 		if(this.single) {
+			// set the number of values
+			this.parent.horizontalBar.setValues(this.getTotalElements());
+
 			// calculate the new element
-			this.single.element =Math.min(this.single.element, this.parent.channelInfo[this.single.channel].elements.length - 1);
+			this.single.element = Math.min(this.single.element, this.parent.channelInfo[this.single.channel].elements.length - 1);
 
 			// update scrolling anyway
 			this.scroll();

@@ -44,7 +44,7 @@ export class PatternEditorScrollManager {
 		}, { passive: false, });
 
 		// update scrollbars
-	//	this.parent.horizontalBar.setMultiplier(5);
+		this.parent.horizontalBar.setMultiplier(5);
 		this.parent.verticalBar.setMultiplier(5);
 
 		// create a timeout object. This allows us to defer updating scrolling until the user has reasonably stopped scrolling.

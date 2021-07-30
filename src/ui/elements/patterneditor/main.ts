@@ -113,7 +113,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 
 			// initialize the scrollbars
 			this.verticalBar = makeScrollbar({
-				top: "28px", bottom: "12px", right: "0px", width: "12px", class: [ "patternscroll", ], vertical: true, move: (row) => {
+				top: "0px", bottom: "12px", right: "0px", width: "12px", class: [ "patternscroll", ], vertical: true, move: (row) => {
 					if(this.selectionManager.single) {
 						// update the row of the single selection
 						this.selectionManager.single.row = row;

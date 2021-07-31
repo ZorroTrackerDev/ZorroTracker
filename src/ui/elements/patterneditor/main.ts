@@ -119,8 +119,8 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			// initialize the scrollbars
 			const bar = [
 				makeScrollbar({
-					top: "0px", bottom: "12px", right: "0px", size: 12, class: [ "patternscroll", ],
-					vertical: true, buttonValues: 3, buttonSVG: "scrollbar.button.patternedit", move: (row) => {
+					top: "0px", bottom: "12px", right: "0px", size: 12, class: [ "patternscroll", ], vertical: true,
+					buttonValues: 3, buttonSVG: "scrollbar.button.patternedit", gripSVG: "scrollbar.grip.patternedit", move: (row) => {
 						if(this.selectionManager.single) {
 							// update the row of the single selection
 							this.selectionManager.single.row = row;
@@ -129,8 +129,8 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 					},
 				}),
 				makeScrollbar({
-					size: 12, bottom: "0px", right: "12px", left: "0px", class: [ "patternscroll", ],
-					vertical: false, buttonValues: 3, buttonSVG: "scrollbar.button.patternedit", move: (elm) => {
+					size: 12, bottom: "0px", right: "12px", left: "0px", class: [ "patternscroll", ], vertical: false,
+					buttonValues: 3, buttonSVG: "scrollbar.button.patternedit", gripSVG: "scrollbar.grip.patternedit", move: (elm) => {
 						this.selectionManager.setSingleElement(elm);
 					},
 				}),

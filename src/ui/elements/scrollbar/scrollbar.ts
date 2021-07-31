@@ -83,6 +83,11 @@ export interface ScrollbarOptions extends ScrollbarCornerOptions {
 	 * The SVG file for the buttons
 	 */
 	buttonSVG: string,
+
+	/**
+	 * The SVG file for the grip element
+	 */
+	gripSVG: string,
 }
 
 /**
@@ -107,6 +112,9 @@ export async function makeScrollbar(options:ScrollbarOptions): Promise<Scrollbar
 	setOptions(element, options, options.vertical ? "vertical" : "horizontal", options.vertical, !options.vertical);
 	wrap.style[options.vertical ? "top" : "left"] = sz +"px";
 	wrap.style[options.vertical ? "bottom" : "right"] = sz +"px";
+
+	// load the grip texture
+	grip.innerHTML = await loadSVG(options.gripSVG);
 
 	// initialize buttons
 	await Promise.all(button.map(async(b, ix) => {

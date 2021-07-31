@@ -168,6 +168,144 @@
 					"box-sizing": "border-box",
 				}
 			},
+			// settings related to the scrollbars
+			scrollbar: {
+				// size of the scrollbar in pixels. This also affects the scrollbar buttons
+				size: 12,
+				// settings related to the scrollbar buttons
+				buttons: {
+					// when not highlighting the buttons
+					normal: {
+						// CSS styles
+						css: {
+							"background-color": "#444444",
+							transition: "background-color 170ms",
+						}
+					},
+					// when hovering over the buttons
+					hover: {
+						// CSS styles
+						css: {
+							"background-color": "#666666",
+						}
+					},
+					// when clicking the buttons
+					active: {
+						// CSS styles
+						css: {
+							"background-color": "#aaaaaa",
+							transition: "background-color 0ms",
+						}
+					},
+				},
+				// settings related to the scrollbar button icons
+				buttonicons: {
+					// when not highlighting the buttons
+					normal: {
+						// CSS styles
+						css: {
+							stroke: "#e8e8e8",
+						}
+					},
+					// when hovering over the buttons
+					hover: {
+						// CSS styles
+						css: {
+
+						}
+					},
+					// when clicking the buttons
+					active: {
+						// CSS styles
+						css: {
+							stroke: "#2E2E2E",
+						}
+					},
+				},
+				// settings related to the scrollbar backing
+				bar: {
+					// when not highlighting the scrollbar backing
+					normal: {
+						// CSS styles
+						css: {
+							"background-color": "#444444",
+						}
+					},
+					// when hovering over the scrollbar backing
+					hover: {
+						// CSS styles
+						css: {
+
+						}
+					},
+					// when clicking the scrollbar backing
+					active: {
+						// CSS styles
+						css: {
+
+						}
+					},
+				},
+				// settings related to the scrollbar grip
+				grip: {
+					// when not highlighting the scrollbar grip
+					normal: {
+						// CSS styles
+						css: {
+							"background-color": "#888888",
+							transition: "background-color 170ms",
+						}
+					},
+					// when hovering over the scrollbar grip
+					hover: {
+						// CSS styles
+						css: {
+							"background-color": "#aaaaaa",
+						}
+					},
+					// when clicking the scrollbar grip
+					active: {
+						// CSS styles
+						css: {
+							"background-color": "#cccccc",
+							transition: "background-color 0ms",
+						}
+					},
+				},
+				// settings related to the scrollbar grip icons
+				gripicon: {
+					// when not highlighting the scrollbar grip icons
+					normal: {
+						// CSS styles
+						css: {
+							stroke: "#606060",
+							transition: "stroke 170ms",
+						}
+					},
+					// when hovering over the scrollbar grip icons
+					hover: {
+						// CSS styles
+						css: {
+							stroke: "#808080",
+						}
+					},
+					// when clicking the scrollbar grip icons
+					active: {
+						// CSS styles
+						css: {
+							stroke: "#a0a0a0",
+							transition: "stroke 0ms",
+						}
+					},
+				},
+				// settings related to the scrollbar corners
+				corner: {
+					// CSS styles
+					css: {
+						"background-color": "#222222",
+					}
+				},
+			}
 		},
 		worker: {
 			// Miscellaneous parameters that are used for pattern editor

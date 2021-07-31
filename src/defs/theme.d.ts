@@ -3,6 +3,11 @@
  */
 declare type CSSTheme = Record<string, string|number>;
 declare type CSSThemeObj = { css: CSSTheme };
+declare type CSSButtonStates = {
+	normal: CSSThemeObj,
+	hover: CSSThemeObj,
+	active: CSSThemeObj,
+}
 
 declare interface ThemeSettings {
 	playbar?: {
@@ -82,6 +87,39 @@ declare interface PatternEdtiorExtraThemeSettings {
 	 * Declarations for the multi selection element
 	 */
 	multi: CSSThemeObj,
+	/**
+	 * Settings related to the scrollbars in the pattern editor
+	 */
+	scrollbar: {
+		/**
+		 * The size of the scrollbar in pixels. This also affects the scrollbar buttons
+		 */
+		size: number,
+		/**
+		 * Settings related to the scrollbar buttons
+		 */
+		buttons: CSSButtonStates,
+		/**
+		 * Settings related to the scrollbar button icons
+		 */
+		buttonicons: CSSButtonStates,
+		/**
+		 * Settings related to the scrollbar backing
+		 */
+		bar: CSSButtonStates,
+		/**
+		 * Settings related to the scrollbar grip
+		 */
+		grip: CSSButtonStates,
+		/**
+		 * Settings related to the scrollbar grip texture
+		 */
+		gripicon: CSSButtonStates,
+		/**
+		 * Settings related to the scrollbar corners
+		 */
+		corner: CSSThemeObj,
+	},
 }
 
 /**

@@ -2,66 +2,49 @@
 	position: absolute;
 	z-index: 1100;
 
-	&.corner {
-		background: #222222;
-	}
-
 	&> .gripwrap {
 		position: absolute;
-		background: #444444;
 		top: 0; bottom: 0;
 		left: 0; right: 0;
 
 		&> .grip {
 			position: absolute;
-			background: #888888;
 			pointer-events: none;
-			transition: background-color 170ms;
-		}
 
-		&:hover > .grip {
-			background: #aaaaaa;
-		}
-
-		&:active > .grip {
-			background: #cccccc;
-			transition: background-color 0ms;
+			&> svg  {
+				position: absolute;
+			}
 		}
 	}
 
 	&.vertical > .gripwrap > .grip {
 		width: 100%;
+
+		&> svg  {
+			width: 100%;
+			height: auto;
+			transform: translateY(-50%);
+			top: 50%;
+		}
 	}
 
 	&.horizontal > .gripwrap > .grip {
 		height: 100%;
+
+		&> svg  {
+			width: auto;
+			height: 100%;
+			transform: translateX(-50%) rotate(-90deg);
+			left: 50%;
+		}
 	}
 
 	&> .scrollbarbutton {
 		position: absolute;
-		background: #444444;
-		transition: background-color 170ms;
-
-		&:hover {
-			background: #666666;
-		}
-
-		&:active {
-			background: #aaaaaa;
-			transition: background-color 0ms;
-
-			&> svg > * {
-				stroke: #2E2E2E;
-			}
-		}
 
 		&> svg  {
 			width: 100%;
 			height: 100%;
-
-			&> * {
-				stroke: #e8e8e8;
-			}
 		}
 	}
 }

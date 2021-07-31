@@ -378,4 +378,104 @@ const cssPath = [
 			},
 		],
 	},
+	{
+		element: ".scrollbar.patternscroll",
+		path: "pattern.extras.scrollbar",
+		child: [
+			{
+				element: ">.scrollbarbutton",
+				path: "buttons",
+				child: [
+					{
+						element: "",
+						path: "normal",
+					},
+					{
+						element: ":hover",
+						path: "hover",
+					},
+					{
+						element: ":active",
+						path: "active",
+					},
+				],
+			},
+			{
+				element: ">.scrollbarbutton",
+				path: "buttonicons",
+				child: [
+					{
+						element: ">svg>*",
+						path: "normal",
+					},
+					{
+						element: ":hover>svg>*",
+						path: "hover",
+					},
+					{
+						element: ":active>svg>*",
+						path: "active",
+					},
+				],
+			},
+			{
+				element: ">.gripwrap",
+				path: "bar",
+				child: [
+					{
+						element: "",
+						path: "normal",
+					},
+					{
+						element: ":hover",
+						path: "hover",
+					},
+					{
+						element: ":active",
+						path: "active",
+					},
+				],
+			},
+			{
+				element: ".corner",
+				path: "corner",
+			},
+			{
+				element: ">.gripwrap",
+				path: "grip",
+				child: [
+					{
+						element: ">.grip",
+						path: "normal",
+					},
+					{
+						element: ":hover>.grip",
+						path: "hover",
+					},
+					{
+						element: ":active>.grip",
+						path: "active",
+					},
+				],
+			},
+			{
+				element: ">.gripwrap",
+				path: "gripicon",
+				child: [
+					{
+						element: ">.grip>svg>*",
+						path: "normal",
+					},
+					{
+						element: ":hover>.grip>svg>*",
+						path: "hover",
+					},
+					{
+						element: ":active>.grip>svg>*",
+						path: "active",
+					},
+				],
+			},
+		],
+	},
 ];

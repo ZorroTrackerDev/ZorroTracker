@@ -116,11 +116,14 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	 */
 	public init(): Promise<HTMLDivElement> {
 		return new Promise((res, rej) => {
+			// load the button size
+			const size = theme?.pattern?.extras?.scrollbar.size ?? 0;
+
 			// initialize the scrollbars
 			const bar = [
 				makeScrollbar({
-					top: "0px", bottom: "12px", right: "0px", size: 12, class: [ "patternscroll", ], vertical: true,
-					buttonValues: 3, buttonSVG: "scrollbar.button.patternedit", gripSVG: "scrollbar.grip.patternedit", move: (row) => {
+					size, top: "0px", bottom: size +"px", right: "0px", class: [ "patternscroll", ], vertical: true,
+					buttonValues: 4, buttonSVG: "scrollbar.button.patternedit", gripSVG: "scrollbar.grip.patternedit", move: (row) => {
 						if(this.selectionManager.single) {
 							// update the row of the single selection
 							this.selectionManager.single.row = row;
@@ -129,8 +132,8 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 					},
 				}),
 				makeScrollbar({
-					size: 12, bottom: "0px", right: "12px", left: "0px", class: [ "patternscroll", ], vertical: false,
-					buttonValues: 3, buttonSVG: "scrollbar.button.patternedit", gripSVG: "scrollbar.grip.patternedit", move: (elm) => {
+					size, bottom: "0px", right: size +"px", left: "0px", class: [ "patternscroll", ], vertical: false,
+					buttonValues: 4, buttonSVG: "scrollbar.button.patternedit", gripSVG: "scrollbar.grip.patternedit", move: (elm) => {
 						this.selectionManager.setSingleElement(elm);
 					},
 				}),
@@ -432,14 +435,24 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	/**
 	 * Helper function to inform that the theme was reloaded
 	 */
-	public reloadTheme(preload:boolean):Promise<void> {
+	public reloadTheme(preload:boolean):Promise<void[]> {
+		const size = theme?.pattern?.extras?.scrollbar.size ?? 0;
+
+		// update scrollbars
+		const promises = [ this.verticalBar.reloadTheme(size), this.horizontalBar.reloadTheme(size), ];
+		this.verticalBar.element.style.bottom = size +"px";
+		this.horizontalBar.element.style.right = size +"px";
+
 		// update padding amount later
 		requestAnimationFrame(() => this.updatePaddingAmount());
 
 		// tell the child to reload the theme
 		this.eventManager.reloadTheme();
 		this.selectionManager.reloadTheme();
-		return this.scrollManager.reloadTheme(preload);
+		promises.push(this.scrollManager.reloadTheme(preload));
+
+		// return the promise that waits all promises
+		return Promise.all(promises);
 	}
 
 	/**

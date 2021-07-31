@@ -27,6 +27,13 @@ export type ScrollbarReturn = {
 	 * @param value The proportion of each value in the scrollbar
 	 */
 	setMultiplier: (value:number) => void,
+
+	/**
+	 * Function to update the theme on the scrollbar. Must be handled by the caller.
+	 *
+	 * @param size The new size of the scrollbar
+	 */
+	reloadTheme: (size:number) => Promise<void>,
 };
 
 export interface ScrollbarCornerOptions {
@@ -98,7 +105,39 @@ export interface ScrollbarOptions extends ScrollbarCornerOptions {
  */
 export async function makeScrollbar(options:ScrollbarOptions): Promise<ScrollbarReturn> {
 	// load the size property as variable
-	const sz = options.size ?? 0;
+	let sz = options.size ?? 0;
+
+	/**
+	 * Helper function to reload the theme
+	 */
+	const reloadTheme = async(size:number) => {
+		sz = size;
+
+		// set the main element sizes
+		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+		options.vertical && (element.style.width = sz +"px");
+		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+		!options.vertical && (element.style.height = sz +"px");
+
+		// set the wrap sizes
+		wrap.style[options.vertical ? "top" : "left"] = sz +"px";
+		wrap.style[options.vertical ? "bottom" : "right"] = sz +"px";
+
+		// load the grip texture
+		grip.innerHTML = await loadSVG(options.gripSVG);
+
+		// initialize button icon
+		const bsvg = await loadSVG(options.buttonSVG);
+
+		// update the buttons
+		button.forEach((b) => {
+			b.innerHTML = bsvg;
+
+			// handle button size
+			b.style.width = sz +"px";
+			b.style.height = sz +"px";
+		});
+	};
 
 	// create the base elements for the bar
 	const wrap = document.createElement("div");
@@ -110,21 +149,11 @@ export async function makeScrollbar(options:ScrollbarOptions): Promise<Scrollbar
 
 	// initialize the main element properties
 	setOptions(element, options, options.vertical ? "vertical" : "horizontal", options.vertical, !options.vertical);
-	wrap.style[options.vertical ? "top" : "left"] = sz +"px";
-	wrap.style[options.vertical ? "bottom" : "right"] = sz +"px";
-
-	// load the grip texture
-	grip.innerHTML = await loadSVG(options.gripSVG);
 
 	// initialize buttons
-	await Promise.all(button.map(async(b, ix) => {
-		// add the class and size
+	await Promise.all(button.map((b, ix) => {
+		// add the class
 		b.classList.add("scrollbarbutton");
-		b.style.width = sz +"px";
-		b.style.height = sz +"px";
-
-		// load the SVG
-		b.innerHTML = await loadSVG(options.buttonSVG);
 
 		// add the click listener
 		b.onclick = (e) => {
@@ -141,12 +170,16 @@ export async function makeScrollbar(options:ScrollbarOptions): Promise<Scrollbar
 		}
 	}));
 
+	// update button styles to position them
 	button[0].style[options.vertical ? "top" : "left"] = "0px";
 	button[1].style[options.vertical ? "bottom" : "right"] = "0px";
 	button[0].style.transform = "rotate("+ (options.vertical ? 0 : -90) +"deg)";
 	button[1].style.transform = "rotate("+ (options.vertical ? 180 : 90) +"deg)";
 
-	// apeend child elements
+	// load the theme
+	await reloadTheme(sz);
+
+	// append child elements
 	wrap.appendChild(grip);
 	element.appendChild(wrap);
 	button.forEach((b) => element.appendChild(b));
@@ -247,7 +280,8 @@ export async function makeScrollbar(options:ScrollbarOptions): Promise<Scrollbar
 	}
 
 	return {
-		element: element,
+		element,
+		reloadTheme,
 		setPosition: (pos) => {
 			// set the value to the argument and re-render
 			value = pos;

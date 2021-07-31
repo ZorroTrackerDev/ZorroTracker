@@ -272,7 +272,7 @@ export class PatternEditorSelectionManager {
 			// clear multiselection
 			this.clearMultiSelection();
 
-		} else if(e.offsetX < 35) {
+		} else if(e.offsetX < this.parent.padding.left) {
 			// special hold mode when clicking the row numbers
 			this.rowHold = true;
 
@@ -295,9 +295,9 @@ export class PatternEditorSelectionManager {
 
 			// if no preview was set, just ignore this all
 			if(!this.preview) {
-				if(this.rowHold && e.offsetX < 35) {
+				if(this.rowHold && e.offsetX < this.parent.padding.left) {
 					// actually, the row is being held down, update single selection
-					const x = this.findElementAt(this.getAbsolutePointer({ x: 36, y: e.offsetY, }));
+					const x = this.findElementAt(this.getAbsolutePointer({ x: this.parent.padding.left + 1, y: e.offsetY, }));
 					this.single.row = x.row;
 					this.single.pattern = x.pattern;
 
@@ -434,19 +434,19 @@ export class PatternEditorSelectionManager {
 			// check for extra scrolling via edges
 			this.checkEdgeScroll(cursor.x);
 
-		} else if(this.rowHold && cursor.x >= 35){
+		} else if(this.rowHold && cursor.x >= this.parent.padding.left){
 			// if in row hold mode but mouse is not on a row number, hide cursor
 			this.setBounds(new Bounds(-10000, -10000), this.parent.cursor);
 
 		} else {
 			// apply single-selection
-			const b = cursor.x < 35 ? this.getRowNumberBounds(r) : this.getElementBounds(r);
+			const b = cursor.x < this.parent.padding.left ? this.getRowNumberBounds(r) : this.getElementBounds(r);
 
 			// update the bounds for the cursor
 			this.setBounds(b, this.parent.cursor);
 
 			// update the z-index
-			this.parent.cursor.style.zIndex = cursor.x < 35 ? "31" : "24";
+			this.parent.cursor.style.zIndex = cursor.x < this.parent.padding.left ? "31" : "24";
 		}
 	}
 
@@ -458,7 +458,7 @@ export class PatternEditorSelectionManager {
 	 */
 	private getAbsolutePointer(cursor:Position): Position {
 		return {
-			x: cursor.x - 35 + this.parent.scrollManager.horizScroll,
+			x: cursor.x - this.parent.padding.left + this.parent.scrollManager.horizScroll,
 			y: cursor.y - this.parent.scrollManager.scrollMiddle + ((this.parent.scrollManager.currentRow) * this.rowHeight),
 		}
 	}
@@ -535,7 +535,7 @@ export class PatternEditorSelectionManager {
 			for(;channel < this.parent.tab.channels.length;channel ++) {
 				// special check for last channel
 				if(channel === this.parent.tab.channels.length - 1) {
-					if(this.parent.channelInfo[channel].right + 4 > point.x) {
+					if(this.parent.channelInfo[channel].right + this.parent.scrollManager.channelBorderWidth > point.x) {
 						// store the x-offset within the channel
 						xoff = point.x - this.parent.channelInfo[channel].left;
 						break;
@@ -606,7 +606,7 @@ export class PatternEditorSelectionManager {
 	 */
 	public getElementLeft(data:{ channel:number, element:number }, element:number) : number {
 		const base = this.parent.channelInfo[data.channel].left + this.parent.channelInfo[data.channel].offsets[data.element];
-		return base + this.selectionOffsets[element] - this.parent.scrollManager.horizScroll + 35;
+		return base + this.selectionOffsets[element] - this.parent.scrollManager.horizScroll + this.parent.padding.left;
 	}
 
 	/**
@@ -662,7 +662,7 @@ export class PatternEditorSelectionManager {
 		return new Bounds(
 			// eslint-disable-next-line
 			0, ((((data.pattern * this.parent.patternLen) + data.row) - this.parent.scrollManager.currentRow) * this.rowHeight) + this.parent.scrollManager.scrollMiddle,
-			31, this.rowHeight
+			this.parent.padding.left - this.parent.scrollManager.rowNumBorderWidth, this.rowHeight
 		);
 	}
 
@@ -763,7 +763,8 @@ export class PatternEditorSelectionManager {
 		}
 
 		// calculate scroll direction
-		const scroll = (x < 0) ? 0 : (x <= this.edgeWidth + 35) ? -1 : (x >= this.parent.scrollManager.scrollWidth - this.edgeWidth) ? 1 : 0;
+		const scroll = (x < 0) ? 0 : (x <= this.edgeWidth + this.parent.padding.left) ? -1 :
+			(x >= this.parent.scrollManager.scrollWidth - this.edgeWidth) ? 1 : 0;
 
 		if(!this.doEdgeScrolling || scroll === 0) {
 			// no scroll, clear the interval if enabled

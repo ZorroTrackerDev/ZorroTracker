@@ -175,6 +175,9 @@
 				// The height of each pattern row in pixels
 				rowHeight: 19,
 
+				// the number of pixels to draw for the right border of each channel
+				borderWidth: 4,
+
 				// color for patterns that are not visible, and other negative space when in display mode
 				backdrop: "#000000",
 
@@ -211,6 +214,9 @@
 			},
 			// row number settings
 			rownum: {
+				// the number of pixels to draw for the right border, to separate the row numbers from everything else
+				borderWidth: 4,
+
 				// when the pattern is inactive, these colors will be shown in display mode
 				// format: normal, highlight a, highlight b
 				inactive: [ "#222222", "#25292A", "#283233", ],

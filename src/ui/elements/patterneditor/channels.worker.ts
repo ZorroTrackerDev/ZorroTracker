@@ -258,6 +258,7 @@ type ChannelCanvasInfo = {
 		// load some default values
 		textVerticalOffset = theme?.font?.top ?? 0;
 		rowHeight = theme?.params?.rowHeight ?? 0;
+		borderWidth = theme?.params?.borderWidth ?? 0;
 
 		clearColor = [
 			theme?.params?.backdrop ?? fallbackRow,
@@ -389,6 +390,11 @@ type ChannelCanvasInfo = {
 	let rowHeight = 0;
 
 	/**
+	 * The number of pixels for the width of the rightmost border of each channel
+	 */
+	let borderWidth = 0;
+
+	/**
 	 * Function to render a single row of graphics
 	 *
 	 * @param row The row number to render
@@ -413,7 +419,7 @@ type ChannelCanvasInfo = {
 		ctx.fillStyle = borderColor[record ? 1 : 0];
 
 		// draw the border
-		ctx.fillRect(cd.width - 4, top, 4, rowHeight);
+		ctx.fillRect(cd.width - borderWidth, top, borderWidth, rowHeight);
 
 		if(fontLoaded !== null) {
 			// font not loaded, instead add to the load queue

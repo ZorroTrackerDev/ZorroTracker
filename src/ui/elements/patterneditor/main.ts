@@ -8,6 +8,43 @@ import { PatternEditorScrollManager } from "./scroll manager";
 import { PatternEditorSelectionManager } from "./selection manager";
 import { PatternEditorShortcuts } from "./shortcut handler";
 
+/**
+ * Helper type that stores the amount of "padding" on each side of the `PatternEditor`.
+ * This space is obscured by other elements and thus can not be used to draw the pattern graphics.
+ * This is to allow the size to change without having to hardcode these restrictions into code.
+ */
+export type PatternEditorSidePadding = {
+	/**
+	 * The amount of padding from the top of the `PatternEditor`
+	 */
+	top: number,
+
+	/**
+	 * The amount of padding from the bottom of the `PatternEditor`
+	 */
+	bottom: number,
+
+	/**
+	 * The amount of padding vertically from both sides of the `PatternEditor`
+	 */
+	height: number,
+
+	/**
+	 * The amount of padding from the left of the `PatternEditor`
+	 */
+	left: number,
+
+	/**
+	 * The amount of padding from the right of the `PatternEditor`
+	 */
+	right: number,
+
+	/**
+	 * The amount of padding horizontally from both sides of the `PatternEditor`
+	 */
+	width: number,
+}
+
 export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	// various standard elements for the pattern editor
 	public element!: HTMLDivElement;
@@ -59,6 +96,9 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 		this.eventManager = new PatternEditorEventManager(this);
 		this.scrollManager = new PatternEditorScrollManager(this);
 		this.selectionManager = new PatternEditorSelectionManager(this);
+
+		// initialize bounds
+		this.padding = { top: 0, bottom: 0, left: 0, right: 0, width: 0, height: 0, };
 	}
 
 	/**
@@ -301,8 +341,13 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			};
 		}
 
-		// also refresh channel widths
-		requestAnimationFrame(() => this.scrollManager.refreshChannelWidth());
+		requestAnimationFrame(() => {
+			// refresh channel widths
+			this.scrollManager.refreshChannelWidth();
+
+			// update padding amount
+			this.updatePaddingAmount();
+		});
 	}
 
 	/**
@@ -376,9 +421,65 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	 * Helper function to inform that the theme was reloaded
 	 */
 	public reloadTheme(preload:boolean):Promise<void> {
+		// update padding amount later
+		requestAnimationFrame(() => this.updatePaddingAmount());
+
 		// tell the child to reload the theme
 		this.eventManager.reloadTheme();
 		this.selectionManager.reloadTheme();
 		return this.scrollManager.reloadTheme(preload);
+	}
+
+	/**
+	 * The amount of pixels at each edge of the `PatternEditor` that are obscured
+	 */
+	public padding: PatternEditorSidePadding;
+
+	/**
+	 * Helper function to update the padding amount
+	 */
+	public updatePaddingAmount(): void {
+		// prepare the positions here
+		const rc = this.scrollwrapper.children[0] as HTMLDivElement;
+
+		// bitfield for what was updated
+		let update = 0;
+
+		// load the top and left padding via the row num header
+		const top = rc?.offsetHeight ?? 0;
+		const left = rc?.offsetWidth ?? 0;
+
+		if(this.padding.top !== top) {
+			this.padding.top = top;
+			update |= 1;
+		}
+
+		if(this.padding.left !== left) {
+			this.padding.left = left;
+			update |= 4;
+		}
+
+		// load the bottom and right padding via the scrollbars
+		const bottom = this.verticalBar?.element.offsetWidth ?? 0;
+		const right = this.horizontalBar?.element.offsetHeight ?? 0;
+
+		if(this.padding.right !== right) {
+			this.padding.right = right;
+			update |= 8;
+		}
+
+		if(this.padding.bottom !== bottom) {
+			this.padding.bottom = bottom;
+			update |= 2;
+		}
+
+		// update the width and height properties too
+		this.padding.height = this.padding.top + this.padding.bottom;
+		this.padding.width = this.padding.left + this.padding.right;
+
+		// check if the left position was updated
+		if((update & 4) !== 0){
+			this.scrollManager.refreshChannelWidth();
+		}
 	}
 }

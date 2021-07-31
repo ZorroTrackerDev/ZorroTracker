@@ -135,7 +135,7 @@ export class PatternEditorScrollManager {
 	/**
 	 * The bias in elements for how much extra to show when scrolling something to view
 	 */
-	private channelVisibleBias = 50 + 35;
+	private channelVisibleBias = 50;
 
 	/**
 	 * Helper function to ensure the channel is visible.
@@ -149,8 +149,8 @@ export class PatternEditorScrollManager {
 		/* ignore top/bottom for now! :( const bottom = Math.max(row1, row2), top = Math.min(row1, row2);*/
 
 		// get the real area
-		const lp = Math.max(0, this.parent.channelInfo[left].left - this.channelVisibleBias);
-		const rp = Math.min(this.renderAreaWidth, this.parent.channelInfo[right].right + this.channelVisibleBias);
+		const lp = Math.max(0, this.parent.channelInfo[left].left - this.channelVisibleBias - this.parent.padding.left);
+		const rp = Math.min(this.renderAreaWidth, this.parent.channelInfo[right].right + this.channelVisibleBias + this.parent.padding.left);
 
 		// back-up the old scrolling
 		const old = this.horizChannel, opos = this.parent.channelInfo[this.horizChannel].left;
@@ -162,30 +162,19 @@ export class PatternEditorScrollManager {
 
 		// check if the horizontal scrolling is too far right
 		} else if(opos + this.scrollWidth <= rp) {
-			// if so, clamp the position immediately
-			this.horizChannel += 1 + right - this.getLastVisibleChannel();
+			// if so, shift channels until fully visible
+			let test;
+			do {
+				this.horizChannel++;
+				test = this.parent.channelInfo[this.horizChannel].left;
+
+			} while(test + this.scrollWidth <= rp);
 		}
 
 		if(this.horizChannel !== old) {
 			// force-update scrolling related info.
 			this.horizontalScroll(0, true);
 		}
-	}
-
-	/**
-	 * Helper function to get the last visible channel currently
-	 */
-	private getLastVisibleChannel() {
-		let ch = this.horizChannel;
-
-		// loop for all the channels after the current channel, looking for which one starts too far
-		for(;ch < this.parent.channelInfo.length;ch ++) {
-			if(this.parent.channelInfo[ch].left - this.horizScroll >= this.scrollWidth - 35) {
-				return ch - 1;
-			}
-		}
-
-		return ch - 1;
 	}
 
 	/**
@@ -295,9 +284,12 @@ export class PatternEditorScrollManager {
 		}
 	}
 
+	/**
+	 * Helper function to update the width of the focus bar
+	 */
 	private updateFocusWidth() {
 		// update highlight to be at this location too
-		this.parent.focusBar.style.maxWidth = (this.renderAreaWidth - this.horizScroll - 4) +"px";
+		this.parent.focusBar.style.maxWidth = (this.renderAreaWidth - this.horizScroll - this.rowNumBorderWidth) +"px";
 	}
 
 	/**
@@ -311,11 +303,11 @@ export class PatternEditorScrollManager {
 	private updateScrollerSize() {
 		// initialize scrolling size
 		const bounds = this.parent.scrollwrapper.getBoundingClientRect();
-		this.scrollHeight = bounds.height - 30;
+		this.scrollHeight = bounds.height - this.parent.padding.height;
 		this.scrollWidth = bounds.width + 5;
 
 		// calculate the number of rows visible on half screen at once
-		this.scrollMiddle = 30 + (Math.floor(this.scrollHeight / this.rowHeight / 2.5) * this.rowHeight);
+		this.scrollMiddle = this.parent.padding.top + (Math.floor(this.scrollHeight / this.rowHeight / 2.5) * this.rowHeight);
 
 		// update highlight to be at this location too
 		this.parent.focusBar.style.top = this.scrollMiddle +"px";
@@ -452,14 +444,14 @@ export class PatternEditorScrollManager {
 			this.parent.channelInfo[i].left = pos;
 			this.parent.channelInfo[i].width = (this.parent.scrollwrapper.children[i + 1] as HTMLDivElement).offsetWidth;
 			pos += this.parent.channelInfo[i].width;
-			this.parent.channelInfo[i].right = pos - 4;
+			this.parent.channelInfo[i].right = pos - this.channelBorderWidth;
 
 			// update the worker on this as well
 			this.canvas?.forEach((c) => c.updateChannel(i, this.parent.channelInfo[i]));
 		}
 
 		// save the total width of the render area
-		this.renderAreaWidth = pos + 35;
+		this.renderAreaWidth = pos + this.parent.padding.left;
 
 		// find how far we can scroll before we have issues
 		this.findMaxHorizontalScroll();
@@ -521,7 +513,7 @@ export class PatternEditorScrollManager {
 		// find the rightmost channel
 		for(;ch < this.parent.channelInfo.length;ch++) {
 			// check if this channel is visible
-			if(this.parent.channelInfo[ch].left - this.horizScroll >= this.scrollWidth - 39) {
+			if(this.parent.channelInfo[ch].left - this.horizScroll >= this.scrollWidth - this.parent.padding.width) {
 				// save the new channel
 				break;
 			}
@@ -806,6 +798,16 @@ export class PatternEditorScrollManager {
 	}
 
 	/**
+	 * The number of pixels the row number border is wide.
+	 */
+	public rowNumBorderWidth = 0;
+
+	/**
+	 * The number of pixels the channel borders are wide.
+	 */
+	public channelBorderWidth = 0;
+
+	/**
 	 * Helper function to inform that the theme was reloaded
 	 */
 	public async reloadTheme(preload:boolean):Promise<void> {
@@ -816,6 +818,9 @@ export class PatternEditorScrollManager {
 		this.rowHeight = theme?.pattern?.worker?.params?.rowHeight ?? 25;
 		this.elementWidths = theme?.pattern?.worker?.widths ?? [];
 		this.elementOffsets = theme?.pattern?.worker?.offsets ?? [];
+
+		this.rowNumBorderWidth = theme.pattern?.worker?.rownum?.borderWidth ?? 0;
+		this.channelBorderWidth = theme.pattern?.worker?.params?.borderWidth ?? 0;
 
 		// load the tables handling the focus bar colors
 		this.focusBarColorNormal = [

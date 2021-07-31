@@ -176,6 +176,11 @@ declare interface WorkerThemeSettings {
 		rowHeight?: number,
 
 		/**
+		 * The number of pixels to draw the right border for each channel
+		 */
+		borderWidth?: number,
+
+		/**
 		 * The color for the backdrop of the pattern editor in display mode
 		 */
 		backdrop?: string,
@@ -302,6 +307,10 @@ declare interface SimpleElementSettings {
  * Some simple element settings more widely shared
  */
 declare interface RowNumElementSettings extends SimpleElementSettings {
+	/**
+	 * The number of pixels to draw the right border for row number
+	 */
+	borderWidth?: number,
 	/**
 	 * The inactive background colors for a row
 	 */

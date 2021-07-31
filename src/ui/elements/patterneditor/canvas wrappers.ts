@@ -126,7 +126,7 @@ export class RowsCanvas extends EditorCanvasBase {
 	 * @param active Boolean to indicate whether this is the active style canvas or the inactive one
 	 */
 	constructor(height:number, parent:PatternEditor, patternlen:number, rowFormat:boolean, active:boolean) {
-		super(parent, patternlen, "../elements/patterneditor/rows.worker.js", 35, height);
+		super(parent, patternlen, "../elements/patterneditor/rows.worker.js", parent.padding.left, height);
 
 		// give canvas its class
 		this.element.classList.add("rowscanvas");
@@ -208,7 +208,7 @@ export class PatternCanvas extends EditorCanvasBase {
 	public updateRenderInfo(): void {
 		// update positional data to the worker
 		this.worker.postMessage({ command: "renderinfo", data: {
-			width: this.parent.scrollManager.renderAreaWidth - 35,
+			width: this.parent.scrollManager.renderAreaWidth - this.parent.padding.left,
 		}, });
 	}
 
@@ -231,7 +231,7 @@ export class PatternCanvas extends EditorCanvasBase {
 	 * Update horizontal scrolling of canvas
 	 */
 	public updateHoriz(parent:PatternEditorScrollManager): void {
-		this.element.style.left = (35 - parent.horizScroll) +"px";
+		this.element.style.left = (this.parent.padding.left - parent.horizScroll) +"px";
 	}
 
 	/**

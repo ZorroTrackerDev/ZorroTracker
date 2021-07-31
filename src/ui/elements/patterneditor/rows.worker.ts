@@ -88,6 +88,7 @@
 		// load some default values
 		textVerticalOffset = theme?.font?.top ?? 0;
 		rowHeight = theme?.params?.rowHeight ?? 0;
+		borderWidth = theme?.rownum?.borderWidth ?? 0;
 
 		borderColor = [
 			theme?.params?.border ?? fallbackRow,
@@ -172,6 +173,11 @@
 	let rowHeight = 0;
 
 	/**
+	 * The number of pixels for the width of the rightmost border
+	 */
+	let borderWidth = 0;
+
+	/**
 	 * Status indicating whether this is the active row list or not
 	 */
 	let active = false;
@@ -195,7 +201,7 @@
 
 			// fill the border in too
 			ctx.fillStyle = borderColor[record ? 1 : 0];
-			ctx.fillRect(31, 0, 4, canvas.height);
+			ctx.fillRect(canvas.width - borderWidth, 0, borderWidth, canvas.height);
 
 			for(let row = 0;row < patternLen;row ++) {
 				// the top position of this row
@@ -207,7 +213,7 @@
 				if(hid !== 0) {
 					// render the highlight color over this
 					ctx.fillStyle = backdropColors[hid];
-					ctx.fillRect(0, top, 31, rowHeight);
+					ctx.fillRect(0, top, canvas.width - borderWidth, rowHeight);
 				}
 
 				// render the pattern index of this row

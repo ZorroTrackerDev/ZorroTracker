@@ -116,6 +116,26 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	 */
 	public init(): Promise<HTMLDivElement> {
 		return new Promise((res, rej) => {
+			// initialize the scrollbars
+			const bar = [
+				makeScrollbar({
+					top: "0px", bottom: "12px", right: "0px", size: 12, class: [ "patternscroll", ],
+					vertical: true, buttonValues: 3, buttonSVG: "scrollbar.button.patternedit", move: (row) => {
+						if(this.selectionManager.single) {
+							// update the row of the single selection
+							this.selectionManager.single.row = row;
+							this.selectionManager.moveSingle(0, 0.00001, true);
+						}
+					},
+				}),
+				makeScrollbar({
+					size: 12, bottom: "0px", right: "12px", left: "0px", class: [ "patternscroll", ],
+					vertical: false, buttonValues: 3, buttonSVG: "scrollbar.button.patternedit", move: (elm) => {
+						this.selectionManager.setSingleElement(elm);
+					},
+				}),
+			];
+
 			// generate the main element for this editor
 			this.element = document.createElement("div");
 			this.element.classList.add("patterneditor");
@@ -151,37 +171,29 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			this.multiSelection.classList.add("multiselection");
 			wrap.appendChild(this.multiSelection);
 
-			// initialize the scrollbars
-			this.verticalBar = makeScrollbar({
-				top: "0px", bottom: "12px", right: "0px", width: "12px", class: [ "patternscroll", ], vertical: true, move: (row) => {
-					if(this.selectionManager.single) {
-						// update the row of the single selection
-						this.selectionManager.single.row = row;
-						this.selectionManager.moveSingle(0, 0.00001, true);
-					}
-				},
-			});
-			this.horizontalBar = makeScrollbar({
-				height: "12px", bottom: "0px", right: "12px", left: "0px", class: [ "patternscroll", ], vertical: false, move: (elm) => {
-					this.selectionManager.setSingleElement(elm);
-				},
-			});
-			this.element.appendChild(this.verticalBar.element);
-			this.element.appendChild(this.horizontalBar.element);
-			this.element.appendChild(makeScrollbarCorner({
-				height: "12px", bottom: "0px", width: "12px", right: "0px", class: [ "patternscroll", ],
-			}));
+			// await all the scrollbars initializing
+			Promise.all(bar).then((bardat) => {
+				this.verticalBar = bardat[0];
+				this.horizontalBar = bardat[1];
 
-			// initialize the theme
-			this.reloadTheme(true).then(() => {
-				// return the main element
-				res(this.element);
+				// append the scrollbars to DOM too
+				this.element.appendChild(this.verticalBar.element);
+				this.element.appendChild(this.horizontalBar.element);
+				this.element.appendChild(makeScrollbarCorner({
+					size: 12, bottom: "0px", right: "0px", class: [ "patternscroll", ],
+				}));
 
-				requestAnimationFrame(() => {
-					// initialize children
-					this.scrollManager.init();
-					this.selectionManager.init();
-				});
+				// initialize the theme
+				this.reloadTheme(true).then(() => {
+					// return the main element
+					res(this.element);
+
+					requestAnimationFrame(() => {
+						// initialize children
+						this.scrollManager.init();
+						this.selectionManager.init();
+					});
+				}).catch(rej);
 			}).catch(rej);
 		});
 	}

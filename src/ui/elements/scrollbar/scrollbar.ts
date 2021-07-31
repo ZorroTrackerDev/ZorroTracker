@@ -1,3 +1,4 @@
+import { loadSVG } from "../../misc/theme";
 
 export type ScrollbarReturn = {
 	/**
@@ -55,14 +56,9 @@ export interface ScrollbarCornerOptions {
 	right?: string,
 
 	/**
-	 * The width of the scrollbar
+	 * The size of the scrollbar in pixels. This will directly affect height/width
 	 */
-	width?: string,
-
-	/**
-	 * The height of the scrollbar
-	 */
-	height?: string,
+	size?: number,
 }
 
 export interface ScrollbarOptions extends ScrollbarCornerOptions {
@@ -77,6 +73,16 @@ export interface ScrollbarOptions extends ScrollbarCornerOptions {
 	 * Boolean setting for the whether the scrollbar is vertical or horizontal.
 	 */
 	vertical: boolean,
+
+	/**
+	 * How many numbers the direction buttons will change
+	 */
+	buttonValues: number,
+
+	/**
+	 * The SVG file for the buttons
+	 */
+	buttonSVG: string,
 }
 
 /**
@@ -85,12 +91,57 @@ export interface ScrollbarOptions extends ScrollbarCornerOptions {
  * @param options The various options that you can apply to the scrollbar
  * @returns The element to be attached to the DOM along with various functions that can control this scrollbar
  */
-export function makeScrollbar(options:ScrollbarOptions): ScrollbarReturn {
+export async function makeScrollbar(options:ScrollbarOptions): Promise<ScrollbarReturn> {
+	// load the size property as variable
+	const sz = options.size ?? 0;
+
 	// create the base elements for the bar
+	const wrap = document.createElement("div");
+	wrap.classList.add("gripwrap");
 	const grip = document.createElement("div");
+	grip.classList.add("grip");
 	const element = document.createElement("div");
-	setOptions(element, options, options.vertical ? "vertical" : "horizontal");
-	element.appendChild(grip);
+	const button = [ document.createElement("div"), document.createElement("div"), ];
+
+	// initialize the main element properties
+	setOptions(element, options, options.vertical ? "vertical" : "horizontal", options.vertical, !options.vertical);
+	wrap.style[options.vertical ? "top" : "left"] = sz +"px";
+	wrap.style[options.vertical ? "bottom" : "right"] = sz +"px";
+
+	// initialize buttons
+	await Promise.all(button.map(async(b, ix) => {
+		// add the class and size
+		b.classList.add("scrollbarbutton");
+		b.style.width = sz +"px";
+		b.style.height = sz +"px";
+
+		// load the SVG
+		b.innerHTML = await loadSVG(options.buttonSVG);
+
+		// add the click listener
+		b.onclick = (e) => {
+			if(e.button === 0) {
+				// change the value by some amount
+				value = Math.max(0, Math.min(max - 1, value + (ix === 0 ? -options.buttonValues : options.buttonValues)));
+
+				// reload position
+				refresh();
+
+				// update anything else that may need this value
+				options.move(value);
+			}
+		}
+	}));
+
+	button[0].style[options.vertical ? "top" : "left"] = "0px";
+	button[1].style[options.vertical ? "bottom" : "right"] = "0px";
+	button[0].style.transform = "rotate("+ (options.vertical ? 0 : -90) +"deg)";
+	button[1].style.transform = "rotate("+ (options.vertical ? 180 : 90) +"deg)";
+
+	// apeend child elements
+	wrap.appendChild(grip);
+	element.appendChild(wrap);
+	button.forEach((b) => element.appendChild(b));
 
 	// generate variables
 	let value = 0, max = 0, multiplier = 0, grippos = 0;
@@ -126,8 +177,8 @@ export function makeScrollbar(options:ScrollbarOptions): ScrollbarReturn {
 	const mousemove = (e:MouseEvent) => {
 		// prepare some variables
 		const gripoff = grippos + (grip[options.vertical ? "offsetHeight" : "offsetWidth"] / 2);
-		const top = getRelativePos(e[options.vertical ? "clientY" : "clientX"], element) - gripoff;
-		const scale = element[options.vertical ? "offsetHeight" : "offsetWidth"];
+		const top = getRelativePos(e[options.vertical ? "clientY" : "clientX"], wrap) - gripoff;
+		const scale = wrap[options.vertical ? "offsetHeight" : "offsetWidth"];
 
 		// get the closest value and update position
 		value = findNearestValue((top / scale) * 100);
@@ -147,6 +198,7 @@ export function makeScrollbar(options:ScrollbarOptions): ScrollbarReturn {
 		if((e.buttons & 1) !== 0) {
 			return;
 		}
+
 		// disable event handlers
 		window.removeEventListener("pointermove", mousemove);
 		window.removeEventListener("pointerup", mouseup);
@@ -157,9 +209,14 @@ export function makeScrollbar(options:ScrollbarOptions): ScrollbarReturn {
 	}
 
 	// handle mouse being pressed down on the bar
-	element.onpointerdown = (e) => {
+	wrap.onpointerdown = (e) => {
 		// ignore anything that isn't right click
 		if(e.button !== 0) {
+			return;
+		}
+
+		// also ignore if this is not the event target
+		if(e.currentTarget !== e.target) {
 			return;
 		}
 
@@ -167,7 +224,7 @@ export function makeScrollbar(options:ScrollbarOptions): ScrollbarReturn {
 		const rpos = getRelativePos(e[options.vertical ? "clientY" : "clientX"], grip);
 		const sz = grip[options.vertical ? "offsetHeight" : "offsetWidth"];
 
-		// if the grip position is within the element, try to calculate the offset. Otherwise center it
+		// if the grip position is within the wrapper, try to calculate the offset. Otherwise center it
 		if(rpos >= 0 && rpos < sz) {
 			grippos = rpos - (sz / 2);
 
@@ -184,14 +241,17 @@ export function makeScrollbar(options:ScrollbarOptions): ScrollbarReturn {
 	return {
 		element: element,
 		setPosition: (pos) => {
+			// set the value to the argument and re-render
 			value = pos;
 			refresh();
 		},
 		setValues: (value) => {
+			// set the maximum possible value to the argument and re-render
 			max = value;
 			refresh();
 		},
 		setMultiplier: (value) => {
+			// set the grip multiplier to the argument and re-render
 			multiplier = value;
 			refresh();
 		},
@@ -207,11 +267,20 @@ export function makeScrollbar(options:ScrollbarOptions): ScrollbarReturn {
 export function makeScrollbarCorner(options:ScrollbarCornerOptions): HTMLDivElement {
 	// create the element, apply options and return the element
 	const element = document.createElement("div");
-	setOptions(element, options, "corner");
+	setOptions(element, options, "corner", true, true);
 	return element;
 }
 
-function setOptions(element:HTMLDivElement, options:ScrollbarCornerOptions, extraclass:string) {
+/**
+ * Helper function to initialize some properties in the scrollbar element
+ *
+ * @param element The element to apply styles and classes to
+ * @param options The various options to apply
+ * @param extraclass Any extra classes to be appended to the element
+ * @param width Whether to use the `size` property to control width of the element
+ * @param height Whether to use the `size` property to control height of the element
+ */
+function setOptions(element:HTMLDivElement, options:ScrollbarCornerOptions, extraclass:string, width:boolean, height:boolean) {
 	// added the requested classes
 	element.classList.add("scrollbar", extraclass, ...(options.class ?? []));
 
@@ -219,7 +288,10 @@ function setOptions(element:HTMLDivElement, options:ScrollbarCornerOptions, extr
 	element.style.top = options.top ?? "";
 	element.style.left = options.left ?? "";
 	element.style.right = options.right ?? "";
-	element.style.width = options.width ?? "";
-	element.style.height = options.height ?? "";
 	element.style.bottom = options.bottom ?? "";
+
+	// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+	width && (element.style.width = (options.size ?? 0) +"px");
+	// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+	height && (element.style.height = (options.size ?? 0) +"px");
 }

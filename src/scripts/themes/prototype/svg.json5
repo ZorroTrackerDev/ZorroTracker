@@ -7,4 +7,6 @@
 	"slider.button.+": "./svg/slider.button.+.svg",
 	"slider.button.-": "./svg/slider.button.-.svg",
 	"slider.volume.icon": "./svg/slider.volume.icon.svg",
+
+	"scrollbar.button.patternedit": "./svg/scrollbar.button.patternedit.svg",
 }

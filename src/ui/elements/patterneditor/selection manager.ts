@@ -1,5 +1,5 @@
 import { loadFlag } from "../../../api/files";
-import { Bounds, Position } from "../../../api/ui";
+import { Bounds, getMouseInElement, Position } from "../../../api/ui";
 import { theme } from "../../misc/theme";
 import { PatternEditor } from "./main";
 
@@ -51,11 +51,10 @@ export class PatternEditorSelectionManager {
 	 */
 	public init(): void {
 		// initialize the selections to default values
-		this.parent.scrollwrapper.addEventListener("pointermove", (e) => this.pointerMove( { x: e.offsetX, y: e.offsetY, }));
-		this.parent.scrollwrapper.addEventListener("pointerleave", () => this.pointerLeave());
-		this.parent.scrollwrapper.addEventListener("pointerenter", (e) => this.pointerEnter(e));
-		this.parent.scrollwrapper.addEventListener("pointerdown", (e) => this.pointerDown(e));
-		this.parent.scrollwrapper.addEventListener("pointerup", (e) => this.pointerUp(e));
+		this.parent.scrollwrapper.onpointerleave = () => this.pointerLeave();
+		this.parent.scrollwrapper.onpointerenter = (e) => this.pointerEnter(e);
+		this.parent.scrollwrapper.onpointerdown = (e) => this.pointerDown(e);
+		this.disableWindowListeners();
 	}
 
 	/**
@@ -143,9 +142,10 @@ export class PatternEditorSelectionManager {
 		if(this.isSelectionValid(sel)) {
 			// if holding shift, do some special checking
 			if(e.shiftKey) {
-				// check if single selection and new selection pattern is the same. If not, bail
+				// check if single selection and new selection pattern is the same
 				if(this.single.pattern !== sel.pattern) {
-					return;
+					// if not same, just clear multiselection
+					return this.clearMultiSelection();
 				}
 
 				// extend selection
@@ -161,6 +161,9 @@ export class PatternEditorSelectionManager {
 
 			// clear multiselection
 			this.clearMultiSelection();
+
+			// enable window-wide listeners as opposed to just element wide
+			this.enableWindowListeners();
 
 			// find the on-screen position for the cursor
 			const b = this.getMultiBounds(this.preview);
@@ -181,6 +184,29 @@ export class PatternEditorSelectionManager {
 	}
 
 	/**
+	 * Helper function to enable window-wide listeners and disable element-wide
+	 */
+	private enableWindowListeners() {
+		// generate the pointer up and pointer move handlers
+		this.windowListeners = [
+			(e:PointerEvent) => {
+				e.preventDefault();
+				e.stopImmediatePropagation();
+				return this.pointerUp(e);
+			},
+			(e:PointerEvent) => {
+				e.preventDefault();
+				e.stopImmediatePropagation();
+				this.pointerMove(getMouseInElement(this.parent.element, e));
+			},
+		];
+
+		// apply these listeners to the window
+		window.addEventListener("pointerup", this.windowListeners[0]);
+		window.addEventListener("pointermove", this.windowListeners[1]);
+	}
+
+	/**
 	 * Function to handling mouse button being released
 	 */
 	private async pointerUp(e:PointerEvent) {
@@ -195,6 +221,9 @@ export class PatternEditorSelectionManager {
 			// if no preview was set, just ignore this all
 			if(!this.preview) {
 				if(this.rowHold && e.offsetX < this.parent.padding.left) {
+					// disable the window-wide listeners and just use element wide
+					this.disableWindowListeners();
+
 					// actually, the row is being held down, update single selection
 					const x = this.findElementAt(this.getAbsolutePointer({ x: this.parent.padding.left + 1, y: e.offsetY, }));
 					this.single.row = x.row;
@@ -208,6 +237,12 @@ export class PatternEditorSelectionManager {
 				}
 				return;
 			}
+
+			// disable the window-wide listeners and just use element wide
+			this.disableWindowListeners();
+
+			// disable cursor
+			this.setBounds(new Bounds(-10000, -10000), this.parent.cursor);
 
 			// check whether to create multi or single selection
 			if(this.arePositionsEqual(...(this.preview as MultiSelection))) {
@@ -247,7 +282,28 @@ export class PatternEditorSelectionManager {
 	}
 
 	/**
-	 * Helepr function to check if all selections are equal
+	 * Window-wide listeners are stored here so they can be easily disabled
+	 */
+	private windowListeners: undefined|((e:PointerEvent) => unknown)[];
+
+	/**
+	 * Helper function to disable window-wide listeners and enable element-wide
+	 */
+	private disableWindowListeners() {
+		if(this.windowListeners) {
+			// remove the window listeners
+			window.removeEventListener("pointerup", this.windowListeners[0]);
+			window.removeEventListener("pointermove", this.windowListeners[1]);
+			this.windowListeners = undefined;
+		}
+
+		// add the event listeners from the element itself
+		this.parent.scrollwrapper.onpointerup = (e) => this.pointerUp(e);
+		this.parent.scrollwrapper.onpointermove = (e) => this.pointerMove(getMouseInElement(this.parent.element, e));
+	}
+
+	/**
+	 * Helper function to check if all selections are equal
 	 *
 	 * @param d1 The first selection to check
 	 * @param d2 The second selection to check
@@ -651,7 +707,7 @@ export class PatternEditorSelectionManager {
 	 * Helper function to clear edge scrolling by setting an invalid x-position
 	 */
 	private clearEdgeScroll() {
-		this.checkEdgeScroll(-1);
+		this.checkEdgeScroll(this.parent.padding.left);
 	}
 
 	/**
@@ -673,7 +729,7 @@ export class PatternEditorSelectionManager {
 		}
 
 		// calculate scroll direction
-		const scroll = (x < 0) ? 0 : (x <= this.edgeWidth + this.parent.padding.left) ? -1 :
+		const scroll = (x < this.parent.padding.left) ? -1 :
 			(x >= this.parent.scrollManager.scrollWidth - this.edgeWidth - this.parent.padding.right) ? 1 : 0;
 
 		if(!this.doEdgeScrolling || scroll === 0) {

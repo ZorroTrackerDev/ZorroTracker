@@ -493,13 +493,10 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	 * @param note The note ID to release
 	 */
 	public async releaseNote(note:number):Promise<boolean> {
-		// check if this note exists
-		if(typeof (await this.tab.getNotes(this.tab.selectedChannel.info.type)).notes[note]?.frequency === "number"){
-			if(await window.ipc.driver.pianoRelease(note)){
-				// remove the active class
-				await this.modNote("active", "remove", note);
-				return true;
-			}
+		if(await window.ipc.driver.pianoRelease(note)){
+			// remove the active class
+			await this.modNote("active", "remove", note);
+			return true;
 		}
 
 		return false;

@@ -8,6 +8,29 @@ import { ZorroEvent, ZorroEventEnum } from "./events";
 export type Position = { x:number, y:number };
 
 /**
+ * Helper function to calculate the position inside an element
+ *
+ * @param element The element to find the position in
+ * @param position The mouse event to calculate the position with
+ * @returns The new position inside the element
+ */
+export function getMouseInElement(element:HTMLElement, mouse:MouseEvent): Position {
+	return getPositionInElement(element, { x: mouse.clientX, y: mouse.clientY, });
+}
+
+/**
+ * Helper function to calculate the position inside an element
+ *
+ * @param element The element to find the position in
+ * @param position The position to calculate the position with
+ * @returns The new position inside the element
+ */
+export function getPositionInElement(element:HTMLElement, position:Position): Position {
+	const bounds = element.getBoundingClientRect();
+	return { x: position.x - bounds.left, y: position.y - bounds.top, };
+}
+
+/**
  * A common UI type for rectangular data
  */
  export type Rectangle = electron.Rectangle;

@@ -52,7 +52,6 @@ export interface Driver {
 	 *
 	 * @param id The ID of the channel to affect
 	 * @param state Boolean indicating whether to mute or unmute
-	 *
 	 * @returns whether the action was executed
 	 */
 	muteChannel:(id:number, state:boolean) => boolean;

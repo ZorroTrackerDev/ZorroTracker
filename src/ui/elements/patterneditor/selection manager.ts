@@ -64,6 +64,9 @@ export class PatternEditorSelectionManager {
 		this.multi = null;
 		this.single = { channel: 0, element: 0, pattern: 0, row: 0, };
 
+		// set the selected tab channel
+		this.parent.tab.setSelectedChannel(this.single.channel);
+
 		// set the number of values
 		this.parent.horizontalBar.setValues(this.getTotalElements());
 	}
@@ -211,6 +214,9 @@ export class PatternEditorSelectionManager {
 		// ensure the channel is visible
 		this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
 
+		// set the selected tab channel
+		this.parent.tab.setSelectedChannel(this.single.channel);
+
 		if(!vscrl) {
 			// update graphics
 			this.scroll();
@@ -325,6 +331,9 @@ export class PatternEditorSelectionManager {
 
 				// tell the scrolling manager to make channels visible
 				this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
+
+				// set the selected tab channel
+				this.parent.tab.setSelectedChannel(this.single.channel);
 
 			} else {
 				// multi mode

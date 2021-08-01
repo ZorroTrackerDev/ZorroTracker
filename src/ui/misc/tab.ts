@@ -59,14 +59,29 @@ export class Tab {
 	}
 
 	/**
-	 * The channels actgive in this tab
+	 * The currently selected channel in the pattern editor
 	 */
-	public channels!:Channel[];
+	public selectedChannelId = 0;
 
 	/**
 	 * The currently selected channel in the pattern editor
 	 */
 	public selectedChannel!:Channel;
+
+	/**
+	 * Function to set the selected channel for the tab
+	 *
+	 * @param channel The channel to set active
+	 */
+	public setSelectedChannel(channel:number): void {
+		this.selectedChannelId = channel;
+		this.selectedChannel = this.channels[channel];
+	}
+
+	/**
+	 * The channels actgive in this tab
+	 */
+	public channels!:Channel[];
 
 	/**
 	 * Function to change the mute mode all channels

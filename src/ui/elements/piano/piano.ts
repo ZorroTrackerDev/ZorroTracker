@@ -474,7 +474,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	public async triggerNote(note:number, velocity:number):Promise<boolean> {
 		// check if this note exists
 		if(typeof (await this.tab.getNotes(this.tab.selectedChannel.info.type)).notes[note]?.frequency === "number"){
-			if(await window.ipc.driver.pianoTrigger(note, velocity, 0)){
+			if(await window.ipc.driver.pianoTrigger(note, velocity, this.tab.selectedChannel.info.id)){
 				// add the active class
 				await this.modNote("active", "add", note);
 				return true;

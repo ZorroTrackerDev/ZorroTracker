@@ -151,7 +151,27 @@ export default class implements Driver {
 		return this.getChannels().find((c) => c.id === id);
 	}
 
+	/**
+	 * The mute states of all channels
+	 */
+	private muted = 0;
+
+	/**
+	 * Function to mute or unmute a channel based on its ID
+	 *
+	 * @param id The ID of the channel to affect
+	 * @param state Boolean indicating whether to mute or unmute
+	 * @returns whether the action was executed
+	 */
 	public muteChannel(id:number, state:boolean): boolean {
+		// handle the internal mute state
+		if(state) {
+			this.muted |= 1 << id;
+
+		} else {
+			this.muted &= 0xFFF - (1 << id);
+		}
+
 		if(id < 6) {
 			// FM
 			this.chip.muteYM(id, state);
@@ -360,8 +380,15 @@ export default class implements Driver {
 				// enable note
 				this.pianoNotes[cc] = note;
 
-				// enable PSG frequency
-				this.chip.writePSG(PSGCMD.FREQ | this.hwid[cc] | (data.frequency & 0xF));
+				// enable PSG frequency (special PSG4: set frequency to PSG3)
+				if(cc === 9) {
+					this.chip.writePSG(PSGCMD.FREQ | PSGCMD.PSG4 | PSGCMD.WHITE | PSGCMD.TONE3);
+					this.chip.writePSG(PSGCMD.FREQ | this.hwid[8] | (data.frequency & 0xF));
+
+				} else {
+					this.chip.writePSG(PSGCMD.FREQ | this.hwid[cc] | (data.frequency & 0xF));
+				}
+
 				this.chip.writePSG((data.frequency & 0x3F0) >> 4);
 
 				// enable PSG volume
@@ -458,7 +485,7 @@ export default class implements Driver {
 	 */
 	private findFreeChannel(chan:number, ignore:number[], channels:number[]) {
 		// check if channel is busy
-		if(!this.pianoNotes[chan]) {
+		if(!this.pianoNotes[chan] && (this.muted & (1 << chan)) === 0) {
 			return chan;
 		}
 
@@ -469,7 +496,7 @@ export default class implements Driver {
 
 		// find new channel for polyphony
 		for(const c of channels) {
-			if(!this.pianoNotes[c]) {
+			if(!this.pianoNotes[c] && (this.muted & (1 << c)) === 0) {
 				// this channel is free
 				return c;
 			}

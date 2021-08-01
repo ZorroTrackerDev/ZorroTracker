@@ -141,13 +141,35 @@ export class PatternEditorSelectionManager {
 
 		// check if the selection is valid
 		if(this.isSelectionValid(sel)) {
-			this.preview = [ sel, sel, ];
+			// if holding shift, do some special checking
+			if(e.shiftKey) {
+				// check if single selection and new selection pattern is the same. If not, bail
+				if(this.single.pattern !== sel.pattern) {
+					return;
+				}
+
+				// extend selection
+				this.preview = [ { ...this.single, }, sel, ];
+
+			} else {
+				// regular selection
+				this.preview = [ { ...sel, }, sel, ];
+			}
 
 			// give the hold class to the cursor
 			this.parent.cursor.classList.add("hold");
 
 			// clear multiselection
 			this.clearMultiSelection();
+
+			// find the on-screen position for the cursor
+			const b = this.getMultiBounds(this.preview);
+
+			// update the bounds for the cursor
+			this.setBounds(b, this.parent.cursor);
+
+			// update the z-index
+			this.parent.cursor.style.zIndex = "24";
 
 		} else if(e.offsetX < this.parent.padding.left) {
 			// special hold mode when clicking the row numbers
@@ -195,11 +217,11 @@ export class PatternEditorSelectionManager {
 				// clear the preview selection
 				this.preview = null;
 
-				// tell the scrolling manager to change the current row
-					this.parent.scrollManager.scrollToSelection(this.single);
-
 				// tell the scrolling manager to make channels visible
 				this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
+
+				// tell the scrolling manager to change the current row
+				this.parent.scrollManager.scrollToSelection(this.single);
 
 				// set the selected tab channel
 				await this.parent.tab.setSelectedChannel(this.single.channel);
@@ -207,12 +229,16 @@ export class PatternEditorSelectionManager {
 			} else {
 				// multi mode
 				this.multi = this.preview as MultiSelection;
+				this.single = { ...(this.preview as MultiSelection)[1], };
 
 				// clear the preview selection
 				this.preview = null;
 
 				// tell the scrolling manager to make channels visible
 				this.parent.scrollManager.ensureVisibleChannel(this.multi[1].channel, this.multi[1].channel);
+
+				// tell the scrolling manager to change the current row
+				this.parent.scrollManager.scrollToSelection(this.multi[1]);
 
 				// update scrolling anyway
 				this.render();
@@ -825,8 +851,10 @@ export class PatternEditorSelectionManager {
 
 		if(x !== 0) {
 			// ensure the channel is visible
-			const ch = Math[x > 0 ? "max" : "min"](this.multi[0].channel, this.multi[1].channel);
-			this.parent.scrollManager.ensureVisibleChannel(ch, ch);
+			const target = +(x > 0 !== this.multi[0].channel > this.multi[1].channel);
+			this.single.channel = this.multi[target].channel;
+			this.single.element = this.multi[target].element;
+			this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
 
 			// if no y-offset, then handle redrawing now
 			if(y === 0) {
@@ -837,6 +865,7 @@ export class PatternEditorSelectionManager {
 		if(y !== 0) {
 			// ensure the row is visible
 			const row = Math[y > 0 ? "max" : "min"](this.multi[0].row, this.multi[1].row);
+			this.single.row = row;
 			this.parent.scrollManager.scrollToRow(row + (this.multi[0].pattern * this.parent.patternLen));
 		}
 
@@ -857,8 +886,13 @@ export class PatternEditorSelectionManager {
 		// ensure the channel is visible
 		this.parent.scrollManager.ensureVisibleChannel(this.multi[1].channel, this.multi[1].channel);
 
+		// update single selection
+		this.single.channel = this.multi[1].channel;
+		this.single.element = this.multi[1].element;
+		this.single.row = this.multi[1].row;
+
 		// update the scrolled row
-		this.parent.scrollManager.scrollToSelection(this.multi[1]);
+		this.parent.scrollManager.scrollToSelection(this.single);
 		return true;
 	}
 }

@@ -123,18 +123,18 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			const bar = [
 				makeScrollbar({
 					size, top: "0px", bottom: size +"px", right: "0px", class: [ "patternscroll", ], vertical: true,
-					buttonValues: 4, buttonSVG: "scrollbar.button.patternedit", gripSVG: "scrollbar.grip.patternedit", move: (row) => {
+					buttonValues: 4, buttonSVG: "scrollbar.button.patternedit", gripSVG: "scrollbar.grip.patternedit", move: async(row) => {
 						if(this.selectionManager.single) {
 							// update the row of the single selection
 							this.selectionManager.single.row = row;
-							this.selectionManager.moveSingle(0, 0.00001, true);
+							await this.selectionManager.moveSingle(0, 0.00001, true);
 						}
 					},
 				}),
 				makeScrollbar({
 					size, bottom: "0px", right: size +"px", left: "0px", class: [ "patternscroll", ], vertical: false,
-					buttonValues: 4, buttonSVG: "scrollbar.button.patternedit", gripSVG: "scrollbar.grip.patternedit", move: (elm) => {
-						this.selectionManager.setSingleElement(elm);
+					buttonValues: 4, buttonSVG: "scrollbar.button.patternedit", gripSVG: "scrollbar.grip.patternedit", move: async(elm) => {
+						await this.selectionManager.setSingleElement(elm);
 					},
 				}),
 			];
@@ -204,7 +204,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	/**
 	 * Function to load the component
 	 */
-	public load(pass:number): boolean|Promise<boolean> {
+	public async load(pass:number): Promise<boolean> {
 		// component loads in pass 2
 		if(pass !== 2) {
 			return pass < 2;
@@ -212,7 +212,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 
 		// initialize the channel layout for this editor
 		this.initChannels();
-		this.selectionManager.load();
+		await this.selectionManager.load();
 		return this.scrollManager.load();
 	}
 

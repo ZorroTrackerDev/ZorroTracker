@@ -164,7 +164,7 @@ export class PatternEditorScrollManager {
 				this.horizChannel++;
 				test = this.parent.channelInfo[this.horizChannel].left;
 
-			} while(test + this.scrollWidth <= rp);
+			} while(test + this.scrollWidth - this.parent.padding.right <= rp);
 		}
 
 		if(this.horizChannel !== old) {

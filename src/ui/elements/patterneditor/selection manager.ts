@@ -3,7 +3,7 @@ import { Bounds, Position } from "../../../api/ui";
 import { theme } from "../../misc/theme";
 import { PatternEditor } from "./main";
 
-type SingleSelection = {
+export type SingleSelection = {
 	/**
 	 * The channel index that is selected
 	 */
@@ -22,7 +22,7 @@ type SingleSelection = {
 	row: number,
 };
 
-type MultiSelection = [ SingleSelection, SingleSelection, ];
+export type MultiSelection = [ SingleSelection, SingleSelection, ];
 
 export class PatternEditorSelectionManager {
 	private parent:PatternEditor;
@@ -94,137 +94,6 @@ export class PatternEditorSelectionManager {
 		this.rowHeight = theme?.pattern?.worker?.params?.rowHeight ?? 25;
 		this.selectionWidths = theme?.pattern?.worker?.selwidths ?? [];
 		this.selectionOffsets = theme?.pattern?.worker?.seloffsets ?? [];
-	}
-
-	/**
-	 * Helper function to find the total number of elements in the pattern editor
-	 *
-	 * @returns The total number of elements
-	 */
-	public getTotalElements(): number {
-		return this.parent.channelInfo.reduce((p, c) => p + c.elements.length, 0);
-	}
-
-	/**
-	 * Helper function to find the absolute element for the single selection
-	 *
-	 * @returns The absolute element number for the selection
-	 */
-	public getSingleElement(): number {
-		// special case to check if single is valid??
-		if(!this.single) {
-			return 0;
-		}
-
-		// load the element number in the last channel
-		let el = this.single.element;
-
-		// loop for each channel to find the element
-		for(let ch = this.single.channel - 1;ch >= 0; --ch) {
-			el += this.parent.channelInfo[ch].elements.length;
-		}
-
-		return el;
-	}
-
-	/**
-	 * Set the absolute element for the channel, and refreshing scrolling
-	 *
-	 * @param element The element number to move to
-	 */
-	public setSingleElement(element:number): void {
-		this.moveSingle(element - this.getSingleElement(), 0, false);
-	}
-
-	/**
-	 * Helper function to move the single selection by some amount automatically
-	 */
-	public moveSingle(x:number, y:number, wrap:boolean): void {
-		// find the new element id
-		let elm = x + this.single.element, vscrl = false;
-
-		// check if we need to go to the previous channel
-		while(elm < 0) {
-			// wrap channels if needed
-			if(--this.single.channel < 0){
-
-				if(!wrap) {
-					// if wrapping is disabled, cap it instead
-					this.single.channel = 0;
-					elm = 0;
-					break;
-				}
-
-				this.single.channel = this.parent.channelInfo.length - 1;
-			}
-
-			elm += this.parent.channelInfo[this.single.channel].elements.length;
-		}
-
-		// check if we need to go to the next channel
-		while(elm >= this.parent.channelInfo[this.single.channel].elements.length) {
-			elm -= this.parent.channelInfo[this.single.channel].elements.length;
-
-			// wrap channels if needed
-			if(++this.single.channel >= this.parent.channelInfo.length){
-
-				if(!wrap) {
-					// if wrapping is disabled, cap it instead
-					this.single.channel = this.parent.channelInfo.length - 1;
-					elm = this.parent.channelInfo[this.single.channel].elements.length - 1;
-					break;
-				}
-
-				this.single.channel = 0;
-			}
-		}
-
-		// save the element now
-		this.single.element = elm;
-
-		// check if vertical scrolling is possible
-		if(wrap || (y < 0 && this.single.pattern + this.single.row > 0) ||
-			(y > 0 && (this.single.pattern < this.parent.tab.matrix.matrixlen - 1 || this.single.row < this.parent.patternLen - 1))) {
-				vscrl = true;
-
-				// get the absolute row from selection
-				let r = (this.single.pattern * this.parent.patternLen) + this.single.row + Math.round(y);
-
-				// if wrapping is disabled, make sure this works correctly
-				const ttl = this.parent.tab.matrix.matrixlen * this.parent.patternLen;
-
-				if(!wrap && y < 0 && r < 0) {
-					r = 0;
-
-				} else if(!wrap && y > 0 && r >= ttl){
-					r = ttl - 1;
-				}
-
-				// wrap it
-				r = (ttl + r) % ttl;
-
-				// save it back
-				this.single.row = r % this.parent.patternLen;
-				this.single.pattern = Math.floor(r / this.parent.patternLen);
-
-				// set parents current row to this as well
-				this.parent.scrollManager.currentRow = r;
-			}
-
-		// ensure the channel is visible
-		this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
-
-		// set the selected tab channel
-		this.parent.tab.setSelectedChannel(this.single.channel);
-
-		if(!vscrl) {
-			// update graphics
-			this.scroll();
-
-		} else {
-			// immediately do vertical scrolling on the parent
-			this.parent.scrollManager.verticalScroll(0);
-		}
 	}
 
 	/**
@@ -722,13 +591,19 @@ export class PatternEditorSelectionManager {
 	/**
 	 * Helper function to clear the multi selection object
 	 */
-	public clearMultiSelection(): void {
+	public clearMultiSelection(): boolean {
+		// ignore if no multi selection in the first place
+		if(!this.multi) {
+			return false;
+		}
+
 		// clear selection
 		this.multi = null;
 
 		// set the object itself far away and height to 0
 		this.parent.multiSelection.style.top = "-10000px";
 		this.parent.multiSelection.style.height = "0px";
+		return true;
 	}
 
 	/**
@@ -792,5 +667,189 @@ export class PatternEditorSelectionManager {
 				this.parent.scrollManager.horizontalScroll(this.whichEdge, false);
 			}, this.edgeScrollDelay);
 		}
+	}
+
+	/**
+	 * Helper function to find the total number of elements in the pattern editor
+	 *
+	 * @returns The total number of elements
+	 */
+	public getTotalElements(): number {
+		return this.parent.channelInfo.reduce((p, c) => p + c.elements.length, 0);
+	}
+
+	/**
+	 * Helper function to find the absolute element for the single selection
+	 *
+	 * @returns The absolute element number for the selection
+	 */
+	public getSingleElement(): number {
+		// special case to check if single is valid??
+		if(!this.single) {
+			return 0;
+		}
+
+		// load the element number in the last channel
+		let el = this.single.element;
+
+		// loop for each channel to find the element
+		for(let ch = this.single.channel - 1;ch >= 0; --ch) {
+			el += this.parent.channelInfo[ch].elements.length;
+		}
+
+		return el;
+	}
+
+	/**
+	 * Set the absolute element for the channel, and refreshing scrolling
+	 *
+	 * @param element The element number to move to
+	 */
+	public setSingleElement(element:number): boolean {
+		return this.moveSingle(element - this.getSingleElement(), 0, false);
+	}
+
+	/**
+	 * Helper function to move the single selection by some amount automatically
+	 */
+	public moveSingle(x:number, y:number, wrap:boolean): boolean {
+		// handle selection movement
+		const vscrl = this.moveSelection(this.single, x, y, wrap, false);
+
+		// ensure the channel is visible
+		this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
+
+		// set the selected tab channel
+		this.parent.tab.setSelectedChannel(this.single.channel);
+
+		if(!vscrl) {
+			// update graphics
+			this.scroll();
+
+		} else {
+			// update current row too
+			this.parent.scrollManager.currentRow = (this.single.pattern * this.parent.patternLen) + this.single.row;
+
+			// immediately do vertical scrolling on the parent
+			this.parent.scrollManager.verticalScroll(0);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Helper function to move a selection by some amount
+	 */
+	private moveSelection(selection:SingleSelection, x:number, y:number, wrap:boolean, inpattern:boolean): boolean {
+		// find the new element id
+		let elm = x + selection.element, vscrl = false;
+
+		// check if we need to go to the previous channel
+		while(elm < 0) {
+			// wrap channels if needed
+			if(--selection.channel < 0){
+
+				if(!wrap) {
+					// if wrapping is disabled, cap it instead
+					selection.channel = 0;
+					elm = 0;
+					break;
+				}
+
+				selection.channel = this.parent.channelInfo.length - 1;
+			}
+
+			elm += this.parent.channelInfo[selection.channel].elements.length;
+		}
+
+		// check if we need to go to the next channel
+		while(elm >= this.parent.channelInfo[selection.channel].elements.length) {
+			elm -= this.parent.channelInfo[selection.channel].elements.length;
+
+			// wrap channels if needed
+			if(++selection.channel >= this.parent.channelInfo.length){
+
+				if(!wrap) {
+					// if wrapping is disabled, cap it instead
+					selection.channel = this.parent.channelInfo.length - 1;
+					elm = this.parent.channelInfo[selection.channel].elements.length - 1;
+					break;
+				}
+
+				selection.channel = 0;
+			}
+		}
+
+		// save the element now
+		selection.element = elm;
+
+		// check if vertical scrolling is possible
+		if(wrap || (y < 0 && selection.pattern + selection.row > 0) ||
+			(y > 0 && (selection.pattern < this.parent.tab.matrix.matrixlen - 1 || selection.row < this.parent.patternLen - 1))) {
+				vscrl = true;
+
+				// get the absolute row from selection
+				let r = (inpattern ? 0 : (selection.pattern * this.parent.patternLen)) + selection.row + Math.round(y);
+
+				// if wrapping is disabled, make sure this works correctly
+				const ttl = inpattern ? this.parent.patternLen : (this.parent.tab.matrix.matrixlen * this.parent.patternLen);
+
+				if(!wrap && y < 0 && r < 0) {
+					r = 0;
+
+				} else if(!wrap && y > 0 && r >= ttl){
+					r = ttl - 1;
+				}
+
+				// wrap it
+				r = (ttl + r) % ttl;
+
+				// save it back
+				selection.row = r % this.parent.patternLen;
+				if(!inpattern) {
+					selection.pattern = Math.floor(r / this.parent.patternLen);
+				}
+			}
+
+		return vscrl;
+	}
+
+	/**
+	 * Helper function to move the multi selection by some amount automatically
+	 */
+	public moveMulti(x:number, y:number, wrap:boolean): boolean {
+		if(!this.multi) {
+			return false;
+		}
+
+		// handle selection movement
+		this.moveSelection(this.multi[0], x, y, wrap, true);
+		this.moveSelection(this.multi[1], x, y, wrap, true);
+
+		// ensure the channel is visible
+		this.parent.scrollManager.ensureVisibleChannel(this.multi[1].channel, this.multi[1].channel);
+
+		// update graphics
+		this.scroll();
+		return true;
+	}
+
+	/**
+	 * Helper function to extend the multi selection by some amount automatically
+	 */
+	public extendMulti(x:number, y:number, wrap:boolean): boolean {
+		if(!this.multi) {
+			return false;
+		}
+
+		// handle selection movement
+		this.moveSelection(this.multi[1], x, y, wrap, true);
+
+		// ensure the channel is visible
+		this.parent.scrollManager.ensureVisibleChannel(this.multi[1].channel, this.multi[1].channel);
+
+		// update graphics
+		this.scroll();
+		return true;
 	}
 }

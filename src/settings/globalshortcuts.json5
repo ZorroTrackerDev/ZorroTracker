@@ -6,14 +6,14 @@
 */
 
 {
-	"ui.opendevtools":					[ "ctrl+shift+I", "F12" ],				/* shortcut for opening Chromium dev tools */
-	"ui.inspectelement":				[ "shift+F12" ],						/* shortcut for inspect element in Chromium dev tools */
-	"ui.fullscreen":					[ "F11" ],								/* shortcut for entering/exiting maximized mode */
-	"ui.close":							[ "ctrl+W" ],							/* shortcut for closing the project or window */
-	"ui.zoomin":						[ "ctrl+equal" ],						/* shortcut for zooming in the window */
-	"ui.zoomout":						[ "ctrl+minus" ],						/* shortcut for zooming out the window */
-	"ui.zoomreset":						[ "ctrl+0" ],							/* shortcut for setting zoom level to 100% */
+	"ui.opendevtools":						[ "ctrl+shift+I", "F12" ],				/* shortcut for opening Chromium dev tools */
+	"ui.inspectelement":					[ "shift+F12" ],						/* shortcut for inspect element in Chromium dev tools */
+	"ui.fullscreen":						[ "F11" ],								/* shortcut for entering/exiting maximized mode */
+	"ui.close":								[ "ctrl+W" ],							/* shortcut for closing the project or window */
+	"ui.zoomin":							[ "ctrl+equal" ],						/* shortcut for zooming in the window */
+	"ui.zoomout":							[ "ctrl+minus" ],						/* shortcut for zooming out the window */
+	"ui.zoomreset":							[ "ctrl+0" ],							/* shortcut for setting zoom level to 100% */
 
-	"window.projectinfo":				[ "ctrl+shift+P" ],						/* shortcut for opening the project info editor */
-	"window.shortcuts":					[ "ctrl+shift+Z" ],						/* shortcut for opening the shortcuts editor */
+	"window.projectinfo":					[ "ctrl+P" ],							/* shortcut for opening the project info editor */
+	"window.shortcuts":						[ "F2" ],								/* shortcut for opening the shortcuts editor */
 }

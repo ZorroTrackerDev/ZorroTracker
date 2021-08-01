@@ -7,6 +7,7 @@ import { LoadSaveData, LoadType, Module, Project } from "./project";
 const tabRecordEvent = ZorroEvent.createEvent(ZorroEventEnum.TabRecordMode);
 const tabPlayModeEvent = ZorroEvent.createEvent(ZorroEventEnum.TabPlayMode);
 const tabSetMute = ZorroEvent.createEvent(ZorroEventEnum.TabMute);
+const tabSetChannel = ZorroEvent.createEvent(ZorroEventEnum.SetActiveChannel);
 
 /**
  * Helper class to store all state related to the current opened tab
@@ -73,9 +74,16 @@ export class Tab {
 	 *
 	 * @param channel The channel to set active
 	 */
-	public setSelectedChannel(channel:number): void {
-		this.selectedChannelId = channel;
-		this.selectedChannel = this.channels[channel];
+	public async setSelectedChannel(channel:number): Promise<void> {
+		// check if this channel is already active
+		if(this.selectedChannelId !== channel) {
+			// update channel variables
+			this.selectedChannelId = channel;
+			this.selectedChannel = this.channels[channel];
+
+			// send the event for channels
+			await tabSetChannel(this, this.selectedChannel, channel);
+		}
 	}
 
 	/**

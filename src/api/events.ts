@@ -139,6 +139,7 @@ export enum ZorroEventEnum {
 	TabMute,						// event that is ran when a mute state of the channel was updated
 	TabPlayMode,					// event that is ran when the playback mode was changed
 	TabRecordMode,					// event that is ran when the record mode was changed
+	SetActiveChannel,				// event that is ran when the active channel has been changed
 
 	ProjectOpen,					// event that is ran when a project is opened or created
 	ProjectPatternRows,				// event that is ran when the number of pattern rows are changed
@@ -202,6 +203,7 @@ export interface ZorroListenerTypes {
 	[ZorroEventEnum.TabMute]: (event:ZorroEventObject, tab:Tab, channel:Channel, state:boolean) => ZorroListenerReturn<void>,
 	[ZorroEventEnum.TabPlayMode]: (event:ZorroEventObject, tab:Tab, mode:PlayMode) => ZorroListenerReturn<void>,
 	[ZorroEventEnum.TabRecordMode]: (event:ZorroEventObject, tab:Tab, mode:boolean) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.SetActiveChannel]: (event:ZorroEventObject, tab:Tab, channel:Channel, index:number) => ZorroListenerReturn<void>,
 
 	[ZorroEventEnum.ProjectOpen]: (event:ZorroEventObject, project:Project|undefined) => ZorroListenerReturn<void>,
 	[ZorroEventEnum.ProjectPatternRows]: (event:ZorroEventObject, project:Project, module:Module, rows:number) => ZorroListenerReturn<void>,
@@ -239,6 +241,7 @@ export interface ZorroSenderTypes {
 	[ZorroEventEnum.TabMute]: (tab:Tab, channel:Channel, state:boolean) => ZorroSenderReturn<undefined>,
 	[ZorroEventEnum.TabPlayMode]: (tab:Tab, mode:PlayMode) => ZorroSenderReturn<undefined>,
 	[ZorroEventEnum.TabRecordMode]: (tab:Tab, mode:boolean) => ZorroSenderReturn<undefined>,
+	[ZorroEventEnum.SetActiveChannel]: (tab:Tab, channel:Channel, index:number) => ZorroSenderReturn<undefined>,
 
 	[ZorroEventEnum.ProjectOpen]: (project:Project|undefined) => ZorroSenderReturn<undefined>,
 	[ZorroEventEnum.ProjectPatternRows]: (project:Project, module:Module, rows:number) => ZorroSenderReturn<undefined>,

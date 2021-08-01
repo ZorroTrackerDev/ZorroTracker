@@ -89,7 +89,7 @@ ZorroEvent.addListener(ZorroEventEnum.ProjectPatternRows, async(event, project, 
 
 	// handle selection
 	manager?.parent.selectionManager.handleMatrixResize();
-	manager?.parent.selectionManager.scroll();
+	manager?.parent.selectionManager.render();
 });
 
 // listen to matrix being resized
@@ -101,7 +101,7 @@ ZorroEvent.addListener(ZorroEventEnum.MatrixResize, async() => {
 
 		// handle selection
 		manager?.parent.selectionManager.handleMatrixResize();
-		manager?.parent.selectionManager.scroll();
+		manager?.parent.selectionManager.render();
 	}, 1);
 });
 

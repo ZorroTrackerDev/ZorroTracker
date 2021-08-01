@@ -12,7 +12,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	/**
 	 * Helper function to handle movement checks
 	 */
-	private handleMovementCheck(direction:string|undefined, cb: (position:Position) => boolean) {
+	private handleMovementCheck(direction:string|undefined, cb: (position:Position) => boolean|Promise<boolean>) {
 		// load the position offset for the direction
 		const position = shortcutDirection(direction);
 
@@ -27,7 +27,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	/**
 	 * Helper function to get the selection target. Either single selection or second element of multi selection.
 	 */
-	private getSelectionTarget(): [ SingleSelection, (x:number, y:number, wrap:boolean) => boolean, boolean ] {
+	private getSelectionTarget(): [ SingleSelection, (x:number, y:number, wrap:boolean) => boolean|Promise<boolean>, boolean ] {
 		const mode = !this.parent.selectionManager.multi;
 
 		// return the values according to whether multi selection exists

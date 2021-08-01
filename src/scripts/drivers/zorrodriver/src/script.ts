@@ -9,11 +9,11 @@ export default class implements Driver {
 
 	constructor() {
 		// process PSG notes
-		this.NotePSG = this.noteGen({ min: 0, max: 7, C0: Note.C0, size: 12, }, (note: number) => {
-			const xo = (OctaveSize * 7) + Note.C0;
+		this.NotePSG = this.noteGen({ min: 1, max: 8, C0: Note.C0, size: 12, }, (note: number) => {
+			const xo = (OctaveSize * 7) + Note.C0 + 12;
 
 			if(note < Note.C0 + 9) {
-				// negative octaves and C0-A0
+				// negative octaves and C0-A1
 				return undefined;
 
 			} else if(note >= xo) {
@@ -22,7 +22,7 @@ export default class implements Driver {
 			}
 
 			// positive octaves
-			const ftable = this.frequencies[note - Note.C0 + (OctaveSize * 2)];
+			const ftable = this.frequencies[note - Note.C0 + (OctaveSize * 3)];
 			return !ftable ? undefined : Math.min(0x3FF, Math.round(3579545 / (32 * ftable)) - 1);
 		});
 

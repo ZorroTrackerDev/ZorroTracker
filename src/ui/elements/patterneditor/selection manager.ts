@@ -29,6 +29,8 @@ export class PatternEditorSelectionManager {
 
 	constructor(parent:PatternEditor) {
 		this.parent = parent;
+
+		// initialize some flags
 		this.edgeScrollDelay = loadFlag<number>("EDGE_SCROLL_DELAY") ?? 800;
 		this.doEdgeScrolling = loadFlag<boolean>("EDGE_SCROLL_ENABLED") ?? true;
 	}
@@ -59,16 +61,16 @@ export class PatternEditorSelectionManager {
 	/**
 	 * Function to run once the parent loads
 	 */
-	public load(): void {
+	public async load(): Promise<void> {
 		// initialize the selections to default values
 		this.multi = null;
 		this.single = { channel: 0, element: 0, pattern: 0, row: 0, };
 
-		// set the selected tab channel
-		this.parent.tab.setSelectedChannel(this.single.channel);
-
 		// set the number of values
 		this.parent.horizontalBar.setValues(this.getTotalElements());
+
+		// set the selected tab channel
+		await this.parent.tab.setSelectedChannel(this.single.channel);
 	}
 
 	/**
@@ -97,9 +99,9 @@ export class PatternEditorSelectionManager {
 	}
 
 	/**
-	 * Function that is ran when any vertical or horizontal scrolling is applied to the parent
+	 * Function that is ran when the elements require rendering
 	 */
-	public scroll(): void {
+	public render(): void {
 		// force cursor position to update
 		this.pointerMove(this.lastCursor);
 
@@ -159,7 +161,7 @@ export class PatternEditorSelectionManager {
 	/**
 	 * Function to handling mouse button being released
 	 */
-	private pointerUp(e:PointerEvent) {
+	private async pointerUp(e:PointerEvent) {
 		// MUST be right click!
 		if((e.buttons & 1) === 0) {
 			// take the hold class from the cursor
@@ -177,8 +179,7 @@ export class PatternEditorSelectionManager {
 					this.single.pattern = x.pattern;
 
 					// tell the scrolling manager to change the current row
-					const row = (this.single.pattern * this.parent.patternLen) + this.single.row;
-					this.parent.scrollManager.changeCurrentRow(row);
+					this.parent.scrollManager.scrollToSelection(this.single);
 
 					// disable row hold mode
 					this.rowHold = false;
@@ -195,14 +196,13 @@ export class PatternEditorSelectionManager {
 				this.preview = null;
 
 				// tell the scrolling manager to change the current row
-				const row = (this.single.pattern * this.parent.patternLen) + this.single.row;
-				this.parent.scrollManager.changeCurrentRow(row);
+					this.parent.scrollManager.scrollToSelection(this.single);
 
 				// tell the scrolling manager to make channels visible
 				this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
 
 				// set the selected tab channel
-				this.parent.tab.setSelectedChannel(this.single.channel);
+				await this.parent.tab.setSelectedChannel(this.single.channel);
 
 			} else {
 				// multi mode
@@ -215,7 +215,7 @@ export class PatternEditorSelectionManager {
 				this.parent.scrollManager.ensureVisibleChannel(this.multi[1].channel, this.multi[1].channel);
 
 				// update scrolling anyway
-				this.scroll();
+				this.render();
 			}
 		}
 	}
@@ -249,12 +249,12 @@ export class PatternEditorSelectionManager {
 	/**
 	 * Function to track the mouse cursor entering the element
 	 */
-	private pointerEnter(e:PointerEvent) {
+	private async pointerEnter(e:PointerEvent) {
 		this.cursorInBounds = true;
 
 		if(this.preview && (e.buttons & 1) === 0) {
 			// right click was released outside of the window, run the pointerUp handler
-			this.pointerUp(e);
+			await this.pointerUp(e);
 		}
 	}
 
@@ -337,7 +337,7 @@ export class PatternEditorSelectionManager {
 	private getAbsolutePointer(cursor:Position): Position {
 		return {
 			x: cursor.x - this.parent.padding.left + this.parent.scrollManager.horizScroll,
-			y: cursor.y - this.parent.scrollManager.scrollMiddle + ((this.parent.scrollManager.currentRow) * this.rowHeight),
+			y: cursor.y - this.parent.scrollManager.scrollMiddle + ((this.parent.scrollManager.scrolledRow) * this.rowHeight),
 		}
 	}
 
@@ -494,7 +494,7 @@ export class PatternEditorSelectionManager {
 	 * @returns The screen position for the top of the element
 	 */
 	private getElementTop(data:{ pattern:number, row:number }) : number {
-		const row = ((data.pattern * this.parent.patternLen) + data.row) - this.parent.scrollManager.currentRow;
+		const row = ((data.pattern * this.parent.patternLen) + data.row) - this.parent.scrollManager.scrolledRow;
 		return (row * this.rowHeight) + this.parent.scrollManager.scrollMiddle;
 	}
 
@@ -539,7 +539,7 @@ export class PatternEditorSelectionManager {
 		// row bounds
 		return new Bounds(
 			// eslint-disable-next-line
-			0, ((((data.pattern * this.parent.patternLen) + data.row) - this.parent.scrollManager.currentRow) * this.rowHeight) + this.parent.scrollManager.scrollMiddle,
+			0, ((((data.pattern * this.parent.patternLen) + data.row) - this.parent.scrollManager.scrolledRow) * this.rowHeight) + this.parent.scrollManager.scrollMiddle,
 			this.parent.padding.left - this.parent.scrollManager.rowNumBorderWidth, this.rowHeight
 		);
 	}
@@ -570,7 +570,7 @@ export class PatternEditorSelectionManager {
 			this.single.element = Math.min(this.single.element, this.parent.channelInfo[this.single.channel].elements.length - 1);
 
 			// update scrolling anyway
-			this.scroll();
+			this.render();
 		}
 	}
 
@@ -648,7 +648,7 @@ export class PatternEditorSelectionManager {
 
 		// calculate scroll direction
 		const scroll = (x < 0) ? 0 : (x <= this.edgeWidth + this.parent.padding.left) ? -1 :
-			(x >= this.parent.scrollManager.scrollWidth - this.edgeWidth) ? 1 : 0;
+			(x >= this.parent.scrollManager.scrollWidth - this.edgeWidth - this.parent.padding.right) ? 1 : 0;
 
 		if(!this.doEdgeScrolling || scroll === 0) {
 			// no scroll, clear the interval if enabled
@@ -705,14 +705,14 @@ export class PatternEditorSelectionManager {
 	 *
 	 * @param element The element number to move to
 	 */
-	public setSingleElement(element:number): boolean {
+	public setSingleElement(element:number): Promise<boolean> {
 		return this.moveSingle(element - this.getSingleElement(), 0, false);
 	}
 
 	/**
 	 * Helper function to move the single selection by some amount automatically
 	 */
-	public moveSingle(x:number, y:number, wrap:boolean): boolean {
+	public async moveSingle(x:number, y:number, wrap:boolean): Promise<boolean> {
 		// handle selection movement
 		const vscrl = this.moveSelection(this.single, x, y, wrap, false);
 
@@ -720,18 +720,15 @@ export class PatternEditorSelectionManager {
 		this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
 
 		// set the selected tab channel
-		this.parent.tab.setSelectedChannel(this.single.channel);
+		await this.parent.tab.setSelectedChannel(this.single.channel);
 
 		if(!vscrl) {
 			// update graphics
-			this.scroll();
+			this.render();
 
 		} else {
-			// update current row too
-			this.parent.scrollManager.currentRow = (this.single.pattern * this.parent.patternLen) + this.single.row;
-
-			// immediately do vertical scrolling on the parent
-			this.parent.scrollManager.verticalScroll(0);
+			// update the scrolled row
+			this.parent.scrollManager.scrollToSelection(this.single);
 		}
 
 		return true;
@@ -826,11 +823,23 @@ export class PatternEditorSelectionManager {
 		this.moveSelection(this.multi[0], x, y, wrap, true);
 		this.moveSelection(this.multi[1], x, y, wrap, true);
 
-		// ensure the channel is visible
-		this.parent.scrollManager.ensureVisibleChannel(this.multi[1].channel, this.multi[1].channel);
+		if(x !== 0) {
+			// ensure the channel is visible
+			const ch = Math[x > 0 ? "max" : "min"](this.multi[0].channel, this.multi[1].channel);
+			this.parent.scrollManager.ensureVisibleChannel(ch, ch);
 
-		// update graphics
-		this.scroll();
+			// if no y-offset, then handle redrawing now
+			if(y === 0) {
+				this.render();
+			}
+		}
+
+		if(y !== 0) {
+			// ensure the row is visible
+			const row = Math[y > 0 ? "max" : "min"](this.multi[0].row, this.multi[1].row);
+			this.parent.scrollManager.scrollToRow(row + (this.multi[0].pattern * this.parent.patternLen));
+		}
+
 		return true;
 	}
 
@@ -848,8 +857,8 @@ export class PatternEditorSelectionManager {
 		// ensure the channel is visible
 		this.parent.scrollManager.ensureVisibleChannel(this.multi[1].channel, this.multi[1].channel);
 
-		// update graphics
-		this.scroll();
+		// update the scrolled row
+		this.parent.scrollManager.scrollToSelection(this.multi[1]);
 		return true;
 	}
 }

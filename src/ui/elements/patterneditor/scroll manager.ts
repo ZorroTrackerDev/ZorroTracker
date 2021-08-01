@@ -2,6 +2,7 @@ import { loadFlag } from "../../../api/files";
 import { theme } from "../../misc/theme";
 import { PatternCanvas, RowsCanvas } from "./canvas wrappers";
 import { PatternEditor } from "./main";
+import { SingleSelection } from "./selection manager";
 
 /**
  * Helper class to deal with scrolling in the `PatternEditor`. Thgis is to make the main class have less to deal with.
@@ -31,15 +32,15 @@ export class PatternEditorScrollManager {
 	 */
 	public init():void {
 		// add handler for vertical and horizontal scrolling
-		this.parent.scrollwrapper.addEventListener("wheel", (e) => {
+		this.parent.scrollwrapper.addEventListener("wheel", async(e) => {
 			if(e.deltaX) {
 				// there is horizontal movement, call the special scroll handler
-				this.parent.selectionManager.moveSingle(Math.round(e.deltaX * 0.03), 0, false);
+				await this.parent.selectionManager.moveSingle(Math.round(e.deltaX * 0.03), 0, false);
 			}
 
 			if(e.deltaY) {
 				// there is vertical movement, call the special scroll handler
-				this.parent.selectionManager.moveSingle(0, Math.round(e.deltaY * 0.03), false);
+				await this.parent.selectionManager.moveSingle(0, Math.round(e.deltaY * 0.03), false);
 			}
 		}, { passive: false, });
 
@@ -98,7 +99,7 @@ export class PatternEditorScrollManager {
 	public load(): Promise<boolean> {
 		return new Promise((res, rej) => {
 			// reset some variables
-			this.currentRow = 0;
+			this.scrolledRow = 0;
 
 			requestAnimationFrame(() => {
 				// initialize the scrolling region size
@@ -133,11 +134,6 @@ export class PatternEditorScrollManager {
 	}
 
 	/**
-	 * The bias in elements for how much extra to show when scrolling something to view
-	 */
-	private channelVisibleBias = 50;
-
-	/**
 	 * Helper function to ensure the channel is visible.
 	 *
 	 * @param channel1 The first channel to make visible
@@ -149,8 +145,8 @@ export class PatternEditorScrollManager {
 		/* ignore top/bottom for now! :( const bottom = Math.max(row1, row2), top = Math.min(row1, row2);*/
 
 		// get the real area
-		const lp = Math.max(0, this.parent.channelInfo[left].left - this.channelVisibleBias - this.parent.padding.left);
-		const rp = Math.min(this.renderAreaWidth, this.parent.channelInfo[right].right + this.channelVisibleBias + this.parent.padding.left);
+		const lp = Math.max(0, this.parent.channelInfo[left].left - this.parent.padding.left);
+		const rp = Math.min(this.renderAreaWidth, this.parent.channelInfo[right].right + this.parent.padding.left);
 
 		// back-up the old scrolling
 		const old = this.horizChannel, opos = this.parent.channelInfo[this.horizChannel].left;
@@ -158,7 +154,7 @@ export class PatternEditorScrollManager {
 		// check if the horizontal scrolling is too far left
 		if(opos > lp) {
 			// if so, clamp the position immediately
-			this.horizChannel = left - 1;
+			this.horizChannel = left;
 
 		// check if the horizontal scrolling is too far right
 		} else if(opos + this.scrollWidth <= rp) {
@@ -178,17 +174,26 @@ export class PatternEditorScrollManager {
 	}
 
 	/**
-	 * Store the vertical scroll position of channel datas
+	 * Helper function to scroll to vertical row based on selection
+	 *
+	 * @param select The selection to use for the basis of scrolling
 	 */
-	public currentRow = 0;
+	public scrollToSelection(select:SingleSelection): void {
+		this.scrollToRow((select.pattern * this.parent.patternLen) + select.row);
+	}
 
 	/**
-	 * Helper function to update the current row
-	 *
-	 * @param row The row to set as the current row
+	 * Store the vertical scroll position of channel datas
 	 */
-	public changeCurrentRow(row:number): void {
-		this.currentRow = row;
+	public scrolledRow = 0;
+
+	/**
+	 * Helper function to scroll to vertical row
+	 *
+	 * @param row The row to scroll to
+	 */
+	public scrollToRow(row:number): void {
+		this.scrolledRow = row;
 		this.verticalScroll(0);
 	}
 
@@ -209,19 +214,19 @@ export class PatternEditorScrollManager {
 	 */
 	public verticalScroll(delta:number): void {
 		// update the scrolling position based on delta
-		this.currentRow = Math.round((delta * 0.03) + this.currentRow);
+		this.scrolledRow = Math.round((delta * 0.03) + this.scrolledRow);
 
 		// check clamping scrolling position above 0th
-		if(this.currentRow <= 0) {
-			this.currentRow = 0;
+		if(this.scrolledRow <= 0) {
+			this.scrolledRow = 0;
 
 		} else {
 			// calculate the maximum scrolling position
 			const max = (this.parent.tab.matrix.matrixlen * (this.parent.tab.module?.patternRows ?? 64)) - 1;
 
 			// check clamping scrolling position below last
-			if(this.currentRow > max) {
-				this.currentRow = max;
+			if(this.scrolledRow > max) {
+				this.scrolledRow = max;
 			}
 		}
 
@@ -229,7 +234,7 @@ export class PatternEditorScrollManager {
 		this.updatePositionAndGraphics();
 
 		// tell the selection manager to update scrolling
-		this.parent.selectionManager.scroll();
+		this.parent.selectionManager.render();
 	}
 
 	/**
@@ -261,7 +266,7 @@ export class PatternEditorScrollManager {
 			this.canvas.forEach((c) => c.updateHoriz(this));
 
 			// tell the selection manager to update scrolling
-			this.parent.selectionManager.scroll();
+			this.parent.selectionManager.render();
 
 			// update every channel header too, to change their translateX values
 			for(let i = this.parent.tab.channels.length;i > 0;--i){
@@ -589,7 +594,7 @@ export class PatternEditorScrollManager {
 	 */
 	public async setPatternRows(rows:number): Promise<void> {
 		// prepare some variables
-		const pat = this.parent.activePattern, offs = this.currentRow % this.parent.patternLen;
+		const pat = this.parent.activePattern, offs = this.scrolledRow % this.parent.patternLen;
 		this.parent.patternLen = rows;
 
 		// update the vertical scrollbar
@@ -605,7 +610,7 @@ export class PatternEditorScrollManager {
 			this.rows.forEach((c) => c.render());
 
 			// scroll to a different row based on the new size
-			this.currentRow = (pat * rows) + Math.min(offs, rows - 1);
+			this.scrolledRow = (pat * rows) + Math.min(offs, rows - 1);
 
 			// go to handle scrolling, reloading, drawing, etc
 			this.updatePositionAndGraphics();
@@ -652,7 +657,7 @@ export class PatternEditorScrollManager {
 			}
 
 			// update canvas y-position
-			const offsetTop = ((this.parent.activePattern * patternRows) - this.currentRow);
+			const offsetTop = ((this.parent.activePattern * patternRows) - this.scrolledRow);
 
 			// request to render every visible row in this pattern
 			this.canvas[0].render(
@@ -684,7 +689,7 @@ export class PatternEditorScrollManager {
 			}
 
 			// calculate row y-position
-			const top = ((((ppos * patternRows) - this.currentRow) * this.rowHeight) + this.scrollMiddle) +"px";
+			const top = ((((ppos * patternRows) - this.scrolledRow) * this.rowHeight) + this.scrollMiddle) +"px";
 
 			// update row position
 			cr.element.style.top = top;
@@ -698,7 +703,7 @@ export class PatternEditorScrollManager {
 			const cv = this.canvas[co];
 
 			// calculate canvas y-position
-			const offsetTop = ((pat * patternRows) - this.currentRow);
+			const offsetTop = ((pat * patternRows) - this.scrolledRow);
 			const top = ((offsetTop * this.rowHeight) + this.scrollMiddle) +"px";
 
 			// invalidate layout if it is not the same pattern or active status doesn't match
@@ -788,7 +793,7 @@ export class PatternEditorScrollManager {
 	 */
 	private updateFocusRowData() {
 		// calculate the current highlight ID
-		const row = this.currentRow % this.parent.patternLen;
+		const row = this.scrolledRow % this.parent.patternLen;
 		const hid = (this.parent.tab.recordMode ? 3 : 0) + ((row % this.rowHighlights[0]) === 0 ? 2 : (row % this.rowHighlights[1]) === 0 ? 1 : 0);
 
 		// update background color and blend mode for this row

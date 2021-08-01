@@ -455,6 +455,9 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 			await move(e);
 		}
 
+		// update size
+		await this.changeSize(0);
+
 		// redraw the inner elements
 		await this.redraw();
 		return false;
@@ -564,5 +567,14 @@ ZorroEvent.addListener(ZorroEventEnum.MidiNoteOff, async(event:ZorroEventObject,
 		if(await _piano.releaseNote(keys[note])) {
 			keys[note] = 0;
 		}
+	}
+});
+
+/**
+ * Helper event listener for the SetActiveChannel event, so that the piano knows to refresh when needed
+ */
+ZorroEvent.addListener(ZorroEventEnum.SetActiveChannel, async() => {
+	if(_piano) {
+		await _piano.changeOctave(0);
 	}
 });

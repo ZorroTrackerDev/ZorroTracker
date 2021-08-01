@@ -424,7 +424,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	 * Pseudo-variable that is the current active pattern
 	 */
 	public get activePattern(): number {
-		return Math.floor(this.scrollManager.currentRow / this.patternLen);
+		return Math.floor(this.scrollManager.scrolledRow / this.patternLen);
 	}
 
 	/**

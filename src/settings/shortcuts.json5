@@ -90,8 +90,10 @@
 	"layout.pattern.sel.extend.down":		[ "shift+ArrowDown" ],					/* shortcut for extending the selection down */
 	"layout.pattern.sel.extend.left":		[ "shift+ArrowLeft" ],					/* shortcut for extending the selection left */
 	"layout.pattern.sel.extend.right":		[ "shift+ArrowRight" ],					/* shortcut for extending the selection right */
-	"layout.pattern.sel.movepattern.up":	[ "ctrl+ArrowUp" ],						/* shortcut for moving the selection to the pattern above */
-	"layout.pattern.sel.movepattern.down":	[ "ctrl+ArrowDown" ],					/* shortcut for moving the selection to the pattern below */
+	"layout.pattern.sel.movehighlight.up":	[ "ctrl+ArrowUp" ],						/* shortcut for moving the selection to the highlight above */
+	"layout.pattern.sel.movehighlight.down":[ "ctrl+ArrowDown" ],					/* shortcut for moving the selection to the highlight below */
+	"layout.pattern.sel.movepattern.up":	[ "ctrl+ArrowLeft" ],					/* shortcut for moving the selection to the pattern above */
+	"layout.pattern.sel.movepattern.down":	[ "ctrl+ArrowRight" ],					/* shortcut for moving the selection to the pattern below */
 	"layout.pattern.sel.movechannel.left":	[ "shift+Tab" ],						/* shortcut for moving the selection to the channel on the left */
 	"layout.pattern.sel.movechannel.right":	[ "Tab" ],								/* shortcut for moving the selection to the channel on the right */
 	"layout.pattern.sel.scroll.up":			[ "PageUp" ],							/* shortcut for moving the selection up by 4 rows */

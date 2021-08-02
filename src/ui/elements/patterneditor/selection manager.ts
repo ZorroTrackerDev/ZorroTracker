@@ -277,6 +277,9 @@ export class PatternEditorSelectionManager {
 
 				// update scrolling anyway
 				this.render();
+
+				// set the selected tab channel
+				await this.parent.tab.setSelectedChannel(this.single.channel);
 			}
 		}
 	}
@@ -796,7 +799,7 @@ export class PatternEditorSelectionManager {
 	 */
 	public async moveSingle(x:number, y:number, wrap:boolean): Promise<boolean> {
 		// handle selection movement
-		const vscrl = this.moveSelection(this.single, x, y, wrap, false);
+		const vscrl = this.moveSelection(this.single, Math.round(x), y, wrap, false);
 
 		// ensure the channel is visible
 		this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
@@ -896,14 +899,14 @@ export class PatternEditorSelectionManager {
 	/**
 	 * Helper function to move the multi selection by some amount automatically
 	 */
-	public moveMulti(x:number, y:number, wrap:boolean): boolean {
+	public async moveMulti(x:number, y:number, wrap:boolean): Promise<boolean> {
 		if(!this.multi) {
 			return false;
 		}
 
 		// handle selection movement
-		this.moveSelection(this.multi[0], x, y, wrap, true);
-		this.moveSelection(this.multi[1], x, y, wrap, true);
+		this.moveSelection(this.multi[0], Math.round(x), y, wrap, true);
+		this.moveSelection(this.multi[1], Math.round(x), y, wrap, true);
 
 		if(x !== 0) {
 			// ensure the channel is visible
@@ -916,6 +919,9 @@ export class PatternEditorSelectionManager {
 			if(y === 0) {
 				this.render();
 			}
+
+			// set the selected tab channel
+			await this.parent.tab.setSelectedChannel(this.single.channel);
 		}
 
 		if(y !== 0) {
@@ -931,7 +937,7 @@ export class PatternEditorSelectionManager {
 	/**
 	 * Helper function to extend the multi selection by some amount automatically
 	 */
-	public extendMulti(x:number, y:number, wrap:boolean): boolean {
+	public async extendMulti(x:number, y:number, wrap:boolean): Promise<boolean> {
 		if(!this.multi) {
 			return false;
 		}
@@ -949,6 +955,9 @@ export class PatternEditorSelectionManager {
 
 		// update the scrolled row
 		this.parent.scrollManager.scrollToSelection(this.single);
+
+		// set the selected tab channel
+		await this.parent.tab.setSelectedChannel(this.single.channel);
 		return true;
 	}
 }

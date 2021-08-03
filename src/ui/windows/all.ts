@@ -1,11 +1,17 @@
 /* load object extensions */
 import { SettingsTypes } from "../../api/files";
+import { receiveShortcutFunc } from "../../api/ui";
 import { WindowType } from "../../defs/windowtype";
 import "../extensions";
 import "../misc/logger";
 import { addShortcutReceiver, loadDefaultShortcuts } from "../misc/shortcuts";
 
 window.isLoading = false;
+
+// if not initialized, create a new function to load shortcut priority
+if(!window.shortcutPriority) {
+	window.shortcutPriority = () => 0;
+}
 
 /**
  * Helper function to update the maximize UI button depending on the window state. This info comes from the Node side using IPC.
@@ -29,7 +35,7 @@ window.preload.updateMaximizeButtonState = (mode:boolean) => {
 	update(document.getElementById("main_toolbar_maximize"));
 }
 
-export function loadStandardShortcuts(type:SettingsTypes, extras:{ [key:string]: (data:string[]) => boolean|Promise<boolean>, }): void {
+export function loadStandardShortcuts(type:SettingsTypes, extras:{ [key:string]: receiveShortcutFunc, }): void {
 	loadDefaultShortcuts(type);
 
 	// add default window open handler
@@ -52,8 +58,7 @@ export function loadStandardShortcuts(type:SettingsTypes, extras:{ [key:string]:
 	});
 
 	// add default UI shortcuts handler
-	// eslint-disable-next-line require-await
-	addShortcutReceiver("ui", async(data) => {
+	addShortcutReceiver("ui", (data, event, state) => {
 		const c = data.shift();
 
 		switch(c) {
@@ -93,7 +98,7 @@ export function loadStandardShortcuts(type:SettingsTypes, extras:{ [key:string]:
 			default:
 				// handle extra commands here
 				if(extras[c]){
-					return extras[c](data);
+					return extras[c](data, event, state);
 				}
 				break;
 		}

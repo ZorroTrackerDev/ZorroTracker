@@ -48,6 +48,29 @@ window.preload = {
 	},
 }
 
+/**
+ * Helper function to determine if the component is focused
+ *
+ * @param name The component name to check
+ * @returns Boolean indicating if the focus is on the named component
+ */
+function checkFocus(name:string) {
+	return document.querySelector(":focus") === components.get<UIComponent<HTMLElement>>(name)?.element;
+}
+
+// create a function to give priority to shortcuts
+window.shortcutPriority = (data:string[]) => {
+	switch(data.shift()) {
+		case "pattern": return 2;
+		case "matrix": return checkFocus("matrix") ? 1 : 11;
+		case "*piano": return 12;
+		case "piano": return 13;
+		case "window": return 14;
+		case "ui": return 15;
+		default: return 999;
+	}
+}
+
 import { addShortcutReceiver, doShortcut } from "../misc/shortcuts";
 import { loadDefaultToolbar } from "../elements/toolbar/toolbar";
 import { loadFlag, SettingsTypes } from "../../api/files";
@@ -131,7 +154,6 @@ window.ipc.ui.path().then(async() => {
 			await initLayout();
 
 			// STEP 5: initialize miscellaneous less important systems
-			initShortcutHandler();
 			MIDI.init();
 			await enableMediaKeys();
 
@@ -152,25 +174,6 @@ window.ipc.ui.path().then(async() => {
 	});
 
 }).catch(console.error);
-
-// handler for receiving shortcuts
-function initShortcutHandler() {
-	// eslint-disable-next-line require-await
-	addShortcutReceiver("layout", async(data, e, state) => {
-		switch(data.shift()) {
-			case "matrix":
-				return components.get<UIShortcutHandler>("matrix")?.receiveShortcut(data, e, state) ?? false;
-
-			case "pattern":
-				return components.get<UIShortcutHandler>("pattern")?.receiveShortcut(data, e, state) ?? false;
-
-			case "piano":
-				return components.get<UIShortcutHandler>("piano")?.receiveShortcut(data, e, state) ?? false;
-		}
-
-		return false;
-	});
-}
 
 async function loadMainShortcuts() {
 	// load all.ts asynchronously. This will setup our environment better than we can do here
@@ -422,6 +425,29 @@ async function loadMainShortcuts() {
 			// nothing to target
 			return false;
 		},
+
+		/* shortcuts for the pattern editor */
+		pattern: (data, e, state) => {
+			return components.get<UIShortcutHandler>("pattern")?.receiveShortcut(data, e, state) ?? false;
+		},
+
+		/* shortcuts for the piano */
+		piano: (data, e, state) => {
+			return components.get<UIShortcutHandler>("piano")?.receiveShortcut(data, e, state) ?? false;
+		},
+	});
+
+	// add some shortcut handlers for components
+	addShortcutReceiver("matrix", (data, event, state) => {
+		return components.get<UIShortcutHandler>("matrix")?.receiveShortcut(data, event, state) ?? false;
+	});
+
+	addShortcutReceiver("pattern", (data, event, state) => {
+		return components.get<UIShortcutHandler>("pattern")?.receiveShortcut(data, event, state) ?? false;
+	});
+
+	addShortcutReceiver("piano", (data, event, state) => {
+		return components.get<UIShortcutHandler>("piano")?.receiveShortcut(data, event, state) ?? false;
 	});
 }
 
@@ -533,6 +559,7 @@ async function initLayout() {
 
 	const _top = document.createElement("div");
 	_top.id = "editor_top";
+	_top.tabIndex = -1;				// hack to allow mouse focus on the top row too
 	body.appendChild(_top);
 
 	const _bot = document.createElement("div");
@@ -540,8 +567,10 @@ async function initLayout() {
 	body.appendChild(_bot);
 
 	// load all the standard components
-	_bot.appendChild(await components.addComponent("pattern", new PatternEditor()));
-	_top.appendChild(await components.addComponent("matrix", new MatrixEditor()));
+	const _pattern = await components.addComponent("pattern", new PatternEditor());
+	_bot.appendChild(_pattern);
+	const _matrix = await components.addComponent("matrix", new MatrixEditor());
+	_top.appendChild(_matrix);
 	_bot.appendChild(await components.addComponent("piano", new Piano()));
 
 	// create the base pane element
@@ -569,6 +598,40 @@ async function initLayout() {
 	// create the child panes. Create 2 of them
 	sbot.appendChild(await components.addComponent("settingsleft", new SettingsPanelLeft()));
 	sbot.appendChild(await components.addComponent("settingsright", new SettingsPanelRight()));
+
+	// helper function to enable or disable focus on pattern
+	const focusOnPattern = (yes:boolean) => {
+		_pattern.classList[yes ? "add" : "remove"]("focus");
+	}
+
+	// add handler for elements getting focused. Use it to determine whether to focus on the pattern editor or not
+	window.addEventListener("focusin", (e) => {
+		console.log("in", e)
+
+		switch((e.target as HTMLElement).tagName) {
+			case "TEXTAREA": case "FORM": case "BUTTON": case "SELECT": case "A":
+				return focusOnPattern(false);
+
+			case "DIV": {
+				// special rules for div
+				return focusOnPattern((e.target !== _matrix));
+			}
+
+			default:
+				return focusOnPattern(true);
+		}
+	});
+
+	// helper function on when the focus goes to `null`. Somehow this works weirdly
+	window.addEventListener("focusout", (e) => {
+		console.log("out", e)
+		if(e.relatedTarget === null) {
+			return focusOnPattern(true);
+		}
+	});
+
+	// initialize focus
+	focusOnPattern(true);
 }
 
 /**
@@ -672,12 +735,14 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 
 		// create the row element
 		this.rows = await valueBox([ 2, 256, ], 64, "Rows", 2, async(value:number) => {
-			// update everything with this new value
-			(this.tab.module as Module).patternRows = value;
-			await projectPatternRows(this.tab.project, this.tab.module as Module, value);
+			if((this.tab.module as Module).patternRows !== value) {
+				// update everything with this new value
+				(this.tab.module as Module).patternRows = value;
+				await projectPatternRows(this.tab.project, this.tab.module as Module, value);
 
-			// project is now dirty!
-			this.tab.project.dirty();
+				// project is now dirty!
+				this.tab.project.dirty();
+			}
 		});
 
 		// make a title
@@ -685,12 +750,14 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 
 		// create the highlight a element
 		this.hla = await valueBox([ 1, 256, ], 1, "Highlight A", 1, (value) => {
-			// update pattern editor and module with the new value
-			components.get<PatternEditor>("pattern")?.scrollManager?.changeHighlight(1, value);
-			(this.tab.module as Module).highlights[1] = value;
+			if((this.tab.module as Module).highlights[1] !== value) {
+				// update pattern editor and module with the new value
+				components.get<PatternEditor>("pattern")?.scrollManager?.changeHighlight(1, value);
+				(this.tab.module as Module).highlights[1] = value;
 
-			// project is now dirty!
-			this.tab.project.dirty();
+				// project is now dirty!
+				this.tab.project.dirty();
+			}
 		});
 
 		// make a title
@@ -700,12 +767,14 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 
 		// create the highlight a element
 		this.hlb = await valueBox([ 1, 256, ], 1, "Highlight B", 1, (value) => {
-			// update pattern editor and module with the new value
-			components.get<PatternEditor>("pattern")?.scrollManager?.changeHighlight(0, value);
-			(this.tab.module as Module).highlights[0] = value;
+			if((this.tab.module as Module).highlights[0] !== value) {
+				// update pattern editor and module with the new value
+				components.get<PatternEditor>("pattern")?.scrollManager?.changeHighlight(0, value);
+				(this.tab.module as Module).highlights[0] = value;
 
-			// project is now dirty!
-			this.tab.project.dirty();
+				// project is now dirty!
+				this.tab.project.dirty();
+			}
 		});
 
 		// make a title

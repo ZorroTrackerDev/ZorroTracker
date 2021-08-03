@@ -143,7 +143,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			// generate the main element for this editor
 			this.element = document.createElement("div");
 			this.element.classList.add("patterneditor");
-			this.element.tabIndex = 0;
+			this.element.tabIndex = -1;
 
 			// add the scrolling wrapper to the list
 			this.scrollwrapper = document.createElement("div");

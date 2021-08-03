@@ -1,6 +1,7 @@
 export enum Note {
 	Null = 0,
 	Rest = 1,
+	Cut = 2,
 	First = 4,
 
 	C0 = First + (12 * 5),

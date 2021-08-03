@@ -24,6 +24,14 @@ declare global {
 		 */
 		isLoading: boolean,
 
+		/**
+		 * Helper function to load the shortcut priority from the shortcut
+		 *
+		 * @param data The parts of the shortcut to inspect for priority
+		 * @returns A number indicating priority, lower values are higher priority
+		 */
+		shortcutPriority:(data:string[]) => number,
+
 		path: {
 			/**
 			 * The absolute path for the program data directory. This is where the exe file is in production, or the build directory in development.
@@ -34,7 +42,6 @@ declare global {
 			 */
 			home: string,
 		},
-
 		preload: {
 			/**
 			 * Helper function to update the maximize UI button depending on the window state. This info comes from the Node side using IPC.

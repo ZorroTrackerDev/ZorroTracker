@@ -154,7 +154,7 @@ export class Bounds {
  * @param state The shortcut state. For normal shortcuts, this is `undefined`. For special shortcuts, `true` = keydown, `false` = keyup
  * @returns Boolean indicating whether shortcut was processed or not
  */
-export type receiveShortcutFunc = (data:string[], event:KeyboardEvent|undefined, state:boolean|undefined) => Promise<boolean>;
+export type receiveShortcutFunc = (data:string[], event:KeyboardEvent|undefined, state:boolean|undefined) => boolean|Promise<boolean>;
 
 export interface UIShortcutHandler {
 	receiveShortcut: receiveShortcutFunc;

@@ -73,7 +73,7 @@
 					vu: {
 						// CSS styles
 						css: {
-							background: "linear-gradient(to right, #1c9835 60%, #bbb008 60%, #bbb008 80%, #bd1010 80%)",
+							background: "linear-gradient(to right, #1c9835 52%, #bbb008 68%, #bbb008 72%, #bd1010 88%)",
 						}
 					},
 				},

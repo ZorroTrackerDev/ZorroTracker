@@ -1,5 +1,6 @@
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../../api/events";
 import { loadFlag } from "../../../api/files";
+import { Note } from "../../../api/notes";
 import { UIComponent, UIShortcutHandler } from "../../../api/ui";
 import { Tab } from "../../misc/tab";
 
@@ -64,8 +65,20 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 			return false;
 		}
 
+		// helper function to process special note
+		const specialNote = (note:number) => {
+			if(state) {
+				return this.triggerNote(note, 1);
+
+			} else {
+				return this.releaseNote(note);
+			}
+		};
+
 		// process the shortcut
 		switch(data.shift()?.toLowerCase()) {
+			case "rest":		return specialNote(Note.Rest);
+			case "cut":			return specialNote(Note.Cut);
 			case "toleft":		return this.changePosition(-1);
 			case "toright":		return this.changePosition(1);
 			case "octavedown":	return this.changeOctave(-1);
@@ -498,6 +511,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	 *
 	 * @param note The note ID to play
 	 * @param velocity The velocity to play the note with, from 0 to 1.0.
+	 * @returns boolean indicatin whether the note was triggered
 	 */
 	public async triggerNote(note:number, velocity:number):Promise<boolean> {
 		// check if this note exists
@@ -516,6 +530,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	 * Release a note
 	 *
 	 * @param note The note ID to release
+	 * @returns boolean indicatin whether the note was released
 	 */
 	public async releaseNote(note:number):Promise<boolean> {
 		if(await window.ipc.driver.pianoRelease(note)){

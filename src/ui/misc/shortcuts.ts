@@ -79,6 +79,7 @@ const stdHandler = (type:"keydown"|"keyup", state:boolean) => {
 		if(activeKeys[_key]) {
 			// shortcut is already active, prevent default event and handle event correctly
 			event.preventDefault();
+			event.stopImmediatePropagation();
 
 			// determine if this shortcut should handle being held down
 			const hold = activeKeys[_key].startsWith("*");
@@ -124,7 +125,6 @@ const stdHandler = (type:"keydown"|"keyup", state:boolean) => {
 			if(rs){
 				// found a shortcut, now save it and prevent defaults
 				activeKeys[_key] = rs;
-				event.preventDefault();
 			}
 		}).catch(console.error);
 	});
@@ -149,6 +149,20 @@ window.addEventListener("blur", () => {
 });
 
 /**
+ * Helper function to sort the shortcut names based on their apparent priority
+ *
+ * @param name The shortcut names list
+ * @returns The same list, but sorted
+ */
+function shortcutSort(name:string[]) {
+	// create the priority sorted array
+	const sort = name.map((n) => { return { name: n, priority: window.shortcutPriority(n.split(".")), }});
+
+	// sort the actual array and return the names by themselves
+	return sort.sort((a, b) => a.priority - b.priority).map((n) => n.name);
+}
+
+/**
  * Execute shortcuts from an array of possible shortcuts. This will only execute the first accepted shortcut.
  *
  * @param name The list of shortcuts to execute
@@ -163,7 +177,7 @@ export async function doShortcut(name:string[], event?:KeyboardEvent, state?:boo
 	}
 
 	// do each shortcut separately
-	for(const com of name) {
+	for(const com of shortcutSort(name)) {
 		// split into an array based on dots and get the first element of the array
 		const comarr = (com.startsWith("*") ? com.substring(1) : com).toLowerCase().split(".");
 		const comkey = comarr.shift() ?? "<null>";
@@ -174,6 +188,10 @@ export async function doShortcut(name:string[], event?:KeyboardEvent, state?:boo
 			console.error("!!! Invalid command!!!\nShortcut had an invalid command "+ comkey);
 			return;
 		}
+
+		// prevent event from firing, if one was to exist
+		event?.preventDefault();
+		event?.stopImmediatePropagation();
 
 		// the function exists, execute it with the current event.
 		if(await shortcutReceivers[comkey](comarr, event, state)) {

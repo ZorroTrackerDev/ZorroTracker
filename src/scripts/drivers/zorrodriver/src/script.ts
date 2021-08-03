@@ -79,11 +79,11 @@ export default class implements Driver {
 		const ret = Array<NoteData>(256);
 
 		// prepare some values
-		ret[0] = { frequency: 0xFFFE, name: "", sharp: "", };
-		ret[1] = { frequency: 0xFFFF, name: "=", sharp: "", };
+		ret[0] = { frequency: undefined, name: "", sharp: "", };
+		ret[1] = { frequency: undefined, name: "===", sharp: "", };
+		ret[2] = { frequency: undefined, name: "-x-", sharp: "", };
 
 		// filler
-		ret[2] = { frequency: undefined, name: "", sharp: "", };
 		ret[3] = { frequency: undefined, name: "", sharp: "", };
 
 		// function defined, start filling the table

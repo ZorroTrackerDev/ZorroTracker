@@ -44,7 +44,7 @@ export class MatrixEditor implements UIComponent<HTMLDivElement>, UIShortcutHand
 		// generate the main element for this editor
 		this.element = document.createElement("div");
 		this.element.classList.add("matrix");
-		this.element.tabIndex = 0;						// cool so this whole element will break without this line here!
+		this.element.tabIndex = -1;						// cool so this whole element will break without this line here!
 
 		// generate the pattern display for this editor
 		this.elscroll = document.createElement("div")
@@ -321,72 +321,70 @@ export class MatrixEditor implements UIComponent<HTMLDivElement>, UIShortcutHand
 	 * @returns Whether the shortcut was executed
 	 */
 	// eslint-disable-next-line require-await
-	public async receiveShortcut(data:string[], e:KeyboardEvent|undefined, state:boolean|undefined):Promise<boolean> {
-		if(document.querySelector(":focus") === this.element) {
-			// has focus, process the shortcut
-			switch(data.shift()) {
-				case "edit":		return this.editToggle();
-				case "shiftdown":	return this.mode !== editMode.Paste && this.shiftDown();
-				case "shiftup":		return this.mode !== editMode.Paste && this.shiftUp();
-				case "insert":		return this.mode !== editMode.Paste && this.insert();
-				case "delete":		return this.mode !== editMode.Paste && this.delete();
-				case "copy":		return this.mode !== editMode.Paste && this.copy();
-				case "move":		return this.moveSelection(data.shift(), true);
-				case "movemax":		return this.specialSelection(data.shift(), true);
-				case "select":		return this.moveSelection(data.shift(), false);
-				case "selmax":		return this.specialSelection(data.shift(), false);
-				case "pasteenter":	return this.mode !== editMode.Paste && this.pasteInit();
-				case "pasteexit":	return this.pasteExit();
+	public async receiveShortcut(data:string[]):Promise<boolean> {
+		// has focus, process the shortcut
+		switch(data.shift()) {
+			case "edit":		return this.editToggle();
+			case "shiftdown":	return this.mode !== editMode.Paste && this.shiftDown();
+			case "shiftup":		return this.mode !== editMode.Paste && this.shiftUp();
+			case "insert":		return this.mode !== editMode.Paste && this.insert();
+			case "delete":		return this.mode !== editMode.Paste && this.delete();
+			case "copy":		return this.mode !== editMode.Paste && this.copy();
+			case "move":		return this.moveSelection(data.shift(), true);
+			case "movemax":		return this.specialSelection(data.shift(), true);
+			case "select":		return this.moveSelection(data.shift(), false);
+			case "selmax":		return this.specialSelection(data.shift(), false);
+			case "pasteenter":	return this.mode !== editMode.Paste && this.pasteInit();
+			case "pasteexit":	return this.pasteExit();
 
-				case "selall":
-					// select the entire matrix
-					return this.select(false, { x: 0, y: 0, w: this.tab.matrix.getWidth() - 1, h: this.tab.matrix.getHeight() - 1, });
+			case "selall":
+				// select the entire matrix
+				return this.select(false, { x: 0, y: 0, w: this.tab.matrix.getWidth() - 1, h: this.tab.matrix.getHeight() - 1, });
 
-				case "selrow":
-					// select the entire row
-					return this.select(false, { x: 0, w: this.tab.matrix.getWidth() - 1, });
+			case "selrow":
+				// select the entire row
+				return this.select(false, { x: 0, w: this.tab.matrix.getWidth() - 1, });
 
-				case "selcolumn":
-					// select the entire column
-					return this.select(false, { y: 0, h: this.tab.matrix.getHeight() - 1, });
+			case "selcolumn":
+				// select the entire column
+				return this.select(false, { y: 0, h: this.tab.matrix.getHeight() - 1, });
 
-				case "scroll": {
-					// convert direction string to x/y offsets
-					const dir = shortcutDirection(data.shift());
+			case "scroll": {
+				// convert direction string to x/y offsets
+				const dir = shortcutDirection(data.shift());
 
-					if(!dir || !dir.y) {
-						return false;
-					}
-
-					// apply scrolling
-					this.scroll(dir.y * MatrixEditor.SCROLL_STEP);
-					return true;
+				if(!dir || !dir.y) {
+					return false;
 				}
 
-				case "hex": {
-					// parse the value we passed
-					const value = parseInt(data.shift() ?? "NaN", 16);
+				// apply scrolling
+				this.scroll(dir.y * MatrixEditor.SCROLL_STEP);
+				return true;
+			}
 
-					// convert to hex
-					return this.setHex(value);
+			case "hex": {
+				// parse the value we passed
+				const value = parseInt(data.shift() ?? "NaN", 16);
+
+				// convert to hex
+				return this.setHex(value);
+			}
+
+			case "change": {
+				// disable in paste mode
+				if(this.mode === editMode.Paste) {
+					return false;
 				}
 
-				case "change": {
-					// disable in paste mode
-					if(this.mode === editMode.Paste) {
-						return false;
-					}
+				// convert direction string to x/y offsets
+				const dir = shortcutDirection(data.shift());
 
-					// convert direction string to x/y offsets
-					const dir = shortcutDirection(data.shift());
-
-					if(!dir || !dir.y) {
-						return false;
-					}
-
-					// apply the change
-					return this.change(dir.y * -1);
+				if(!dir || !dir.y) {
+					return false;
 				}
+
+				// apply the change
+				return this.change(dir.y * -1);
 			}
 		}
 

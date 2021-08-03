@@ -309,7 +309,7 @@ const cssPath = [
 		path: "pattern.main",
 	},
 	{
-		element: ".patterneditor:focus",
+		element: ".patterneditor.focus",
 		path: "pattern.focus",
 	},
 	{

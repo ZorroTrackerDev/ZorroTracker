@@ -66,7 +66,7 @@ export class PatternEditorSelectionManager {
 		this.single = { channel: 0, element: 0, pattern: 0, row: 0, };
 
 		// set the number of values
-		this.parent.horizontalBar.setValues(this.getTotalElements());
+		this.parent.horizontalBar.setValues(this.getTotalColumns());
 
 		// set the selected tab channel
 		await this.parent.tab.setSelectedChannel(this.single.channel);
@@ -649,7 +649,7 @@ export class PatternEditorSelectionManager {
 		// update the single selection to be in bounds
 		if(this.single) {
 			// set the number of values
-			this.parent.horizontalBar.setValues(this.getTotalElements());
+			this.parent.horizontalBar.setValues(this.getTotalColumns());
 
 			// calculate the new element
 			this.single.element = Math.min(this.single.element, this.parent.channelInfo[this.single.channel].elements.length - 1);
@@ -755,18 +755,18 @@ export class PatternEditorSelectionManager {
 	}
 
 	/**
-	 * Helper function to find the total number of elements in the pattern editor
+	 * Helper function to find the total number of columns in the pattern editor
 	 *
-	 * @returns The total number of elements
+	 * @returns The total number of columns
 	 */
-	public getTotalElements(): number {
+	public getTotalColumns(): number {
 		return this.parent.channelInfo.reduce((p, c) => p + c.elements.length, 0);
 	}
 
 	/**
-	 * Helper function to find the absolute element for the single selection
+	 * Helper function to find the column number for the single selection
 	 *
-	 * @returns The absolute element number for the selection
+	 * @returns The column number for the selection
 	 */
 	public getSingleElement(): number {
 		// special case to check if single is valid??
@@ -775,23 +775,23 @@ export class PatternEditorSelectionManager {
 		}
 
 		// load the element number in the last channel
-		let el = this.single.element;
+		let cc = this.single.element;
 
 		// loop for each channel to find the element
 		for(let ch = this.single.channel - 1;ch >= 0; --ch) {
-			el += this.parent.channelInfo[ch].elements.length;
+			cc += this.parent.channelInfo[ch].elements.length;
 		}
 
-		return el;
+		return cc;
 	}
 
 	/**
-	 * Set the absolute element for the channel, and refreshing scrolling
+	 * Set the column and refresh scrolling
 	 *
-	 * @param element The element number to move to
+	 * @param column The column number to move to
 	 */
-	public setSingleElement(element:number): Promise<boolean> {
-		return this.moveSingle(element - this.getSingleElement(), 0, false);
+	public setSingleElement(column:number): Promise<boolean> {
+		return this.moveSingle(column - this.getSingleElement(), 0, false);
 	}
 
 	/**

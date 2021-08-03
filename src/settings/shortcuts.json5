@@ -100,9 +100,14 @@
 	"layout.pattern.sel.scroll.down":		[ "PageDown" ],							/* shortcut for moving the selection down by 4 rows */
 	"layout.pattern.sel.rowtop":			[ "Home" ],								/* shortcut for moving the selection to the first row in pattern */
 	"layout.pattern.sel.rowbottom":			[ "End" ],								/* shortcut for moving the selection to the last row in pattern */
-	"layout.pattern.sel.patterntop":		[ "shift+Home" ],						/* shortcut for moving the selection to the first row in the first pattern */
-	"layout.pattern.sel.patternbottom":		[ "shift+End" ],						/* shortcut for moving the selection to the last row in the last pattern */
+	"layout.pattern.sel.patterntop":		[ "ctrl+Home" ],						/* shortcut for moving the selection to the first row in the first pattern */
+	"layout.pattern.sel.patternbottom":		[ "ctrl+End" ],							/* shortcut for moving the selection to the last row in the last pattern */
+	"layout.pattern.sel.extendtop":			[ "shift+Home" ],						/* shortcut for extending the selection to the first row in pattern */
+	"layout.pattern.sel.extendbottom":		[ "shift+End" ],						/* shortcut for extending the selection to the last row in pattern */
 	"layout.pattern.sel.deselect":			[ "Escape" ],							/* shortcut for clearing the multi selection */
+	"layout.pattern.sel.fullcolumn":		[ "ctrl+A" ],							/* shortcut for selecting the entire column */
+	"layout.pattern.sel.fullchannel":		[ "ctrl+A" ],							/* shortcut for selecting the entire channel */
+	"layout.pattern.sel.fullpattern":		[ "ctrl+A", "ctrl+shift+A" ],			/* shortcut for selecting the entire pattern */
 
 	"ui.open":								[ "ctrl+O" ],							/* shortcut for opening a file or a project */
 	"ui.undo":								[ "ctrl+Z" ],							/* shortcut for undoing a change */

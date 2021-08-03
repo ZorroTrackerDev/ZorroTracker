@@ -40,6 +40,57 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	}
 
 	/**
+	 * Helper function to check if multi selection exists, and if not, then clone the single selection as both of the points in multi selection
+	 */
+	private checkMultiSelection() {
+		if(!this.parent.selectionManager.multi) {
+			this.parent.selectionManager.multi = [
+				{ ...this.parent.selectionManager.single, },
+				{ ...this.parent.selectionManager.single, },
+			]
+		}
+	}
+
+	/**
+	 * Helper function to check if multi-selection is in the full column(s)
+	 *
+	 * @param channel If set, then check also that th full channel is selected
+	 */
+	private checkSelectAll(channel:boolean) {
+		// load the multi seleciton and check if its valid
+		const sl = this.parent.selectionManager.multi;
+
+		if(sl) {
+			// determine the top and bottom positions of the selection
+			const top = +(sl[0].row > sl[1].row);
+
+			// if selection is already at the top and bottom, then check if its around the cursor
+			if(sl[top].row === 0 && sl[1-top].row === this.parent.patternLen - 1) {
+				// check the if the selection is selecting the entire channel
+				const left = +(sl[0].element > sl[1].element);
+
+				if(!channel || (sl[left].element === 0 && sl[1-left].element === this.parent.channelInfo[sl[1-left].channel].elements.length - 1)) {
+					// helper function to find the offset from the single selection and multi selection.
+					const check = (sel:SingleSelection) => {
+						return sel.channel !== this.parent.selectionManager.single.channel ?
+							sel.channel - this.parent.selectionManager.single.channel :
+							sel.element - this.parent.selectionManager.single.element;
+					}
+
+					// check if single selection is inside the multi selection
+					const soff = sl.map((s) => check(s));
+					if((soff[0] === 0 || soff[1] === 0 || (soff[0] <= 0) !== (soff[1] <= 0))) {
+						// if so, then ignore shortcut
+						return false;
+					}
+				}
+			}
+		}
+
+		return true;
+	}
+
+	/**
 	 * Function to receive shortcut events from the user.
 	 *
 	 * @param shortcut Array of strings representing the shotcut data
@@ -64,12 +115,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 						case "extend":
 							return this.handleMovementCheck(data.shift(), (pos:Position) => {
 								// if there is no multi selection, clone single selection as the multi selection
-								if(!this.parent.selectionManager.multi) {
-									this.parent.selectionManager.multi = [
-										{ ...this.parent.selectionManager.single, },
-										{ ...this.parent.selectionManager.single, },
-									]
-								}
+								this.checkMultiSelection();
 
 								// extend multi selection
 								return this.parent.selectionManager.extendMulti(pos.x, pos.y, false);
@@ -171,6 +217,34 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 							return fn(0, 0.0001, wrap);
 						}
 
+						case "extendtop": {
+							// if there is no multi selection, clone single selection as the multi selection
+							this.checkMultiSelection();
+
+							// find which selection is closest to the top
+							const sl = this.parent.selectionManager.multi as MultiSelection;
+							const t = +(sl[0].row > sl[1].row);
+
+							// set the row and scroll
+							this.parent.selectionManager.single.row = sl[t].row = 0;
+							this.parent.scrollManager.scrollToRow(this.parent.selectionManager.single.pattern * this.parent.patternLen);
+							return true;
+						}
+
+						case "extendbottom": {
+							// if there is no multi selection, clone single selection as the multi selection
+							this.checkMultiSelection();
+
+							// find which selection is closest to the bottom
+							const sl = this.parent.selectionManager.multi as MultiSelection;
+							const t = +(sl[0].row < sl[1].row);
+
+							// set the row and scroll
+							this.parent.selectionManager.single.row = sl[t].row = this.parent.patternLen - 1;
+							this.parent.scrollManager.scrollToRow(((this.parent.selectionManager.single.pattern + 1) * this.parent.patternLen) - 1);
+							return true;
+						}
+
 						case "movepattern":
 							return this.handleMovementCheck(data.shift(), (pos:Position) => {
 								if(pos.y) {
@@ -246,6 +320,66 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 							this.parent.selectionManager.single.row = this.parent.patternLen - 1;
 							this.parent.selectionManager.single.pattern = this.parent.tab.matrix.matrixlen - 1;
 							return this.parent.selectionManager.moveSingle(0, 0.0001, true);
+						}
+
+						case "fullcolumn": {
+							if(!this.checkSelectAll(false)) {
+								return false;
+							}
+
+							// set the multi selection on the single selection column
+							const sl = this.parent.selectionManager.multi = [
+								{ ...this.parent.selectionManager.single, },
+								{ ...this.parent.selectionManager.single, },
+							];
+
+							sl[0].row = 0;
+							sl[1].row = this.parent.patternLen - 1;
+
+							// re-render the selection
+							this.parent.selectionManager.render();
+							return true;
+						}
+
+						case "fullchannel": {
+							if(!this.checkSelectAll(true)) {
+								return false;
+							}
+
+							// set the multi selection on the single selection column
+							const sl = this.parent.selectionManager.multi = [
+								{ ...this.parent.selectionManager.single, },
+								{ ...this.parent.selectionManager.single, },
+							];
+
+							sl[0].row = 0;
+							sl[0].element = 0;
+							sl[1].row = this.parent.patternLen - 1;
+							sl[1].element = this.parent.channelInfo[this.parent.selectionManager.single.channel].elements.length - 1;
+
+							// re-render the selection
+							this.parent.selectionManager.render();
+							return true;
+						}
+
+						case "fullpattern": {
+							// initialize the selection at the edges of the pattern
+							this.parent.selectionManager.multi = [
+								{
+									pattern: this.parent.selectionManager.single.pattern,
+									row: 0, channel: 0, element: 0,
+								},
+								{
+									pattern: this.parent.selectionManager.single.pattern,
+									row: this.parent.patternLen - 1,
+									channel: this.parent.channelInfo.length - 1,
+									element: this.parent.channelInfo[this.parent.channelInfo.length - 1].elements.length - 1,
+								},
+							];
+
+							// re-render the selection
+							this.parent.selectionManager.render();
+							return true;
 						}
 
 						case "deselect":

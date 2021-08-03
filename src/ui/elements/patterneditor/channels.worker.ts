@@ -407,8 +407,13 @@ type ChannelCanvasInfo = {
 		// get the highlight ID
 		const hid = (record ? 6 : 0) + (active ? 0 : 3) + ((row % highlights[0]) === 0 ? 2 : (row % highlights[1]) === 0 ? 1 : 0);
 
-		// grab the appropriate context
+		// load the channel data and return if undefined. TODO: Check if this can cause issues
 		const cd = channels[channel];
+		if(!cd){
+			return;
+		}
+
+		// grab the appropriate context
 		const ctx = cd.ctx;
 
 		// draw the background fill color

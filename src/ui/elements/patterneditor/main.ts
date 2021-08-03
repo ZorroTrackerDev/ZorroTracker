@@ -210,6 +210,9 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			return pass < 2;
 		}
 
+		// focus on the element
+		this.element.focus();
+
 		// initialize the channel layout for this editor
 		this.initChannels();
 		await this.selectionManager.load();

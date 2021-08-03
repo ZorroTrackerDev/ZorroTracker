@@ -29,7 +29,7 @@ window.preload.updateMaximizeButtonState = (mode:boolean) => {
 	update(document.getElementById("main_toolbar_maximize"));
 }
 
-export function loadStandardShortcuts(type:SettingsTypes, extras:{ [key:string]: () => boolean|Promise<boolean>, }): void {
+export function loadStandardShortcuts(type:SettingsTypes, extras:{ [key:string]: (data:string[]) => boolean|Promise<boolean>, }): void {
 	loadDefaultShortcuts(type);
 
 	// add default window open handler
@@ -93,7 +93,7 @@ export function loadStandardShortcuts(type:SettingsTypes, extras:{ [key:string]:
 			default:
 				// handle extra commands here
 				if(extras[c]){
-					return extras[c]();
+					return extras[c](data);
 				}
 				break;
 		}

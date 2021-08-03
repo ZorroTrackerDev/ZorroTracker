@@ -162,7 +162,7 @@ function initShortcutHandler() {
 				return components.get<UIShortcutHandler>("matrix")?.receiveShortcut(data, e, state) ?? false;
 
 			case "pattern":
-				return components.get<UIShortcutHandler>("editor")?.receiveShortcut(data, e, state) ?? false;
+				return components.get<UIShortcutHandler>("pattern")?.receiveShortcut(data, e, state) ?? false;
 
 			case "piano":
 				return components.get<UIShortcutHandler>("piano")?.receiveShortcut(data, e, state) ?? false;
@@ -407,6 +407,21 @@ async function loadMainShortcuts() {
 			await Tab.active.setMuteAll(false);
 			return true;
 		},
+
+		/* shortcut for focusing on something */
+		focus: (data:string[]) => {
+			// load the target component
+			const target = components.get<UIComponent<HTMLElement>>(data.shift() ?? "");
+
+			if(target) {
+				// focus on the target
+				target.element.focus({ preventScroll: true, });
+				return true;
+			}
+
+			// nothing to target
+			return false;
+		},
 	});
 }
 
@@ -525,7 +540,7 @@ async function initLayout() {
 	body.appendChild(_bot);
 
 	// load all the standard components
-	_bot.appendChild(await components.addComponent("editor", new PatternEditor()));
+	_bot.appendChild(await components.addComponent("pattern", new PatternEditor()));
 	_top.appendChild(await components.addComponent("matrix", new MatrixEditor()));
 	_bot.appendChild(await components.addComponent("piano", new Piano()));
 
@@ -671,7 +686,7 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 		// create the highlight a element
 		this.hla = await valueBox([ 1, 256, ], 1, "Highlight A", 1, (value) => {
 			// update pattern editor and module with the new value
-			components.get<PatternEditor>("editor")?.scrollManager?.changeHighlight(1, value);
+			components.get<PatternEditor>("pattern")?.scrollManager?.changeHighlight(1, value);
 			(this.tab.module as Module).highlights[1] = value;
 
 			// project is now dirty!
@@ -686,7 +701,7 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 		// create the highlight a element
 		this.hlb = await valueBox([ 1, 256, ], 1, "Highlight B", 1, (value) => {
 			// update pattern editor and module with the new value
-			components.get<PatternEditor>("editor")?.scrollManager?.changeHighlight(0, value);
+			components.get<PatternEditor>("pattern")?.scrollManager?.changeHighlight(0, value);
 			(this.tab.module as Module).highlights[0] = value;
 
 			// project is now dirty!
@@ -734,7 +749,7 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 		await projectPatternRows(this.tab.project, this.tab.module as Module, (this.tab.module as Module).patternRows);
 
 		// load editor element
-		const edit = components.get<PatternEditor>("editor");
+		const edit = components.get<PatternEditor>("pattern");
 
 		// initialize highlight a element
 		this.hla.setValue((this.tab.module as Module).highlights[1].toString(), (this.tab.module as Module).highlights[1]);

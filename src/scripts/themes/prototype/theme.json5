@@ -1,6 +1,19 @@
 {
 	pattern: {
+		// settings related to the main element when focused
+		focus: {
+			// CSS styles
+			css: {
+				filter: "none",
+				outline: "#4CAF50 solid 2px",
+			}
+		},
 		main: {
+			// CSS styles related to the main element
+			css: {
+				filter: "brightness(70%) contrast(80%)",
+				transition: "filter 200ms ease-in-out"
+			},
 			// settings related to the channel headers
 			header: {
 				// settings related to the resize handle for each channel header

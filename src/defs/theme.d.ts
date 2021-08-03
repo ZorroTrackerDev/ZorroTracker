@@ -30,6 +30,10 @@ declare interface ThemeSettings {
 	},
 	pattern?: {
 		/**
+		 * The CSS styles for the main pattern editor element when focused
+		 */
+		focus?: CSSThemeObj,
+		/**
 		 * Settings related to the worker
 		 */
 		worker?: WorkerThemeSettings,
@@ -144,6 +148,10 @@ declare interface PatternEdtiorExtraThemeSettings {
  * Helper type to handle theme settings related to the pattern editor
  */
 declare interface PatternEditorThemeSettings {
+	/**
+	 * The CSS styles for the main pattern editor element
+	 */
+	css?: CSSTheme,
 	/**
 	 * Settings related to the channel headers
 	 */

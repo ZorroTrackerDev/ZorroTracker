@@ -305,6 +305,14 @@ const cssPath = [
 		],
 	},
 	{
+		element: ".patterneditor",
+		path: "pattern.main",
+	},
+	{
+		element: ".patterneditor:focus",
+		path: "pattern.focus",
+	},
+	{
 		element: ".patterneditorwrap>.channelwrapper",
 		path: "pattern.main.header",
 		child: [

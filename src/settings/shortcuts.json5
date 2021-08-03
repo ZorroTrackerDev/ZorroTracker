@@ -104,10 +104,10 @@
 	"layout.pattern.sel.patternbottom":		[ "ctrl+End" ],							/* shortcut for moving the selection to the last row in the last pattern */
 	"layout.pattern.sel.extendtop":			[ "shift+Home" ],						/* shortcut for extending the selection to the first row in pattern */
 	"layout.pattern.sel.extendbottom":		[ "shift+End" ],						/* shortcut for extending the selection to the last row in pattern */
-	"layout.pattern.sel.deselect":			[ "Escape" ],							/* shortcut for clearing the multi selection */
 	"layout.pattern.sel.fullcolumn":		[ "ctrl+A" ],							/* shortcut for selecting the entire column */
 	"layout.pattern.sel.fullchannel":		[ "ctrl+A" ],							/* shortcut for selecting the entire channel */
 	"layout.pattern.sel.fullpattern":		[ "ctrl+A", "ctrl+shift+A" ],			/* shortcut for selecting the entire pattern */
+	"layout.pattern.sel.deselect":			[ "Escape" ],							/* shortcut for clearing the multi selection */
 
 	"ui.open":								[ "ctrl+O" ],							/* shortcut for opening a file or a project */
 	"ui.undo":								[ "ctrl+Z" ],							/* shortcut for undoing a change */
@@ -126,4 +126,7 @@
 	"ui.soloselected":						[ "Shift+F9" ],							/* shortcut for muting selected channel */
 	"ui.muteall":							[ "F10" ],								/* shortcut for muting all channels */
 	"ui.unmuteall":							[ "Shift+F9", "F10" ],					/* shortcut for unmuting all channels */
+
+	"ui.focus.pattern":						[ "alt+P" ],							/* shortcut for focusing on the pattern editor */
+	"ui.focus.matrix":						[ "alt+O" ],							/* shortcut for focusing on the matrix editor */
 }

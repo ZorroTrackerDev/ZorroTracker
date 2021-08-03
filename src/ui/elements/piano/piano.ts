@@ -72,6 +72,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 			case "octaveup":	return this.changeOctave(1);
 			case "smaller":		return this.changeSize(-1);
 			case "bigger":		return this.changeSize(1);
+			case "hide":		return this.toggleHide();
 			case "octave0":		return octave(data, 0);
 			case "octave1":		return octave(data, 1);
 			case "octave2":		return octave(data, 2);
@@ -94,7 +95,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	/**
 	 * Function to initialize the piano component
 	 */
-	public init(): HTMLDivElement {
+	public async init(): Promise<HTMLDivElement> {
 		// create the piano base element
 		this.element = document.createElement("div");
 		this.element.classList.add("pianowrapper");
@@ -115,10 +116,24 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 		this.position = loadFlag<number>("PIANO_DEFAULT_POSITION") ?? 0;
 
 		// update position
-		this.changePosition(0);
+		await this.changePosition(0);
 
 		// return the main element for this piano
 		return this.element;
+	}
+
+	private hidden = false;
+
+	/**
+	 * Helper function to toggle hiding the piano
+	 */
+	public async toggleHide(): Promise<boolean> {
+		// toggle the state
+		this.hidden = !this.hidden;
+
+		// redraw the piano
+		await this.redraw();
+		return true;
 	}
 
 	/**
@@ -126,12 +141,18 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	 *
 	 * @param offset The offset to apply to the position
 	 */
-	public changePosition(offset:number): boolean {
+	public async changePosition(offset:number): Promise<boolean> {
 		// update position and cap it between -1 and 1
 		this.position = Math.max(-1, Math.min(1, this.position + offset));
 
 		// update the float value
 		((this.element.children[0] as HTMLDivElement).children[0] as HTMLDivElement).style.float = [ "left", "", "right", ][this.position + 1];
+
+		if(this.hidden) {
+			// if hidden, unhide and redraw
+			this.hidden = false;
+			await this.redraw();
+		}
 		return true;
 	}
 
@@ -144,12 +165,13 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 		const { min, max, } = (await this.tab.getNotes(this.tab.selectedChannel.type)).octave;
 
 		// update size and cap it between 1 and max octaves
-		this.width = Math.max(1, Math.min((max - min + 1), this.width + offset));
+		this.width = Math.max(2, Math.min((max - min + 1), this.width + offset));
 
 		// ensure the octave doesnt go out of range
 		await this.changeOctave(0);
 
 		// redraw the piano
+		this.hidden = false;
 		await this.redraw();
 		return true;
 	}
@@ -183,7 +205,10 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 		}
 
 		// redraw the piano
-		await this.redraw();
+		if(!this.hidden) {
+			await this.redraw();
+		}
+
 		return true;
 	}
 
@@ -193,11 +218,6 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	 * @returns An array depicting the minimum and maximum octaves to display. For example to only display octave 3, this will return [ 3, 3 ].
 	 */
 	private async getOctaveRange(): Promise<[ number, number, ]> {
-		// just pretend to show an invalid octave range, if no piano would display.
-		if(this.width < 2) {
-			return [ 1, 0, ];
-		}
-
 		// prepare the octave marker
 		let oc = this.octave;
 
@@ -285,6 +305,11 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 		// remove all children
 		while(wrap.children.length > 0){
 			wrap.removeChild(wrap.children[0]);
+		}
+
+		// if hidden, then do not draw anything
+		if(this.hidden) {
+			return;
 		}
 
 		// load note cache data

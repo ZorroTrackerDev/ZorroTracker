@@ -48,10 +48,13 @@
 	"layout.matrix.hex.E":					[ "E" ],								/* shortcut for the hexadecimal value E */
 	"layout.matrix.hex.F":					[ "F" ],								/* shortcut for the hexadecimal value F */
 
-	"layout.piano.bigger":					[ "ctrl+shift+F4" ],					/* shortcut for moving increasing piano size */
-	"layout.piano.smaller":					[ "ctrl+shift+F3" ],					/* shortcut for moving decreasing piano size */
-	"layout.piano.octavedown":				[ "ctrl+F3" ],							/* shortcut for decreasing the base octave */
-	"layout.piano.octaveup":				[ "ctrl+F4" ],							/* shortcut for increasing the base octave */
+	"layout.piano.smaller":					[ "ctrl+F5" ],							/* shortcut for decreasing piano size */
+	"layout.piano.bigger":					[ "ctrl+F6" ],							/* shortcut for increasing piano size */
+	"layout.piano.hide":					[ "ctrl+F7" ],							/* shortcut for hiding and unhiding the piano */
+	"layout.piano.octaveup":				[ "equal" ],							/* shortcut for increasing the base octave */
+	"layout.piano.octavedown":				[ "minus" ],							/* shortcut for decreasing the base octave */
+	"layout.piano.toleft":					[ "ctrl+shift+ArrowLeft" ],				/* shortcut for moving piano to left side */
+	"layout.piano.toright":					[ "ctrl+shift+ArrowRight" ],			/* shortcut for moving piano to right side */
 	"*layout.piano.octave0.C":				[ "KeyZ" ],								/* shortcut for playing C on current octave +0 */
 	"*layout.piano.octave0.C#":				[ "KeyS" ],								/* shortcut for playing C# on current octave +0 */
 	"*layout.piano.octave0.D":				[ "KeyX" ],								/* shortcut for playing D on current octave +0 */
@@ -109,12 +112,12 @@
 	"layout.pattern.sel.fullpattern":		[ "ctrl+A", "ctrl+shift+A" ],			/* shortcut for selecting the entire pattern */
 	"layout.pattern.sel.deselect":			[ "Escape" ],							/* shortcut for clearing the multi selection */
 
-	"ui.open":								[ "ctrl+O" ],							/* shortcut for opening a file or a project */
 	"ui.undo":								[ "ctrl+Z" ],							/* shortcut for undoing a change */
 	"ui.redo":								[ "ctrl+Y" ],							/* shortcut for redoing a change */
+	"ui.open":								[ "ctrl+O" ],							/* shortcut for opening a file or a project */
+	"ui.new":								[ "ctrl+N" ],							/* shortcut for creating a new project */
 	"ui.save":								[ "ctrl+S" ],							/* shortcut for saving the project */
 	"ui.saveas":							[ "ctrl+shift+S" ],						/* shortcut for saving the project as another file */
-	"ui.new":								[ "ctrl+N" ],							/* shortcut for creating a new project */
 
 	"ui.play":								[ "MediaPlayPause", "Enter" ],			/* shortcut for playing back the entire track */
 	"ui.playpattern":						[ "MediaTrackPrevious", "Shift+Enter" ],/* shortcut for playing back the current pattern */

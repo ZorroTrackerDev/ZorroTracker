@@ -158,7 +158,7 @@ export class PatternEditorScrollManager {
 			this.horizChannel = left;
 
 		// check if the horizontal scrolling is too far right
-		} else if(opos + this.scrollWidth <= rp) {
+		} else if(opos + this.scrollWidth - this.parent.padding.right <= rp) {
 			// if so, shift channels until fully visible
 			let test;
 			do {
@@ -447,6 +447,9 @@ export class PatternEditorScrollManager {
 
 		// re-render all visible rows
 		this.updatePositionAndGraphics();
+
+		// set the project to be dirty
+		this.parent.tab.project.dirty();
 	}
 
 	/**

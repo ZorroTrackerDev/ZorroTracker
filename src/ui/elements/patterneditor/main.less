@@ -42,8 +42,26 @@
 			display: inline-block;
 			z-index: 40;
 
-			&:not(:first-child) {
-				&> .channelnamewrapper {
+			&> .channelnamewrapper {
+				position: relative;
+				height: @labelheight;
+				text-align: center;
+				z-index: 15;
+				width: 100%;
+
+				&> label {
+					height: 100%;
+					pointer-events: none;
+				}
+
+				&> .channelvu {
+					pointer-events: none;
+					position: absolute;
+					right: 6px; left: 6px;
+					bottom: 3px; height: 4px;
+				}
+
+				&.channelisdrag {
 					&> .channeldragarea {
 						position: absolute;
 						right: 0; top: 0; bottom: 0;
@@ -66,10 +84,11 @@
 					}
 
 					&> .channelvu {
-						pointer-events: none;
-						position: absolute;
-						right: @labelheight; left: 6px;
-						bottom: 3px; height: 4px;
+						right: @labelheight;
+					}
+
+					&> label {
+						padding-right: @labelheight - 4px;
 					}
 				}
 			}
@@ -81,23 +100,9 @@
 				&> .channelnamewrapper {
 					width: 100%;
 
-					&> .channeldragarea {
+					&> .channelvu {
 						display: none;
 					}
-				}
-			}
-
-			&> .channelnamewrapper {
-				position: relative;
-				height: @labelheight;
-				text-align: center;
-				z-index: 15;
-				width: 100%;
-
-				&> label {
-					height: 100%;
-					padding-right: @labelheight - 4px;
-					pointer-events: none;
 				}
 			}
 		}

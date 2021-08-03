@@ -1,3 +1,4 @@
+import { FeatureFlag } from "../../../api/driver";
 import { UIComponent, UIShortcutHandler } from "../../../api/ui";
 import { Tab } from "../../misc/tab";
 import { theme } from "../../misc/theme";
@@ -248,30 +249,32 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 		this.channelInfo = [];
 
 		// generating DOM for a single channel
-		const doChannel = (name:string) => {
+		const doChannel = (name:string, drag:boolean) => {
 			// do some regex hacking to remove all tabs and newlines. HTML whyyy
 			return /*html*/`
 				<div class="channelwrapper">
-					<div class="channelnamewrapper">
+					<div class="channelnamewrapper${ drag ? " channelisdrag" : "" }">
 						<label>${ name }</label>
 						<div class="channelvu"></div>
-						<div class="channeldragarea">
-							<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-								<path fill="#3b1b0f" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"/>
-							</svg>
-						</div>
+						${ !drag ? "" : /* html */`
+							<div class="channeldragarea">
+								<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+									<path fill="#3b1b0f" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"/>
+								</svg>
+							</div>
+						`}
 					</div>
 				</div>
 			`.replace(/[\t|\r|\n]+/g, "");
 		};
 
 		// create the row index column
-		this.scrollwrapper.innerHTML = doChannel("\u200B");
+		this.scrollwrapper.innerHTML = doChannel("\u200B", false);
 
 		// handle DOM generation for each channel and save it to scrollwrapper
 		this.scrollwrapper.innerHTML += this.tab.channels.map((c) => {
 			// generate DOM for a single channel
-			return doChannel(c.info.name);
+			return doChannel(c.info.name, (c.features & FeatureFlag.EFFECTS) !== 0);
 		}).join("");
 
 		// enable resize handlers and init styles
@@ -282,10 +285,42 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			const chan = this.scrollwrapper.children[i + 1] as HTMLDivElement;
 			const drag = chan.children[0].children[2] as HTMLDivElement;
 
-			let pos = -1, left = 0;
-
 			// initialize header size
 			this.setChannelHeaderSize(this.tab.channels[i]?.info.effects ?? 0, i, this.tab.channels[i].muted, chan);
+
+			// handler for mouse clicks on the main channel itself
+			chan.onclick = async(e) => {
+				// check if this was a right click
+				if(e.button !== 0) {
+					return;
+				}
+
+				// fetch the channel to effect
+				const ch = this.tab.channels[i];
+
+				if(e.detail > 1) {
+					// double click handling
+					if(this.tab.isSolo(ch)) {
+						// enable all channels
+						await this.tab.setMuteAll(false);
+
+					} else {
+						// make the channel go solo
+						await this.tab.setSolo(ch);
+					}
+
+				} else if(e.detail === 1) {
+					// single click handling
+					await this.tab.setMute(ch, !ch.muted);
+				}
+			};
+
+			// if drag is not defined, just skip the rest
+			if(!drag) {
+				continue;
+			}
+
+			let pos = -1, left = 0;
 
 			// enable mouse down detection
 			drag.onpointerdown = (e) => {
@@ -331,33 +366,6 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 				// fix horizontal scrolling just in case
 				this.scrollManager.horizontalScroll(0, false);
 			}
-
-			// handler for mouse clicks on the main channel itself
-			chan.onclick = async(e) => {
-				// check if this was a right click
-				if(e.button !== 0) {
-					return;
-				}
-
-				// fetch the channel to effect
-				const ch = this.tab.channels[i];
-
-				if(e.detail > 1) {
-					// double click handling
-					if(this.tab.isSolo(ch)) {
-						// enable all channels
-						await this.tab.setMuteAll(false);
-
-					} else {
-						// make the channel go solo
-						await this.tab.setSolo(ch);
-					}
-
-				} else if(e.detail === 1) {
-					// single click handling
-					await this.tab.setMute(ch, !ch.muted);
-				}
-			};
 		}
 
 		requestAnimationFrame(() => {

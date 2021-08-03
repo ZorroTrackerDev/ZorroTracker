@@ -1,4 +1,4 @@
-import { ChannelType, Driver, DriverChannel, DriverConfig, NoteData, NoteReturnType, OctaveInfo } from "../../../../api/driver";
+import { ChannelType, Driver, DriverChannel, DriverConfig, FeatureFlag, NoteData, NoteReturnType, OctaveInfo } from "../../../../api/driver";
 import { Chip, PSGCMD, YMKey, YMREG } from "../../../../api/chip";
 import { DefaultOctave, DefaultOctaveSharp, Note, OctaveSize } from "../../../../api/notes";
 
@@ -133,18 +133,18 @@ export default class implements Driver {
 
 	public getChannels(): DriverChannel[] {
 		return [
-			{ name: "FM1", id: 0, type: ChannelType.YM2612FM, },
-			{ name: "FM2", id: 1, type: ChannelType.YM2612FM, },
-			{ name: "FM3", id: 2, type: ChannelType.YM2612FM, },
-			{ name: "FM4", id: 3, type: ChannelType.YM2612FM, },
-			{ name: "FM5", id: 4, type: ChannelType.YM2612FM, },
-			{ name: "FM6", id: 5, type: ChannelType.YM2612FM, },
-			{ name: "PCM1", id:10, type: ChannelType.YM2612DAC, },
-			{ name: "PCM2", id:11, type: ChannelType.YM2612DAC, },
-			{ name: "PSG1", id: 6, type: ChannelType.YM7101PSG, },
-			{ name: "PSG2", id: 7, type: ChannelType.YM7101PSG, },
-			{ name: "PSG3", id: 8, type: ChannelType.YM7101PSG, },
-			{ name: "PSG4", id: 9, type: ChannelType.YM7101PSG, },
+			{ name: "FM1", id: 0, type: ChannelType.YM2612FM, features: FeatureFlag.ALL, },
+			{ name: "FM2", id: 1, type: ChannelType.YM2612FM, features: FeatureFlag.ALL, },
+			{ name: "FM3", id: 2, type: ChannelType.YM2612FM, features: FeatureFlag.ALL, },
+			{ name: "FM4", id: 3, type: ChannelType.YM2612FM, features: FeatureFlag.ALL, },
+			{ name: "FM5", id: 4, type: ChannelType.YM2612FM, features: FeatureFlag.ALL, },
+			{ name: "FM6", id: 5, type: ChannelType.YM2612FM, features: FeatureFlag.ALL, },
+			{ name: "PCM1", id:10, type: ChannelType.YM2612DAC, features: FeatureFlag.INSTRUMENT | FeatureFlag.EFFECTS, },
+			{ name: "PCM2", id:11, type: ChannelType.YM2612DAC, features: FeatureFlag.INSTRUMENT | FeatureFlag.EFFECTS, },
+			{ name: "PSG1", id: 6, type: ChannelType.YM7101PSG, features: FeatureFlag.ALL, },
+			{ name: "PSG2", id: 7, type: ChannelType.YM7101PSG, features: FeatureFlag.ALL, },
+			{ name: "PSG3", id: 8, type: ChannelType.YM7101PSG, features: FeatureFlag.ALL, },
+			{ name: "PSG4", id: 9, type: ChannelType.YM7101PSG, features: FeatureFlag.ALL, },
 		];
 	}
 

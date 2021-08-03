@@ -165,26 +165,51 @@ export type NoteReturnType = {
 
 export interface DriverChannel {
 	/**
-	 * The channel ID. This can be anything, this only matters
+	 * The channel ID. This can be anything, this only matters for driver internal functions
 	 */
-	id: number;
+	id: number,
 
 	/**
 	 * The string name for this channel
 	 */
-	name: string;
+	name: string,
 
 	/**
 	 * The type of the channel. This helps ZorroTracker use apprioriate elements for channel.
 	 */
-	type: ChannelType;
+	type: ChannelType,
+
+	/**
+	 * The various features this channels supports
+	 */
+	features: FeatureFlag,
 }
 
-export interface ChannelInfo extends DriverChannel {
+export interface ChannelInfo {
+	/**
+	 * The channel ID. This can be anything, this only matters for driver internal functions
+	 */
+	id: number,
+
+	/**
+	 * The string name for this channel
+	 */
+	name: string,
+
+	/**
+	 * The type of the channel. This helps ZorroTracker use apprioriate elements for channel.
+	 */
+	type: ChannelType,
+
 	/**
 	 * How many effects are displayed
 	 */
 	effects: number,
+
+	/**
+	 * The various features this channels supports
+	 */
+	features: FeatureFlag,
 }
 
 export interface Channel {
@@ -197,6 +222,16 @@ export interface Channel {
 	 * Boolean indicating whether the channel is muted
 	 */
 	muted: boolean,
+
+	/**
+	 * The type of the channel. This helps ZorroTracker use apprioriate elements for channel.
+	 */
+	type: ChannelType,
+
+	/**
+	 * The various features this channels supports
+	 */
+	features: FeatureFlag,
 }
 
 export enum ChannelType {
@@ -206,4 +241,12 @@ export enum ChannelType {
 	YM2612DAC = 0x11,
 	YM7101PSG = 0x20,
 	YM7101DAC = 0x21,
+}
+
+export enum FeatureFlag {
+	NOTE = 1 << 0,
+	INSTRUMENT = 1 << 1,
+	VOLUME = 1 << 2,
+	EFFECTS = 1 << 3,
+	ALL = FeatureFlag.NOTE | FeatureFlag.INSTRUMENT | FeatureFlag.VOLUME | FeatureFlag.EFFECTS,
 }

@@ -117,7 +117,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	public init(): Promise<HTMLDivElement> {
 		return new Promise((res, rej) => {
 			// load the button size
-			const size = theme?.pattern?.extras?.scrollbar.size ?? 0;
+			const size = theme?.pattern?.extras?.scrollbar?.size ?? 0;
 
 			// initialize the scrollbars
 			const bar = [
@@ -251,6 +251,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 				<div class="channelwrapper">
 					<div class="channelnamewrapper">
 						<label>${ name }</label>
+						<div class="channelvu"></div>
 						<div class="channeldragarea">
 							<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
 								<path fill="#3b1b0f" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"/>
@@ -276,7 +277,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			this.channelInfo[i] = { width: 0, left: 0, right: 0, elements: [], offsets: [], };
 
 			const chan = this.scrollwrapper.children[i + 1] as HTMLDivElement;
-			const drag = chan.children[0].children[1] as HTMLDivElement;
+			const drag = chan.children[0].children[2] as HTMLDivElement;
 
 			let pos = -1, left = 0;
 
@@ -368,25 +369,25 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	/**
 	 * Function to update the channel header size
 	 *
-	 * @param width The number of commands this channel has
+	 * @param effects The number of effects this channel has
 	 * @param channel The channel to change
 	 * @param element The root element for this channel
 	 */
-	private setChannelHeaderSize(width:number, channel:number, muted:boolean, element:HTMLDivElement) {
-		// update commands amount
-		this.tab.channels[channel].info.effects = width;
-		this.scrollManager.updateElementRender(channel, width);
+	private setChannelHeaderSize(effects:number, channel:number, muted:boolean, element:HTMLDivElement) {
+		// update effects amount
+		this.tab.channels[channel].info.effects = effects;
+		const width = this.scrollManager.updateElementRender(channel, effects);
 
 		// update header element width and classes
-		element.style.width = this.channelWidths[width] +"px";
+		element.style.width = width +"px";
 
 		// @ts-expect-error This works you silly butt
-		element.classList = "channelwrapper"+ (muted ? " muted" : "") + (width === 1 ? " dragright" : width === 8 ? " dragleft" : "");
+		element.classList = "channelwrapper"+ (muted ? " muted" : "") + (effects === 1 ? " dragright" : effects === 8 ? " dragleft" : "");
 
 		// update SVG path element
 		const path = element.querySelector("path");
 		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-		path && path.setAttribute("d", (theme?.pattern?.main?.header?.resize?.path ?? [])[width === 1 ? 0 : width === 8 ? 2 : 1] ?? "");
+		path && path.setAttribute("d", (theme?.pattern?.main?.header?.resize?.path ?? [])[effects === 1 ? 0 : effects === 8 ? 2 : 1] ?? "");
 	}
 
 	/**
@@ -436,7 +437,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	 * Helper function to inform that the theme was reloaded
 	 */
 	public reloadTheme(preload:boolean):Promise<void[]> {
-		const size = theme?.pattern?.extras?.scrollbar.size ?? 0;
+		const size = theme?.pattern?.extras?.scrollbar?.size ?? 0;
 
 		// update scrollbars
 		const promises = [ this.verticalBar.reloadTheme(size), this.horizontalBar.reloadTheme(size), ];

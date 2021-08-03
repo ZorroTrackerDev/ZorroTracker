@@ -26,7 +26,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 
 				if(state) {
 					// fetch octave info
-					const octaveInfo = (await this.tab.getNotes(this.tab.selectedChannel.info.type)).octave;
+					const octaveInfo = (await this.tab.getNotes(this.tab.selectedChannel.type)).octave;
 
 					// calculate the note
 					const n = octaveInfo.C0 + note + ((this.octave + octave) * octaveInfo.size);
@@ -141,7 +141,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	 * @param offset The offset to apply to the size
 	 */
 	public async changeSize(offset:number): Promise<boolean> {
-		const { min, max, } = (await this.tab.getNotes(this.tab.selectedChannel.info.type)).octave;
+		const { min, max, } = (await this.tab.getNotes(this.tab.selectedChannel.type)).octave;
 
 		// update size and cap it between 1 and max octaves
 		this.width = Math.max(1, Math.min((max - min + 1), this.width + offset));
@@ -172,7 +172,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	 * @param update If set to false, do not update the function
 	 */
 	public async changeOctave(offset:number, update?:boolean): Promise<boolean> {
-		const { min, max, } = (await this.tab.getNotes(this.tab.selectedChannel.info.type)).octave;
+		const { min, max, } = (await this.tab.getNotes(this.tab.selectedChannel.type)).octave;
 
 		// update octave and cap it between minimum and maximum octave
 		this.octave = Math.max(min, Math.min(max - 1, this.octave + offset));
@@ -205,7 +205,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 		const lw = Math.floor(this.width / 2), rw = Math.ceil(this.width / 2);
 
 		// fetch the minimum and maximum octaves
-		const { min, max, } = (await this.tab.getNotes(this.tab.selectedChannel.info.type)).octave;
+		const { min, max, } = (await this.tab.getNotes(this.tab.selectedChannel.type)).octave;
 
 		// handle minimum and maximum octave
 		if(oc < min + lw) {
@@ -256,7 +256,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	public onRangeUpdate(func:(min: number, max: number, ) => void): void {
 		// generate the range update function
 		this.rangeUpdateFunc = async() => {
-			const { min, max, } = (await this.tab.getNotes(this.tab.selectedChannel.info.type)).octave;
+			const { min, max, } = (await this.tab.getNotes(this.tab.selectedChannel.type)).octave;
 			func(min, max - 1);
 		};
 
@@ -271,7 +271,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	 * @returns the translated note
 	 */
 	public async getRelativeNote(offset:number): Promise<number> {
-		const octave = (await this.tab.getNotes(this.tab.selectedChannel.info.type)).octave;
+		const octave = (await this.tab.getNotes(this.tab.selectedChannel.type)).octave;
 		return ((this.octave + 1) * octave.size) + octave.C0 + offset;
 	}
 
@@ -288,7 +288,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 		}
 
 		// load note cache data
-		const cache = await this.tab.getNotes(this.tab.selectedChannel.info.type);
+		const cache = await this.tab.getNotes(this.tab.selectedChannel.type);
 
 		// helper function to add a single key to the wrapper
 		const key = (note:number, parent:HTMLDivElement) => {
@@ -414,7 +414,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 
 				// calculate the note
 				const [ oct, ] = await this.getOctaveRange();
-				const octaveInfo = (await this.tab.getNotes(this.tab.selectedChannel.info.type)).octave;
+				const octaveInfo = (await this.tab.getNotes(this.tab.selectedChannel.type)).octave;
 
 				note = octaveInfo.C0 + (octaveInfo.size * oct) + (parseInt(e.target.getAttribute("note") ?? "0", 10));
 
@@ -476,7 +476,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	 */
 	public async triggerNote(note:number, velocity:number):Promise<boolean> {
 		// check if this note exists
-		if(typeof (await this.tab.getNotes(this.tab.selectedChannel.info.type)).notes[note]?.frequency === "number"){
+		if(typeof (await this.tab.getNotes(this.tab.selectedChannel.type)).notes[note]?.frequency === "number"){
 			if(await window.ipc.driver.pianoTrigger(note, velocity, this.tab.selectedChannel.info.id)){
 				// add the active class
 				await this.modNote("active", "add", note);
@@ -514,7 +514,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 		const [ ocMin, ocMax, ] = await this.getOctaveRange();
 
 		// fetch octave info
-		const octaveInfo = (await this.tab.getNotes(this.tab.selectedChannel.info.type)).octave;
+		const octaveInfo = (await this.tab.getNotes(this.tab.selectedChannel.type)).octave;
 
 		// check if this note is on the piano
 		if(note > ocMin * octaveInfo.size && note - octaveInfo.C0 < ocMax * octaveInfo.size) {

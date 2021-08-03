@@ -532,6 +532,9 @@ export class Project {
 	 * @returns The new module
 	 */
 	public async addModule(file?:string): Promise<Module> {
+		// load initial effects count
+		const fx = Math.max(1, Math.min(8, loadFlag<number>("INITIAL_EFFECT_COUNT") ?? 1));
+
 		const data = {
 			file: file ?? Project.generateName(),
 			name: "",
@@ -541,12 +544,13 @@ export class Project {
 			highlights: [ loadFlag<number>("HIGHLIGHT_B_DEFAULT") ?? 16, loadFlag<number>("HIGHLIGHT_A_DEFAULT") ?? 4, ] as [ number, number, ],
 			type: ZorroModuleType.Song,
 			lastDate: new Date(),
-			channels: await window.ipc.driver.getChannels(),
+			channels: (await window.ipc.driver.getChannels()).map((c) => {
+				// initialize the channels with effect count
+				const y = c as ChannelInfo;
+				y.effects = fx;
+				return y;
+			}),
 		}
-
-		// initialize command count to 1 by default
-		const fx = Math.max(1, Math.min(8, loadFlag<number>("INITIAL_EFFECT_COUNT") ?? 1));
-		data.channels.forEach((c) => c.effects = fx);
 
 		if(!file) {
 			// check if the data already exists. If so, try to generate a new one

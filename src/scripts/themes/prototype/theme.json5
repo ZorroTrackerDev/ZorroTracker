@@ -56,6 +56,13 @@
 							"font-weight": "500",
 						}
 					},
+					// settings related to the vu meter
+					vu: {
+						// CSS styles
+						css: {
+							background: "linear-gradient(to right, #1c9835 60%, #bbb008 60%, #bbb008 80%, #bd1010 80%)",
+						}
+					},
 				},
 				// settings related to the main element for the channel header when hovered
 				mainhover: {
@@ -65,6 +72,13 @@
 					},
 					// settings related to the label of the channel when hovered
 					label: {
+						// CSS styles
+						css: {
+
+						}
+					},
+					// settings related to the vu meter
+					vu: {
 						// CSS styles
 						css: {
 
@@ -84,6 +98,13 @@
 
 						}
 					},
+					// settings related to the vu meter
+					vu: {
+						// CSS styles
+						css: {
+
+						}
+					},
 				},
 				// settings related to the main element for the channel header when hovered and muted
 				mutedhover: {
@@ -93,6 +114,13 @@
 					},
 					// settings related to the label of the channel when hovered and muted
 					label: {
+						// CSS styles
+						css: {
+
+						}
+					},
+					// settings related to the vu meter
+					vu: {
 						// CSS styles
 						css: {
 

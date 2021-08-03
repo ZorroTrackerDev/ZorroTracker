@@ -268,6 +268,10 @@ const _channelwrapperChild = [
 		element: ">.channelnamewrapper>label",
 		path: "label",
 	},
+	{
+		element: ">.channelnamewrapper>.channelvu",
+		path: "vu",
+	},
 ];
 
 /**

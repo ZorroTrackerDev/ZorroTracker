@@ -1,3 +1,4 @@
+import { FeatureFlag } from "../../../api/driver";
 import { loadFlag } from "../../../api/files";
 import { theme } from "../../misc/theme";
 import { PatternCanvas, RowsCanvas } from "./canvas wrappers";
@@ -393,7 +394,7 @@ export class PatternEditorScrollManager {
 	 * @param channel The channel to handle
 	 * @param effects The number of effects the channel has
 	 */
-	public updateElementRender(channel:number, effects:number): void {
+	public updateElementRender(channel:number, effects:number): number {
 		// total number of elements to render
 		const len = [ 3, 5, 7, 9, 11, 13, 15, 17, 19, ][effects];
 		let pos = 0;
@@ -404,6 +405,16 @@ export class PatternEditorScrollManager {
 
 		// loop for each element
 		for(let i = 0;i < len;i ++) {
+			// check if element rendering is enabled
+			if(i >= 3) {
+				if((this.parent.tab.channels[channel].features & FeatureFlag.EFFECTS) === 0){
+					break;
+				}
+
+			} else if((this.parent.tab.channels[channel].features & [ FeatureFlag.NOTE, FeatureFlag.INSTRUMENT, FeatureFlag.VOLUME, ][i]) === 0) {
+				continue;
+			}
+
 			// push the element ID
 			els.push(i);
 
@@ -411,6 +422,8 @@ export class PatternEditorScrollManager {
 			off.push(pos + this.elementOffsets[i]);
 			pos += this.elementWidths[i];
 		}
+
+		return pos + 3;
 	}
 
 	/**

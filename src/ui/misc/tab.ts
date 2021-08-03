@@ -31,8 +31,8 @@ export class Tab {
 			project.setDataHandlers((data:LoadSaveData<LoadType>, module:Module) => {
 				// set the channels
 				this.channels = module.channels?.map(c => { return {
-					info: c,
-					muted: false,
+					info: { effects: 1, id: c.id, name: c.name, type: c.type, features: c.features, },
+					muted: false, type: c.type, features: c.features,
 				}}) ?? [];
 
 				// also set the selected channel

@@ -14,19 +14,19 @@ declare interface ThemeSettings {
 		/**
 		 * The normal status for buttons that are not activated
 		 */
-		normal: PlaybarButtonsInfo,
+		normal?: PlaybarButtonsInfo,
 		/**
 		 * The hovered status for buttons that are not activated
 		 */
-		hover: PlaybarButtonsInfo,
+		hover?: PlaybarButtonsInfo,
 		/**
 		 * The normal status for buttons that are activated
 		 */
-		active: PlaybarButtonsInfo,
+		active?: PlaybarButtonsInfo,
 		/**
 		 * The hovered status for buttons that are activated
 		 */
-		activehover: PlaybarButtonsInfo,
+		activehover?: PlaybarButtonsInfo,
 	},
 	pattern?: {
 		/**
@@ -51,11 +51,11 @@ declare interface PlaybarButtonsInfo {
 	/**
 	 * Declarations for the button wrapper
 	 */
-	button: CSSThemeObj,
+	button?: CSSThemeObj,
 	/**
 	 * Declarations for the SVG path element inside the button
 	 */
-	icon: CSSThemeObj,
+	icon?: CSSThemeObj,
 }
 
 /**
@@ -65,62 +65,80 @@ declare interface PatternEdtiorExtraThemeSettings {
 	/**
 	 * Declarations for the currently focused element
 	 */
-	focus: CSSThemeObj,
+	focus?: CSSThemeObj,
 	/**
 	 * Settings related to the cursor element
 	 */
-	cursor: {
+	cursor?: {
 		/**
 		 * The CSS styles for the cursor element
 		 */
-		css: CSSTheme,
+		css?: CSSTheme,
 		/**
 		 * Declarations for when the cursor element is held down
 		 */
-		hold: CSSThemeObj,
+		hold?: CSSThemeObj,
 	},
 	/**
 	 * Declarations for the single selection element
 	 */
-	single: CSSThemeObj,
+	single?: CSSThemeObj,
 	/**
 	 * Declarations for the multi selection element
 	 */
-	multi: CSSThemeObj,
+	multi?: CSSThemeObj,
 	/**
 	 * Settings related to the scrollbars in the pattern editor
 	 */
-	scrollbar: {
+	scrollbar?: {
 		/**
 		 * The size of the scrollbar in pixels. This also affects the scrollbar buttons
 		 */
-		size: number,
+		size?: number,
 		/**
 		 * Settings related to the scrollbar buttons
 		 */
-		buttons: CSSButtonStates,
+		buttons?: CSSButtonStates,
 		/**
 		 * Settings related to the scrollbar button icons
 		 */
-		buttonicons: CSSButtonStates,
+		buttonicons?: CSSButtonStates,
 		/**
 		 * Settings related to the scrollbar backing
 		 */
-		bar: CSSButtonStates,
+		bar?: CSSButtonStates,
 		/**
 		 * Settings related to the scrollbar grip
 		 */
-		grip: CSSButtonStates,
+		grip?: CSSButtonStates,
 		/**
 		 * Settings related to the scrollbar grip texture
 		 */
-		gripicon: CSSButtonStates,
+		gripicon?: CSSButtonStates,
 		/**
 		 * Settings related to the scrollbar corners
 		 */
-		corner: CSSThemeObj,
+		corner?: CSSThemeObj,
 	},
 }
+
+/**
+ * Helper type to handle theme settings related to the channel header elements
+ */
+ declare interface PatternEditorHeaderThemeSettings {
+	/**
+	 * The CSS styles for the element
+	 */
+	css?: CSSTheme,
+	/**
+	 * Settings related to the label element for the channel header
+	 */
+	label?: CSSThemeObj,
+	/**
+	 * Settings related to the VU meter element for the channel header
+	 */
+	vu?: CSSThemeObj,
+ }
 
 /**
  * Helper type to handle theme settings related to the pattern editor
@@ -133,11 +151,19 @@ declare interface PatternEditorThemeSettings {
 		/**
 		 * Settings related to the main element for the channel header
 		 */
-		main?: CSSThemeObj,
+		main?: PatternEditorHeaderThemeSettings,
 		/**
-		 * Settings related to the label element for the channel header
+		 * Settings related to the main element for the channel header when hovered
 		 */
-		label?: CSSThemeObj,
+		mainhover?: PatternEditorHeaderThemeSettings,
+		/**
+		 * Settings related to the main element for the channel header when muted
+		 */
+		muted?: PatternEditorHeaderThemeSettings,
+		/**
+		 * Settings related to the main element for the channel header when hovered and muted
+		 */
+		mutedhover?: PatternEditorHeaderThemeSettings,
 		/**
 		 * Settings related to the resize handle of a channel header
 		 */
@@ -149,11 +175,11 @@ declare interface PatternEditorThemeSettings {
 			/**
 			 * The CSS styles for the resize handle
 			 */
-			css: CSSTheme,
+			css?: CSSTheme,
 			/**
 			 * Styles for the child elements inside of a SVG
 			 */
-			icon: CSSThemeObj,
+			icon?: CSSThemeObj,
 		},
 		/**
 		 * Settings related to the resize handle of a channel header when hovered
@@ -162,11 +188,11 @@ declare interface PatternEditorThemeSettings {
 			/**
 			 * The CSS styles for the resize handle
 			 */
-			css: CSSTheme,
+			css?: CSSTheme,
 			/**
 			 * Styles for the child elements inside of a SVG
 			 */
-			icon: CSSThemeObj,
+			icon?: CSSThemeObj,
 		},
 		/**
 		 * Settings related to the row header

@@ -135,9 +135,9 @@ export default class implements Driver {
 		return [
 			{ name: "FM1", id: 0, type: ChannelType.YM2612FM, features: FeatureFlag.ALL, },
 			{ name: "FM2", id: 1, type: ChannelType.YM2612FM, features: FeatureFlag.ALL, },
-			{ name: "OP1", id: 12, type: ChannelType.YM2612FM, features: FeatureFlag.NOTE, },
-			{ name: "OP2", id: 13, type: ChannelType.YM2612FM, features: FeatureFlag.NOTE, },
-			{ name: "OP3", id: 14, type: ChannelType.YM2612FM, features: FeatureFlag.NOTE, },
+			{ name: "OP1", id: 12, type: ChannelType.YM2612FM, features: FeatureFlag.NOTE | FeatureFlag.NOVU, },
+			{ name: "OP2", id: 13, type: ChannelType.YM2612FM, features: FeatureFlag.NOTE | FeatureFlag.NOVU, },
+			{ name: "OP3", id: 14, type: ChannelType.YM2612FM, features: FeatureFlag.NOTE | FeatureFlag.NOVU, },
 			{ name: "OP4", id: 2, type: ChannelType.YM2612FM, features: FeatureFlag.ALL, },
 			{ name: "FM4", id: 3, type: ChannelType.YM2612FM, features: FeatureFlag.ALL, },
 			{ name: "FM5", id: 4, type: ChannelType.YM2612FM, features: FeatureFlag.ALL, },

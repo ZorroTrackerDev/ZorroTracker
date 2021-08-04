@@ -30,10 +30,16 @@ export class Tab {
 			// set the save and load handlers for the project
 			project.setDataHandlers((data:LoadSaveData<LoadType>, module:Module) => {
 				// set the channels
-				this.channels = module.channels?.map(c => { return {
-					info: c,
-					muted: false, type: c.type, features: c.features,
-				}}) ?? [];
+				this.channels = module.channels?.map(c => {
+					// find if this channel exists
+					const ch = project.driverChannels.find((dc) => c.id === dc.id && c.name === dc.name);
+
+					if(!ch) {
+						throw new Error("Could not load module because of an invalid channel! The project file or module may be corrupted!");
+					}
+
+					return { info: c, muted: false, type: ch.type, features: ch.features, };
+				}) ?? [];
 
 				// also set the selected channel
 				this.selectedChannel = this.channels[0];

@@ -249,13 +249,13 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 		this.channelInfo = [];
 
 		// generating DOM for a single channel
-		const doChannel = (name:string, drag:boolean) => {
+		const doChannel = (name:string, drag:boolean, vu:boolean) => {
 			// do some regex hacking to remove all tabs and newlines. HTML whyyy
 			return /*html*/`
 				<div class="channelwrapper">
 					<div class="channelnamewrapper${ drag ? " channelisdrag" : "" }">
 						<label>${ name }</label>
-						<div class="channelvu"></div>
+						<div class="channelvu" ${ vu ? "" : "style='display:none;'" }></div>
 						${ !drag ? "" : /* html */`
 							<div class="channeldragarea">
 								<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -269,12 +269,12 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 		};
 
 		// create the row index column
-		this.scrollwrapper.innerHTML = doChannel("\u200B", false);
+		this.scrollwrapper.innerHTML = doChannel("\u200B", false, true);
 
 		// handle DOM generation for each channel and save it to scrollwrapper
 		this.scrollwrapper.innerHTML += this.tab.channels.map((c) => {
 			// generate DOM for a single channel
-			return doChannel(c.info.name, (c.features & FeatureFlag.EFFECTS) !== 0);
+			return doChannel(c.info.name, (c.features & FeatureFlag.EFFECTS) !== 0, (c.features & FeatureFlag.NOVU) === 0);
 		}).join("");
 
 		// enable resize handlers and init styles

@@ -197,19 +197,9 @@ export interface ChannelInfo {
 	name: string,
 
 	/**
-	 * The type of the channel. This helps ZorroTracker use apprioriate elements for channel.
-	 */
-	type: ChannelType,
-
-	/**
 	 * How many effects are displayed
 	 */
 	effects: number,
-
-	/**
-	 * The various features this channels supports
-	 */
-	features: FeatureFlag,
 }
 
 export interface Channel {
@@ -249,4 +239,6 @@ export enum FeatureFlag {
 	VOLUME = 1 << 2,
 	EFFECTS = 1 << 3,
 	ALL = FeatureFlag.NOTE | FeatureFlag.INSTRUMENT | FeatureFlag.VOLUME | FeatureFlag.EFFECTS,
+
+	NOVU = 1 << 8,
 }

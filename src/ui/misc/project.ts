@@ -8,7 +8,7 @@ import { ipcRenderer } from "electron";
 import { ipcEnum } from "../../system/ipc/ipc enum";
 import { WindowType } from "../../defs/windowtype";
 import { setTitle } from "../elements/toolbar/toolbar";
-import { ChannelInfo } from "../../api/driver";
+import { ChannelInfo, DriverChannel } from "../../api/driver";
 import { Tab } from "./tab";
 
 // load all the events
@@ -77,6 +77,7 @@ export class Project {
 
 		// initiate new project without settings
 		const project = new Project("", new admZip());
+		project.driverChannels = await window.ipc.driver.getChannels();
 		project.modules = [];
 
 		// set project config to default value
@@ -89,7 +90,7 @@ export class Project {
 		};
 
 		// create a single default module
-		const m = await project.addModule();
+		const m = project.addModule();
 		m.name = "New module";
 		await project.setActiveModuleIndex(false, 0);
 
@@ -211,7 +212,8 @@ export class Project {
 			await project.setActiveModuleIndex(false, 0);
 
 			// initialize the driver instance
-			window.ipc.audio?.setDriver(project.config.driver);
+			await window.ipc.audio?.setDriver(project.config.driver);
+			project.driverChannels = await window.ipc.driver.getChannels();
 			return project;
 
 		} catch(ex) {
@@ -266,7 +268,12 @@ export class Project {
 		}
 
 		// must cause to load the first time its called
-		this.loadHandler();
+		try {
+			this.loadHandler();
+		} catch(ex){
+			Project.projectError(ex);
+			throw ex;
+		}
 	}
 
 	/**
@@ -318,6 +325,7 @@ export class Project {
 	private file:string;
 	public config!:ProjectConfig;
 	public modules!:Module[];
+	public driverChannels!:DriverChannel[];
 
 	/**
 	 * Helper function to get the file location of this project
@@ -531,7 +539,7 @@ export class Project {
 	 * @param file If provided, the filename will be used in the file, as opposed to generating one
 	 * @returns The new module
 	 */
-	public async addModule(file?:string): Promise<Module> {
+	public addModule(file?:string): Module {
 		// load initial effects count
 		const fx = Math.max(1, Math.min(8, loadFlag<number>("INITIAL_EFFECT_COUNT") ?? 1));
 
@@ -544,11 +552,9 @@ export class Project {
 			highlights: [ loadFlag<number>("HIGHLIGHT_B_DEFAULT") ?? 16, loadFlag<number>("HIGHLIGHT_A_DEFAULT") ?? 4, ] as [ number, number, ],
 			type: ZorroModuleType.Song,
 			lastDate: new Date(),
-			channels: (await window.ipc.driver.getChannels()).map((c) => {
+			channels: this.driverChannels.map((c) => {
 				// initialize the channels with effect count
-				const y = c as ChannelInfo;
-				y.effects = fx;
-				return y;
+				return { id: c.id, name: c.name, effects: fx, };
 			}),
 		}
 
@@ -671,7 +677,11 @@ export class Project {
 
 			// tell the UI to load this modules data
 			if(this.loadHandler) {
-				this.loadHandler();
+				try {
+					this.loadHandler();
+				} catch(ex) {
+					Project.projectError(ex);
+				}
 			}
 
 			// module found, set the active module

@@ -310,7 +310,7 @@ export class PatternEditorScrollManager {
 		// initialize scrolling size
 		const bounds = this.parent.scrollwrapper.getBoundingClientRect();
 		this.scrollHeight = bounds.height - this.parent.padding.height;
-		this.scrollWidth = bounds.width;
+		this.scrollWidth = bounds.width - 4;
 
 		// calculate the number of rows visible on half screen at once
 		this.scrollMiddle = this.parent.padding.top + (Math.floor(this.scrollHeight / this.rowHeight / 2.5) * this.rowHeight);

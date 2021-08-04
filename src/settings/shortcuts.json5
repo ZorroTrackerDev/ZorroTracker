@@ -115,6 +115,9 @@
 	"pattern.sel.fullpattern":				[ "ctrl+A", "ctrl+shift+A" ],			/* shortcut for selecting the entire pattern */
 	"pattern.sel.deselect":					[ "Escape" ],							/* shortcut for clearing the multi selection */
 
+	"pattern.chfx.up":						[ "shift++" ],							/* shortcut for increasing the number of effects in the selected channel */
+	"pattern.chfx.down":					[ "shift+-" ],							/* shortcut for decreasing the number of effects in the selected channel */
+
 	"ui.undo":								[ "ctrl+Z" ],							/* shortcut for undoing a change */
 	"ui.redo":								[ "ctrl+Y" ],							/* shortcut for redoing a change */
 	"ui.open":								[ "ctrl+O" ],							/* shortcut for opening a file or a project */

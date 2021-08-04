@@ -310,7 +310,7 @@ export class PatternEditorScrollManager {
 		// initialize scrolling size
 		const bounds = this.parent.scrollwrapper.getBoundingClientRect();
 		this.scrollHeight = bounds.height - this.parent.padding.height;
-		this.scrollWidth = bounds.width + 5;
+		this.scrollWidth = bounds.width;
 
 		// calculate the number of rows visible on half screen at once
 		this.scrollMiddle = this.parent.padding.top + (Math.floor(this.scrollHeight / this.rowHeight / 2.5) * this.rowHeight);
@@ -395,13 +395,21 @@ export class PatternEditorScrollManager {
 	 * @param effects The number of effects the channel has
 	 */
 	public updateElementRender(channel:number, effects:number): number {
+		const data = this.getElementRenderList(channel, effects);
+		this.parent.channelInfo[channel].elements = data.elements;
+		this.parent.channelInfo[channel].offsets = data.offsets;
+		return data.total;
+	}
+
+	public getElementRenderList(channel:number, effects:number): { total: number, offsets: number[], elements: number[], effects: number[] } {
 		// total number of elements to render
 		const len = [ 3, 5, 7, 9, 11, 13, 15, 17, 19, ][effects];
 		let pos = 0;
 
 		// the actual data arrays
-		const els:number[] = this.parent.channelInfo[channel].elements = [];
-		const off:number[] = this.parent.channelInfo[channel].offsets = [];
+		const els:number[] = [];
+		const off:number[] = [];
+		const fx:number[] = [];
 
 		// loop for each element
 		for(let i = 0;i < len;i ++) {
@@ -418,12 +426,17 @@ export class PatternEditorScrollManager {
 			// push the element ID
 			els.push(i);
 
+			if(i >= 3 && (i & 1) !== 0) {
+				// save the effect position too
+				fx.push(pos + (this.elementWidths[i] / 2));
+			}
+
 			// calculate the offset
 			off.push(pos + this.elementOffsets[i]);
 			pos += this.elementWidths[i];
 		}
 
-		return pos + 3;
+		return { total: pos + 3, offsets: off, elements: els, effects: fx, };
 	}
 
 	/**
@@ -437,6 +450,7 @@ export class PatternEditorScrollManager {
 		this.refreshChannelWidth();
 
 		// scroll to follow cursor and update size
+		this.horizontalScroll(0, false);
 		this.ensureVisibleChannel(channel, channel);
 
 		// invalidate and clear all canvas rows

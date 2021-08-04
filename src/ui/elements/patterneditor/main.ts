@@ -340,7 +340,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			const move = (e:MouseEvent) => {
 				// fetch channel size
 				pos += e.movementX;
-				const sz = this.getClosestChannelSize(pos - left);
+				const sz = this.getClosestChannelSize(pos - left, i);
 
 				if(this.tab.channels[i].info.effects !== sz) {
 					// update channel header size
@@ -378,6 +378,23 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	}
 
 	/**
+	 * Function to set the number of effects for a specific channel
+	 *
+	 * @param effects The number of effects for this channel
+	 * @param channel The channel to set for
+	 */
+	public setChannelEffects(effects:number, channel:number): void {
+		// update channel header size
+		this.setChannelHeaderSize(effects, channel, this.tab.channels[channel].muted, this.scrollwrapper.children[channel + 1] as HTMLDivElement);
+
+		// update scroll manager
+		this.scrollManager.changeChannelSize(channel);
+
+		// tell the selection manager to update selection
+		this.selectionManager.handleChannelResize();
+	}
+
+	/**
 	 * Function to update the channel header size
 	 *
 	 * @param effects The number of effects this channel has
@@ -402,29 +419,22 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	}
 
 	/**
-	 * Array of channel width values that are accepted
-	 */
-	private channelWidths = [ 30, 107, 145, 183, 221, 259, 297, 335, 373, ];
-
-	/**
-	 * The amount of leeway before snapping to higher size
-	 */
-	private widthBias = 5;
-
-	/**
 	 * Helper function to get the closest channel commands count for the given channel size
 	 *
 	 * @param size The size we're checking
+	 * @param channel The channel we're checking for
 	 */
-	private getClosestChannelSize(size:number) {
-		for(let i = 1;i < this.channelWidths.length;i ++) {
-			if(size < this.channelWidths[i] + this.widthBias){
+	private getClosestChannelSize(size:number, channel:number) {
+		const fx = this.scrollManager.getElementRenderList(channel, this.maxEffects).effects;
+
+		for(let i = 1;i < fx.length;i ++) {
+			if(size < fx[i]){
 				return i;
 			}
 		}
 
 		// maximum size
-		return this.channelWidths.length - 1;
+		return this.maxEffects;
 	}
 
 	/**
@@ -445,10 +455,16 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	public channelInfo!: PatternChannelInfo[];
 
 	/**
+	 * The maximum number of effects per channel
+	 */
+	public maxEffects = 1;
+
+	/**
 	 * Helper function to inform that the theme was reloaded
 	 */
 	public reloadTheme(preload:boolean):Promise<void[]> {
 		const size = theme?.pattern?.extras?.scrollbar?.size ?? 0;
+		this.maxEffects = theme?.pattern?.worker?.fxnum ?? 1;
 
 		// update scrollbars
 		const promises = [ this.verticalBar.reloadTheme(size), this.horizontalBar.reloadTheme(size), ];

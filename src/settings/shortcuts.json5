@@ -104,6 +104,8 @@
 	"pattern.sel.movechannel.right":		[ "Tab" ],								/* shortcut for moving the selection to the channel on the right */
 	"pattern.sel.scroll.up":				[ "PageUp" ],							/* shortcut for moving the selection up by 4 rows */
 	"pattern.sel.scroll.down":				[ "PageDown" ],							/* shortcut for moving the selection down by 4 rows */
+	"pattern.sel.scrollextend.up":			[ "shift+PageUp" ],						/* shortcut for extending the selection up by 4 rows */
+	"pattern.sel.scrollextend.down":		[ "shift+PageDown" ],					/* shortcut for extending the selection down by 4 rows */
 	"pattern.sel.rowtop":					[ "Home" ],								/* shortcut for moving the selection to the first row in pattern */
 	"pattern.sel.rowbottom":				[ "End" ],								/* shortcut for moving the selection to the last row in pattern */
 	"pattern.sel.patterntop":				[ "ctrl+Home" ],						/* shortcut for moving the selection to the first row in the first pattern */

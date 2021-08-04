@@ -606,8 +606,10 @@ async function initLayout() {
 
 	// add handler for elements getting focused. Use it to determine whether to focus on the pattern editor or not
 	window.addEventListener("focusin", (e) => {
+	//	console.log("in", e.target)
+
 		switch((e.target as HTMLElement).tagName) {
-			case "TEXTAREA": case "FORM": case "BUTTON": case "SELECT": case "A":
+			case "TEXTAREA": case "FORM": case "SELECT": case "A":
 				return focusOnPattern(false);
 
 			case "DIV": {
@@ -622,6 +624,8 @@ async function initLayout() {
 
 	// helper function on when the focus goes to `null`. Somehow this works weirdly
 	window.addEventListener("focusout", (e) => {
+	//	console.log("out", e.relatedTarget)
+
 		if(e.relatedTarget === null) {
 			return focusOnPattern(true);
 		}

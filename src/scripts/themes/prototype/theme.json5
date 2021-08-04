@@ -12,7 +12,8 @@
 			// CSS styles related to the main element
 			css: {
 				filter: "brightness(70%) contrast(80%)",
-				transition: "filter 200ms ease-in-out"
+				transition: "filter 200ms ease-in-out",
+				"transition-delay": "20ms",
 			},
 			// settings related to the channel headers
 			header: {

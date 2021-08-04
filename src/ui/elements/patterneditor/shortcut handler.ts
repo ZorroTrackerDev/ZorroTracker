@@ -169,6 +169,15 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 					return fn(pos.x * 4, pos.y * 4, wrap);
 				});
 
+			case "scrollextend":
+				return this.handleMovementCheck(data.shift(), (pos:Position) => {
+					// if there is no multi selection, clone single selection as the multi selection
+					this.checkMultiSelection();
+
+					// extend multi selection
+					return this.parent.selectionManager.extendMulti(pos.x * 4, pos.y * 4, false);
+				});
+
 			case "movechannel":
 				return this.handleMovementCheck(data.shift(), async(pos:Position) => {
 					if(pos.x) {

@@ -52,8 +52,8 @@
 	"piano.smaller":						[ "ctrl+F5" ],							/* shortcut for decreasing piano size */
 	"piano.bigger":							[ "ctrl+F6" ],							/* shortcut for increasing piano size */
 	"piano.hide":							[ "ctrl+F7" ],							/* shortcut for hiding and unhiding the piano */
-	"piano.octaveup":						[ "equal" ],							/* shortcut for increasing the base octave */
-	"piano.octavedown":						[ "minus" ],							/* shortcut for decreasing the base octave */
+	"piano.octaveup":						[ "+" ],								/* shortcut for increasing the base octave */
+	"piano.octavedown":						[ "-" ],								/* shortcut for decreasing the base octave */
 	"piano.toleft":							[ "ctrl+shift+ArrowLeft" ],				/* shortcut for moving piano to left side */
 	"piano.toright":						[ "ctrl+shift+ArrowRight" ],			/* shortcut for moving piano to right side */
 	"*piano.rest":							[ "Digit1" ],							/* shortcut for playing a rest */

@@ -10,8 +10,8 @@
 	"ui.inspectelement":					[ "shift+F12" ],						/* shortcut for inspect element in Chromium dev tools */
 	"ui.fullscreen":						[ "F11" ],								/* shortcut for entering/exiting maximized mode */
 	"ui.close":								[ "ctrl+W" ],							/* shortcut for closing the project or window */
-	"ui.zoomin":							[ "ctrl+equal" ],						/* shortcut for zooming in the window */
-	"ui.zoomout":							[ "ctrl+minus" ],						/* shortcut for zooming out the window */
+	"ui.zoomin":							[ "ctrl++" ],							/* shortcut for zooming in the window */
+	"ui.zoomout":							[ "ctrl+-" ],							/* shortcut for zooming out the window */
 	"ui.zoomreset":							[ "ctrl+0" ],							/* shortcut for setting zoom level to 100% */
 
 	"window.projectinfo":					[ "ctrl+P" ],							/* shortcut for opening the project info editor */

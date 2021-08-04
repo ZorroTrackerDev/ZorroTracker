@@ -21,7 +21,7 @@
 		"@typescript-eslint/no-floating-promises": "error",
 		"@typescript-eslint/no-unused-expressions": "warn",
 		"no-empty-function": 0,
-		"no-constant-condition": 1,
+		"no-constant-condition": 0,
 		"no-debugger": 2,
 		"no-dupe-args": 1,
 		"no-dupe-else-if": 1,

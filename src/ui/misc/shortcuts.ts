@@ -1,21 +1,6 @@
 import { loadSettingsFiles, SettingsTypes } from "../../api/files";
 import { receiveShortcutFunc } from "../../api/ui";
-
-// @ts-expect-error
-navigator.keyboard.getLayoutMap().then((k) => {
-	console.log(k.forEach(console.log));
-});
-
-/**
- * add a class for various shortcut errors
- */
-class ShortcutError extends Error {
-	name = "ShortcutError";
-
-	constructor(message?:string) {
-		super(message)
-	}
-}
+import { getKeyMap, IKeyboardMapping } from "native-keymap";
 
 // container for the shortcutReceiverFun instances used by the UI currently.
 const shortcutReceivers:{ [key:string]: receiveShortcutFunc } = {};
@@ -78,7 +63,7 @@ let activeKeys:{ [key:string]: string } = {};
 const stdHandler = (type:"keydown"|"keyup", state:boolean) => {
 	document.addEventListener(type, (event) => {
 		// fetch the key name
-		const _key = event.code.toUpperCase();
+		const _key = event.code.toLowerCase();
 
 		// check if this shortcut is active
 		if(activeKeys[_key]) {
@@ -113,9 +98,6 @@ const stdHandler = (type:"keydown"|"keyup", state:boolean) => {
 
 		// prepare the commands list
 		const comlist:string[] = [];
-
-		// get the keymappings for key names (these take precedent)
-		(keyMappings[arrayname][event.key.toUpperCase()] ?? []).forEach((c) => comlist.push(c));
 
 		// get the keymappings for positional key codes and add them to the list
 		(keyMappings[arrayname][_key] ?? []).forEach((c) => comlist.push(c));
@@ -190,7 +172,7 @@ export async function doShortcut(name:string[], event?:KeyboardEvent, state?:boo
 		// check if there is a shortcut function defined here
 		if(!shortcutReceivers[comkey]){
 			// there is not, log it. TODO: handle this better.
-			console.error("!!! Invalid command!!!\nShortcut had an invalid command "+ comkey);
+			console.error(`Shortcut key ${comkey} does not exist. Ignoring...`);
 			return;
 		}
 
@@ -233,8 +215,10 @@ export function processShortcuts(files:{ [key: string]: string|string[]}[], call
 			// convert the button state
 			const states = convertShortcutState(keyCombo, functionName);
 
-			// run the callback
-			callback(functionName, states);
+			if(states) {
+				// run the callback
+				callback(functionName, states);
+			}
 		}
 
 		if(Array.isArray(merged[functionName])) {
@@ -249,40 +233,6 @@ export function processShortcuts(files:{ [key: string]: string|string[]}[], call
 }
 
 /**
- * Helper function to convert a keycombo into separated fields depending on combo type
- *
- * @param keyCombo The input key combo to convert
- * @param name The name of the function to convert
- */
-export function convertShortcutState(keyCombo:string, name:string): ShortcutState {
-	let ctrl = false, alt = false, shift = false, button:string|null = null;
-
-	// check if modifier keys are applied
-	for(const key of keyCombo.split("+")) {
-		/*
-		 * this switch-case will either enable some flags or set the key
-		 * this is lazy and allows things to be set multiple times.
-		 */
-		const ku = key.toUpperCase();
-		switch(ku) {
-			case "CTRL": ctrl = true; break;
-			case "SHIFT": shift = true; break;
-			case "ALT": alt = true; break;
-			case "": break;
-			default: button = ku; break;
-		}
-	}
-
-	// make sure "button" is not null. If it is, throw an error.
-	if(button === null) {
-		throw new ShortcutError(`Failed to parse function ${name} shortcut ${keyCombo}!`);
-	}
-
-	// return the button states as an array
-	return { button: button, ctrl: ctrl, alt: alt, shift: shift, };
-}
-
-/**
  * Convert shortcut data into canonical name.
  *
  * @param data The button state data. This represents modifier keys and the actual button string
@@ -292,9 +242,9 @@ export function makeShortcutString(data:ShortcutState): string {
 	const arr = [ data.button, ];
 
 	/* eslint-disable @typescript-eslint/no-unused-expressions */
-	data.shift && arr.unshift("SHIFT");
-	data.ctrl && arr.unshift("CTRL");
-	data.alt && arr.unshift("ALT");
+	data.shift && arr.unshift("shift");
+	data.ctrl && arr.unshift("ctrl");
+	data.alt && arr.unshift("alt");
 	/* eslint-enable @typescript-eslint/no-unused-expressions */
 
 	// convert this to a string
@@ -307,6 +257,8 @@ export function makeShortcutString(data:ShortcutState): string {
  * @throws anything. Invalid files will throw just about any error.
  */
 export function loadDefaultShortcuts(type:SettingsTypes): void {
+	_keymap = getKeyMap();
+
 	// load the files we need to inspect
 	const files = loadSettingsFiles(type) as { [key: string]: string|string[]}[];
 
@@ -314,12 +266,13 @@ export function loadDefaultShortcuts(type:SettingsTypes): void {
 	processShortcuts(files, (fn, states) => {
 		// get the array name for the "keyMappings" based on modifier keys, and apply the new shortcut function.
 		const arrayname = getKeymappingsName(states);
+		const button = states.button.toLowerCase();
 
-		if(!keyMappings[arrayname][states.button]){
-			keyMappings[arrayname][states.button] = [ fn, ];
+		if(!keyMappings[arrayname][button]){
+			keyMappings[arrayname][button] = [ fn, ];
 
-		} else if(!keyMappings[arrayname][states.button].includes(fn)){
-			keyMappings[arrayname][states.button].push(fn);
+		} else if(!keyMappings[arrayname][button].includes(fn)){
+			keyMappings[arrayname][button].push(fn);
 		}
 
 		// check if shortcutstore has this key already. If not, create it
@@ -342,3 +295,95 @@ export function loadShortcutKeys(shortcut:string): string[] {
 	return shortcutStores[shortcut] ?? [];
 }
 
+/**
+ * Helper function to convert a keyboard shortcut into modifier keys and keycode
+ *
+ * @param keyCombo The input key combo to convert
+ * @param name The name of the function to convert
+ */
+export function convertShortcutState(keyCombo:string, name:string): ShortcutState|null {
+	let ctrl = false, alt = false, shift = false, button:string = keyCombo.toLowerCase();
+
+	// check if modifier keys are applied
+	while(true) {
+		if(!ctrl && button.startsWith("ctrl+")) {
+			// ctrl detected, enable ctrl mode
+			ctrl = true;
+			button = button.substring(5);
+
+		} else if(!shift && button.startsWith("shift+")) {
+			// shift detected, enable shift mode
+			shift = true;
+			button = button.substring(6);
+
+		} else if(!alt && button.startsWith("alt+")) {
+			// alt detected, enable alt mode
+			alt = true;
+			button = button.substring(4);
+
+		} else {
+			// nothing more detected, convert button and break out
+			button = button.length === 0 ? "" : convertKey(button);
+			break;
+		}
+	}
+
+	// make sure "button" is not empty. If it is, throw an error.
+	if(button.length === 0) {
+		console.error(`Failed to parse function ${name} shortcut ${keyCombo}. Ignoring...`);
+		return null;
+	}
+
+	// return the button states as an array
+	return { button: button, ctrl: ctrl, alt: alt, shift: shift, };
+}
+
+/**
+ * Helper function to take the key text and convert it to key code
+ *
+ * @param key The key name to convert to key code
+ * @returns The real world key code that is represented by this key
+ */
+export function convertKey(key:string): string {
+	let res = scanKey(key.toLowerCase(), [ "value", "withShift", ]);
+	/* eslint-disable @typescript-eslint/no-unused-expressions */
+	!res && (res = scanKey(key.toLowerCase(), [ "withAltGr", ]));
+	!res && (res = scanKey(key.toLowerCase(), [ "withShiftAltGr", ]));
+	/* eslint-enable @typescript-eslint/no-unused-expressions */
+
+	// return the key itself if failed
+	return res ?? findKey(key) ?? "";
+}
+
+let _keymap:IKeyboardMapping;
+
+/**
+ * Helper function to scan the entire keymap to determine if this key matches anything
+ */
+function scanKey(key:string, mode:("value"|"withShift"|"withAltGr"|"withShiftAltGr")[]) {
+	for(const k of Object.keys(_keymap)) {
+		for(const m of mode) {
+			// check if this key in this mode is the same as inputted key
+			if(_keymap[k][m].toLowerCase() === key) {
+				return k;
+			}
+		}
+	}
+
+	// return null if nothing found
+	return null;
+}
+
+/**
+ * Helper function to scan the entire keymap for the key with the same name
+ */
+function findKey(key:string) {
+	for(const k of Object.keys(_keymap)) {
+		// if the key of the keymap and shortcut are the same. If so, return the keymap key
+		if(k.toLowerCase() === key) {
+			return k;
+		}
+	}
+
+	return null;
+}

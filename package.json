@@ -61,6 +61,7 @@
 		"adm-zip": "^0.5.5",
 		"discord-rich-presence": "^0.0.8",
 		"json5": "^2.2.0",
+		"native-keymap": "^2.2.1",
 		"nuked-opn2-node": "file:./vendor/Nuked-OPN2.rs/nuked-opn2-node",
 		"nuked-psg-node": "file:./vendor/Nuked-PSG.rs/nuked-psg-node"
 	},

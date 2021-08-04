@@ -56,8 +56,8 @@
 	"piano.octavedown":						[ "minus" ],							/* shortcut for decreasing the base octave */
 	"piano.toleft":							[ "ctrl+shift+ArrowLeft" ],				/* shortcut for moving piano to left side */
 	"piano.toright":						[ "ctrl+shift+ArrowRight" ],			/* shortcut for moving piano to right side */
-	"*piano.rest":							[ "Backquote" ],						/* shortcut for playing a rest */
-	"*piano.cut":							[ "Digit1" ],							/* shortcut for playing a note cut */
+	"*piano.rest":							[ "Digit1" ],							/* shortcut for playing a rest */
+	"*piano.cut":							[ "Backquote" ],						/* shortcut for playing a note cut */
 	"*piano.octave0.C":						[ "KeyZ" ],								/* shortcut for playing C on current octave +0 */
 	"*piano.octave0.C#":					[ "KeyS" ],								/* shortcut for playing C# on current octave +0 */
 	"*piano.octave0.D":						[ "KeyX" ],								/* shortcut for playing D on current octave +0 */

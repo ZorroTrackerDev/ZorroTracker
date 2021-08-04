@@ -1,6 +1,11 @@
 import { loadSettingsFiles, SettingsTypes } from "../../api/files";
 import { receiveShortcutFunc } from "../../api/ui";
 
+// @ts-expect-error
+navigator.keyboard.getLayoutMap().then((k) => {
+	console.log(k.forEach(console.log));
+});
+
 /**
  * add a class for various shortcut errors
  */

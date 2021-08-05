@@ -4,7 +4,7 @@
 {
 	uuid: "prototype",								// please generate a *unique ID* for your configuration
 	name: "prototype theme",						// the user-friendly name of this script
-	version: "b1",									// the API version identifier. ZorroTracker will support some older versions as long as the API does not have breaking changes. Do not change this by yourself!
+	version: "b2",									// the API version identifier. ZorroTracker will support some older versions as long as the API does not have breaking changes. Do not change this by yourself!
 	entry: "./",									// this should always be "./"
 	date: "2021/7/14",								// the date the theme configuration was created
 	credits: [										// the credits of people who contributed to this audio handler

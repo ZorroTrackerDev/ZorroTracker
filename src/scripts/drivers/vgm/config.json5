@@ -4,7 +4,7 @@
 {
 	uuid: "9d8d267a-ad94-11eb-8529-0242ac130003",	// please generate a *unique ID* for your configuration
 	name: "VGM",									// the user-friendly name of this script
-	version: "b1",									// the API version identifier. ZorroTracker will support some older versions as long as the API does not have breaking changes. Do not change this by yourself!
+	version: "b2",									// the API version identifier. ZorroTracker will support some older versions as long as the API does not have breaking changes. Do not change this by yourself!
 	entry: "dist/index.js",							// the entry point for code for this script. This should never be a .ts file, you should always compile TypeScript files down to JavaScript before using them.
 	date: "2021/5/4",								// the date the driver configuration was created
 	credits: [										// the credits of people who contributed to this driver

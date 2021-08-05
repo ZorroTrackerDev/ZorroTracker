@@ -30,7 +30,7 @@ const eventUpdate = ZorroEvent.createEvent(ZorroEventEnum.ModuleUpdate);
  *				.patterns -> (binary) PatternIndex.patterns
  */
 export class Project {
-	public static readonly VERSION = ConfigVersion.b1;
+	public static readonly VERSION = ConfigVersion.b2;
 
 	/**
 	 * Helper function to load a project based on project's configuration. This is used for sub-windows to aid editing
@@ -158,7 +158,7 @@ export class Project {
 
 				// validate the project config
 				switch(project.config.version) {
-					case ConfigVersion.b1:
+					case ConfigVersion.b2:
 						break;
 
 					default:

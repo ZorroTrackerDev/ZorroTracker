@@ -2,6 +2,7 @@
 export enum ConfigVersion {
 	b0 = "b0",					// first test version of the API
 	b1 = "b1",					// second version of the API, with expanded functionality to support actual real-world use cases
+	b2 = "b2",					// third version of the API
 }
 
 // a generic configuration object, which specific configurations will extend from.

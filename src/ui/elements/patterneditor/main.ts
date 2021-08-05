@@ -337,7 +337,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			}
 
 			// handler for mouse movement
-			const move = (e:MouseEvent) => {
+			const move = async(e:MouseEvent) => {
 				// fetch channel size
 				pos += e.movementX;
 				const sz = this.getClosestChannelSize(pos - left, i);
@@ -347,7 +347,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 					this.setChannelHeaderSize(sz, i, this.tab.channels[i].muted, chan);
 
 					// update scroll manager
-					this.scrollManager.changeChannelSize(i);
+					await this.scrollManager.changeChannelSize(i);
 
 					// tell the selection manager to update selection
 					this.selectionManager.handleChannelResize();
@@ -355,7 +355,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			}
 
 			// handler for mouse release
-			const up = () => {
+			const up = async() => {
 				// disable pointer lock so we can again move it freely
 				document.exitPointerLock();
 
@@ -364,7 +364,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 				drag.onmousemove = null;
 
 				// fix horizontal scrolling just in case
-				this.scrollManager.horizontalScroll(0, false);
+				await this.scrollManager.horizontalScroll(0, false);
 			}
 		}
 
@@ -383,12 +383,12 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	 * @param effects The number of effects for this channel
 	 * @param channel The channel to set for
 	 */
-	public setChannelEffects(effects:number, channel:number): void {
+	public async setChannelEffects(effects:number, channel:number): Promise<void> {
 		// update channel header size
 		this.setChannelHeaderSize(effects, channel, this.tab.channels[channel].muted, this.scrollwrapper.children[channel + 1] as HTMLDivElement);
 
 		// update scroll manager
-		this.scrollManager.changeChannelSize(channel);
+		await this.scrollManager.changeChannelSize(channel);
 
 		// tell the selection manager to update selection
 		this.selectionManager.handleChannelResize();

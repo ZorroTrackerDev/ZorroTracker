@@ -1,3 +1,4 @@
+import { Note } from "../../../api/notes";
 import { Tab } from "../../misc/tab";
 import { theme } from "../../misc/theme";
 import { PatternEditor } from "./main";
@@ -294,9 +295,9 @@ export class PatternCanvas extends EditorCanvasBase {
 	 * @param left The start of the range of channels to invalidate
 	 * @param right The end of the range of channels to invalidate
 	 */
-	public invalidateChannels(left:number, right:number): void {
-		// send the invalidate command
-		this.worker.postMessage({ command: "invalidate", data: { start: 0, end: this.patternlen, left, right, }, });
+	public invalidateChannels(left:number, right:number): Promise<void> {
+		// invalidate every row in channels
+		return this.dataArea(0, this.patternlen, left, right);
 	}
 
 	/**
@@ -317,8 +318,8 @@ export class PatternCanvas extends EditorCanvasBase {
 	 *
 	 * @param start The start of the range of rows to render
 	 * @param end The end of the range of rows to render
-	 * @param left The start of the range of channels to invalidate
-	 * @param right The end of the range of channels to invalidate
+	 * @param left The start of the range of channels to render
+	 * @param right The end of the range of channels to render
 	 */
 	public render(start:number, end:number, left:number, right:number): void {
 		// set the canvas as not cleared
@@ -327,4 +328,154 @@ export class PatternCanvas extends EditorCanvasBase {
 		// send the command to render row
 		this.worker.postMessage({ command: "renderrange", data: { start, end, active: this.active, left, right, }, });
 	}
+
+	/**
+	 * Function to update pattern data at the entire pattern
+	 */
+	public dataAll(): Promise<void> {
+		return this.dataArea(0, this.patternlen, 0, this.channels);
+	}
+
+	/**
+	 * Function to update pattern data in an area
+	 *
+	 * @param start The start of the range of rows to update
+	 * @param end The end of the range of rows to update
+	 * @param left The start of the range of channels to update
+	 * @param right The end of the range of channels to update
+	 */
+	public async dataArea(start:number, end:number, left:number, right:number): Promise<void> {
+		for(let c = left;c < right;c ++) {
+			await this.dataChannel(start, end, c);
+		}
+	}
+
+	/**
+	 * Function to update all pattern data in a single channel
+	 *
+	 * @param channel The channel to update
+	 */
+	public dataChannelFull(channel:number): Promise<void> {
+		return this.dataChannel(0, this.patternlen, channel);
+	}
+
+	/**
+	 * Function to update pattern data in a single channel
+	 *
+	 * @param start The start of the range of rows to update
+	 * @param end The end of the range of rows to update
+	 * @param channel The channel to update
+	 */
+	public async dataChannel(start:number, end:number, channel:number): Promise<void> {
+		const rows:WorkerData[] = [];
+
+		for(let r = start; r < end; r++) {
+			rows.push(await this.getData(r, channel));
+		}
+
+		// send the command to update data
+		this.worker.postMessage({ command: "patterndata", data: rows, });
+	}
+
+	/**
+	 * Function to update pattern data in a single channel
+	 *
+	 * @param row The row to update
+	 * @param channel The channel to update
+	 */
+	public async dataRow(row:number, channel:number): Promise<void> {
+		// send the command to update data
+		this.worker.postMessage({ command: "patterndata", data: [ await this.getData(row, channel), ], });
+	}
+
+	/**
+	 * Function to load pattern data for a specific row
+	 *
+	 * @param row The row to update
+	 * @param channel The channel to update
+	 * @returns ready-converted data
+	 */
+	private async getData(row:number, channel:number): Promise<WorkerData> {
+		const res:(string|undefined)[] = [];
+
+		// load the pattern cell
+		const rp = this.parent.tab.matrix.get(channel, this.pattern);
+		const pd = this.parent.tab.matrix.patterns[channel][rp ?? 0];
+
+		if(pd && typeof rp === "number") {
+			const cell = pd.cells[row];
+
+			// valid pattern found, fill the array now
+			res.push(await this.convertNote(channel, cell.note as Note));
+			res.push(cell.instrument === 0xFF ? undefined : this.getHex(cell.instrument));
+			res.push(cell.volume === 0xFF ? undefined : this.getHex(cell.volume));
+
+			// load every effect
+			for(let i = 0;i < this.parent.maxEffects; i++) {
+				res.push(i & 1 ? undefined : "XY");
+				res.push(i & 1 ? undefined : this.getHex(cell.effects[i]?.value ?? 0));
+			}
+		}
+
+		return [ channel, row, res, ]
+	}
+
+	/**
+	 * Helper function to convert any value to 2-character hex code
+	 */
+	private getHex(data:number) {
+		let str = data.toString(16).toUpperCase();
+
+		if(str.length === 1) {
+			str = "0"+ str;
+
+		} else if(str.length > 2) {
+			str = str.substring(0, 2);
+		}
+
+		return str;
+	}
+
+	/**
+	 * Helper function to convert a note value to string
+	 */
+	private async convertNote(channel:number, note:Note) {
+		// special case: null note
+		if(note === Note.Null) {
+			return undefined;
+		}
+
+		// find the note stuffs
+		const nd = await this.parent.tab.getNotes(this.parent.tab.channels[channel].type);
+
+		// invalid note name
+		if(!nd.notes[note] || !nd.notes[note].name) {
+			return undefined;
+		}
+
+		// construct name and make sure its correctly aligned to 2 characters
+		let name = nd.notes[note].name;
+		const octave = nd.notes[note].octave;
+
+		if(typeof octave === "number") {
+			// append octave
+			if(name.length === 1) {
+				name += "-";
+
+			} else if(name.length > 2) {
+				name = name.substring(0, 2);
+			}
+
+			name += Math.abs(nd.notes[note].octave as number);
+
+		} else if(name.length > 3) {
+			// clip the length off at 3
+			name = name.substring(0, 3);
+		}
+
+		// finally got octave name
+		return name;
+	}
 }
+
+type WorkerData = [ number, number, (string|undefined)[] ];

@@ -77,10 +77,11 @@ ipcRenderer.on(ipcEnum.ProjectSetModule, (event, data:Module) => {
 
 // listen to requests to add new module with filename
 ipcRenderer.on(ipcEnum.ProjectAddModule, async(event, file:string) => {
+	console.log("add", file)
 	// ensure the project is valid
 	if(Tab.active) {
 		// create a new module and get its index
-		const m = await Tab.active.project.addModule(file);
+		const m = Tab.active.project.addModule(file);
 		const ix = Tab.active.project.getModuleIndexByFile(m.file);
 
 		// switch to module by its index

@@ -50,7 +50,12 @@ export class ModuleSelect {
 		// set button event listeners for each button
 		for(let i = this.buttonFunc.length - 1;i >= 0; --i) {
 			(this.buttons.children[i] as HTMLButtonElement).onclick = (event:MouseEvent) => {
-				return this.buttonFunc[i](event, this);
+				try {
+					return this.buttonFunc[i](event, this);
+
+				} catch(ex) {
+					console.error(ex);
+				}
 			};
 		}
 
@@ -61,8 +66,9 @@ export class ModuleSelect {
 	private buttonFunc = [
 		async(e:MouseEvent, m:ModuleSelect) => {		// create
 			// create a new module and get its index
-			const mod = await m.project.addModule();
+			const mod = m.project.addModule();
 			const index = m.project.getModuleIndexByFile(mod.file);
+			console.log("create!!!", mod, index)
 
 			// render the new module
 			m.items.innerHTML += m.renderItem(index);

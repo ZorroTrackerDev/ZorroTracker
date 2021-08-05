@@ -47,6 +47,11 @@ type ChannelCanvasInfo = {
 	// the channel canvases and contexts
 	const channels: ChannelCanvasInfo[] = [];
 
+	/*
+	 * the actual pattern data for this canvas. Format: pattern[channel][row][element]
+	 */
+	const pattern:(string|undefined)[][][] = [];
+
 	// handler for received mesages from PatternCanvas instance
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const handleMessage = (command:string, data:{ [key:string]: unknown }) => {
@@ -76,6 +81,7 @@ type ChannelCanvasInfo = {
 				// generate the rendered array
 				for(let c = 0;c < channelCount;c ++) {
 					rendered[c] = [];
+					pattern.push(new Array(256));
 
 					for(let r = 0;r < patternLen;r ++) {
 						// set every cell to false, meaning it needs to render
@@ -219,6 +225,15 @@ type ChannelCanvasInfo = {
 				record = data.status as boolean;
 				invalidateArea(0, patternLen, 0, channelCount);
 				break;
+
+			case "patterndata":
+				for(const d of data as unknown as [ number, number, (string|undefined)[] ][]) {
+					// load each data item into pattern and invalidate
+					pattern[d[0]][d[1]] = d[2];
+					invalidateArea(d[1], d[1] + 1, d[0], d[0] + 1);
+
+				//	console.log("send", d[0], d[1], d[2])
+				}
 		}
 	}
 
@@ -439,34 +454,12 @@ type ChannelCanvasInfo = {
 			// render each channel element
 			for(let i = 0;i < cd.elements.length;i ++){
 				const e = cd.elements[i];
-				// some dummy code to generate text for this row
-				if(channel & 1) {
-					let text = "";
-					switch(e) {
-						case 0: text = "C#6";break;
-						case 1: text = "2F"; break;
-						case 2: text = "11"; break;
-						case 3: text = "WQ"; break;
-						case 4: text = "DD"; break;
-						case 5: text = "0Z"; break;
-						case 6: text = "00"; break;
-						case 7: text = "RR"; break;
-						case 8: text = "FF"; break;
-						case 9: text = "PE"; break;
-						case 10:text = "30"; break;
-						case 11:text = "OO"; break;
-						case 12:text = "00"; break;
-						case 13:text = "AF"; break;
-						case 14:text = "97"; break;
-						case 15:text = "WW"; break;
-						case 16:text = "66"; break;
-						case 17:text = "II"; break;
-						case 18:text = "11"; break;
-					}
 
+				// some dummy code to generate text for this row
+				if(pattern[channel][row] && pattern[channel][row][e]) {
 					// render the element with text
 					ctx.fillStyle = channelElementColors[e][hid];
-					ctx.fillText(text, cd.offsets[i], top + textVerticalOffset);
+					ctx.fillText(pattern[channel][row][e] as string, cd.offsets[i], top + textVerticalOffset);
 
 				} else {
 					// render the element with blanks

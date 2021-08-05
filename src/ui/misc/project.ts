@@ -552,7 +552,7 @@ export class Project {
 			highlights: [ loadFlag<number>("HIGHLIGHT_B_DEFAULT") ?? 16, loadFlag<number>("HIGHLIGHT_A_DEFAULT") ?? 4, ] as [ number, number, ],
 			type: ZorroModuleType.Song,
 			lastDate: new Date(),
-			channels: this.driverChannels.map((c) => {
+			channels: this.driverChannels?.map((c) => {
 				// initialize the channels with effect count
 				return { id: c.id, name: c.name, effects: fx, };
 			}),

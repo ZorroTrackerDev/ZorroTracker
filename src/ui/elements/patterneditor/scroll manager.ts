@@ -63,7 +63,7 @@ export class PatternEditorScrollManager {
 			}
 
 			// create a new timeout in 50ms, to update scrolling size, reload canvases, and to call the scroll handler
-			timeout = setTimeout(() => {
+			timeout = setTimeout(async() => {
 				timeout = null;
 
 				// ignore this all if tab was not loaded
@@ -73,7 +73,7 @@ export class PatternEditorScrollManager {
 
 				// update horizontal scrolling and visible channels
 				this.updateScrollerSize();
-				this.horizontalScroll(0, false);
+				await this.horizontalScroll(0, false);
 
 				if(this.updateVisibleChannels()) {
 					// if visible channels changed, then we must also re-render
@@ -89,7 +89,7 @@ export class PatternEditorScrollManager {
 				height = this.parent.element.offsetHeight;
 
 				// call the special scroll handler, mainly to update the current position and to redraw canvases
-				this.verticalScroll(0);
+				await this.verticalScroll(0);
 			}, 50);
 		});
 	}
@@ -109,10 +109,10 @@ export class PatternEditorScrollManager {
 				// update scrollbars
 				this.parent.verticalBar.setValues(this.parent.patternLen);
 
-				this.refreshPatternAmount().then(() => {
+				this.refreshPatternAmount().then(async() => {
 					// forcibly apply scrolling effects
-					this.verticalScroll(0);
-					this.horizontalScroll(0, false);
+					await this.verticalScroll(0);
+					await this.horizontalScroll(0, false);
 
 					// no moar passes
 					res(false);
@@ -140,7 +140,7 @@ export class PatternEditorScrollManager {
 	 * @param channel1 The first channel to make visible
 	 * @param channel2 The second channel to make visible
 	 */
-	public ensureVisibleChannel(channel1:number, channel2:number): void {
+	public async ensureVisibleChannel(channel1:number, channel2:number): Promise<void> {
 		// calculate the boundaries of the visibility check
 		const left = Math.min(channel1, channel2), right = Math.max(channel1, channel2);
 		/* ignore top/bottom for now! :( const bottom = Math.max(row1, row2), top = Math.min(row1, row2);*/
@@ -170,7 +170,7 @@ export class PatternEditorScrollManager {
 
 		if(this.horizChannel !== old) {
 			// force-update scrolling related info.
-			this.horizontalScroll(0, true);
+			await this.horizontalScroll(0, true);
 		}
 	}
 
@@ -179,8 +179,8 @@ export class PatternEditorScrollManager {
 	 *
 	 * @param select The selection to use for the basis of scrolling
 	 */
-	public scrollToSelection(select:SingleSelection): void {
-		this.scrollToRow((select.pattern * this.parent.patternLen) + select.row);
+	public scrollToSelection(select:SingleSelection): Promise<void> {
+		return this.scrollToRow((select.pattern * this.parent.patternLen) + select.row);
 	}
 
 	/**
@@ -193,9 +193,9 @@ export class PatternEditorScrollManager {
 	 *
 	 * @param row The row to scroll to
 	 */
-	public scrollToRow(row:number): void {
+	public scrollToRow(row:number): Promise<void> {
 		this.scrolledRow = row;
-		this.verticalScroll(0);
+		return this.verticalScroll(0);
 	}
 
 	/**
@@ -213,7 +213,7 @@ export class PatternEditorScrollManager {
 	 *
 	 * @param delta The amount to scroll by. It's typical to use 0 to ensure scrolling is correct while not moving intentionally.
 	 */
-	public verticalScroll(delta:number): void {
+	public async verticalScroll(delta:number): Promise<void> {
 		// update the scrolling position based on delta
 		this.scrolledRow = Math.round((delta * 0.03) + this.scrolledRow);
 
@@ -232,7 +232,7 @@ export class PatternEditorScrollManager {
 		}
 
 		// go to handle scrolling, reloading, drawing, etc
-		this.updatePositionAndGraphics();
+		await this.updatePositionAndGraphics();
 
 		// tell the selection manager to update scrolling
 		this.parent.selectionManager.render();
@@ -254,7 +254,7 @@ export class PatternEditorScrollManager {
 	 * @param amount The scrolling amount
 	 * @param force If the horizontal scrolling is forced regardless of previous scroll. Useful for code that sets the scrolling itself
 	 */
-	public horizontalScroll(amount:number, force:boolean): void {
+	public async horizontalScroll(amount:number, force:boolean): Promise<void> {
 		// calculate the new scrolling position
 		const p = Math.max(0, Math.min(this.horizChannel + amount, this.maxHorizontalScroll));
 
@@ -285,7 +285,7 @@ export class PatternEditorScrollManager {
 			// update visible channels
 			if(this.updateVisibleChannels()) {
 				// if changed, also re-render to force channels to show up
-				this.updatePositionAndGraphics();
+				await this.updatePositionAndGraphics();
 			}
 		}
 	}
@@ -445,22 +445,22 @@ export class PatternEditorScrollManager {
 	 * @param channel The channel to change the size for
 	 * @param scroll How much to scroll
 	 */
-	public changeChannelSize(channel:number): void {
+	public async changeChannelSize(channel:number): Promise<void> {
 		// update worker with data
 		this.refreshChannelWidth();
 
 		// scroll to follow cursor and update size
-		this.horizontalScroll(0, false);
-		this.ensureVisibleChannel(channel, channel);
+		await this.horizontalScroll(0, false);
+		await this.ensureVisibleChannel(channel, channel);
 
 		// invalidate and clear all canvas rows
-		this.canvas.forEach((c) => {
-			c.invalidateChannels(channel, channel + 1);
+		await Promise.all(this.canvas.map(async(c) => {
 			c.fillVoid();
-		});
+			await c.invalidateChannels(channel, channel + 1);
+		}));
 
 		// re-render all visible rows
-		this.updatePositionAndGraphics();
+		await this.updatePositionAndGraphics();
 
 		// set the project to be dirty
 		this.parent.tab.project.dirty();
@@ -643,7 +643,7 @@ export class PatternEditorScrollManager {
 			this.scrolledRow = (pat * rows) + Math.min(offs, rows - 1);
 
 			// go to handle scrolling, reloading, drawing, etc
-			this.updatePositionAndGraphics();
+			await this.updatePositionAndGraphics();
 		}
 	}
 
@@ -666,7 +666,7 @@ export class PatternEditorScrollManager {
 	/**
 	 * Handle scrolling. This updates each canvas position, graphics, active canvas, etc
 	 */
-	private updatePositionAndGraphics(): void {
+	private async updatePositionAndGraphics(): Promise<void> {
 		// clear any previous timeouts
 		if(this.graphicsTimeout) {
 			clearTimeout(this.graphicsTimeout);
@@ -743,7 +743,7 @@ export class PatternEditorScrollManager {
 				cv.pattern = pat;
 
 				// invalidate every row in pattern
-				cv.invalidateAll();
+				await cv.dataAll();
 			}
 
 			// check if this pattern is visible
@@ -779,14 +779,14 @@ export class PatternEditorScrollManager {
 	 * @param channel The channel that is affected
 	 * @param position The position index that is affected
 	 */
-	public patternChanged(channel:number, position:number): void {
+	public async patternChanged(channel:number, position:number): Promise<void> {
 		let render = false;
 
 		// ensure that the pattern is actually visible currently
 		for(const c of this.canvas) {
 			if(c.pattern === position) {
 				// if this has the same pattern, invalidate the affected channel
-				c.invalidateChannels(channel, channel + 1);
+				await c.invalidateChannels(channel, channel + 1);
 				render = true;
 			}
 		}
@@ -808,7 +808,7 @@ export class PatternEditorScrollManager {
 	private doGraphicsLater() {
 		this.graphicsTimeout = setTimeout(() => {
 			// clear timeout and update graphics
-			this.updatePositionAndGraphics();
+			return this.updatePositionAndGraphics();
 		}, 15);
 	}
 

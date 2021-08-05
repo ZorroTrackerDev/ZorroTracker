@@ -112,7 +112,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	 * Handle shortcuts from the `sel` subgroup
 	 */
 	private handleChannelEffectsShortcut(data:string[]) {
-		return this.handleMovementCheck(data.shift(), (pos:Position) => {
+		return this.handleMovementCheck(data.shift(), async(pos:Position) => {
 			if(pos.y) {
 				// got up/down, load channel
 				const ch = this.parent.selectionManager.single.channel;
@@ -127,11 +127,10 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 
 				if(this.parent.tab.channels[ch].info.effects !== fx) {
 					// effects amount changed, update now
-					this.parent.setChannelEffects(fx, ch);
+					await this.parent.setChannelEffects(fx, ch);
 					return true;
 				}
 			}
-
 
 			return false;
 		});
@@ -140,7 +139,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	/**
 	 * Handle shortcuts from the `sel` subgroup
 	 */
-	private handleSelectionShortcut(data:string[]) {
+	private async handleSelectionShortcut(data:string[]) {
 		switch(data.shift()) {
 			case "move":
 				return this.handleMovementCheck(data.shift(), (pos:Position) => {
@@ -235,7 +234,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 							this.parent.selectionManager.single.element = sl[target].element;
 
 							// update channel and visibility
-							this.parent.scrollManager.ensureVisibleChannel(sl[target].channel, sl[target].channel);
+							await this.parent.scrollManager.ensureVisibleChannel(sl[target].channel, sl[target].channel);
 							await this.parent.tab.setSelectedChannel(sl[target].channel);
 							this.parent.selectionManager.render();
 						}
@@ -275,7 +274,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 
 				// set the row and scroll
 				this.parent.selectionManager.single.row = sl[t].row = 0;
-				this.parent.scrollManager.scrollToRow(this.parent.selectionManager.single.pattern * this.parent.patternLen);
+				await this.parent.scrollManager.scrollToRow(this.parent.selectionManager.single.pattern * this.parent.patternLen);
 				return true;
 			}
 
@@ -289,7 +288,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 
 				// set the row and scroll
 				this.parent.selectionManager.single.row = sl[t].row = this.parent.patternLen - 1;
-				this.parent.scrollManager.scrollToRow(((this.parent.selectionManager.single.pattern + 1) * this.parent.patternLen) - 1);
+				await this.parent.scrollManager.scrollToRow(((this.parent.selectionManager.single.pattern + 1) * this.parent.patternLen) - 1);
 				return true;
 			}
 

@@ -230,7 +230,7 @@ export class PatternEditorSelectionManager {
 					this.single.pattern = x.pattern;
 
 					// tell the scrolling manager to change the current row
-					this.parent.scrollManager.scrollToSelection(this.single);
+					await this.parent.scrollManager.scrollToSelection(this.single);
 
 					// disable row hold mode
 					this.rowHold = false;
@@ -253,10 +253,10 @@ export class PatternEditorSelectionManager {
 				this.preview = null;
 
 				// tell the scrolling manager to make channels visible
-				this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
+				await await this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
 
 				// tell the scrolling manager to change the current row
-				this.parent.scrollManager.scrollToSelection(this.single);
+				await this.parent.scrollManager.scrollToSelection(this.single);
 
 				// set the selected tab channel
 				await this.parent.tab.setSelectedChannel(this.single.channel);
@@ -270,10 +270,10 @@ export class PatternEditorSelectionManager {
 				this.preview = null;
 
 				// tell the scrolling manager to make channels visible
-				this.parent.scrollManager.ensureVisibleChannel(this.multi[1].channel, this.multi[1].channel);
+				await this.parent.scrollManager.ensureVisibleChannel(this.multi[1].channel, this.multi[1].channel);
 
 				// tell the scrolling manager to change the current row
-				this.parent.scrollManager.scrollToSelection(this.multi[1]);
+				await this.parent.scrollManager.scrollToSelection(this.multi[1]);
 
 				// update scrolling anyway
 				this.render();
@@ -749,7 +749,7 @@ export class PatternEditorSelectionManager {
 		// if interval is not started, start it
 		if(!this.edgeInterval) {
 			this.edgeInterval = setInterval(() => {
-				this.parent.scrollManager.horizontalScroll(this.whichEdge, false);
+				return this.parent.scrollManager.horizontalScroll(this.whichEdge, false);
 			}, this.edgeScrollDelay);
 		}
 	}
@@ -802,7 +802,7 @@ export class PatternEditorSelectionManager {
 		const vscrl = this.moveSelection(this.single, Math.round(x), y, wrap, false);
 
 		// ensure the channel is visible
-		this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
+		await this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
 
 		// set the selected tab channel
 		await this.parent.tab.setSelectedChannel(this.single.channel);
@@ -813,7 +813,7 @@ export class PatternEditorSelectionManager {
 
 		} else {
 			// update the scrolled row
-			this.parent.scrollManager.scrollToSelection(this.single);
+			await this.parent.scrollManager.scrollToSelection(this.single);
 		}
 
 		return true;
@@ -913,7 +913,7 @@ export class PatternEditorSelectionManager {
 			const target = +(x > 0 !== this.multi[0].channel > this.multi[1].channel);
 			this.single.channel = this.multi[target].channel;
 			this.single.element = this.multi[target].element;
-			this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
+			await this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
 
 			// if no y-offset, then handle redrawing now
 			if(y === 0) {
@@ -928,7 +928,7 @@ export class PatternEditorSelectionManager {
 			// ensure the row is visible
 			const row = Math[y > 0 ? "max" : "min"](this.multi[0].row, this.multi[1].row);
 			this.single.row = row;
-			this.parent.scrollManager.scrollToRow(row + (this.multi[0].pattern * this.parent.patternLen));
+			await this.parent.scrollManager.scrollToRow(row + (this.multi[0].pattern * this.parent.patternLen));
 		}
 
 		return true;
@@ -946,7 +946,7 @@ export class PatternEditorSelectionManager {
 		this.moveSelection(this.multi[1], x, y, wrap, true);
 
 		// ensure the channel is visible
-		this.parent.scrollManager.ensureVisibleChannel(this.multi[1].channel, this.multi[1].channel);
+		await this.parent.scrollManager.ensureVisibleChannel(this.multi[1].channel, this.multi[1].channel);
 
 		// update single selection
 		this.single.channel = this.multi[1].channel;
@@ -954,7 +954,7 @@ export class PatternEditorSelectionManager {
 		this.single.row = this.multi[1].row;
 
 		// update the scrolled row
-		this.parent.scrollManager.scrollToSelection(this.single);
+		await this.parent.scrollManager.scrollToSelection(this.single);
 
 		// set the selected tab channel
 		await this.parent.tab.setSelectedChannel(this.single.channel);

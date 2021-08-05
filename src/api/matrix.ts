@@ -9,12 +9,13 @@ import { Tab } from "../ui/misc/tab";
  export class PatternCell {
 	public note: number;
 	public volume: number;
-	public commands: { id: TrackerCommands|number, value: number, }[];
+	public instrument: number;
+	public effects: { id: TrackerCommands|number, value: number, }[];
 
 	constructor(){
 		this.note = 0;
-		this.volume = 0;
-		this.commands = [
+		this.volume = this.instrument = 0xFF;
+		this.effects = [
 			{ id: TrackerCommands.Empty, value: 0, },
 			{ id: TrackerCommands.Empty, value: 0, },
 			{ id: TrackerCommands.Empty, value: 0, },
@@ -33,13 +34,14 @@ import { Tab } from "../ui/misc/tab";
 		const ret = [];
 
 		// convert the note to bytes
-		ret.push(this.note as number);
+		ret.push(this.note);
 
-		// convert the volume to bytes
-		ret.push(this.volume as number);
+		// convert the volume and instrument to bytes
+		ret.push(this.volume);
+		ret.push(this.instrument);
 
 		// push each command to res
-		for(const c of this.commands) {
+		for(const c of this.effects) {
 			// push the command ID
 			ret.push(c.id & 0xFF, c.id >> 8);
 
@@ -84,6 +86,7 @@ import { Tab } from "../ui/misc/tab";
 		// load the note and the volume
 		this.note = data[index++];
 		this.volume = data[index++];
+		this.instrument = data[index++];
 
 		// loop for each command
 		for(let i = 0;i < width; i++) {
@@ -117,8 +120,8 @@ import { Tab } from "../ui/misc/tab";
 			}
 
 			// finally, put dat command in
-			this.commands[i].id = id;
-			this.commands[i].value = value;
+			this.effects[i].id = id;
+			this.effects[i].value = value;
 		}
 
 		// return the new position

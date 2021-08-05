@@ -112,9 +112,14 @@ export type NoteData = {
 	frequency: number|undefined,
 
 	/**
-	 * Name of the note. Must have a single \u2060 delimiting the note key and octave. Octave must come after key name.
+	 * Name of the note. Must only contain the name, octave must be separate
 	 */
 	name: string,
+
+	/**
+	 * Octave of the note. This should only be the octave in the note and nothing else
+	 */
+	octave: number|null,
 
 	/**
 	 * Whether this is a sharp note or not. This also defines how the piano should display the note.
@@ -231,6 +236,43 @@ export enum ChannelType {
 	YM2612DAC = 0x11,
 	YM7101PSG = 0x20,
 	YM7101DAC = 0x21,
+}
+
+/**
+ * These are the IDs recommended to be used for drivers.
+ */
+export enum DefChanIds {
+	// Mega Drive FM channels
+	YM2612FM1 = 0,
+	YM2612FM2 = 1,
+	YM2612FM3 = 2,
+	YM2612FM4 = 3,
+	YM2612FM5 = 4,
+	YM2612FM6 = 5,
+
+	// Mega Drive PSG channels
+	YM7101PSG1 = 6,
+	YM7101PSG2 = 7,
+	YM7101PSG3 = 8,
+	YM7101PSG4 = 9,
+
+	// Mega Drive FM PCM channels
+	YM2612PCM1 = 10,
+	YM2612PCM2 = 11,
+	YM2612PCM3 = 12,
+	YM2612PCM4 = 13,
+
+	// Mega Drive PSG PCM channels
+	YM7101PCM1 = 16,
+	YM7101PCM2 = 17,
+	YM7101PCM3 = 18,
+	YM7101PCM4 = 19,
+
+	// Mega Drive FM3 operator channels
+	YM2612FM3OP1 = 20,
+	YM2612FM3OP2 = 21,
+	YM2612FM3OP3 = 22,
+	YM2612FM3OP4 = DefChanIds.YM2612FM3,
 }
 
 export enum FeatureFlag {

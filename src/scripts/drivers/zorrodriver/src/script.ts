@@ -1,4 +1,5 @@
-import { ChannelType, Driver, DriverChannel, DriverConfig, FeatureFlag, NoteData, NoteReturnType, OctaveInfo } from "../../../../api/driver";
+// eslint-disable-next-line max-len
+import { ChannelType, Driver, DriverChannel, DriverConfig, FeatureFlag, NoteData, NoteReturnType, OctaveInfo, DefChanIds } from "../../../../api/driver";
 import { Chip, PSGCMD, YMKey, YMREG } from "../../../../api/chip";
 import { DefaultOctave, DefaultOctaveSharp, Note, OctaveSize } from "../../../../api/notes";
 
@@ -74,17 +75,17 @@ export default class implements Driver {
 	 * @param type The channel type to inspect
 	 * @returns The table containing note info
 	 */
-	private noteGen(octave: OctaveInfo, func:(note: number) => number|undefined): NoteReturnType {
+	private noteGen(octave:OctaveInfo, func:(note: number) => number|undefined): NoteReturnType {
 		// prepare some variables
 		const ret = Array<NoteData>(256);
 
 		// prepare some values
-		ret[0] = { frequency: undefined, name: "", sharp: "", };
-		ret[1] = { frequency: undefined, name: "===", sharp: "", };
-		ret[2] = { frequency: undefined, name: "-x-", sharp: "", };
+		ret[0] = { frequency: undefined, name: "", octave: null, sharp: "", };
+		ret[1] = { frequency: undefined, name: "===", octave: null, sharp: "", };
+		ret[2] = { frequency: undefined, name: "-x-", octave: null, sharp: "", };
 
 		// filler
-		ret[3] = { frequency: undefined, name: "", sharp: "", };
+		ret[3] = { frequency: undefined, name: "NUL", octave: null, sharp: "", };
 
 		// function defined, start filling the table
 		for(let n = Note.First;n < Note.Last; n++) {
@@ -96,7 +97,8 @@ export default class implements Driver {
 
 			// replace the note data with this
 			ret[n] = {
-				name: DefaultOctave[op] +"\u2060"+ (Math.floor((n - Note.C0) / OctaveSize)),
+				name: DefaultOctave[op],
+				octave: (Math.floor((n - Note.C0) / OctaveSize)),
 				sharp: DefaultOctaveSharp[op],
 				frequency: freq,
 			};
@@ -132,23 +134,25 @@ export default class implements Driver {
 	}
 
 	public getChannels(): DriverChannel[] {
+		/* eslint-disable max-len */
 		return [
-			{ name: "FM1", id: 0, type: ChannelType.YM2612FM, features: FeatureFlag.ALL, },
-			{ name: "FM2", id: 1, type: ChannelType.YM2612FM, features: FeatureFlag.ALL, },
-			{ name: "OP1", id: 12, type: ChannelType.YM2612FM, features: FeatureFlag.NOTE | FeatureFlag.NOVU, },
-			{ name: "OP2", id: 13, type: ChannelType.YM2612FM, features: FeatureFlag.NOTE | FeatureFlag.NOVU, },
-			{ name: "OP3", id: 14, type: ChannelType.YM2612FM, features: FeatureFlag.NOTE | FeatureFlag.NOVU, },
-			{ name: "OP4", id: 2, type: ChannelType.YM2612FM, features: FeatureFlag.ALL, },
-			{ name: "FM4", id: 3, type: ChannelType.YM2612FM, features: FeatureFlag.ALL, },
-			{ name: "FM5", id: 4, type: ChannelType.YM2612FM, features: FeatureFlag.ALL, },
-			{ name: "FM6", id: 5, type: ChannelType.YM2612FM, features: FeatureFlag.ALL, },
-			{ name: "PCM1", id:10, type: ChannelType.YM2612DAC, features: FeatureFlag.INSTRUMENT | FeatureFlag.EFFECTS | FeatureFlag.NOTE, },
-			{ name: "PCM2", id:11, type: ChannelType.YM2612DAC, features: FeatureFlag.INSTRUMENT | FeatureFlag.EFFECTS | FeatureFlag.NOTE, },
-			{ name: "PSG1", id: 6, type: ChannelType.YM7101PSG, features: FeatureFlag.ALL, },
-			{ name: "PSG2", id: 7, type: ChannelType.YM7101PSG, features: FeatureFlag.ALL, },
-			{ name: "PSG3", id: 8, type: ChannelType.YM7101PSG, features: FeatureFlag.ALL, },
-			{ name: "PSG4", id: 9, type: ChannelType.YM7101PSG, features: FeatureFlag.ALL, },
+			{ name: "FM1",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM1,		features: FeatureFlag.ALL, },
+			{ name: "FM2",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM2,		features: FeatureFlag.ALL, },
+			{ name: "OP1",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM3OP1,	features: FeatureFlag.NOTE | FeatureFlag.NOVU, },
+			{ name: "OP2",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM3OP2,	features: FeatureFlag.NOTE | FeatureFlag.NOVU, },
+			{ name: "OP3",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM3OP3,	features: FeatureFlag.NOTE | FeatureFlag.NOVU, },
+			{ name: "OP4",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM3OP4,	features: FeatureFlag.ALL, },
+			{ name: "FM4",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM4,		features: FeatureFlag.ALL, },
+			{ name: "FM5",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM5,		features: FeatureFlag.ALL, },
+			{ name: "FM6",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM6,		features: FeatureFlag.ALL, },
+			{ name: "PCM1", type: ChannelType.YM2612DAC, id: DefChanIds.YM2612PCM1,		features: FeatureFlag.INSTRUMENT | FeatureFlag.EFFECTS | FeatureFlag.NOTE, },
+			{ name: "PCM2", type: ChannelType.YM2612DAC, id: DefChanIds.YM2612PCM2,		features: FeatureFlag.INSTRUMENT | FeatureFlag.EFFECTS | FeatureFlag.NOTE, },
+			{ name: "PSG1", type: ChannelType.YM7101PSG, id: DefChanIds.YM7101PSG1,		features: FeatureFlag.ALL, },
+			{ name: "PSG2", type: ChannelType.YM7101PSG, id: DefChanIds.YM7101PSG2,		features: FeatureFlag.ALL, },
+			{ name: "PSG3", type: ChannelType.YM7101PSG, id: DefChanIds.YM7101PSG3,		features: FeatureFlag.ALL, },
+			{ name: "PSG4", type: ChannelType.YM7101PSG, id: DefChanIds.YM7101PSG4,		features: FeatureFlag.ALL, },
 		];
+		/* eslint-enable max-len */
 	}
 
 	/**
@@ -181,17 +185,17 @@ export default class implements Driver {
 			this.muted &= 0xFFF - (1 << id);
 		}
 
-		if(id < 6) {
+		if(id <= DefChanIds.YM2612FM6) {
 			// FM
 			this.chip.muteYM(id, state);
 			return true;
 
-		} else if(id < 10) {
+		} else if(id <= DefChanIds.YM7101PSG4) {
 			// PSG
-			this.chip.mutePSG(id - 6, state);
+			this.chip.mutePSG(id - DefChanIds.YM7101PSG1, state);
 			return true;
 
-		} else if(id < 12) {
+		} else if(id <= DefChanIds.YM2612PCM2) {
 			// DAC
 			return false;
 		}
@@ -341,7 +345,10 @@ export default class implements Driver {
 				}
 
 				// find new channel for polyphony, ignoring certain channels
-				const cc = this.findFreeChannel(channel, [], [ 0, 1, 2, 3, 4, 5, ]);
+				const cc = this.findFreeChannel(channel, [], [
+					DefChanIds.YM2612FM1, DefChanIds.YM2612FM2, DefChanIds.YM2612FM3,
+					DefChanIds.YM2612FM4, DefChanIds.YM2612FM5, DefChanIds.YM2612FM6,
+				]);
 
 				// find new channel for polyphony. If failed, jump out
 				if(typeof cc !== "number") {
@@ -379,7 +386,8 @@ export default class implements Driver {
 				}
 
 				// find new channel for polyphony, ignoring certain channels
-				const cc = this.findFreeChannel(channel, [ 9, ], [ 6, 7, 8, ]);
+				const cc = this.findFreeChannel(channel, [ DefChanIds.YM7101PSG4, ],
+					[ DefChanIds.YM7101PSG1, DefChanIds.YM7101PSG2, DefChanIds.YM7101PSG3, ]);
 
 				// find new channel for polyphony. If failed, jump out
 				if(typeof cc !== "number") {
@@ -392,7 +400,7 @@ export default class implements Driver {
 				// enable PSG frequency (special PSG4: set frequency to PSG3)
 				if(cc === 9) {
 					this.chip.writePSG(PSGCMD.FREQ | PSGCMD.PSG4 | PSGCMD.WHITE | PSGCMD.TONE3);
-					this.chip.writePSG(PSGCMD.FREQ | this.hwid[8] | (data.frequency & 0xF));
+					this.chip.writePSG(PSGCMD.FREQ | this.hwid[DefChanIds.YM7101PSG3] | (data.frequency & 0xF));
 
 				} else {
 					this.chip.writePSG(PSGCMD.FREQ | this.hwid[cc] | (data.frequency & 0xF));

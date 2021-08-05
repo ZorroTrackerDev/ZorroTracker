@@ -354,7 +354,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 				}
 
 				// add the inner text to show which note it is
-				e.innerHTML = /*html*/`<span>${ cn.name.split("\u2060")[0] }</span>`;
+				e.innerHTML = /*html*/`<span>${ cn.name }</span>`;
 
 			} else {
 				// note is very not valid
@@ -389,7 +389,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 
 				if(c) {
 					// if yes, this is the new octave, use it! No matter what!
-					o = c.name.split("\u2060")[1];
+					o = c.octave?.toString() ?? "invalid";
 					break;
 				}
 			}

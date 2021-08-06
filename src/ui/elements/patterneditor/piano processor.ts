@@ -6,7 +6,7 @@ import { PatternEditor } from "./main";
 const eventNoteOn = ZorroEvent.createEvent(ZorroEventEnum.PianoNoteOn);
 const eventNoteOff = ZorroEvent.createEvent(ZorroEventEnum.PianoNoteOff);
 
-type QueueItem = { mode: boolean, note: number, freq: number, velocity: number, };
+type QueueItem = { mode: boolean, note: number, freq: number, volume: number, velocity: number, };
 
 export class PianoProcessor {
 	private parent:PatternEditor;
@@ -38,11 +38,12 @@ export class PianoProcessor {
 	 */
 	public triggerNote(note:number, velocity:number):boolean {
 		// check if this note exists
-		const freq = this.parent.tab.notesCache[this.parent.tab.selectedChannel.type]?.notes[note]?.frequency;
+		const cache = this.parent.tab.notesCache[this.parent.tab.selectedChannel.type];
+		const freq = cache?.notes[note]?.frequency;
 
 		if(typeof freq === "number"){
 			// save the data to the queue finally
-			this.queue.push({ mode: true, freq, note, velocity, });
+			this.queue.push({ mode: true, freq, note, velocity, volume: Math.round(velocity * cache.maxvolume), });
 			setTimeout(() => this.runQueue().catch(console.error), 0);
 			return true;
 		}
@@ -59,11 +60,12 @@ export class PianoProcessor {
 	 */
 	public releaseNote(note:number, velocity:number): boolean {
 		// check if this note exists
-		const freq = this.parent.tab.notesCache[this.parent.tab.selectedChannel.type]?.notes[note]?.frequency;
+		const cache = this.parent.tab.notesCache[this.parent.tab.selectedChannel.type];
+		const freq = cache?.notes[note]?.frequency;
 
 		if(typeof freq === "number"){
 			// save the data to the queue finally
-			this.queue.push({ mode: false, freq, note, velocity, });
+			this.queue.push({ mode: false, freq, note, velocity, volume: Math.round(velocity * cache.maxvolume), });
 			setTimeout(() => this.runQueue().catch(console.error), 0);
 			return true;
 		}
@@ -93,7 +95,7 @@ export class PianoProcessor {
 
 		// while there is stuff in the queue, pop the first item from start off
 		while(this.queue.length > 0) {
-			const { mode, freq, note, velocity, } = this.queue.shift() as QueueItem;
+			const { mode, freq, note, volume, velocity, } = this.queue.shift() as QueueItem;
 
 			if(!mode) {
 				// reset the active note if released
@@ -129,7 +131,7 @@ export class PianoProcessor {
 
 					// if enabled, also updates the note velocity
 					if(this.parent.tab.recordVelocity) {
-						info[2].volume = Math.round(velocity * 0x7F);
+						info[2].volume = volume;
 					}
 
 					if(this.activeNote) {
@@ -150,7 +152,7 @@ export class PianoProcessor {
 					// project is dirty now
 					this.parent.tab.project.dirty();
 
-					this.enableRepeat(note, velocity);
+					this.enableRepeat(note, volume);
 
 				} else {
 					// if not in record mode then try to disable repeat anyway!!!
@@ -175,7 +177,7 @@ export class PianoProcessor {
 	/**
 	 * Function to execute a note repeat on record mode
 	 */
-	private async noteRepeat(note:number, velocity:number) {
+	private async noteRepeat(note:number, volume:number) {
 		if(this.parent.tab.recordMode) {
 			// put the note in again
 			if(this.parent.shortcuts.getCurrentElementId() !== 0) {
@@ -196,7 +198,7 @@ export class PianoProcessor {
 
 			// if enabled, also updates the note velocity
 			if(this.parent.tab.recordVelocity) {
-				info[2].volume = Math.round(velocity * 0x7F);
+				info[2].volume = volume;
 			}
 
 			// reload this row
@@ -210,7 +212,7 @@ export class PianoProcessor {
 
 			// set a new timeout if not canceled
 			if(this.repeatTimeout && this.activeNote === note) {
-				this.repeatTimeout = setTimeout(() => this.noteRepeat(note, velocity).catch(console.error), this.reptWait);
+				this.repeatTimeout = setTimeout(() => this.noteRepeat(note, volume).catch(console.error), this.reptWait);
 			}
 		}
 	}
@@ -228,9 +230,9 @@ export class PianoProcessor {
 	/**
 	 * Function to execute a note repeat on record mode
 	 */
-	private enableRepeat(note:number, velocity:number) {
+	private enableRepeat(note:number, volume:number) {
 		if(this.parent.tab.recordMode) {
-			this.repeatTimeout = setTimeout(() => this.noteRepeat(note, velocity).catch(console.error), this.reptDelay);
+			this.repeatTimeout = setTimeout(() => this.noteRepeat(note, volume).catch(console.error), this.reptDelay);
 		}
 	}
 }

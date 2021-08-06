@@ -164,6 +164,11 @@ export type NoteReturnType = {
 	octave: OctaveInfo,
 
 	/**
+	 * The maximum volume this chip can use
+	 */
+	maxvolume: number,
+
+	/**
 	 * The list of actual notes on this chip type
 	 */
 	notes: Array<NoteData>,

@@ -11,7 +11,7 @@ export default class implements Driver {
 
 	constructor() {
 		// process PSG notes
-		this.NotePSG = this.noteGen({ min: -4, max: 8, C0: Note.C0, size: 12, }, (note: number) => {
+		this.NotePSG = this.noteGen({ min: -4, max: 8, C0: Note.C0, size: 12, }, 0xF, (note: number) => {
 			const xo = (OctaveSize * 7) + Note.C0 + 12;
 
 			if(note < Note.C0 + 9 + 12) {
@@ -29,7 +29,7 @@ export default class implements Driver {
 		});
 
 		// process FM notes
-		this.NoteFM = this.noteGen({ min: -4, max: 8, C0: Note.C0, size: 12, }, (note: number) => {
+		this.NoteFM = this.noteGen({ min: -4, max: 8, C0: Note.C0, size: 12, }, 0x7F, (note: number) => {
 			if(note < Note.C0) {
 				// negative octaves
 				const ftable = this.frequencies[note - Note.C0 + (OctaveSize * 4)];
@@ -46,7 +46,7 @@ export default class implements Driver {
 		});
 
 		// process DAC notes
-		this.NoteDAC = this.noteGen({ min: -4, max: 8, C0: Note.C0, size: 12, }, () => {
+		this.NoteDAC = this.noteGen({ min: -4, max: 8, C0: Note.C0, size: 12, }, 0, () => {
 			return undefined;
 		});
 	}
@@ -72,10 +72,11 @@ export default class implements Driver {
 	 * Function to get the frequency table based on channel type
 	 *
 	 * @param octave The discrete data for octaves
+	 * @param maxvolume MAximum volume level
 	 * @param type The channel type to inspect
 	 * @returns The table containing note info
 	 */
-	private noteGen(octave:OctaveInfo, func:(note: number) => number|undefined): NoteReturnType {
+	private noteGen(octave:OctaveInfo, maxvolume:number, func:(note: number) => number|undefined): NoteReturnType {
 		// prepare some variables
 		const ret = Array<NoteData>(256);
 
@@ -106,6 +107,7 @@ export default class implements Driver {
 
 		return {
 			octave: octave,
+			maxvolume,
 			notes: ret,
 		};
 	}

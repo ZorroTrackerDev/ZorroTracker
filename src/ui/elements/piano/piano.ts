@@ -378,7 +378,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 				note = octaveInfo.C0 + (octaveInfo.size * oct) + (parseInt(e.target.getAttribute("note") ?? "0", 10));
 
 				// trigger the note
-				await this.pianoReceiver.triggerNote(note, pos);
+				this.pianoReceiver.triggerNote(note, pos);
 
 				// activate it
 				cur = e.target;

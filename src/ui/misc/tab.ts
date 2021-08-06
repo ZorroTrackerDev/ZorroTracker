@@ -245,7 +245,7 @@ export class Tab {
 	/**
 	 * List of note info caches from the driver
 	 */
-	private notesCache:{ [key: number]: NoteReturnType } = {};
+	public notesCache:{ [key: number]: NoteReturnType } = {};
 
 	/**
 	 * Function to fetch the note cache data

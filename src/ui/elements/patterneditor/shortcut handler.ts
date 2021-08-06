@@ -4,18 +4,19 @@ import { PatternCell, PatternData } from "../../../api/matrix";
 import { Note } from "../../../api/notes";
 import { Position, shortcutDirection, UIShortcutHandler } from "../../../api/ui";
 import { PatternEditor } from "./main";
+import { PianoProcessor } from "./piano processor";
 import { MultiSelection, SingleSelection } from "./selection manager";
-
-// create events
-const eventNoteOn = ZorroEvent.createEvent(ZorroEventEnum.PianoNoteOn);
-const eventNoteOff = ZorroEvent.createEvent(ZorroEventEnum.PianoNoteOff);
 
 export class PatternEditorShortcuts implements UIShortcutHandler {
 	private parent:PatternEditor;
+	private pianoProcessor:PianoProcessor;
 
 	constructor(parent:PatternEditor) {
 		this.parent = parent;
 		_shortcut = this;
+
+		// generate the piano processor isntance
+		this.pianoProcessor = new PianoProcessor(parent);
 	}
 
 	/**
@@ -470,12 +471,12 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 					const n = octaveInfo.C0 + note + ((this.parent.tab.octave + octave) * octaveInfo.size);
 
 					// trigger the note
-					await this.triggerNote(n, 1);
+					this.triggerNote(n, 1);
 					this.scmap[name] = n;
 
 				} else if(this.scmap[name]){
 					// release the note and remove scmap reference
-					await this.releaseNote(this.scmap[name], 0);
+					this.releaseNote(this.scmap[name], 0);
 					delete this.scmap[name];
 				}
 
@@ -527,14 +528,14 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	/**
 	 * Helper function to get the ID of the currently selected element in single selection
 	 */
-	private getCurrentElementId() {
+	public getCurrentElementId(): number {
 		return this.parent.channelInfo[this.parent.selectionManager.single.channel].elements[this.parent.selectionManager.single.element];
 	}
 
 	/**
 	 * Helper function to get the currently active pattern cell
 	 */
-	private getCurrentPatternCell(): null|[ number, PatternData, PatternCell, ] {
+	public getCurrentPatternCell(): null|[ number, PatternData, PatternCell, ] {
 		// load the current channel
 		const ch = this.parent.selectionManager.single.channel;
 
@@ -560,15 +561,10 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	/**
 	 * Helper function to update the current data row
 	 */
-	private updateCurrentRow(pattern:number) {
+	public updateCurrentRow(pattern:number): Promise<void> {
 		const sel = this.parent.selectionManager.single;
 		return this.parent.scrollManager.updateDataRow(pattern, sel.row, sel.channel);
 	}
-
-	/**
-	 * Currently active note on the chip. This only matters in record mode
-	 */
-	private activeNote = 0;
 
 	/**
 	 * Trigger a note at a certain velocity
@@ -577,61 +573,8 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	 * @param velocity The velocity to trigger the note with, from 0 to 1.0.
 	 * @returns boolean indicatin whether the note was triggered
 	 */
-	public async triggerNote(note:number, velocity:number):Promise<boolean> {
-		// check if this note exists
-		const freq = (await this.parent.tab.getNotes(this.parent.tab.selectedChannel.type)).notes[note]?.frequency;
-
-		if(typeof freq === "number"){
-			// if in record mode, check whether to place this note
-			if(this.parent.tab.recordMode){
-				if(this.getCurrentElementId() !== 0) {
-					// do not allow notes to be played if element ID is not 0
-					return false;
-				}
-
-				// check if the pattern cell is valid
-				const cd = this.getCurrentPatternCell();
-
-				if(!cd) {
-					return false;
-				}
-
-				// save the note
-				cd[2].note = note;
-				cd[1].edited = true;
-
-				// if enabled, also updates the note velocity
-				if(this.parent.tab.recordVelocity) {
-					cd[2].volume = Math.round(velocity * 0x7F);
-				}
-
-				if(this.activeNote) {
-					// note is active, release it quickly
-					await this.releaseNote(this.activeNote, 1);
-				}
-
-				// set new active note
-				this.activeNote = isNaN(freq) ? 0 : note;
-
-				// reload this row
-				await this.updateCurrentRow(cd[0]);
-
-				// apply step
-				await this.parent.selectionManager.applyStep();
-
-				// project is dirty now
-				this.parent.tab.project.dirty();
-			}
-
-			if(!isNaN(freq)) {
-				// can play on piano
-				await eventNoteOn(this.parent.tab.selectedChannelId, note, velocity);
-			}
-
-			return true;
-		}
-
-		return false;
+	public triggerNote(note:number, velocity:number):boolean {
+		return this.pianoProcessor.triggerNote(note, velocity);
 	}
 
 	/**
@@ -641,27 +584,8 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	 * @param velocity The velocity to release the note with, from 0 to 1.0.
 	 * @returns boolean indicatin whether the note was released
 	 */
-	public async releaseNote(note:number, velocity:number):Promise<boolean> {
-		// reset the active note if released
-		if(this.activeNote === note) {
-			this.activeNote = 0;
-		}
-
-		// check if this note exists
-		const freq = (await this.parent.tab.getNotes(this.parent.tab.selectedChannel.type)).notes[note]?.frequency;
-
-		if(typeof freq === "number"){
-			// note exists, check how to handle it
-			if(!isNaN(freq)) {
-				// can release on piano
-				await eventNoteOff(this.parent.tab.selectedChannelId, note, velocity);
-				this.activeNote = 0;
-			}
-
-			return true;
-		}
-
-		return false;
+	public releaseNote(note:number, velocity:number): boolean {
+		return this.pianoProcessor.releaseNote(note, velocity);
 	}
 
 	/**
@@ -692,7 +616,7 @@ ZorroEvent.addListener(ZorroEventEnum.MidiNoteOn, async(event:ZorroEventObject, 
 		const rn = await _shortcut.getRelativeNote(note - 60);
 
 		// attempt to trigger the note
-		if(await _shortcut.triggerNote(rn, velocity)) {
+		if(_shortcut.triggerNote(rn, velocity)) {
 			keys[note] = rn;
 		}
 	}
@@ -701,10 +625,11 @@ ZorroEvent.addListener(ZorroEventEnum.MidiNoteOn, async(event:ZorroEventObject, 
 /**
  * Helper event listener for the MidiNoteOff event, so that the piano can receive notes from MIDI devices
  */
+// eslint-disable-next-line require-await
 ZorroEvent.addListener(ZorroEventEnum.MidiNoteOff, async(event:ZorroEventObject, channel:number, note:number, velocity:number) => {
 	if(_shortcut) {
 		// attempt to release the note
-		if(await _shortcut.releaseNote(keys[note], velocity)) {
+		if(_shortcut.releaseNote(keys[note], velocity)) {
 			keys[note] = 0;
 		}
 	}

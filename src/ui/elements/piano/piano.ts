@@ -369,7 +369,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 				let pos = (e.clientY - rect.top) / rect.height;
 
 				// make the position a bit saner
-				pos = 1 - (Math.max(0.05, Math.min(0.8, pos)) * (1 / 0.8));
+				pos = (Math.max(0.05, Math.min(0.8, pos)) * (1 / 0.8));
 
 				// calculate the note
 				const [ oct, ] = await this.getOctaveRange();

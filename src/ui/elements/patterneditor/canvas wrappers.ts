@@ -1,3 +1,5 @@
+import { NoteReturnType } from "../../../api/driver";
+import { PatternData } from "../../../api/matrix";
 import { Note } from "../../../api/notes";
 import { Tab } from "../../misc/tab";
 import { theme } from "../../misc/theme";
@@ -360,6 +362,33 @@ export class PatternCanvas extends EditorCanvasBase {
 	}
 
 	/**
+	 * Helper function to fetch the data parameters
+	 */
+	private async fetchDataParams(channel:number, pattern:number): Promise<[ PatternData, NoteReturnType ]|null> {
+		// load the pattern info
+		const rp = this.parent.tab.matrix.get(channel, pattern);
+
+		if(typeof rp !== "number") {
+			return null;
+		}
+
+		const pd = this.parent.tab.matrix.patterns[channel][rp];
+
+		if(!pd) {
+			return null;
+		}
+
+		// find the note stuffs
+		const nd = await this.parent.tab.getNotes(this.parent.tab.channels[channel].type);
+
+		if(!nd) {
+			return null;
+		}
+
+		return [ pd, nd, ];
+	}
+
+	/**
 	 * Function to update pattern data in a single channel
 	 *
 	 * @param start The start of the range of rows to update
@@ -369,8 +398,16 @@ export class PatternCanvas extends EditorCanvasBase {
 	public async dataChannel(start:number, end:number, channel:number): Promise<void> {
 		const rows:WorkerData[] = [];
 
+		// load the input params
+		const res = await this.fetchDataParams(channel, this.pattern);
+
+		if(!res) {
+			return;
+		}
+
+		// loop for all rows to update
 		for(let r = start; r < end; r++) {
-			rows.push(await this.getData(r, channel));
+			rows.push(this.getData(res[0], res[1], r, channel));
 		}
 
 		// send the command to update data
@@ -384,8 +421,15 @@ export class PatternCanvas extends EditorCanvasBase {
 	 * @param channel The channel to update
 	 */
 	public async dataRow(row:number, channel:number): Promise<void> {
+		// load the input params
+		const res = await this.fetchDataParams(channel, this.pattern);
+
+		if(!res) {
+			return;
+		}
+
 		// send the command to update data
-		this.worker.postMessage({ command: "patterndata", data: [ await this.getData(row, channel), ], });
+		this.worker.postMessage({ command: "patterndata", data: [ this.getData(res[0], res[1], row, channel), ], });
 	}
 
 	/**
@@ -395,26 +439,19 @@ export class PatternCanvas extends EditorCanvasBase {
 	 * @param channel The channel to update
 	 * @returns ready-converted data
 	 */
-	private async getData(row:number, channel:number): Promise<WorkerData> {
+	private getData(pd:PatternData, nd:NoteReturnType, row:number, channel:number): WorkerData {
 		const res:(string|undefined)[] = [];
+		const cell = pd.cells[row];
 
-		// load the pattern cell
-		const rp = this.parent.tab.matrix.get(channel, this.pattern);
-		const pd = this.parent.tab.matrix.patterns[channel][rp ?? 0];
+		// valid pattern found, fill the array now
+		res.push(this.convertNote(nd, cell.note as Note));
+		res.push(cell.instrument === 0xFF ? undefined : this.getHex(cell.instrument));
+		res.push(cell.volume === 0xFF ? undefined : this.getHex(cell.volume));
 
-		if(pd && typeof rp === "number") {
-			const cell = pd.cells[row];
-
-			// valid pattern found, fill the array now
-			res.push(await this.convertNote(channel, cell.note as Note));
-			res.push(cell.instrument === 0xFF ? undefined : this.getHex(cell.instrument));
-			res.push(cell.volume === 0xFF ? undefined : this.getHex(cell.volume));
-
-			// load every effect
-			for(let i = 0;i < this.parent.maxEffects; i++) {
-				res.push(i & 1 ? undefined : "XY");
-				res.push(i & 1 ? undefined : this.getHex(cell.effects[i]?.value ?? 0));
-			}
+		// load every effect
+		for(let i = 0;i < this.parent.maxEffects; i++) {
+			res.push(i & 1 ? undefined : "XY");
+			res.push(i & 1 ? undefined : this.getHex(cell.effects[i]?.value ?? 0));
 		}
 
 		return [ channel, row, res, ]
@@ -439,14 +476,11 @@ export class PatternCanvas extends EditorCanvasBase {
 	/**
 	 * Helper function to convert a note value to string
 	 */
-	private async convertNote(channel:number, note:Note) {
+	private convertNote(nd:NoteReturnType, note:Note) {
 		// special case: null note
 		if(note === Note.Null) {
 			return undefined;
 		}
-
-		// find the note stuffs
-		const nd = await this.parent.tab.getNotes(this.parent.tab.channels[channel].type);
 
 		// invalid note name
 		if(!nd.notes[note] || !nd.notes[note].name) {

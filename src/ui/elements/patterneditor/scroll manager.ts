@@ -110,6 +110,9 @@ export class PatternEditorScrollManager {
 				this.parent.verticalBar.setValues(this.parent.patternLen);
 
 				this.refreshPatternAmount().then(async() => {
+					// set all patterns to invalid again to force data reload
+					this.canvas.forEach((c) => c.pattern = -1);
+
 					// forcibly apply scrolling effects
 					await this.verticalScroll(0);
 					await this.horizontalScroll(0, false);
@@ -682,8 +685,8 @@ export class PatternEditorScrollManager {
 				this.canvas[0].pattern = this.parent.activePattern;
 				this.canvas[0].active = true;
 
-				// invalidate every row in pattern
-				this.canvas[0].invalidateAll();
+				// update all data
+				await this.canvas[0].dataAll();
 			}
 
 			// update canvas y-position
@@ -705,28 +708,8 @@ export class PatternEditorScrollManager {
 			return;
 		}
 
-		// position all row elements
-		for(let r = 0;r < this.rows.length;r ++) {
-			const cr = this.rows[(this.rows.length + r - 1) % this.rows.length];
-
-			// calculate target pattern
-			const ppos = r - 1 + this.parent.activePattern;
-
-			if(ppos < 0 || ppos >= this.parent.tab.matrix.matrixlen) {
-				// hide row if out of bounds
-				cr.element.style.top = "-10000px";
-				continue;
-			}
-
-			// calculate row y-position
-			const top = ((((ppos * patternRows) - this.scrolledRow) * this.rowHeight) + this.scrollMiddle) +"px";
-
-			// update row position
-			cr.element.style.top = top;
-		}
-
 		// run for each visible patterns
-		for(let r = 0;r < this.canvas.length; r++) {
+		const promises = this.canvas.map(async(_, r) => {
 			// load some variables beforehand
 			const co = (this.canvas.length + r + (this.parent.activePattern % this.canvas.length)) % this.canvas.length;
 			const pat = this.parent.activePattern + r - 1;
@@ -736,14 +719,20 @@ export class PatternEditorScrollManager {
 			const offsetTop = ((pat * patternRows) - this.scrolledRow);
 			const top = ((offsetTop * this.rowHeight) + this.scrollMiddle) +"px";
 
-			// invalidate layout if it is not the same pattern or active status doesn't match
-			if(cv.pattern !== pat || (pat === this.parent.activePattern) !== cv.active) {
+			// invalidate layout if it is not the same pattern as before
+			if(cv.pattern !== pat) {
 				// update pattern status
-				cv.active = pat === this.parent.activePattern;
 				cv.pattern = pat;
 
-				// invalidate every row in pattern
+				// update all data
 				await cv.dataAll();
+
+			} else if((pat === this.parent.activePattern) !== cv.active) {
+				// only invalidate if the active pattern does not match
+				cv.active = pat === this.parent.activePattern;
+
+				// invalidate every row in pattern
+				cv.invalidateAll();
 			}
 
 			// check if this pattern is visible
@@ -767,10 +756,33 @@ export class PatternEditorScrollManager {
 
 			// update canvas position
 			cv.element.style.top = top;
+		});
+
+		// position all row elements
+		for(let r = 0;r < this.rows.length;r ++) {
+			const cr = this.rows[(this.rows.length + r - 1) % this.rows.length];
+
+			// calculate target pattern
+			const ppos = r - 1 + this.parent.activePattern;
+
+			if(ppos < 0 || ppos >= this.parent.tab.matrix.matrixlen) {
+				// hide row if out of bounds
+				cr.element.style.top = "-10000px";
+				continue;
+			}
+
+			// calculate row y-position
+			const top = ((((ppos * patternRows) - this.scrolledRow) * this.rowHeight) + this.scrollMiddle) +"px";
+
+			// update row position
+			cr.element.style.top = top;
 		}
 
 		// update focus row settings for the current row
 		this.updateFocusRowData();
+
+		// wait for the pattern stuff to update!!
+		await Promise.all(promises);
 	}
 
 	/**

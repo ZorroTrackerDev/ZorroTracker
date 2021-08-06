@@ -230,10 +230,9 @@ type ChannelCanvasInfo = {
 				for(const d of data as unknown as [ number, number, (string|undefined)[] ][]) {
 					// load each data item into pattern and invalidate
 					pattern[d[0]][d[1]] = d[2];
-					invalidateArea(d[1], d[1] + 1, d[0], d[0] + 1);
-
-				//	console.log("send", d[0], d[1], d[2])
+					rendered[d[0]][d[1]] = false;
 				}
+				break;
 		}
 	}
 

@@ -10,7 +10,7 @@
 		main: {
 			// CSS styles related to the main element
 			css: {
-				filter: "brightness(70%) contrast(80%)",
+				filter: "brightness(90%) contrast(85%)",
 				transition: "filter 200ms ease-in-out",
 				"transition-delay": "20ms",
 			},

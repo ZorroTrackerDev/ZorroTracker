@@ -1,5 +1,6 @@
 import { FeatureFlag } from "../../../api/driver";
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../../api/events";
+import { PatternCell, PatternData } from "../../../api/matrix";
 import { Note } from "../../../api/notes";
 import { Position, shortcutDirection, UIShortcutHandler } from "../../../api/ui";
 import { PatternEditor } from "./main";
@@ -533,7 +534,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	/**
 	 * Helper function to get the currently active pattern cell
 	 */
-	private getCurrentPatternCell() {
+	private getCurrentPatternCell(): null|[ number, PatternData, PatternCell, ] {
 		// load the current channel
 		const ch = this.parent.selectionManager.single.channel;
 
@@ -552,15 +553,16 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 		}
 
 		// find the cell that we're targeting
-		return pd.cells[this.parent.selectionManager.single.row] ?? null;
+		const cell = pd.cells[this.parent.selectionManager.single.row];
+		return !cell ? null : [ rp, pd, cell, ];
 	}
 
 	/**
 	 * Helper function to update the current data row
 	 */
-	private updateCurrentRow() {
+	private updateCurrentRow(pattern:number) {
 		const sel = this.parent.selectionManager.single;
-		return this.parent.scrollManager.updateDataRow(sel.pattern, sel.row, sel.channel);
+		return this.parent.scrollManager.updateDataRow(pattern, sel.row, sel.channel);
 	}
 
 	/**
@@ -583,14 +585,15 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 
 			// if in record mode, check whether to place this note
 			if(this.parent.tab.recordMode && this.getCurrentElementId() === 0) {
-				const cell = this.getCurrentPatternCell();
+				const cd = this.getCurrentPatternCell();
 
-				if(cell) {
+				if(cd) {
 					// save the note
-					cell.note = note;
+					cd[2].note = note;
+					cd[1].edited = true;
 
 					// reload this row
-					await this.updateCurrentRow();
+					await this.updateCurrentRow(cd[0]);
 
 					// project is dirty now
 					this.parent.tab.project.dirty();

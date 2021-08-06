@@ -183,6 +183,11 @@ export class PatternData {
 		for(let i = 0;i <= cells; i++) {
 			// load cell data
 			index = this.cells[i].load(data, index, this.width);
+
+			// check if this cell was edited. If so, enable to flag to prevent clearing
+			if(!this.edited && this.cells[i].instrument !== 0xFF || this.cells[i].volume !== 0xFF || this.cells[i].note !== 0) {
+				this.edited = true;
+			}
 		}
 
 		// return the new position
@@ -643,8 +648,8 @@ export class Matrix {
 		}
 
 		// check if we can't replace a pre-existing pattern should one be there.
-		if(replace && this.patterns[channel][index]){
-			return false;
+		if(!replace && this.patterns[channel][index]){
+			return true;
 		}
 
 		// run the make event and check if we failed

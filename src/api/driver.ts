@@ -85,7 +85,7 @@ export interface Driver {
 	 * Be aware that the same note can be triggered multiple times without being released.
 	 *
 	 * @param note The ID of the note to trigger
-	 * @param velocity A value between 0 and 1, representing the velocity of the note. 0 = mute
+	 * @param velocity A value between 0 and 1, representing the velocity of the note. 1 = mute, 0 = loudest
 	 * @param channel The ID of the channel to trigger the note on
 	 * @returns Whether the note was triggered
 	 */

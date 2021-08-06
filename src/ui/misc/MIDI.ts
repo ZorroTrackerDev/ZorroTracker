@@ -105,7 +105,7 @@ export class MIDI {
 	 */
 	private async noteEvent(keyon:boolean, channel:number, note:number, velocity:number) {
 		// translate velocity into 0..1 range
-		const tv = velocity / 127.0;
+		const tv = 1 - (velocity / 127.0);
 
 		// finally call the event dispatcher for this note
 		await (keyon ? MIDI.eventNoteOn : MIDI.eventNoteOff)(channel, note, tv);

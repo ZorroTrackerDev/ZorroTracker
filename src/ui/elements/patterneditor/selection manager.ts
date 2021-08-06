@@ -786,6 +786,13 @@ export class PatternEditorSelectionManager {
 	}
 
 	/**
+	 * Function to apply step offset to the current selection
+	 */
+	public applyStep(): Promise<boolean> {
+		return this.moveSingle(0, this.parent.tab.step, false);
+	}
+
+	/**
 	 * Set the column and refresh scrolling
 	 *
 	 * @param column The column number to move to

@@ -68,6 +68,16 @@ export class Tab {
 	}
 
 	/**
+	 * The step offset for this tab
+	 */
+	public step = 1;
+
+	/**
+	 * Whether to record velocity along with note. Useful for MIDI keyboards and the like
+	 */
+	public recordVelocity = true;
+
+	/**
 	 * The current octave in the piano display. Also affects which notes are written to pattern editor
 	 */
 	public octave: number;

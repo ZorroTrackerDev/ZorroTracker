@@ -336,6 +336,11 @@ export default class implements Driver {
 
 		switch(ch.type) {
 			case ChannelType.YM2612FM: {
+				// check if trying to play on op1-op3
+				if(channel > DefChanIds.YM2612FM6) {
+					return false;
+				}
+
 				// pretend this is PSG
 				const data = this.NoteFM.notes[note];
 
@@ -369,7 +374,7 @@ export default class implements Driver {
 				this.loadFMFrequency(cx, data.frequency);
 
 				// enable FM volume
-				this.writeYMch(cx, YMREG.TL | YMREG.op4, 0x3F - Math.floor(velocity * 0x3F));
+				this.writeYMch(cx, YMREG.TL | YMREG.op4, Math.floor(velocity * 0x3F));
 
 				// enable key
 				this.writeYM1(YMREG.Key, cx | YMKey.OpAll);
@@ -430,7 +435,7 @@ export default class implements Driver {
 	/**
 	 * PSG volume LUT
 	 */
-	private PSGVol = [ 0xE, 0xD, 0xC, 0xB, 0xA, 9, 8, 7, 7, 6, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0, 0, 0, ];
+	private PSGVol = [ 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 7, 7, 8, 8, 9, 0xA, 0xB, 0xC, 0xD, 0xE, ];
 
 	/**
 	 * Release a note via the piano.

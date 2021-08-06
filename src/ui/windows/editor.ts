@@ -773,8 +773,6 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 		// make a title
 		this.hla.label.title = "Highlight every x rows. Usually for beats.";
 
-		// append it to the first pane
-
 		// create the highlight a element
 		this.hlb = await valueBox([ 1, 256, ], 1, "Highlight B", 1, (value) => {
 			if((this.tab.module as Module).highlights[0] !== value) {
@@ -790,18 +788,27 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 		// make a title
 		this.hlb.label.title = "Highlight every x rows. Usually for bars.";
 
+		// create the highlight a element
+		this.step = await valueBox([ 0, 256, ], 1, "Step", 2, (value) => {
+			this.tab.step = value;
+		});
+
+		// make a title
+		this.step.label.title = "Number of rows to skip on edit";
+
 		// append all items in order
 		this.element.appendChild(this.octave.element);
 		this.element.appendChild(this.rows.element);
 		this.element.appendChild(this.hla.element);
 		this.element.appendChild(this.hlb.element);
-
+		this.element.appendChild(this.step.element);
 		return this.element;
 	}
 
 	// these are the various elements that are loaded as settings
 	private octave!: SimpleValueReturn;
 	private rows!: SimpleValueReturn;
+	private step!: SimpleValueReturn;
 	private hla!: SimpleValueReturn;
 	private hlb!: SimpleValueReturn;
 

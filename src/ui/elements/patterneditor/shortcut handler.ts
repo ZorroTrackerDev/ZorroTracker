@@ -470,7 +470,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 					const n = octaveInfo.C0 + note + ((this.parent.tab.octave + octave) * octaveInfo.size);
 
 					// trigger the note
-					await this.triggerNote(n, 1);
+					await this.triggerNote(n, 0);
 					this.scmap[name] = n;
 
 				} else if(this.scmap[name]){
@@ -505,10 +505,10 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 		// helper function to process special note
 		const specialNote = (note:number) => {
 			if(state) {
-				return this.triggerNote(note, 1);
+				return this.triggerNote(note, 0);
 
 			} else {
-				return this.releaseNote(note, 0);
+				return this.releaseNote(note, 1);
 			}
 		};
 
@@ -577,28 +577,36 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 		const freq = (await this.parent.tab.getNotes(this.parent.tab.selectedChannel.type)).notes[note]?.frequency;
 
 		if(typeof freq === "number"){
-			// note exists, check how to handle it
-			if(!isNaN(freq)) {
+			// if in record mode, check whether to place this note
+			if(this.parent.tab.recordMode){
+				if(this.getCurrentElementId() === 0) {
+					const cd = this.getCurrentPatternCell();
+
+					if(cd) {
+						// save the note
+						cd[2].note = note;
+						cd[1].edited = true;
+
+						// if enabled, also updates the note velocity
+						if(this.parent.tab.recordVelocity) {
+							cd[2].volume = Math.round(velocity * 0x7F);
+						}
+
+						// reload this row
+						await this.updateCurrentRow(cd[0]);
+
+						// apply step
+						await this.parent.selectionManager.applyStep();
+
+						// project is dirty now
+						this.parent.tab.project.dirty();
+					}
+				}
+			} else if(!isNaN(freq)) {
 				// can play on piano
 				await eventNoteOn(this.parent.tab.selectedChannelId, note, velocity);
 			}
 
-			// if in record mode, check whether to place this note
-			if(this.parent.tab.recordMode && this.getCurrentElementId() === 0) {
-				const cd = this.getCurrentPatternCell();
-
-				if(cd) {
-					// save the note
-					cd[2].note = note;
-					cd[1].edited = true;
-
-					// reload this row
-					await this.updateCurrentRow(cd[0]);
-
-					// project is dirty now
-					this.parent.tab.project.dirty();
-				}
-			}
 			return true;
 		}
 
@@ -613,6 +621,11 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	 * @returns boolean indicatin whether the note was released
 	 */
 	public async releaseNote(note:number, velocity:number):Promise<boolean> {
+		// ignore fully in record mode
+		if(this.parent.tab.recordMode) {
+			return true;
+		}
+
 		// check if this note exists
 		const freq = (await this.parent.tab.getNotes(this.parent.tab.selectedChannel.type)).notes[note]?.frequency;
 

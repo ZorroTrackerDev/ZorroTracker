@@ -13,6 +13,8 @@
 	PIANO_DEFAULT_SIZE: 4,														/* The default amount of octaves in the piano */
 	PIANO_DEFAULT_POSITION: 0,													/* The default piano position. 0 = center, -1 = left, 1 = right */
 	PIANO_DEFAULT_OCTAVE: 3,													/* The default starting ocatave */
+	PIANO_REPEAT_DELAY: 800,													/* How long to hold down the piano key until it will start repeating */
+	PIANO_REPEAT_WAIT: 70,														/* How long time to to wait between key repeats */
 	MIDI_ENABLE: true,															/* If true, ZorroTracker will scan for MIDI devices and allow them to interface with ZorroTracker */
 	ROW_NUM_IN_HEX: false,														/* If true, row numbers will be in hexadecimal */
 	OPEN_PREVIOUS: true,														/* If true, the previous project will be opened if possible. Otherwise, always create an empty project. */

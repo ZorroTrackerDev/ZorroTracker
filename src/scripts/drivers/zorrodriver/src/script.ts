@@ -82,7 +82,7 @@ export default class implements Driver {
 		// prepare some values
 		ret[0] = { frequency: NaN, name: "", octave: null, sharp: "", };
 		ret[1] = { frequency: NaN, name: "===", octave: null, sharp: "", };
-		ret[2] = { frequency: NaN, name: "-x-", octave: null, sharp: "", };
+		ret[2] = { frequency: NaN, name: "———", octave: null, sharp: "", };
 
 		// filler
 		ret[3] = { frequency: undefined, name: "NUL", octave: null, sharp: "", };

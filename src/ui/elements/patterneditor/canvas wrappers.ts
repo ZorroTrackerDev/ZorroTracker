@@ -500,7 +500,12 @@ export class PatternCanvas extends EditorCanvasBase {
 				name = name.substring(0, 2);
 			}
 
-			name += Math.abs(nd.notes[note].octave as number);
+			name += Math.abs(octave);
+
+			// special handling for negative octaves
+			if(octave < 0) {
+				name = "\u200B"+ name;
+			}
 
 		} else if(name.length > 3) {
 			// clip the length off at 3

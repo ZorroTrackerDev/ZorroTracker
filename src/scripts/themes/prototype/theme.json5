@@ -635,6 +635,14 @@
 			// the selection offsets of each element. This is in addition to the normal offsets property. This is used for positioning of the selection highlight.
 			// format: note, instrument, volume, effect, value, effect, value, [...]
 			seloffsets: [ -3, -2, -1,  -2, -1,  -2, -1,  -2, -1,  -2, -1,  -2, -1,  -2, -1,  -2, -1,  -2, -1, ],
+
+			// these are settings related to the negative octave marker. These defined the position of the marker. It uses the current text color
+			minus: {
+				left: 18,
+				right: 24,
+				top: 17,
+				bottom: 19,
+			},
 		},
 	},
 	playbar: {

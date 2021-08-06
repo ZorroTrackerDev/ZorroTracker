@@ -351,6 +351,15 @@ declare interface WorkerThemeSettings {
 	 * The selection offsets of each possible element
 	 */
 	seloffsets?: number[],
+	/**
+	 * Data related to the negative octave marker. These are simply the positions to draw it at
+	 */
+	minus?: {
+		left?: number,
+		right?: number,
+		top?: number,
+		bottom?: number,
+	}
 }
 
 /**

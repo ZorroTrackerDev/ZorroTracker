@@ -273,6 +273,12 @@ type ChannelCanvasInfo = {
 		textVerticalOffset = theme?.font?.top ?? 0;
 		rowHeight = theme?.params?.rowHeight ?? 0;
 		borderWidth = theme?.params?.borderWidth ?? 0;
+		minusMarker = {
+			top: theme?.minus?.top ?? 0,
+			height: (theme?.minus?.bottom ?? 0) - (theme?.minus?.top ?? 0),
+			left: theme?.minus?.left ?? 0,
+			width: (theme?.minus?.right ?? 0) - (theme?.minus?.left ?? 0),
+		}
 
 		clearColor = [
 			theme?.params?.backdrop ?? fallbackRow,
@@ -409,6 +415,11 @@ type ChannelCanvasInfo = {
 	let borderWidth = 0;
 
 	/**
+	 * The positions to draw the negative octave marker
+	 */
+	let minusMarker = { top: 0, left: 0, height: 0, width: 0, };
+
+	/**
 	 * Function to render a single row of graphics
 	 *
 	 * @param row The row number to render
@@ -456,9 +467,15 @@ type ChannelCanvasInfo = {
 
 				// some dummy code to generate text for this row
 				if(pattern[channel][row] && pattern[channel][row][e]) {
+					const text = pattern[channel][row][e] as string;
 					// render the element with text
 					ctx.fillStyle = channelElementColors[e][hid];
-					ctx.fillText(pattern[channel][row][e] as string, cd.offsets[i], top + textVerticalOffset);
+					ctx.fillText(text, cd.offsets[i], top + textVerticalOffset);
+
+					if(e === 0 && text.charCodeAt(0) === 0x200B) {
+						// special case for notes in negative octaves
+						ctx.fillRect(cd.offsets[i] + minusMarker.left, top + minusMarker.top, minusMarker.width, minusMarker.height);
+					}
 
 				} else {
 					// render the element with blanks

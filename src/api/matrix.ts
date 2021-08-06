@@ -137,7 +137,7 @@ export class PatternData {
 	public edited = false;
 
 	/**
-	 * This is the maximum number of pattern commands. This has no relation to actual number of commands in the channel.
+	 * This is the maximum number of pattern effects. This has no relation to actual number of effects in the channel.
 	 */
 	public width = 8;
 
@@ -180,7 +180,7 @@ export class PatternData {
 		this.width = data[index++];
 
 		// process every cells one at a time
-		for(let i = cells;i >= 0; --i) {
+		for(let i = 0;i <= cells; i++) {
 			// load cell data
 			index = this.cells[i].load(data, index, this.width);
 		}

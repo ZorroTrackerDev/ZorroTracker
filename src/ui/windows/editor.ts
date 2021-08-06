@@ -533,6 +533,9 @@ function disableLoading() {
 	// hide the entire element in 210ms
 	loadTM = setTimeout(() => {
 		el.style.display = "none";
+
+		// initialize focus
+		focusOnPattern(true);
 	}, 340);
 }
 
@@ -567,11 +570,14 @@ async function initLayout() {
 	body.appendChild(_bot);
 
 	// load all the standard components
-	const _pattern = await components.addComponent("pattern", new PatternEditor());
-	_bot.appendChild(_pattern);
+	const _pe = new PatternEditor();
+	_bot.appendChild(await components.addComponent("pattern", _pe));
+
 	const _matrix = await components.addComponent("matrix", new MatrixEditor());
 	_top.appendChild(_matrix);
-	_bot.appendChild(await components.addComponent("piano", new Piano()));
+
+	const _piano = new Piano();
+	_bot.appendChild(await components.addComponent("piano", _piano));
 
 	// create the base pane element
 	const _set = document.createElement("div");
@@ -598,11 +604,6 @@ async function initLayout() {
 	// create the child panes. Create 2 of them
 	sbot.appendChild(await components.addComponent("settingsleft", new SettingsPanelLeft()));
 	sbot.appendChild(await components.addComponent("settingsright", new SettingsPanelRight()));
-
-	// helper function to enable or disable focus on pattern
-	const focusOnPattern = (yes:boolean) => {
-		_pattern.classList[yes ? "add" : "remove"]("focus");
-	}
 
 	// add handler for elements getting focused. Use it to determine whether to focus on the pattern editor or not
 	window.addEventListener("focusin", (e) => {
@@ -633,6 +634,14 @@ async function initLayout() {
 
 	// initialize focus
 	focusOnPattern(true);
+
+	// let the piano access certain functions in shortcuts
+	_piano.pianoReceiver = _pe.shortcuts;
+}
+
+// helper function to enable or disable focus on pattern
+function focusOnPattern(yes:boolean) {
+	components.get<UIComponent<HTMLElement>>("pattern")?.element.classList[yes ? "add" : "remove"]("focus");
 }
 
 /**

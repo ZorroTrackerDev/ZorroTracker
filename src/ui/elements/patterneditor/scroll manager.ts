@@ -628,6 +628,7 @@ export class PatternEditorScrollManager {
 	public async setPatternRows(rows:number): Promise<void> {
 		// prepare some variables
 		const pat = this.parent.activePattern, offs = this.scrolledRow % this.parent.patternLen;
+		const _old = this.parent.patternLen;
 		this.parent.patternLen = rows;
 
 		// update the vertical scrollbar
@@ -644,6 +645,11 @@ export class PatternEditorScrollManager {
 
 			// scroll to a different row based on the new size
 			this.scrolledRow = (pat * rows) + Math.min(offs, rows - 1);
+
+			// also load the missing rows if bigger
+			if(_old < rows) {
+				await Promise.all(this.canvas.map((c) => c.dataArea(_old, rows, 0, this.parent.channelInfo.length)));
+			}
 
 			// go to handle scrolling, reloading, drawing, etc
 			await this.updatePositionAndGraphics();
@@ -721,6 +727,9 @@ export class PatternEditorScrollManager {
 
 			// invalidate layout if it is not the same pattern as before
 			if(cv.pattern !== pat) {
+				// update active status too
+				cv.active = pat === this.parent.activePattern;
+
 				// update pattern status
 				cv.pattern = pat;
 
@@ -806,6 +815,35 @@ export class PatternEditorScrollManager {
 		// if anything was affected, then render a bit later
 		if(render) {
 			this.doGraphicsLater();
+		}
+	}
+
+	/**
+	 * Function to update some data in a specific place, and to request graphics reload for that place
+	 *
+	 * @param pattern The pattern the update happened in
+	 * @param row The row the update happened in
+	 * @param channel The channel the update happened in
+	 */
+	public async updateDataRow(pattern:number, row:number, channel:number): Promise<void> {
+		// loop through all canvases, finding if any of them contain the requested pattern
+		const array = await Promise.all(this.canvas.map(async(c) => {
+			if(c.pattern === pattern) {
+				// if the pattern matches, update the row
+				await c.dataRow(row, channel);
+				return true;
+			}
+
+			return false;
+		}));
+
+		// loop through all results, checking if any were changed. If so, then we must also render
+		for(const render of array) {
+			if(render) {
+				// must render, ignore all other results
+				this.doGraphicsLater();
+				return;
+			}
 		}
 	}
 

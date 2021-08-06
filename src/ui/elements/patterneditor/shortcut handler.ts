@@ -524,6 +524,46 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	}
 
 	/**
+	 * Helper function to get the ID of the currently selected element in single selection
+	 */
+	private getCurrentElementId() {
+		return this.parent.channelInfo[this.parent.selectionManager.single.channel].elements[this.parent.selectionManager.single.element];
+	}
+
+	/**
+	 * Helper function to get the currently active pattern cell
+	 */
+	private getCurrentPatternCell() {
+		// load the current channel
+		const ch = this.parent.selectionManager.single.channel;
+
+		// get the real pattern number
+		const rp = this.parent.tab.matrix.get(ch, this.parent.selectionManager.single.pattern);
+
+		if(typeof rp !== "number") {
+			return null;
+		}
+
+		// load the pattern data based on pattern number
+		const pd = this.parent.tab.matrix.patterns[ch][rp];
+
+		if(!pd) {
+			return null;
+		}
+
+		// find the cell that we're targeting
+		return pd.cells[this.parent.selectionManager.single.row] ?? null;
+	}
+
+	/**
+	 * Helper function to update the current data row
+	 */
+	private updateCurrentRow() {
+		const sel = this.parent.selectionManager.single;
+		return this.parent.scrollManager.updateDataRow(sel.pattern, sel.row, sel.channel);
+	}
+
+	/**
 	 * Trigger a note at a certain velocity
 	 *
 	 * @param note The note ID to trigger
@@ -541,6 +581,21 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 				await eventNoteOn(this.parent.tab.selectedChannelId, note, velocity);
 			}
 
+			// if in record mode, check whether to place this note
+			if(this.parent.tab.recordMode && this.getCurrentElementId() === 0) {
+				const cell = this.getCurrentPatternCell();
+
+				if(cell) {
+					// save the note
+					cell.note = note;
+
+					// reload this row
+					await this.updateCurrentRow();
+
+					// project is dirty now
+					this.parent.tab.project.dirty();
+				}
+			}
 			return true;
 		}
 

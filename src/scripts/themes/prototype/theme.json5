@@ -5,7 +5,6 @@
 			// CSS styles
 			css: {
 				filter: "none",
-				outline: "#4CAF50 solid 2px",
 			}
 		},
 		main: {

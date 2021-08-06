@@ -2,6 +2,7 @@ import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../../api/event
 import { loadFlag } from "../../../api/files";
 import { UIComponent, UIShortcutHandler } from "../../../api/ui";
 import { Tab } from "../../misc/tab";
+import { PatternEditorShortcuts } from "../patterneditor/shortcut handler";
 
 export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	/**
@@ -26,6 +27,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 		return false;
 	}
 
+	public pianoReceiver!: PatternEditorShortcuts;
 	public tab!: Tab;
 	public element!: HTMLDivElement;
 	private position!: number;
@@ -346,7 +348,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 		const release = async(n:number) => {
 			if(n > 0) {
 				// release note
-				await this.releaseNote(n);
+				await this.pianoReceiver.releaseNote(n, 0);
 			}
 		}
 
@@ -376,7 +378,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 				note = octaveInfo.C0 + (octaveInfo.size * oct) + (parseInt(e.target.getAttribute("note") ?? "0", 10));
 
 				// trigger the note
-				await this.triggerNote(note, pos);
+				await this.pianoReceiver.triggerNote(note, pos);
 
 				// activate it
 				cur = e.target;

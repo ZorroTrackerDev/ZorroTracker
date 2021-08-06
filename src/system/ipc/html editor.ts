@@ -1,9 +1,8 @@
-import "../../system/ipc/html";
+import { _async } from "../../system/ipc/html";
 import { ipcRenderer } from "electron";
 import { Module, Project } from "../../ui/misc/project";
 import { ipcEnum } from "./ipc enum";
 import { loadToModule } from "../../ui/windows/editor";
-import { _async } from "../../system/ipc/html";
 import { Tab } from "../../ui/misc/tab";
 
 // add some extra ipc functions

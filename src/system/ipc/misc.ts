@@ -39,18 +39,18 @@ ipcMain.on(ipcEnum.CookieSet, (event, name:string, value:string) => {
 });
 
 // handle CookieGet event, for getting a cookie value, or null if it does not exist.
-ipcMain.on(ipcEnum.CookieGet, (event, name:string) => {
+ipcMain.on(ipcEnum.CookieGet, (event, token:number, name:string) => {
 	getCookie(name).then((res:Cookie[]) => {
 		// check the return value and whether there are cookies or not.
 		if(res.length > 0){
-			event.reply(ipcEnum.CookieGet, res[0].value);
+			event.reply(ipcEnum.CookieGet, token, res[0].value);
 
 		} else {
-			event.reply(ipcEnum.CookieGet, null);
+			event.reply(ipcEnum.CookieGet, token, null);
 		}
 
 	}).catch(() => {
-		event.reply(ipcEnum.CookieGet, null);
+		event.reply(ipcEnum.CookieGet, token, null);
 	});
 });
 
@@ -60,9 +60,9 @@ ipcMain.on(ipcEnum.CookieGet, (event, name:string) => {
 type ScriptFolders = "chips"|"drivers"|"themes";
 
 // find all different kind of scripts.
-ipcMain.on(ipcEnum.ChipFindAll, (event) => _findall("chips", ipcEnum.ChipFindAll, event));
-ipcMain.on(ipcEnum.DriverFindAll, (event) => _findall("drivers", ipcEnum.DriverFindAll, event));
-ipcMain.on(ipcEnum.ThemeFindAll, (event) => _findall("themes", ipcEnum.ThemeFindAll, event));
+ipcMain.on(ipcEnum.ChipFindAll, (event, token) => _findall("chips", ipcEnum.ChipFindAll, event, token));
+ipcMain.on(ipcEnum.DriverFindAll, (event, token) => _findall("drivers", ipcEnum.DriverFindAll, event, token));
+ipcMain.on(ipcEnum.ThemeFindAll, (event, token) => _findall("themes", ipcEnum.ThemeFindAll, event, token));
 
 /**
  * Find all scripts and return their configurations.
@@ -71,14 +71,14 @@ ipcMain.on(ipcEnum.ThemeFindAll, (event) => _findall("themes", ipcEnum.ThemeFind
  * @param eventName Name of the command to send to IpcRenderer.
  * @param event The actual event received from the IpcRenderer to respond to.
  */
-function _findall(folder:ScriptFolders, eventName:ipcEnum, event:IpcMainEvent) {
+function _findall(folder:ScriptFolders, eventName:ipcEnum, event:IpcMainEvent, token:number) {
 	ScriptHelper.findAll(folder).then((res) => {
-		event.reply(eventName, res);
+		event.reply(eventName, token, res);
 
 	}).catch((ex) => {
 		// for some reason this didn't work, just throw an error
 		log.error(ex);
-		event.reply(eventName, []);
+		event.reply(eventName, token, []);
 	})
 }
 

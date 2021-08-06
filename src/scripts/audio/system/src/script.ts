@@ -31,7 +31,7 @@ let driver:Driver|undefined;
 let volume = 0;
 
 // handle messages from the parent thread
-parentPort?.on("message", (data:{ code:string, data:unknown, fn?:string }) => {
+parentPort?.on("message", (data:{ token?:number, code:string, data:unknown, fn?:string }) => {
 	try {
 		switch(data.code) {
 			/**
@@ -140,7 +140,7 @@ parentPort?.on("message", (data:{ code:string, data:unknown, fn?:string }) => {
 				driver?.init(outputRate, data.data as DriverConfig, chip);
 
 				// let the caller know we finished
-				parentPort?.postMessage({ code: "driver", });
+				parentPort?.postMessage({ token: data.token, code: "driver", });
 
 				// log it too
 				parentPort?.postMessage({ code: "log", data: [
@@ -205,7 +205,7 @@ parentPort?.on("message", (data:{ code:string, data:unknown, fn?:string }) => {
 			case "quit":
 				driver?.stop();
 				rtAudio.closeStream();
-				parentPort?.postMessage({ code: "quit", data: null, });
+				parentPort?.postMessage({ token: data.token, code: "quit", data: null, });
 				break;
 
 			/**
@@ -217,42 +217,47 @@ parentPort?.on("message", (data:{ code:string, data:unknown, fn?:string }) => {
 				// handler driver function call
 				switch((data.fn) as string) {
 					case "getChannels":
-						parentPort?.postMessage({ code: "cd", fn: data.fn, data: driver?.getChannels() ?? [], });
+						parentPort?.postMessage({
+							token: data.token, code: "cd", fn: data.fn, data: driver?.getChannels() ?? [],
+						});
 						break;
 
 					case "muteChannel":
 						parentPort?.postMessage({
-							code: "cd", fn: data.fn, data: driver?.muteChannel(...(data.data as [number, boolean])) ?? false,
+							token: data.token, code: "cd", fn: data.fn, data: driver?.muteChannel(...(data.data as [number, boolean])) ?? false,
 						});
 						break;
 
 					case "enableChannel":
 						parentPort?.postMessage({
-							code: "cd", fn: data.fn, data: driver?.enableChannel(...(data.data as [number])) ?? false,
+							token: data.token, code: "cd", fn: data.fn, data: driver?.enableChannel(...(data.data as [number])) ?? false,
 						});
 						break;
 
 					case "disableChannel":
 						parentPort?.postMessage({
-							code: "cd", fn: data.fn, data: driver?.disableChannel(...(data.data as [number])) ?? false,
+							token: data.token, code: "cd", fn: data.fn, data: driver?.disableChannel(...(data.data as [number])) ?? false,
 						});
 						break;
 
 					case "notes":
 						parentPort?.postMessage({
-							code: "cd", fn: data.fn, data: driver?.notes(...(data.data as [number])) ?? { octave: { min: 0, max: 0, }, notes: [], },
+							token: data.token, code: "cd", fn: data.fn,
+							data: driver?.notes(...(data.data as [number])) ?? { octave: { min: 0, max: 0, }, notes: [], },
 						});
 						break;
 
 					case "pianoTrigger":
 						parentPort?.postMessage({
-							code: "cd", fn: data.fn, data: driver?.pianoTrigger(...(data.data as [number, number, number])) ?? false,
+							token: data.token, code: "cd", fn: data.fn,
+							data: driver?.pianoTrigger(...(data.data as [number, number, number])) ?? false,
 						});
 						break;
 
 					case "pianoRelease":
 						parentPort?.postMessage({
-							code: "cd", fn: data.fn, data: driver?.pianoRelease(...(data.data as [number])) ?? false,
+							token: data.token, code: "cd", fn: data.fn,
+							data: driver?.pianoRelease(...(data.data as [number])) ?? false,
 						});
 						break;
 				}

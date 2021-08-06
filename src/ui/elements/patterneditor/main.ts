@@ -108,8 +108,8 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	 * @param shortcut Array of strings representing the shotcut data
 	 * @returns Whether the shortcut was executed
 	 */
-	public receiveShortcut(data:string[]):Promise<boolean> {
-		return this.shortcuts.receiveShortcut(data);
+	public receiveShortcut(data:string[], e:KeyboardEvent|undefined, state:boolean|undefined):Promise<boolean> {
+		return this.shortcuts.receiveShortcut(data, e, state);
 	}
 
 	/**

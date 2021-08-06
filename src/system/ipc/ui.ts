@@ -24,8 +24,9 @@ import { getCookie, setCookie } from "./misc";
  */
 
 // handle the UI requesting the application path
-ipcMain.on(ipcEnum.UiPath, (event) => {
-	event.reply(ipcEnum.UiPath, { data: dataPath, home: app.getPath("home"), });
+ipcMain.on(ipcEnum.UiPath, (event, token) => {
+	console.log(ipcEnum.UiPath, token)
+	event.reply(ipcEnum.UiPath, token, { data: dataPath, home: app.getPath("home"), });
 });
 
 /**
@@ -186,9 +187,9 @@ ipcMain.on(ipcEnum.UiLoadWindow, async(event, name:string) => {
 });
 
 // handle the UI requesting a dialog box be opened
-ipcMain.on(ipcEnum.UiDialog, async(event, type:string, mode:string, cookie:string, settings:OpenDialogOptions|SaveDialogOptions) => {
+ipcMain.on(ipcEnum.UiDialog, async(event, token:number, type:string, mode:string, cookie:string, settings:OpenDialogOptions|SaveDialogOptions) => {
 	if(!windows[type]) {
-		event.reply(ipcEnum.UiDialog, null);
+		event.reply(ipcEnum.UiDialog, token, null);
 		return;
 	}
 
@@ -227,7 +228,7 @@ ipcMain.on(ipcEnum.UiDialog, async(event, type:string, mode:string, cookie:strin
 
 	// if the operation was cancelled, do not update the cookie
 	if(!result) {
-		event.reply(ipcEnum.UiDialog, null);
+		event.reply(ipcEnum.UiDialog, token, null);
 		return;
 	}
 
@@ -235,5 +236,5 @@ ipcMain.on(ipcEnum.UiDialog, async(event, type:string, mode:string, cookie:strin
 	setCookie(cookie, path.dirname(result));
 
 	// send the data back to UI
-	event.reply(ipcEnum.UiDialog, result);
+	event.reply(ipcEnum.UiDialog, token, result);
 });

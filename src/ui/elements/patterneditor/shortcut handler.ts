@@ -1,13 +1,20 @@
 import { FeatureFlag } from "../../../api/driver";
+import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../../api/events";
+import { Note } from "../../../api/notes";
 import { Position, shortcutDirection, UIShortcutHandler } from "../../../api/ui";
 import { PatternEditor } from "./main";
 import { MultiSelection, SingleSelection } from "./selection manager";
+
+// create events
+const eventNoteOn = ZorroEvent.createEvent(ZorroEventEnum.PianoNoteOn);
+const eventNoteOff = ZorroEvent.createEvent(ZorroEventEnum.PianoNoteOff);
 
 export class PatternEditorShortcuts implements UIShortcutHandler {
 	private parent:PatternEditor;
 
 	constructor(parent:PatternEditor) {
 		this.parent = parent;
+		_shortcut = this;
 	}
 
 	/**
@@ -98,11 +105,12 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	 * @returns Whether the shortcut was executed
 	 */
 	// eslint-disable-next-line require-await
-	public async receiveShortcut(data:string[]):Promise<boolean> {
+	public async receiveShortcut(data:string[], e:KeyboardEvent|undefined, state:boolean|undefined):Promise<boolean> {
 		// has focus, process the shortcut
 		switch(data.shift()) {
 			case "sel": return this.handleSelectionShortcut(data);
 			case "chfx": return this.handleChannelEffectsShortcut(data);
+			case "note": return this.handleNoteShortcut(data, state);
 		}
 
 		return false;
@@ -436,4 +444,175 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 
 		return false;
 	}
+
+	/**
+	 * Map strings to note numbers. This will allow the Piano to correctly release notes
+	 */
+	private scmap:{ [key:string]: number, } = {};
+
+	/**
+	 * Handle shortcuts from the `note` subgroup
+	 */
+	private handleNoteShortcut(data:string[], state:boolean|undefined) {
+		// helper function to process an octave of notes
+		const octave = (data:string[], octave:number) => {
+			// helper function to trigger a single note
+			const note = async(note:number) => {
+				// get the scmap name for this note
+				const name = octave +"-"+ note;
+
+				if(state) {
+					// fetch octave info
+					const octaveInfo = (await this.parent.tab.getNotes(this.parent.tab.selectedChannel.type)).octave;
+
+					// calculate the note
+					const n = octaveInfo.C0 + note + ((this.parent.tab.octave + octave) * octaveInfo.size);
+
+					// trigger the note
+					await this.triggerNote(n, 1);
+					this.scmap[name] = n;
+
+				} else if(this.scmap[name]){
+					// release the note and remove scmap reference
+					await this.releaseNote(this.scmap[name], 0);
+					delete this.scmap[name];
+				}
+
+				return true;
+			};
+
+			// read the note and handle it
+			switch(data.shift()?.toUpperCase()) {
+				case "C":	return note(0);
+				case "C#":	return note(1);
+				case "D":	return note(2);
+				case "D#":	return note(3);
+				case "E":	return note(4);
+				case "F":	return note(5);
+				case "F#":	return note(6);
+				case "G":	return note(7);
+				case "G#":	return note(8);
+				case "A":	return note(9);
+				case "A#":	return note(10);
+				case "B":	return note(11);
+			}
+
+			// note not found
+			return false;
+		}
+
+		// helper function to process special note
+		const specialNote = (note:number) => {
+			if(state) {
+				return this.triggerNote(note, 1);
+
+			} else {
+				return this.releaseNote(note, 0);
+			}
+		};
+
+		// process the shortcut
+		switch(data.shift()?.toLowerCase()) {
+			case "rest":		return specialNote(Note.Rest);
+			case "cut":			return specialNote(Note.Cut);
+			case "octave0":		return octave(data, 0);
+			case "octave1":		return octave(data, 1);
+			case "octave2":		return octave(data, 2);
+		}
+
+		return false;
+	}
+
+	/**
+	 * Trigger a note at a certain velocity
+	 *
+	 * @param note The note ID to trigger
+	 * @param velocity The velocity to trigger the note with, from 0 to 1.0.
+	 * @returns boolean indicatin whether the note was triggered
+	 */
+	public async triggerNote(note:number, velocity:number):Promise<boolean> {
+		// check if this note exists
+		const freq = (await this.parent.tab.getNotes(this.parent.tab.selectedChannel.type)).notes[note]?.frequency;
+
+		if(typeof freq === "number"){
+			// note exists, check how to handle it
+			if(!isNaN(freq)) {
+				// can play on piano
+				await eventNoteOn(this.parent.tab.selectedChannelId, note, velocity);
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Release a note
+	 *
+	 * @param note The note ID to release
+	 * @param velocity The velocity to release the note with, from 0 to 1.0.
+	 * @returns boolean indicatin whether the note was released
+	 */
+	public async releaseNote(note:number, velocity:number):Promise<boolean> {
+		// check if this note exists
+		const freq = (await this.parent.tab.getNotes(this.parent.tab.selectedChannel.type)).notes[note]?.frequency;
+
+		if(typeof freq === "number"){
+			// note exists, check how to handle it
+			if(!isNaN(freq)) {
+				// can release on piano
+				await eventNoteOff(this.parent.tab.selectedChannelId, note, velocity);
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Helper function to get relative note to start of current octave, mainly for MIDI devices.
+	 *
+	 * @param offset The note offset from the start of current octave
+	 * @returns the translated note
+	 */
+	public async getRelativeNote(offset:number): Promise<number> {
+		const octave = (await this.parent.tab.getNotes(this.parent.tab.selectedChannel.type)).octave;
+		return ((this.parent.tab.octave + 1) * octave.size) + octave.C0 + offset;
+	}
 }
+
+let _shortcut:undefined|PatternEditorShortcuts;
+
+/*
+ * Store a translation table of MIDI notes -> driver notes. This allows the octave to change without disturbing the MIDI note.
+ */
+const keys:number[] = Array(128);
+
+/**
+ * Helper event listener for the MidiNoteOn event, so that the piano can receive notes from MIDI devices
+ */
+ZorroEvent.addListener(ZorroEventEnum.MidiNoteOn, async(event:ZorroEventObject, channel:number, note:number, velocity:number) => {
+	if(_shortcut) {
+		// get the relative note to trigger
+		const rn = await _shortcut.getRelativeNote(note - 60);
+
+		// attempt to trigger the note
+		if(await _shortcut.triggerNote(rn, velocity)) {
+			keys[note] = rn;
+		}
+	}
+});
+
+/**
+ * Helper event listener for the MidiNoteOff event, so that the piano can receive notes from MIDI devices
+ */
+ZorroEvent.addListener(ZorroEventEnum.MidiNoteOff, async(event:ZorroEventObject, channel:number, note:number, velocity:number) => {
+	if(_shortcut) {
+		// attempt to release the note
+		if(await _shortcut.releaseNote(keys[note], velocity)) {
+			keys[note] = 0;
+		}
+	}
+});

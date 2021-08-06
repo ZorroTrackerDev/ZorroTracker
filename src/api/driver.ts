@@ -107,7 +107,8 @@ export interface Driver {
 export type NoteData = {
 	/**
 	 * The frequency of this note. This is driver-dependent and is assumed to follow the conventions of the target chip.
-	 * If `undefined`, this note is marked as invalid. It's other properties will be used for piano display
+	 * If 'NaN', this note is marked as a meta note - it can not be played on the piano, but it is a recognized note.
+	 * If `undefined`, this note is marked as invalid. It's other properties will be used for piano display.
 	 */
 	frequency: number|undefined,
 

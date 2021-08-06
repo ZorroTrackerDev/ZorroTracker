@@ -56,37 +56,6 @@
 	"piano.octavedown":						[ "-" ],								/* shortcut for decreasing the base octave */
 	"piano.toleft":							[ "ctrl+shift+ArrowLeft" ],				/* shortcut for moving piano to left side */
 	"piano.toright":						[ "ctrl+shift+ArrowRight" ],			/* shortcut for moving piano to right side */
-	"*piano.rest":							[ "Digit1" ],							/* shortcut for playing a rest */
-	"*piano.cut":							[ "Backquote" ],						/* shortcut for playing a note cut */
-	"*piano.octave0.C":						[ "KeyZ" ],								/* shortcut for playing C on current octave +0 */
-	"*piano.octave0.C#":					[ "KeyS" ],								/* shortcut for playing C# on current octave +0 */
-	"*piano.octave0.D":						[ "KeyX" ],								/* shortcut for playing D on current octave +0 */
-	"*piano.octave0.D#":					[ "KeyD" ],								/* shortcut for playing D# on current octave +0 */
-	"*piano.octave0.E":						[ "KeyC" ],								/* shortcut for playing E on current octave +0 */
-	"*piano.octave0.F":						[ "KeyV" ],								/* shortcut for playing F on current octave +0 */
-	"*piano.octave0.F#":					[ "KeyG" ],								/* shortcut for playing F# on current octave +0 */
-	"*piano.octave0.G":						[ "KeyB" ],								/* shortcut for playing G on current octave +0 */
-	"*piano.octave0.G#":					[ "KeyH" ],								/* shortcut for playing G# on current octave +0 */
-	"*piano.octave0.A":						[ "KeyN" ],								/* shortcut for playing A on current octave +0 */
-	"*piano.octave0.A#":					[ "KeyJ" ],								/* shortcut for playing A# on current octave +0 */
-	"*piano.octave0.B":						[ "KeyM" ],								/* shortcut for playing B on current octave +0 */
-	"*piano.octave1.C":						[ "Comma", "KeyQ" ],					/* shortcut for playing C on current octave +1 */
-	"*piano.octave1.C#":					[ "KeyL", "Digit2" ],					/* shortcut for playing C# on current octave +1 */
-	"*piano.octave1.D":						[ "Period", "KeyW" ],					/* shortcut for playing D on current octave +1 */
-	"*piano.octave1.D#":					[ "Digit3" ],							/* shortcut for playing D# on current octave +1 */
-	"*piano.octave1.E":						[ "KeyE" ],								/* shortcut for playing E on current octave +1 */
-	"*piano.octave1.F":						[ "KeyR" ],								/* shortcut for playing F on current octave +1 */
-	"*piano.octave1.F#":					[ "Digit5" ],							/* shortcut for playing F# on current octave +1 */
-	"*piano.octave1.G":						[ "KeyT" ],								/* shortcut for playing G on current octave +1 */
-	"*piano.octave1.G#":					[ "Digit6" ],							/* shortcut for playing G# on current octave +1 */
-	"*piano.octave1.A":						[ "KeyY" ],								/* shortcut for playing A on current octave +1 */
-	"*piano.octave1.A#":					[ "Digit7" ],							/* shortcut for playing A# on current octave +1 */
-	"*piano.octave1.B":						[ "KeyU" ],								/* shortcut for playing B on current octave +1 */
-	"*piano.octave2.C":						[ "KeyI" ],								/* shortcut for playing C on current octave +2 */
-	"*piano.octave2.C#":					[ "Digit9" ],							/* shortcut for playing C# on current octave +2 */
-	"*piano.octave2.D":						[ "KeyO" ],								/* shortcut for playing D on current octave +2 */
-	"*piano.octave2.D#":					[ "Digit0" ],							/* shortcut for playing D# on current octave +2 */
-	"*piano.octave2.E":						[ "KeyP" ],								/* shortcut for playing E on current octave +2 */
 
 	"pattern.sel.move.up":					[ "ArrowUp" ],							/* shortcut for moving the selection up */
 	"pattern.sel.move.down":				[ "ArrowDown" ],						/* shortcut for moving the selection down */
@@ -119,6 +88,38 @@
 
 	"pattern.chfx.up":						[ "shift++" ],							/* shortcut for increasing the number of effects in the selected channel */
 	"pattern.chfx.down":					[ "shift+-" ],							/* shortcut for decreasing the number of effects in the selected channel */
+
+	"*pattern.note.rest":					[ "Digit1" ],							/* shortcut for playing a rest */
+	"*pattern.note.cut":					[ "Backquote" ],						/* shortcut for playing a note cut */
+	"*pattern.note.octave0.C":				[ "KeyZ" ],								/* shortcut for playing C on current octave +0 */
+	"*pattern.note.octave0.C#":				[ "KeyS" ],								/* shortcut for playing C# on current octave +0 */
+	"*pattern.note.octave0.D":				[ "KeyX" ],								/* shortcut for playing D on current octave +0 */
+	"*pattern.note.octave0.D#":				[ "KeyD" ],								/* shortcut for playing D# on current octave +0 */
+	"*pattern.note.octave0.E":				[ "KeyC" ],								/* shortcut for playing E on current octave +0 */
+	"*pattern.note.octave0.F":				[ "KeyV" ],								/* shortcut for playing F on current octave +0 */
+	"*pattern.note.octave0.F#":				[ "KeyG" ],								/* shortcut for playing F# on current octave +0 */
+	"*pattern.note.octave0.G":				[ "KeyB" ],								/* shortcut for playing G on current octave +0 */
+	"*pattern.note.octave0.G#":				[ "KeyH" ],								/* shortcut for playing G# on current octave +0 */
+	"*pattern.note.octave0.A":				[ "KeyN" ],								/* shortcut for playing A on current octave +0 */
+	"*pattern.note.octave0.A#":				[ "KeyJ" ],								/* shortcut for playing A# on current octave +0 */
+	"*pattern.note.octave0.B":				[ "KeyM" ],								/* shortcut for playing B on current octave +0 */
+	"*pattern.note.octave1.C":				[ "Comma", "KeyQ" ],					/* shortcut for playing C on current octave +1 */
+	"*pattern.note.octave1.C#":				[ "KeyL", "Digit2" ],					/* shortcut for playing C# on current octave +1 */
+	"*pattern.note.octave1.D":				[ "Period", "KeyW" ],					/* shortcut for playing D on current octave +1 */
+	"*pattern.note.octave1.D#":				[ "Digit3" ],							/* shortcut for playing D# on current octave +1 */
+	"*pattern.note.octave1.E":				[ "KeyE" ],								/* shortcut for playing E on current octave +1 */
+	"*pattern.note.octave1.F":				[ "KeyR" ],								/* shortcut for playing F on current octave +1 */
+	"*pattern.note.octave1.F#":				[ "Digit5" ],							/* shortcut for playing F# on current octave +1 */
+	"*pattern.note.octave1.G":				[ "KeyT" ],								/* shortcut for playing G on current octave +1 */
+	"*pattern.note.octave1.G#":				[ "Digit6" ],							/* shortcut for playing G# on current octave +1 */
+	"*pattern.note.octave1.A":				[ "KeyY" ],								/* shortcut for playing A on current octave +1 */
+	"*pattern.note.octave1.A#":				[ "Digit7" ],							/* shortcut for playing A# on current octave +1 */
+	"*pattern.note.octave1.B":				[ "KeyU" ],								/* shortcut for playing B on current octave +1 */
+	"*pattern.note.octave2.C":				[ "KeyI" ],								/* shortcut for playing C on current octave +2 */
+	"*pattern.note.octave2.C#":				[ "Digit9" ],							/* shortcut for playing C# on current octave +2 */
+	"*pattern.note.octave2.D":				[ "KeyO" ],								/* shortcut for playing D on current octave +2 */
+	"*pattern.note.octave2.D#":				[ "Digit0" ],							/* shortcut for playing D# on current octave +2 */
+	"*pattern.note.octave2.E":				[ "KeyP" ],								/* shortcut for playing E on current octave +2 */
 
 	"ui.undo":								[ "ctrl+Z" ],							/* shortcut for undoing a change */
 	"ui.redo":								[ "ctrl+Y" ],							/* shortcut for redoing a change */

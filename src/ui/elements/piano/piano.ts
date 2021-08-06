@@ -1,15 +1,9 @@
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../../api/events";
 import { loadFlag } from "../../../api/files";
-import { Note } from "../../../api/notes";
 import { UIComponent, UIShortcutHandler } from "../../../api/ui";
 import { Tab } from "../../misc/tab";
 
 export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
-	/**
-	 * Map strings to note numbers. This will allow the Piano to correctly release notes
-	 */
-	private scmap:{ [key:string]: number, } = {};
-
 	/**
 	 * Function to receive shortcut events from the user.
 	 *
@@ -17,68 +11,9 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	 * @returns Whether the shortcut was executed
 	 */
 	// eslint-disable-next-line require-await
-	public async receiveShortcut(data:string[], e:KeyboardEvent|undefined, state:boolean|undefined):Promise<boolean> {
-		// helper function to process an octave of notes
-		const octave = (data:string[], octave:number) => {
-			// helper function to trigger a single note
-			const note = async(note:number) => {
-				// get the scmap name for this note
-				const name = octave +"-"+ note;
-
-				if(state) {
-					// fetch octave info
-					const octaveInfo = (await this.tab.getNotes(this.tab.selectedChannel.type)).octave;
-
-					// calculate the note
-					const n = octaveInfo.C0 + note + ((this.octave + octave) * octaveInfo.size);
-
-					// trigger the note
-					await this.triggerNote(n, 1);
-					this.scmap[name] = n;
-
-				} else if(this.scmap[name]){
-					// release the note and remove scmap reference
-					await this.releaseNote(this.scmap[name]);
-					delete this.scmap[name];
-				}
-
-				return true;
-			};
-
-			// read the note and handle it
-			switch(data.shift()?.toUpperCase()) {
-				case "C":	return note(0);
-				case "C#":	return note(1);
-				case "D":	return note(2);
-				case "D#":	return note(3);
-				case "E":	return note(4);
-				case "F":	return note(5);
-				case "F#":	return note(6);
-				case "G":	return note(7);
-				case "G#":	return note(8);
-				case "A":	return note(9);
-				case "A#":	return note(10);
-				case "B":	return note(11);
-			}
-
-			// note not found
-			return false;
-		}
-
-		// helper function to process special note
-		const specialNote = (note:number) => {
-			if(state) {
-				return this.triggerNote(note, 1);
-
-			} else {
-				return this.releaseNote(note);
-			}
-		};
-
+	public async receiveShortcut(data:string[]):Promise<boolean> {
 		// process the shortcut
 		switch(data.shift()?.toLowerCase()) {
-			case "rest":		return specialNote(Note.Rest);
-			case "cut":			return specialNote(Note.Cut);
 			case "toleft":		return this.changePosition(-1);
 			case "toright":		return this.changePosition(1);
 			case "octavedown":	return this.changeOctave(-1);
@@ -86,9 +21,6 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 			case "smaller":		return this.changeSize(-1);
 			case "bigger":		return this.changeSize(1);
 			case "hide":		return this.toggleHide();
-			case "octave0":		return octave(data, 0);
-			case "octave1":		return octave(data, 1);
-			case "octave2":		return octave(data, 2);
 		}
 
 		return false;
@@ -98,7 +30,6 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	public element!: HTMLDivElement;
 	private position!: number;
 	private width!: number;
-	private octave!: number;
 
 	// create a new piano instance
 	constructor() {
@@ -125,7 +56,6 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 
 		// load some flags
 		this.width = loadFlag<number>("PIANO_DEFAULT_SIZE") ?? 2;
-		this.octave = loadFlag<number>("PIANO_DEFAULT_OCTAVE") ?? 3;
 		this.position = loadFlag<number>("PIANO_DEFAULT_POSITION") ?? 0;
 
 		// update position
@@ -196,7 +126,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	 * @param update If set to false, do not update the function
 	 */
 	public setOctave(value:number, update?:boolean): Promise<boolean> {
-		this.octave = value;
+		this.tab.octave = value;
 		return this.changeOctave(0, update);
 	}
 
@@ -210,11 +140,11 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 		const { min, max, } = (await this.tab.getNotes(this.tab.selectedChannel.type)).octave;
 
 		// update octave and cap it between minimum and maximum octave
-		this.octave = Math.max(min, Math.min(max - 1, this.octave + offset));
+		this.tab.octave = Math.max(min, Math.min(max - 1, this.tab.octave + offset));
 
 		// tell the outside function about the value
 		if(update !== false && this.octaveUpdateFunc) {
-			this.octaveUpdateFunc(this.octave);
+			this.octaveUpdateFunc(this.tab.octave);
 		}
 
 		// redraw the piano
@@ -232,7 +162,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	 */
 	private async getOctaveRange(): Promise<[ number, number, ]> {
 		// prepare the octave marker
-		let oc = this.octave;
+		let oc = this.tab.octave;
 
 		// prepare the width values on the left and rightr
 		const lw = Math.floor(this.width / 2), rw = Math.ceil(this.width / 2);
@@ -273,7 +203,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 		this.octaveUpdateFunc = func;
 
 		// initialize octave on load
-		func(this.octave);
+		func(this.tab.octave);
 	}
 
 	/**
@@ -295,17 +225,6 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 
 		// run the function once, too
 		(this.rangeUpdateFunc as () => Promise<void>)().catch(console.error);
-	}
-
-	/**
-	 * Helper function to get relative note to start of current octave, mainly for MIDI devices.
-	 *
-	 * @param offset The note offset from the start of current octave
-	 * @returns the translated note
-	 */
-	public async getRelativeNote(offset:number): Promise<number> {
-		const octave = (await this.tab.getNotes(this.tab.selectedChannel.type)).octave;
-		return ((this.octave + 1) * octave.size) + octave.C0 + offset;
 	}
 
 	/**
@@ -376,7 +295,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 			e.classList.add("pianooctave");
 
 			// user can currently play this ocave
-			if(x >= this.octave && x < this.octave + 2) {
+			if(x >= this.tab.octave && x < this.tab.octave + 2) {
 				e.classList.add("play");
 			}
 
@@ -515,12 +434,10 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	 */
 	public async triggerNote(note:number, velocity:number):Promise<boolean> {
 		// check if this note exists
-		if(typeof (await this.tab.getNotes(this.tab.selectedChannel.type)).notes[note]?.frequency === "number"){
-			if(await window.ipc.driver.pianoTrigger(note, velocity, this.tab.selectedChannel.info.id)){
-				// add the active class
-				await this.modNote("active", "add", note);
-				return true;
-			}
+		if(await window.ipc.driver.pianoTrigger(note, velocity, this.tab.selectedChannel.info.id)){
+			// add the active class
+			await this.modNote("active", "add", note);
+			return true;
 		}
 
 		return false;
@@ -575,35 +492,23 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 
 let _piano: Piano;
 
-/*
- * Store a translation table of MIDI notes -> driver notes. This allows the octave to change without disturbing the MIDI note.
- */
-const keys:number[] = Array(128);
-
 /**
- * Helper event listener for the MidiNoteOn event, so that the piano can receive notes from MIDI devices
+ * Helper event listener for the PianoNoteOn event, so that the piano can receive notes from the system
  */
-ZorroEvent.addListener(ZorroEventEnum.MidiNoteOn, async(event:ZorroEventObject, channel:number, note:number, velocity:number) => {
+ZorroEvent.addListener(ZorroEventEnum.PianoNoteOn, async(event:ZorroEventObject, channel:number, note:number, velocity:number) => {
 	if(_piano) {
-		// get the relative note to trigger
-		const rn = await _piano.getRelativeNote(note - 60);
-
 		// attempt to trigger the note
-		if(await _piano.triggerNote(rn, velocity)) {
-			keys[note] = rn;
-		}
+		await _piano.triggerNote(note, velocity);
 	}
 });
 
 /**
- * Helper event listener for the MidiNoteOff event, so that the piano can receive notes from MIDI devices
+ * Helper event listener for the PianoNoteOff event, so that the piano can receive notes from the system
  */
-ZorroEvent.addListener(ZorroEventEnum.MidiNoteOff, async(event:ZorroEventObject, channel:number, note:number) => {
+ZorroEvent.addListener(ZorroEventEnum.PianoNoteOff, async(event:ZorroEventObject, channel:number, note:number) => {
 	if(_piano) {
 		// attempt to release the note
-		if(await _piano.releaseNote(keys[note])) {
-			keys[note] = 0;
-		}
+		await _piano.releaseNote(note);
 	}
 });
 

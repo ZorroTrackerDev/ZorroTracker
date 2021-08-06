@@ -80,9 +80,9 @@ export default class implements Driver {
 		const ret = Array<NoteData>(256);
 
 		// prepare some values
-		ret[0] = { frequency: undefined, name: "", octave: null, sharp: "", };
-		ret[1] = { frequency: undefined, name: "===", octave: null, sharp: "", };
-		ret[2] = { frequency: undefined, name: "-x-", octave: null, sharp: "", };
+		ret[0] = { frequency: NaN, name: "", octave: null, sharp: "", };
+		ret[1] = { frequency: NaN, name: "===", octave: null, sharp: "", };
+		ret[2] = { frequency: NaN, name: "-x-", octave: null, sharp: "", };
 
 		// filler
 		ret[3] = { frequency: undefined, name: "NUL", octave: null, sharp: "", };
@@ -100,7 +100,7 @@ export default class implements Driver {
 				name: DefaultOctave[op],
 				octave: (Math.floor((n - Note.C0) / OctaveSize)),
 				sharp: DefaultOctaveSharp[op],
-				frequency: freq,
+				frequency: isNaN(freq) ? undefined : freq,
 			};
 		}
 

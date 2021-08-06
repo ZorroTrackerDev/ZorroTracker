@@ -1,5 +1,6 @@
 import { Channel, ChannelType, NoteReturnType } from "../../api/driver";
 import { ZorroEvent, ZorroEventEnum } from "../../api/events";
+import { loadFlag } from "../../api/files";
 import { Matrix } from "../../api/matrix";
 import { WindowType } from "../../defs/windowtype";
 import { LoadSaveData, LoadType, Module, Project } from "./project";
@@ -25,6 +26,7 @@ export class Tab {
 	 */
 	constructor(project:Project) {
 		this._project = project;
+		this.octave = loadFlag<number>("PIANO_DEFAULT_OCTAVE") ?? 0;
 
 		if(window.type === WindowType.Editor) {
 			// set the save and load handlers for the project
@@ -64,6 +66,11 @@ export class Tab {
 			});
 		}
 	}
+
+	/**
+	 * The current octave in the piano display. Also affects which notes are written to pattern editor
+	 */
+	public octave: number;
 
 	/**
 	 * The currently selected channel in the pattern editor

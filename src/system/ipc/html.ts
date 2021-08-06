@@ -2,7 +2,7 @@ import { ipcEnum } from "./ipc enum";
 import { ipcRenderer } from "electron";
 import { ChipConfig } from "../../api/chip";
 import { Channel, ChannelType, DriverChannel, DriverConfig, NoteReturnType } from "../../api/driver";
-import { OpenDialogOptions, SaveDialogOptions } from "electron/main";
+import { IpcRendererEvent, OpenDialogOptions, SaveDialogOptions } from "electron/main";
 import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 import { WindowType } from "../../defs/windowtype";
 
@@ -15,11 +15,20 @@ import { WindowType } from "../../defs/windowtype";
  */
 export const _async = (name:string, ...args:unknown[]): Promise<unknown> => {
 	return new Promise((res) => {
-		ipcRenderer.once(name, (result, value) => {
-			res(value);
-		});
+		// generate a pseudo random token
+		const _token = Math.random();
 
-		ipcRenderer.send(name, ...args);
+		const fn = (result:IpcRendererEvent, token:number, value:unknown) => {
+			if(_token === token) {
+				// token found, disable event and resolve promise.
+				ipcRenderer.off(name, fn);
+				res(value);
+			}
+		};
+
+		// send request
+		ipcRenderer.on(name, fn);
+		ipcRenderer.send(name, _token, ...args);
 	});
 };
 
@@ -31,15 +40,8 @@ ipcRenderer.on(ipcEnum.UiGetMaximize, (event, state:boolean) => {
 // create the functions table for various IPC actions. This abstracts the actual calling code from the rest of the codebase.
 window.ipc = {
 	ui: {
-		path: () => {
-			return new Promise((res) => {
-				ipcRenderer.once(ipcEnum.UiPath, (result, value) => {
-					window.path = value;
-					res(value);
-				});
-
-				ipcRenderer.send(ipcEnum.UiPath);
-			});
+		path: async() => {
+			window.path = (await _async(ipcEnum.UiPath)) as { data: string; home: string; };
 		},
 		dialog: {
 			open: (cookie:string, settings:OpenDialogOptions) =>

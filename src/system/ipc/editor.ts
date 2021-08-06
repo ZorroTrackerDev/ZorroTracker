@@ -51,9 +51,11 @@ let worker:Worker|undefined;
  * Helper function for listening to worker messages correctly and responding with data
  */
 function workerAsync(code:string, data:unknown, fn:string|undefined, handler:(data:unknown) => void): void {
+	const _token = Math.random();
+
 	// helper function to listen to the response
-	const f = (data:{ code:string, data:unknown, fn:string|undefined }) => {
-		if(data.code === code && data.fn === fn){
+	const f = (data:{ token: number, code:string, data:unknown, fn:string|undefined }) => {
+		if(data.token === _token && data.code === code && data.fn === fn){
 			// success, now send it along
 			worker?.off("message", f);
 			handler(data.data);
@@ -64,7 +66,7 @@ function workerAsync(code:string, data:unknown, fn:string|undefined, handler:(da
 	worker?.on("message", f);
 
 	// post the messages to the worker
-	worker?.postMessage({ code: code, data: data, fn: fn, });
+	worker?.postMessage({ token: _token, code: code, data: data, fn: fn, });
 }
 
  // handle changing the volume of the audio adapter instance.
@@ -79,14 +81,14 @@ ipcMain.on(ipcEnum.AudioChip, (event, chip:ChipConfig) => {
 });
 
 // handle creating the audio adapter instance.
-ipcMain.on(ipcEnum.AudioDriver, (event, driver:DriverConfig) => {
+ipcMain.on(ipcEnum.AudioDriver, (event, token, driver:DriverConfig) => {
 	// post the DriverConfig
 	workerAsync("driver", driver, undefined, () => {
-		// tell the UI we finished
-		event.reply(ipcEnum.AudioDriver);
-
 		// initialize the audio adapter instance
 		worker?.postMessage({ code: "load", data: undefined, });
+
+		// tell the UI we finished
+		event.reply(ipcEnum.AudioDriver, token);
 	});
 
 	// close the previous instance of RtAudio if running
@@ -193,10 +195,10 @@ ipcMain.on(ipcEnum.UiExit, (event:unknown, state:boolean) => {
  * Various functions for dealing with drivers
  */
 // handle arbitary function calls
-ipcMain.on(ipcEnum.DriverFunc, (event, args:[string, unknown[]]) => {
+ipcMain.on(ipcEnum.DriverFunc, (event, token, args:[string, unknown[]]) => {
 	// create a new message and listen to it
 	workerAsync("cd", args[1], args[0], (data) => {
 		// valid response, return data
-		event.reply(ipcEnum.DriverFunc, data);
+		event.reply(ipcEnum.DriverFunc, token, data);
 	});
 });

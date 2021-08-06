@@ -274,6 +274,10 @@ export enum DefChanIds {
 	YM2612FM3OP2 = 21,
 	YM2612FM3OP3 = 22,
 	YM2612FM3OP4 = DefChanIds.YM2612FM3,
+
+	// YM2612 special
+	YM2612TIMERA = 100,
+	YM2612TIMERB = 101,
 }
 
 export enum FeatureFlag {
@@ -283,5 +287,6 @@ export enum FeatureFlag {
 	EFFECTS = 1 << 3,
 	ALL = FeatureFlag.NOTE | FeatureFlag.INSTRUMENT | FeatureFlag.VOLUME | FeatureFlag.EFFECTS,
 
+	FREQ = 1 << 0,			// TODO
 	NOVU = 1 << 8,
 }

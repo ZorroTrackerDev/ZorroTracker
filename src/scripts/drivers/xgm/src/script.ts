@@ -138,15 +138,18 @@ export default class implements Driver {
 		return [
 			{ name: "FM1",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM1,		features: FeatureFlag.ALL, },
 			{ name: "FM2",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM2,		features: FeatureFlag.ALL, },
-			{ name: "OP1",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM3OP1,	features: FeatureFlag.NOTE | FeatureFlag.NOVU, },
-			{ name: "OP2",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM3OP2,	features: FeatureFlag.NOTE | FeatureFlag.NOVU, },
-			{ name: "OP3",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM3OP3,	features: FeatureFlag.NOTE | FeatureFlag.NOVU, },
+			{ name: "TMRA", type: ChannelType.TimerA,    id: DefChanIds.YM2612TIMERA,	features: FeatureFlag.FREQ | FeatureFlag.EFFECTS | FeatureFlag.NOVU, },
+			{ name: "OP1",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM3OP1,	features: FeatureFlag.ALL, },
+			{ name: "OP2",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM3OP2,	features: FeatureFlag.ALL, },
+			{ name: "OP3",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM3OP3,	features: FeatureFlag.ALL, },
 			{ name: "OP4",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM3OP4,	features: FeatureFlag.ALL, },
 			{ name: "FM4",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM4,		features: FeatureFlag.ALL, },
 			{ name: "FM5",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM5,		features: FeatureFlag.ALL, },
-			{ name: "FM6",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM6,		features: FeatureFlag.ALL, },
-			{ name: "PCM1", type: ChannelType.YM2612DAC, id: DefChanIds.YM2612PCM1,		features: FeatureFlag.INSTRUMENT | FeatureFlag.EFFECTS | FeatureFlag.NOTE, },
-			{ name: "PCM2", type: ChannelType.YM2612DAC, id: DefChanIds.YM2612PCM2,		features: FeatureFlag.INSTRUMENT | FeatureFlag.EFFECTS | FeatureFlag.NOTE, },
+		//	{ name: "FM6",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM6,		features: FeatureFlag.ALL, },
+			{ name: "PCM1", type: ChannelType.YM2612DAC, id: DefChanIds.YM2612PCM1,		features: FeatureFlag.ALL, },
+			{ name: "PCM2", type: ChannelType.YM2612DAC, id: DefChanIds.YM2612PCM2,		features: FeatureFlag.ALL, },
+			{ name: "PCM3", type: ChannelType.YM2612DAC, id: DefChanIds.YM2612PCM3,		features: FeatureFlag.ALL, },
+			{ name: "PCM4", type: ChannelType.YM2612DAC, id: DefChanIds.YM2612PCM4,		features: FeatureFlag.ALL, },
 			{ name: "PSG1", type: ChannelType.YM7101PSG, id: DefChanIds.YM7101PSG1,		features: FeatureFlag.ALL, },
 			{ name: "PSG2", type: ChannelType.YM7101PSG, id: DefChanIds.YM7101PSG2,		features: FeatureFlag.ALL, },
 			{ name: "PSG3", type: ChannelType.YM7101PSG, id: DefChanIds.YM7101PSG3,		features: FeatureFlag.ALL, },
@@ -182,7 +185,7 @@ export default class implements Driver {
 			this.muted |= 1 << id;
 
 		} else {
-			this.muted &= 0xFFF - (1 << id);
+			this.muted &= 0xFFFF - (1 << id);
 		}
 
 		if(id <= DefChanIds.YM2612FM6) {

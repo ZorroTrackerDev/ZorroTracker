@@ -118,10 +118,13 @@ function loadShortcutTables() {
 		if(fn.startsWith("pattern")){
 			return "Pattern editor";
 
+		} else if(fn.startsWith("*pattern.note")){
+			return "Notes";
+
 		} else if(fn.startsWith("matrix")){
 			return "Matrix editor";
 
-		} else if(fn.includes("piano")){
+		} else if(fn.startsWith("piano")){
 			return "Piano";
 
 		} else if(fn.startsWith("ui") || fn.startsWith("window")){
@@ -263,47 +266,47 @@ const shortcutDescriptions: { [key:string]: string } = {
 	"piano.octavedown":						"Increase base octave",
 	"piano.octaveup":						"Decrease base octave",
 	"piano.hide":							"Hide or unhide piano",
-	"*piano.rest":							"Play the rest note",
-	"*piano.cut":							"Play the note cut",
+	"*pattern.note.rest":					"Play the rest note",
+	"*pattern.note.cut":					"Play the note cut",
 
-	"*piano.octave0.C":						"Play C on current octave",
-	"*piano.octave0.C#":					"Play C# on current octave",
-	"*piano.octave0.D":						"Play D on current octave",
-	"*piano.octave0.D#":					"Play D# on current octave",
-	"*piano.octave0.E":						"Play E on current octave",
-	"*piano.octave0.F":						"Play F on current octave",
-	"*piano.octave0.F#":					"Play F# on current octave",
-	"*piano.octave0.G":						"Play G on current octave",
-	"*piano.octave0.G#":					"Play G# on current octave",
-	"*piano.octave0.A":						"Play A on current octave",
-	"*piano.octave0.A#":					"Play A# on current octave",
-	"*piano.octave0.B":						"Play B on current octave",
+	"*pattern.note.octave0.C":				"Play C on current octave",
+	"*pattern.note.octave0.C#":				"Play C# on current octave",
+	"*pattern.note.octave0.D":				"Play D on current octave",
+	"*pattern.note.octave0.D#":				"Play D# on current octave",
+	"*pattern.note.octave0.E":				"Play E on current octave",
+	"*pattern.note.octave0.F":				"Play F on current octave",
+	"*pattern.note.octave0.F#":				"Play F# on current octave",
+	"*pattern.note.octave0.G":				"Play G on current octave",
+	"*pattern.note.octave0.G#":				"Play G# on current octave",
+	"*pattern.note.octave0.A":				"Play A on current octave",
+	"*pattern.note.octave0.A#":				"Play A# on current octave",
+	"*pattern.note.octave0.B":				"Play B on current octave",
 
-	"*piano.octave1.C":						"Play C on the next octave",
-	"*piano.octave1.C#":					"Play C# on the next octave",
-	"*piano.octave1.D":						"Play D on the next octave",
-	"*piano.octave1.D#":					"Play D# on the next octave",
-	"*piano.octave1.E":						"Play E on the next octave",
-	"*piano.octave1.F":						"Play F on the next octave",
-	"*piano.octave1.F#":					"Play F# on the next octave",
-	"*piano.octave1.G":						"Play G on the next octave",
-	"*piano.octave1.G#":					"Play G# on the next octave",
-	"*piano.octave1.A":						"Play A on the next octave",
-	"*piano.octave1.A#":					"Play A# on the next octave",
-	"*piano.octave1.B":						"Play B on the next octave",
+	"*pattern.note.octave1.C":				"Play C on the next octave",
+	"*pattern.note.octave1.C#":				"Play C# on the next octave",
+	"*pattern.note.octave1.D":				"Play D on the next octave",
+	"*pattern.note.octave1.D#":				"Play D# on the next octave",
+	"*pattern.note.octave1.E":				"Play E on the next octave",
+	"*pattern.note.octave1.F":				"Play F on the next octave",
+	"*pattern.note.octave1.F#":				"Play F# on the next octave",
+	"*pattern.note.octave1.G":				"Play G on the next octave",
+	"*pattern.note.octave1.G#":				"Play G# on the next octave",
+	"*pattern.note.octave1.A":				"Play A on the next octave",
+	"*pattern.note.octave1.A#":				"Play A# on the next octave",
+	"*pattern.note.octave1.B":				"Play B on the next octave",
 
-	"*piano.octave2.C":						"Play C on the octave after",
-	"*piano.octave2.C#":					"Play C# on the octave after",
-	"*piano.octave2.D":						"Play D on the octave after",
-	"*piano.octave2.D#":					"Play D# on the octave after",
-	"*piano.octave2.E":						"Play E on the octave after",
-	"*piano.octave2.F":						"Play F on the octave after",
-	"*piano.octave2.F#":					"Play F# on the octave after",
-	"*piano.octave2.G":						"Play G on the octave after",
-	"*piano.octave2.G#":					"Play G# on the octave after",
-	"*piano.octave2.A":						"Play A on the octave after",
-	"*piano.octave2.A#":					"Play A# on the octave after",
-	"*piano.octave2.B":						"Play B on the octave after",
+	"*pattern.note.octave2.C":				"Play C on the octave after",
+	"*pattern.note.octave2.C#":				"Play C# on the octave after",
+	"*pattern.note.octave2.D":				"Play D on the octave after",
+	"*pattern.note.octave2.D#":				"Play D# on the octave after",
+	"*pattern.note.octave2.E":				"Play E on the octave after",
+	"*pattern.note.octave2.F":				"Play F on the octave after",
+	"*pattern.note.octave2.F#":				"Play F# on the octave after",
+	"*pattern.note.octave2.G":				"Play G on the octave after",
+	"*pattern.note.octave2.G#":				"Play G# on the octave after",
+	"*pattern.note.octave2.A":				"Play A on the octave after",
+	"*pattern.note.octave2.A#":				"Play A# on the octave after",
+	"*pattern.note.octave2.B":				"Play B on the octave after",
 
 	"pattern.sel.move.up":					"Move selection up",
 	"pattern.sel.move.down":				"Move selection down",
@@ -326,11 +329,16 @@ const shortcutDescriptions: { [key:string]: string } = {
 	"pattern.sel.extend.down":				"Extend selection down",
 	"pattern.sel.extend.left":				"Extend selection left",
 	"pattern.sel.extend.right":				"Extend selection right",
+	"pattern.sel.scrollextend.up":			"Extend selection up 4 rows",
+	"pattern.sel.scrollextend.down":		"Extend selection down 4 rows",
 	"pattern.sel.extendtop":				"Extend selection to the first row in pattern",
 	"pattern.sel.extendbottom":				"Extend selection to the last row in pattern",
 
 	"pattern.sel.fullcolumn":				"Select the entire column if not selected",
 	"pattern.sel.fullchannel":				"Select the entire channel if not selected",
 	"pattern.sel.fullpattern":				"Select the entire pattern if not selected",
-	"pattern.sel.deselect":					"clear selection",
+	"pattern.sel.deselect":					"Clear selection",
+
+	"pattern.chfx.up":						"Increase channel effects count",
+	"pattern.chfx.down":					"Decrease channel effects count",
 };

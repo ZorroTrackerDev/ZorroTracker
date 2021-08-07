@@ -122,6 +122,18 @@ export class PatternEditorSelectionManager {
 	}
 
 	/**
+	 * The digit the user is editing currently. This should only be 0 or 1, except for direct frequency mode
+	 */
+	public digitEdit = 0;
+
+	/**
+	 * Disable various editing modes
+	 */
+	public clearEditMode(): void {
+		this.parent.selectionManager.digitEdit = 0;
+	}
+
+	/**
 	 * If true, the row number is being held down
 	 */
 	private rowHold = false;
@@ -134,6 +146,9 @@ export class PatternEditorSelectionManager {
 		if(e.button !== 0 || e.target !== e.currentTarget) {
 			return;
 		}
+
+		// reset edit mode
+		this.clearEditMode();
 
 		// initiate the preview selection
 		const sel = this.findElementAt(this.getAbsolutePointer({ x: e.offsetX, y: e.offsetY, }));
@@ -217,6 +232,9 @@ export class PatternEditorSelectionManager {
 
 			// stop edge scrolling
 			this.clearEdgeScroll();
+
+			// reset edit mode
+			this.clearEditMode();
 
 			// if no preview was set, just ignore this all
 			if(!this.preview) {
@@ -646,6 +664,9 @@ export class PatternEditorSelectionManager {
 		// remove multi-selection
 		this.clearMultiSelection();
 
+		// reset edit mode
+		this.clearEditMode();
+
 		// update the single selection to be in bounds
 		if(this.single) {
 			// set the number of values
@@ -665,6 +686,9 @@ export class PatternEditorSelectionManager {
 	public handleMatrixResize(): void {
 		// remove multi-selection
 		this.clearMultiSelection();
+
+		// reset edit mode
+		this.clearEditMode();
 
 		// update the single selection to be in bounds
 		if(this.single) {

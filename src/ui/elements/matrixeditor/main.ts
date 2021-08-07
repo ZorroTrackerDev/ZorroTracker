@@ -459,13 +459,13 @@ export class MatrixEditor implements UIComponent<HTMLDivElement>, UIShortcutHand
 	 * @returns boolean indicating whether it was successful
 	 */
 	private async setHex(value:number) {
-		// disable in paste mode
-		if(this.mode === editMode.Paste) {
+		// make sure the value was 100% sure correct or otherwise ignore this code
+		if(isNaN(value) || value < 0 || value > 0xF) {
 			return false;
 		}
 
-		// make sure the value was 100% sure correct or otherwise ignore this code
-		if(isNaN(value) || value < 0 || value > 0xF) {
+		// disable in paste mode
+		if(this.mode === editMode.Paste) {
 			return false;
 		}
 

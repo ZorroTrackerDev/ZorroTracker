@@ -20,6 +20,13 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	}
 
 	/**
+	 * Helper function to determine if pattern editor has focus
+	 */
+	public editorHasFocus(): boolean {
+		return this.parent.element.classList.contains("focus");
+	}
+
+	/**
 	 * Helper function to handle movement checks
 	 */
 	private handleMovementCheck(direction:string|undefined, cb: (position:Position) => boolean|Promise<boolean>) {
@@ -114,6 +121,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 			case "data": return this.handleDataShortcut(data);
 			case "chfx": return this.handleChannelEffectsShortcut(data);
 			case "note": return this.handleNoteShortcut(data, state);
+			case "hex": return this.handleDigitShortcut(parseInt(data.shift() ?? "NaN", 16));
 		}
 
 		return false;
@@ -125,6 +133,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	private handleChannelEffectsShortcut(data:string[]) {
 		return this.handleMovementCheck(data.shift(), async(pos:Position) => {
 			if(pos.y) {
+				// disable digit editing mode
+				this.parent.selectionManager.clearEditMode();
+
 				// got up/down, load channel
 				const ch = this.parent.selectionManager.single.channel;
 
@@ -154,6 +165,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 		switch(data.shift()) {
 			case "move":
 				return this.handleMovementCheck(data.shift(), (pos:Position) => {
+					// disable digit editing mode
+					this.parent.selectionManager.clearEditMode();
+
 					// load the selection target
 					const [ , fn, wrap, ] = this.getSelectionTarget();
 
@@ -163,6 +177,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 
 			case "extend":
 				return this.handleMovementCheck(data.shift(), (pos:Position) => {
+					// disable digit editing mode
+					this.parent.selectionManager.clearEditMode();
+
 					// if there is no multi selection, clone single selection as the multi selection
 					this.checkMultiSelection();
 
@@ -172,6 +189,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 
 			case "scroll":
 				return this.handleMovementCheck(data.shift(), (pos:Position) => {
+					// disable digit editing mode
+					this.parent.selectionManager.clearEditMode();
+
 					// load the selection target
 					const [ , fn, wrap, ] = this.getSelectionTarget();
 
@@ -181,6 +201,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 
 			case "scrollextend":
 				return this.handleMovementCheck(data.shift(), (pos:Position) => {
+					// disable digit editing mode
+					this.parent.selectionManager.clearEditMode();
+
 					// if there is no multi selection, clone single selection as the multi selection
 					this.checkMultiSelection();
 
@@ -191,6 +214,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 			case "movechannel":
 				return this.handleMovementCheck(data.shift(), async(pos:Position) => {
 					if(pos.x) {
+						// disable digit editing mode
+						this.parent.selectionManager.clearEditMode();
+
 						// function to move the selection
 						const move = (sel:SingleSelection, wrap:boolean) => {
 							// check if channel is already maximum/minimum
@@ -258,6 +284,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 				});
 
 			case "rowtop": {
+				// disable digit editing mode
+				this.parent.selectionManager.clearEditMode();
+
 				// load the selection target
 				const [ target, fn, wrap, ] = this.getSelectionTarget();
 
@@ -267,6 +296,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 			}
 
 			case "rowbottom": {
+				// disable digit editing mode
+				this.parent.selectionManager.clearEditMode();
+
 				// load the selection target
 				const [ target, fn, wrap, ] = this.getSelectionTarget();
 
@@ -276,6 +308,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 			}
 
 			case "extendtop": {
+				// disable digit editing mode
+				this.parent.selectionManager.clearEditMode();
+
 				// if there is no multi selection, clone single selection as the multi selection
 				this.checkMultiSelection();
 
@@ -290,6 +325,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 			}
 
 			case "extendbottom": {
+				// disable digit editing mode
+				this.parent.selectionManager.clearEditMode();
+
 				// if there is no multi selection, clone single selection as the multi selection
 				this.checkMultiSelection();
 
@@ -306,6 +344,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 			case "movepattern":
 				return this.handleMovementCheck(data.shift(), (pos:Position) => {
 					if(pos.y) {
+						// disable digit editing mode
+						this.parent.selectionManager.clearEditMode();
+
 						// remove multi selection
 						this.parent.selectionManager.clearMultiSelection();
 
@@ -319,6 +360,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 			case "movehighlight":
 				return this.handleMovementCheck(data.shift(), (pos:Position) => {
 					if(pos.y) {
+						// disable digit editing mode
+						this.parent.selectionManager.clearEditMode();
+
 						// remove multi selection
 						this.parent.selectionManager.clearMultiSelection();
 
@@ -361,6 +405,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 				});
 
 			case "patterntop": {
+				// disable digit editing mode
+				this.parent.selectionManager.clearEditMode();
+
 				// remove multi selection
 				this.parent.selectionManager.clearMultiSelection();
 
@@ -371,6 +418,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 			}
 
 			case "patternbottom": {
+				// disable digit editing mode
+				this.parent.selectionManager.clearEditMode();
+
 				// remove multi selection
 				this.parent.selectionManager.clearMultiSelection();
 
@@ -384,6 +434,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 				if(!this.checkSelectAll(false)) {
 					return false;
 				}
+
+				// disable digit editing mode
+				this.parent.selectionManager.clearEditMode();
 
 				// set the multi selection on the single selection column
 				const sl = this.parent.selectionManager.multi = [
@@ -404,6 +457,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 					return false;
 				}
 
+				// disable digit editing mode
+				this.parent.selectionManager.clearEditMode();
+
 				// set the multi selection on the single selection column
 				const sl = this.parent.selectionManager.multi = [
 					{ ...this.parent.selectionManager.single, },
@@ -421,6 +477,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 			}
 
 			case "fullpattern": {
+				// disable digit editing mode
+				this.parent.selectionManager.clearEditMode();
+
 				// initialize the selection at the edges of the pattern
 				this.parent.selectionManager.multi = [
 					{
@@ -459,26 +518,63 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 
 		switch(data.shift()) {
 			case "change1":
-				return this.handleMovementCheck(data.shift(), (pos:Position) => {
-					return pos.y ? this.handleDataChangeShortcut((sel:SingleSelection) => [ sel, sel, ],
+				return this.handleMovementCheck(data.shift(), async(pos:Position) => {
+					if(!pos.y ? await this.handleDataChangeShortcut((sel:SingleSelection) => [ sel, sel, ],
 						(pd:PatternData, pattern:number, channel:number, rstart:number, rend:number, estart:number, eend:number) =>
-							this.processDataChange(-pos.y, false, pd, pattern, channel, rstart, rend, estart, eend)) : false;
+							this.processDataChange(-pos.y, false, pd, pattern, channel, rstart, rend, estart, eend)) : false){
+								return false;
+							}
+
+					// disable digit editing mode
+					this.parent.selectionManager.clearEditMode();
+					return true;
 				});
 
 			case "change10":
-				return this.handleMovementCheck(data.shift(), (pos:Position) => {
-					return pos.y ? this.handleDataChangeShortcut((sel:SingleSelection) => [ sel, sel, ],
+				return this.handleMovementCheck(data.shift(), async(pos:Position) => {
+					if(!pos.y ? await this.handleDataChangeShortcut((sel:SingleSelection) => [ sel, sel, ],
 						(pd:PatternData, pattern:number, channel:number, rstart:number, rend:number, estart:number, eend:number) =>
-							this.processDataChange(-pos.y, true, pd, pattern, channel, rstart, rend, estart, eend)) : false;
+							this.processDataChange(-pos.y, true, pd, pattern, channel, rstart, rend, estart, eend)) : false){
+								return false;
+							}
+
+					// disable digit editing mode
+					this.parent.selectionManager.clearEditMode();
+					return true;
 				});
 
 			case "delete":
-				if(!await this.handleDataChangeShortcut((sel:SingleSelection) => [ sel, sel, ],
+				if(!await this.handleDataChangeShortcut((sel:SingleSelection) => {
+						// if in the note column in single selection, also delete the volume and instrument
+						const els = this.parent.channelInfo[sel.channel].elements;
+
+						if(els[sel.element] === 0) {
+							let last = sel.element;
+
+							// check if there is a note and instrument column
+							for(let e = sel.element;e < els.length;e++) {
+								if(els[e] > 2) {
+									break;
+								}
+
+								// note or instrument
+								last = e;
+							}
+
+							return [ sel, { pattern: sel.pattern, row: sel.row, channel: sel.channel, element: last, }, ];
+						}
+
+						// delete this single cell
+						return [ sel, sel, ];
+					},
 					(pd:PatternData, pattern:number, channel:number, rstart:number, rend:number, estart:number, eend:number) =>
 						this.deleteData(pd, pattern, channel, rstart, rend, estart, eend)
 					)){
 						return false;
 					}
+
+				// disable digit editing mode
+				this.parent.selectionManager.clearEditMode();
 
 				// if this is single selection, apply step
 				if(!this.parent.selectionManager.multi) {
@@ -488,11 +584,18 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 				return true;
 
 			case "insert":
-				return this.handleDataChangeShortcut((sel:SingleSelection) => [
+				if(!await this.handleDataChangeShortcut((sel:SingleSelection) => [
 						{ pattern: sel.pattern, row: sel.row, channel: 0, element: 0, },
 						{ pattern: sel.pattern, row: sel.row, channel: this.parent.channelInfo.length - 1, element: 0, },
 					], (pd:PatternData, pattern:number, channel:number, rstart:number, rend:number) =>
-						this.insertRows(pd, pattern, channel, rstart, rend));
+						this.insertRows(pd, pattern, channel, rstart, rend)
+					)){
+						return false;
+					}
+
+				// disable digit editing mode
+				this.parent.selectionManager.clearEditMode();
+				return true;
 
 			case "remove":
 				if(!await this.handleDataChangeShortcut((sel:SingleSelection) => sel.row === 0 ? null : [
@@ -503,6 +606,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 					)){
 						return false;
 					}
+
+				// disable digit editing mode
+				this.parent.selectionManager.clearEditMode();
 
 				// move selection if in single mode
 				if(!this.parent.selectionManager.multi) {
@@ -727,7 +833,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 				switch(ele) {
 					case 1: case 2: {		// volume, instrument
 						// find the maximum amount
-						const max = ele === 1 ? 0x100 : 1 + this.parent.tab.notesCache[this.parent.tab.channels[channel].type].maxvolume;
+						const max = ele === 1 ? 0xFE : 1 + this.parent.tab.notesCache[this.parent.tab.channels[channel].type].maxvolume;
 
 						// load the value and check if it was not set
 						let value = pd.cells[r][ele === 1 ? "instrument" : "volume"];
@@ -738,11 +844,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 
 						// modify the value and convert FF to 00
 						value += dir * (is10 ? 0x10 : 1);
-						value = (max + value) % max;
-
-						if(value === 0xFF) {
-							value = 0;
-						}
+						value = Math.max(0, Math.min(max, value));
 
 						// save value
 						pd.cells[r][ele === 1 ? "instrument" : "volume"] = value;
@@ -795,6 +897,130 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 
 		// update rows in channel
 		await this.parent.scrollManager.updateDataRows(pattern, rstart, rend + 1, channel);
+	}
+
+	/**
+	 * Function to place a digit on the pattern
+	 */
+	private async handleDigitShortcut(digit:number) {
+		// ignore invalid digits or not in record mode
+		if(!this.editorHasFocus() || typeof digit !== "number" || isNaN(digit)) {
+			return false;
+		}
+
+		// ignore if not focused
+		if(!this.parent.tab.recordMode) {
+			return true;
+		}
+
+		// check if this is a volume or instrument column
+		const eid = this.getCurrentElementId();
+
+		switch(eid) {
+			// test volume + instrument
+			case 1: case 2: break;
+
+			default:
+				return false;
+		}
+
+		// find the current cell and check its valid
+		const info = this.parent.shortcuts.getCurrentPatternCell();
+
+		if(!info) {
+			return false;
+		}
+		// find the maximum amount
+		const max = eid === 1 ? 0xFE :
+			this.parent.tab.notesCache[this.parent.tab.channels[this.parent.selectionManager.single.channel].type].maxvolume;
+
+		// get the element name we're editing
+		const enm = eid === 1 ? "instrument" : "volume";
+		let step = false;
+
+		// check which digit we're editing
+		switch(this.parent.selectionManager.digitEdit) {
+			case 0: {
+				// insert the new value in and we're done
+				info[2][enm] = Math.min(max, digit);
+
+				// check if this can fit in 1 digit
+				if(max < 0x10) {
+					step = true;
+
+				} else {
+					// needs 2 digits
+					this.parent.selectionManager.digitEdit++;
+				}
+				break;
+			}
+
+			case 1: {
+				// create the value in this dumb way
+				info[2][enm] = Math.min(max, (info[2][enm] << 4) | digit);
+				step = true;
+				this.parent.selectionManager.digitEdit = 0;
+				break;
+			}
+
+			// just in case something goes really weird
+			default: return false;
+		}
+
+		// re-render this element
+		await this.parent.shortcuts.updateCurrentRow(info[0]);
+
+		// apply step only when needed
+		if(step) {
+			await this.parent.selectionManager.applyStep();
+		}
+
+		// project is dirty now
+		this.parent.tab.project.dirty();
+		info[1].edited = true;
+
+		return true;
+	}
+
+	/**
+	 * Helper function to get the ID of the currently selected element in single selection
+	 */
+	public getCurrentElementId(): number {
+		return this.parent.channelInfo[this.parent.selectionManager.single.channel].elements[this.parent.selectionManager.single.element];
+	}
+
+	/**
+	 * Helper function to get the currently active pattern cell
+	 */
+	public getCurrentPatternCell(): null|[ number, PatternData, PatternCell, ] {
+		// load the current channel
+		const ch = this.parent.selectionManager.single.channel;
+
+		// get the real pattern number
+		const rp = this.parent.tab.matrix.get(ch, this.parent.selectionManager.single.pattern);
+
+		if(typeof rp !== "number") {
+			return null;
+		}
+
+		// load the pattern data based on pattern number
+		const pd = this.parent.tab.matrix.patterns[ch][rp];
+
+		if(!pd) {
+			return null;
+		}
+
+		// find the cell that we're targeting
+		const cell = pd.cells[this.parent.selectionManager.single.row];
+		return !cell ? null : [ rp, pd, cell, ];
+	}
+
+	/**
+	 * Helper function to update the current data row
+	 */
+	public updateCurrentRow(pattern:number): Promise<void> {
+		const sel = this.parent.selectionManager.single;
+		return this.parent.scrollManager.updateDataRows(pattern, sel.row, sel.row + 1, sel.channel);
 	}
 
 	/**
@@ -873,47 +1099,6 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 		}
 
 		return false;
-	}
-
-	/**
-	 * Helper function to get the ID of the currently selected element in single selection
-	 */
-	public getCurrentElementId(): number {
-		return this.parent.channelInfo[this.parent.selectionManager.single.channel].elements[this.parent.selectionManager.single.element];
-	}
-
-	/**
-	 * Helper function to get the currently active pattern cell
-	 */
-	public getCurrentPatternCell(): null|[ number, PatternData, PatternCell, ] {
-		// load the current channel
-		const ch = this.parent.selectionManager.single.channel;
-
-		// get the real pattern number
-		const rp = this.parent.tab.matrix.get(ch, this.parent.selectionManager.single.pattern);
-
-		if(typeof rp !== "number") {
-			return null;
-		}
-
-		// load the pattern data based on pattern number
-		const pd = this.parent.tab.matrix.patterns[ch][rp];
-
-		if(!pd) {
-			return null;
-		}
-
-		// find the cell that we're targeting
-		const cell = pd.cells[this.parent.selectionManager.single.row];
-		return !cell ? null : [ rp, pd, cell, ];
-	}
-
-	/**
-	 * Helper function to update the current data row
-	 */
-	public updateCurrentRow(pattern:number): Promise<void> {
-		const sel = this.parent.selectionManager.single;
-		return this.parent.scrollManager.updateDataRows(pattern, sel.row, sel.row + 1, sel.channel);
 	}
 
 	/**

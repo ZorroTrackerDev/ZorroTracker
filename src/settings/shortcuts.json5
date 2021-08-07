@@ -97,6 +97,23 @@
 	"pattern.data.insert":					[ "Insert" ],							/* shortcut for inserting a row */
 	"pattern.data.remove":					[ "Backspace" ],						/* shortcut for removing a row */
 
+	"pattern.hex.0":						[ "0" ],								/* shortcut for the hexadecimal value 0 */
+	"pattern.hex.1":						[ "1" ],								/* shortcut for the hexadecimal value 1 */
+	"pattern.hex.2":						[ "2" ],								/* shortcut for the hexadecimal value 2 */
+	"pattern.hex.3":						[ "3" ],								/* shortcut for the hexadecimal value 3 */
+	"pattern.hex.4":						[ "4" ],								/* shortcut for the hexadecimal value 4 */
+	"pattern.hex.5":						[ "5" ],								/* shortcut for the hexadecimal value 5 */
+	"pattern.hex.6":						[ "6" ],								/* shortcut for the hexadecimal value 6 */
+	"pattern.hex.7":						[ "7" ],								/* shortcut for the hexadecimal value 7 */
+	"pattern.hex.8":						[ "8" ],								/* shortcut for the hexadecimal value 8 */
+	"pattern.hex.9":						[ "9" ],								/* shortcut for the hexadecimal value 9 */
+	"pattern.hex.A":						[ "A" ],								/* shortcut for the hexadecimal value A */
+	"pattern.hex.B":						[ "B" ],								/* shortcut for the hexadecimal value B */
+	"pattern.hex.C":						[ "C" ],								/* shortcut for the hexadecimal value C */
+	"pattern.hex.D":						[ "D" ],								/* shortcut for the hexadecimal value D */
+	"pattern.hex.E":						[ "E" ],								/* shortcut for the hexadecimal value E */
+	"pattern.hex.F":						[ "F" ],								/* shortcut for the hexadecimal value F */
+
 	"*pattern.note.rest":					[ "Digit1" ],							/* shortcut for playing a rest */
 	"*pattern.note.cut":					[ "Backquote" ],						/* shortcut for playing a note cut */
 	"*pattern.note.octave0.C":				[ "KeyZ" ],								/* shortcut for playing C on current octave +0 */

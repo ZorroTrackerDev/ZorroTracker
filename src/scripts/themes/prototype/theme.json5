@@ -197,7 +197,9 @@
 			single: {
 				// CSS styles
 				css: {
-					"background-color": "#5e73c480",
+					"background-color": "#ff9393",
+					"backdrop-filter": "contrast(50%)",
+					"mix-blend-mode": "saturation",
 				}
 			},
 			// settings related to currently selected area (multiple element selection)
@@ -638,10 +640,10 @@
 
 			// these are settings related to the negative octave marker. These defined the position of the marker. It uses the current text color
 			minus: {
-				left: 18,
-				right: 24,
-				top: 17,
-				bottom: 19,
+				left: 16,
+				right: 23,
+				top: 15,
+				bottom: 17,
 			},
 		},
 	},

@@ -61,9 +61,13 @@ function checkFocus(name:string) {
 // create a function to give priority to shortcuts
 window.shortcutPriority = (data:string[]) => {
 	switch(data.shift()) {
-		case "pattern": return 3;
+		case "pattern":
+			switch(data.shift()) {
+				case "hex": return 3;
+				default: return 5;
+			}
 		case "matrix": return checkFocus("matrix") ? 1 : 11;
-		case "*pattern": return 2;
+		case "*pattern": return 4;
 		case "piano": return 12;
 		case "window": return 13;
 		case "ui": return 14;

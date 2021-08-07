@@ -113,7 +113,7 @@ export class PianoProcessor {
 			} else {
 				// if in record mode, check whether to place this note
 				if(this.parent.tab.recordMode){
-					if(this.parent.shortcuts.getCurrentElementId() !== 0) {
+					if(this.parent.shortcuts.getCurrentElementId() !== 0 || !this.parent.shortcuts.editorHasFocus()) {
 						// do not allow notes to be played if element ID is not 0
 						continue;
 					}
@@ -177,7 +177,7 @@ export class PianoProcessor {
 	 * Function to execute a note repeat on record mode
 	 */
 	private async noteRepeat(note:number, volume:number) {
-		if(this.parent.tab.recordMode) {
+		if(this.parent.tab.recordMode && this.parent.shortcuts.editorHasFocus()) {
 			// put the note in again
 			if(this.parent.shortcuts.getCurrentElementId() !== 0) {
 				// do not allow notes to be played if element ID is not 0

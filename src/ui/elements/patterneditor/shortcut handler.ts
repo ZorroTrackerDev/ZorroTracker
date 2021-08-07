@@ -451,17 +451,65 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	/**
 	 * Handle shortcuts from the `data` subgroup
 	 */
-	private handleDataShortcut(data:string[]) {
+	private async handleDataShortcut(data:string[]) {
+		// ignore if not in record mode
+		if(!this.parent.tab.recordMode) {
+			return true;
+		}
+
 		switch(data.shift()) {
 			case "change1":
 				return this.handleMovementCheck(data.shift(), (pos:Position) => {
-					return pos.y ? this.handleDataChangeShortcut(-pos.y, false) : false;
+					return pos.y ? this.handleDataChangeShortcut((sel:SingleSelection) => [ sel, sel, ],
+						(pd:PatternData, pattern:number, channel:number, rstart:number, rend:number, estart:number, eend:number) =>
+							this.processDataChange(-pos.y, false, pd, pattern, channel, rstart, rend, estart, eend)) : false;
 				});
 
 			case "change10":
 				return this.handleMovementCheck(data.shift(), (pos:Position) => {
-					return pos.y ? this.handleDataChangeShortcut(-pos.y, true) : false;
+					return pos.y ? this.handleDataChangeShortcut((sel:SingleSelection) => [ sel, sel, ],
+						(pd:PatternData, pattern:number, channel:number, rstart:number, rend:number, estart:number, eend:number) =>
+							this.processDataChange(-pos.y, true, pd, pattern, channel, rstart, rend, estart, eend)) : false;
 				});
+
+			case "delete":
+				if(!await this.handleDataChangeShortcut((sel:SingleSelection) => [ sel, sel, ],
+					(pd:PatternData, pattern:number, channel:number, rstart:number, rend:number, estart:number, eend:number) =>
+						this.deleteData(pd, pattern, channel, rstart, rend, estart, eend)
+					)){
+						return false;
+					}
+
+				// if this is single selection, apply step
+				if(!this.parent.selectionManager.multi) {
+					await this.parent.selectionManager.applyStep();
+				}
+
+				return true;
+
+			case "insert":
+				return this.handleDataChangeShortcut((sel:SingleSelection) => [
+						{ pattern: sel.pattern, row: sel.row, channel: 0, element: 0, },
+						{ pattern: sel.pattern, row: sel.row, channel: this.parent.channelInfo.length - 1, element: 0, },
+					], (pd:PatternData, pattern:number, channel:number, rstart:number, rend:number) =>
+						this.insertRows(pd, pattern, channel, rstart, rend));
+
+			case "remove":
+				if(!await this.handleDataChangeShortcut((sel:SingleSelection) => sel.row === 0 ? null : [
+						{ pattern: sel.pattern, row: sel.row - 1, channel: 0, element: 0, },
+						{ pattern: sel.pattern, row: sel.row - 1, channel: this.parent.channelInfo.length - 1, element: 0, },
+					], (pd:PatternData, pattern:number, channel:number, rstart:number, rend:number) =>
+						this.removeRows(pd, pattern, channel, rstart, rend)
+					)){
+						return false;
+					}
+
+				// move selection if in single mode
+				if(!this.parent.selectionManager.multi) {
+					await this.parent.selectionManager.moveSingle(0, -1, false);
+				}
+
+				return true;
 		}
 
 		return false;
@@ -470,12 +518,12 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	/**
 	 * Load the ordered selection, based on the
 	 */
-	private getOrderSelection(): MultiSelection {
+	private getOrderSelection(single: (sel:SingleSelection) => null|MultiSelection): null|MultiSelection {
 		const sl = this.parent.selectionManager.multi;
 
 		if(!sl) {
 			// single mode, just choose this single element
-			return [ this.parent.selectionManager.single, this.parent.selectionManager.single, ];
+			return single(this.parent.selectionManager.single);
 		}
 
 		// multi mode, create new selections based on which side is which
@@ -494,9 +542,14 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	/**
 	 * Handle shortcuts that change the selected data offsets some amount
 	 */
-	private async handleDataChangeShortcut(direction:number, is10:boolean) {
+	private async handleDataChangeShortcut(single: (sel:SingleSelection) => null|MultiSelection,
+		func: (pd:PatternData, pattern:number, channel:number, rstart:number, rend:number, estart:number, eend:number) => Promise<unknown>|unknown) {
 		// load the ordered boundaries of the selection
-		const sel = this.getOrderSelection();
+		const sel = this.getOrderSelection(single);
+
+		if(!sel) {
+			return false;
+		}
 
 		// loop through each row
 		for(let channel = sel[0].channel;channel <= sel[1].channel; channel++) {
@@ -543,10 +596,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 				}
 
 				// handle rendering for this area
-				this.processDataChange(pd, direction, is10, channel, rstart, rend, estart, eend);
-
-				// update rows in channel
-				await this.parent.scrollManager.updateDataRows(pattern, rstart, rend + 1, channel);
+				await func(pd, rp, channel, rstart, rend, estart, eend);
 			}
 		}
 
@@ -554,9 +604,118 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	}
 
 	/**
+	 * Helper function to process row insert
+	 */
+	private async insertRows(pd:PatternData, pattern:number, channel:number, rstart:number, rend:number) {
+		// len = number of rows to shift
+		const len = rend - rstart + 1;
+
+		// copy rows down
+		for(let row = 255 - len;row >= rstart; --row) {
+			pd.cells[row + len] = pd.cells[row];
+		}
+
+		// generate new rows
+		for(let row = rend;row >= rstart; --row) {
+			pd.cells[row] = new PatternCell();
+		}
+
+		// reload graphics
+		await this.parent.scrollManager.updateDataRows(pattern, rstart, this.parent.patternLen, channel);
+		this.parent.tab.project.dirty();
+	}
+
+	/**
+	 * Helper function to process row removal
+	 */
+	private async removeRows(pd:PatternData, pattern:number, channel:number, rstart:number, rend:number) {
+		// len = number of rows to shift
+		const len = rend - rstart + 1;
+
+		// copy rows up
+		for(let row = rend;row < 256; row++) {
+			pd.cells[row - len] = pd.cells[row];
+		}
+
+		// generate new rows
+		for(let row = 256 - len;row < 256; row++) {
+			pd.cells[row] = new PatternCell();
+		}
+
+		// reload graphics
+		await this.parent.scrollManager.updateDataRows(pattern, rstart, this.parent.patternLen, channel);
+		this.parent.tab.project.dirty();
+	}
+
+	/**
+	 * Helper function to process data deletion
+	 */
+	private async deleteData(pd:PatternData, pattern:number, channel:number, rstart:number, rend:number, estart:number, eend:number) {
+		let mod = false;
+
+		for(let e = estart;e <= eend;e ++) {
+			// find the element ID
+			const ele = this.parent.channelInfo[channel].elements[e];
+
+			for(let r = rstart;r <= rend;r ++) {
+				// handle this element increment
+				switch(ele) {
+					case 1: case 2: {		// volume, instrument
+						// if already 0xFF, skip
+						if(pd.cells[r][ele === 1 ? "instrument" : "volume"] === 0xFF) {
+							continue;
+						}
+
+						// delete value
+						pd.cells[r][ele === 1 ? "instrument" : "volume"] = 0xFF;
+						mod = true;
+						break;
+					}
+
+					case 0: {		// notes
+						// if already null, skip
+						if(pd.cells[r].note === Note.Null) {
+							continue;
+						}
+
+						// delete note
+						pd.cells[r].note = Note.Null;
+						mod = true;
+						break;
+					}
+
+					default: { // effects
+						const fx = ((ele - 3) / 2) | 0, param = (ele - 3) & 1 ? "value" : "id";
+
+						// if already null, skip
+						if(pd.cells[r].effects[fx][param] === 0) {
+							continue;
+						}
+
+						// delete effect id or value
+						pd.cells[r].effects[fx][param] = 0;
+						mod = true;
+						break;
+					}
+				}
+			}
+		}
+
+		// if modified, make the project dirty
+		if(mod) {
+			this.parent.tab.project.dirty();
+			pd.edited = true;
+		}
+
+		// update rows in channel
+		await this.parent.scrollManager.updateDataRows(pattern, rstart, rend + 1, channel);
+	}
+
+	/**
 	 * Helper function to process data change
 	 */
-	private processDataChange(pd:PatternData, dir:number, is10:boolean, channel:number, rstart:number, rend:number, estart:number, eend:number) {
+	private async processDataChange(dir:number, is10:boolean, pd:PatternData,
+		pattern:number, channel:number, rstart:number, rend:number, estart:number, eend:number) {
 		let mod = false;
 
 		for(let e = estart;e <= eend;e ++) {
@@ -633,6 +792,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 			this.parent.tab.project.dirty();
 			pd.edited = true;
 		}
+
+		// update rows in channel
+		await this.parent.scrollManager.updateDataRows(pattern, rstart, rend + 1, channel);
 	}
 
 	/**

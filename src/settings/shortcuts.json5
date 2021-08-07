@@ -93,6 +93,9 @@
 	"pattern.data.change1.up":				[ "ctrl+F2" ],							/* shortcut for increasing selected values by 1 */
 	"pattern.data.change10.down":			[ "ctrl+F3" ],							/* shortcut for decreasing selected values by 0x10 (or 1 octave in notes) */
 	"pattern.data.change10.up":				[ "ctrl+F4" ],							/* shortcut for increasing selected values by 0x10 (or 1 octave in notes) */
+	"pattern.data.delete":					[ "Delete" ],							/* shortcut for deleting the text inside of the selection */
+	"pattern.data.insert":					[ "Insert" ],							/* shortcut for inserting a row */
+	"pattern.data.remove":					[ "Backspace" ],						/* shortcut for removing a row */
 
 	"*pattern.note.rest":					[ "Digit1" ],							/* shortcut for playing a rest */
 	"*pattern.note.cut":					[ "Backquote" ],						/* shortcut for playing a note cut */

@@ -141,7 +141,7 @@ export class PianoProcessor {
 					}
 
 					// set new active note
-					this.activeNote = isNaN(freq) ? 0 : note;
+					this.activeNote = note;
 
 					// reload this row
 					await this.parent.shortcuts.updateCurrentRow(info[0]);

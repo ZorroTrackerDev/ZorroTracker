@@ -92,6 +92,7 @@ import { PlayMode, Tab } from "../misc/tab";
 import { enableMediaKeys } from "../misc/media keys";
 import { UIComponent, UIComponentStore, UIShortcutHandler } from "../../api/ui";
 import { PlayBar } from "../elements/playbuttonsbar/main";
+import { CheckboxEnum, makeCheckbox, CheckboxReturn } from "../elements/checkbox/checkbox";
 
 /* ipc communication */
 import "../../system/ipc/html editor";
@@ -702,6 +703,42 @@ export async function askSavePopup():Promise<boolean> {
 // load event dispatchers
 const projectPatternRows = ZorroEvent.createEvent(ZorroEventEnum.ProjectPatternRows);
 
+async function makeValueBox(range:[ number, number, ], initial:number, label:string, settings:number, change:(value:number) => void) {
+	// create the value input box
+	const s = await simpleValue(SliderEnum.Horizontal | SliderEnum.Medium | SliderEnum.PlusMinus, "", settings, change);
+
+	// initialize the range and value of the box
+	s.setRange(range[0], range[1]);
+	s.setValue(initial.toString(), initial);
+
+	// initialize the styles
+	s.label.style.width = "80px";
+	s.label.style.paddingLeft = "5px";
+	s.label.innerHTML = label;
+
+	// return the data
+	return s;
+}
+
+/**
+ * Helper function to calculate BPM and update UI
+ */
+function updateBPM() {
+	let bpm = 0;
+
+	if(Tab.active && Tab.active.module) {
+		// calculate BPM
+		bpm = (Tab.active.module.rate / (Tab.active.module.ticksPerRow * Tab.active.module.highlights[1])) * 60;
+	}
+
+	// save the bpm
+	const e = document.getElementById("bpm");
+
+	if(e)  {
+		e.innerText = bpm.toFixed(2) +" bpm";
+	}
+}
+
 /**
  * Class for dealing with the left side of the settings pane
  */
@@ -716,26 +753,8 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 		// create the main element
 		this.element = document.createElement("div");
 
-		// make a helper function to generate all those value boxes
-		const valueBox = async(range:[ number, number, ], initial:number, label:string, settings:number, change:(value:number) => void) => {
-			// create the value input box
-			const s = await simpleValue(SliderEnum.Horizontal | SliderEnum.Medium | SliderEnum.PlusMinus, "", settings, change);
-
-			// initialize the range and value of the box
-			s.setRange(range[0], range[1]);
-			s.setValue(initial.toString(), initial);
-
-			// initialize the styles
-			s.label.style.width = "80px";
-			s.label.style.paddingLeft = "5px";
-			s.label.innerHTML = label;
-
-			// return the data
-			return s;
-		}
-
 		// create the octave element
-		this.octave = await valueBox([ -100, 100, ], 0, "Octave", 0, async(value:number) => {
+		this.octave = await makeValueBox([ -100, 100, ], 0, "Octave", 0, async(value:number) => {
 			const piano = components.get<Piano>("piano");
 
 			if(piano) {
@@ -748,7 +767,7 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 		this.octave.label.title = "The current octave for the piano roll.";
 
 		// create the row element
-		this.rows = await valueBox([ 2, 256, ], 64, "Rows", 2, async(value:number) => {
+		this.rows = await makeValueBox([ 2, 256, ], 64, "Rows", 2, async(value:number) => {
 			if((this.tab.module as Module).patternRows !== value) {
 				// update everything with this new value
 				(this.tab.module as Module).patternRows = value;
@@ -763,11 +782,12 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 		this.rows.label.title = "Number of rows per pattern.";
 
 		// create the highlight a element
-		this.hla = await valueBox([ 1, 256, ], 1, "Highlight A", 1, (value) => {
+		this.hla = await makeValueBox([ 1, 256, ], 1, "Highlight A", 1, (value) => {
 			if((this.tab.module as Module).highlights[1] !== value) {
 				// update pattern editor and module with the new value
 				components.get<PatternEditor>("pattern")?.scrollManager?.changeHighlight(1, value);
 				(this.tab.module as Module).highlights[1] = value;
+				updateBPM();
 
 				// project is now dirty!
 				this.tab.project.dirty();
@@ -778,7 +798,7 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 		this.hla.label.title = "Highlight every x rows. Usually for beats.";
 
 		// create the highlight a element
-		this.hlb = await valueBox([ 1, 256, ], 1, "Highlight B", 1, (value) => {
+		this.hlb = await makeValueBox([ 1, 256, ], 1, "Highlight B", 1, (value) => {
 			if((this.tab.module as Module).highlights[0] !== value) {
 				// update pattern editor and module with the new value
 				components.get<PatternEditor>("pattern")?.scrollManager?.changeHighlight(0, value);
@@ -792,13 +812,24 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 		// make a title
 		this.hlb.label.title = "Highlight every x rows. Usually for bars.";
 
-		// create the highlight a element
-		this.step = await valueBox([ 0, 256, ], 1, "Step", 2, (value) => {
+		// create the step offset element
+		this.step = await makeValueBox([ 0, 256, ], 1, "Step", 2, (value) => {
 			this.tab.step = value;
 		});
 
 		// make a title
-		this.step.label.title = "Number of rows to skip on edit";
+		this.step.label.title = "Number of rows to skip on edit.";
+
+		// create the step offset element
+		this.velocity = makeCheckbox(CheckboxEnum.Medium, (value) => {
+			this.tab.recordVelocity = value;
+		});
+
+		// configure the label
+		this.velocity.label.innerText = "Record note velocity";
+		this.velocity.element.style.width = "176px";
+		this.velocity.label.style.paddingLeft = "5px";
+		this.velocity.label.title = "Choose whether to record velocity with notes.";
 
 		// append all items in order
 		this.element.appendChild(this.octave.element);
@@ -806,6 +837,7 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 		this.element.appendChild(this.hla.element);
 		this.element.appendChild(this.hlb.element);
 		this.element.appendChild(this.step.element);
+		this.element.appendChild(this.velocity.element);
 		return this.element;
 	}
 
@@ -815,6 +847,7 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 	private step!: SimpleValueReturn;
 	private hla!: SimpleValueReturn;
 	private hlb!: SimpleValueReturn;
+	private velocity!: CheckboxReturn;
 
 	/**
 	 * Function to load the component
@@ -848,6 +881,7 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 		// initialize highlight b element
 		this.hlb.setValue((this.tab.module as Module).highlights[0].toString(), (this.tab.module as Module).highlights[0]);
 		edit?.scrollManager?.changeHighlight(0, (this.tab.module as Module).highlights[0]);
+		updateBPM();
 		return false;
 	}
 
@@ -869,9 +903,47 @@ class SettingsPanelRight implements UIComponent<HTMLDivElement> {
 	/**
 	 * Function to initialize the component
 	 */
-	public init(): HTMLDivElement {
+	public async init(): Promise<HTMLDivElement> {
 		// create the main element
 		this.element = document.createElement("div");
+
+		// create the tempo box
+		this.rate = await makeValueBox([ 1, 400, ], 60, "Rate (Hz)", 2, (value) => {
+			if(this.tab.module) {
+				this.tab.module.rate = value;
+				updateBPM();
+
+				// project is now dirty!
+				this.tab.project.dirty();
+			}
+		});
+
+		// make a title
+		this.rate.label.title = "The driver hertz rate. Higher value = faster music.";
+
+		// create the tempo box
+		this.ttpr = await makeValueBox([ 1, 32, ], 6, "Ticks/row", 1, (value) => {
+			if(this.tab.module) {
+				this.tab.module.ticksPerRow = value;
+				updateBPM();
+
+				// project is now dirty!
+				this.tab.project.dirty();
+			}
+		});
+
+		// make a title
+		this.rate.label.title = "How many ticks are between each row. Higher value = slower music.";
+
+		// append all items in order
+		this.element.appendChild(this.rate.element);
+		this.element.appendChild(this.ttpr.element);
+
+		// create the BPM container
+		const bpm = document.createElement("div");
+		bpm.id = "bpm";
+		bpm.innerText = "0 bpm";
+		this.element.appendChild(bpm);
 
 		// create the midi container
 		const midi = document.createElement("div");
@@ -879,6 +951,10 @@ class SettingsPanelRight implements UIComponent<HTMLDivElement> {
 		this.element.appendChild(midi);
 		return this.element;
 	}
+
+	// these are the various elements that are loaded as settings
+	private rate!: SimpleValueReturn;
+	private ttpr!: SimpleValueReturn;
 
 	/**
 	 * Function to load the component
@@ -889,6 +965,10 @@ class SettingsPanelRight implements UIComponent<HTMLDivElement> {
 			return pass < 1;
 		}
 
+		// load settings
+		this.rate.setValue((this.tab.module as Module).rate.toString(), (this.tab.module as Module).rate);
+		this.ttpr.setValue((this.tab.module as Module).ticksPerRow.toString(), (this.tab.module as Module).ticksPerRow);
+		updateBPM();
 		return false;
 	}
 

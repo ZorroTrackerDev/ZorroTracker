@@ -551,6 +551,8 @@ export class Project {
 			patternRows: loadFlag<number>("INITIAL_PATTERN_ROWS") ?? 64,
 			highlights: [ loadFlag<number>("HIGHLIGHT_B_DEFAULT") ?? 16, loadFlag<number>("HIGHLIGHT_A_DEFAULT") ?? 4, ] as [ number, number, ],
 			type: ZorroModuleType.Song,
+			rate: 60,
+			ticksPerRow: 6,
 			lastDate: new Date(),
 			channels: this.driverChannels?.map((c) => {
 				// initialize the channels with effect count
@@ -859,6 +861,16 @@ export interface Module {
 	 * File name of the module. This will refer to a folder in the modules folder.
 	 */
 	file: string,
+
+	/**
+	 * The rate value for this driver. This is in the driver's format, so it may depend wildly
+	 */
+	rate: number,
+
+	/**
+	 * The ticks per row rate of this module
+	 */
+	ticksPerRow: number,
 
 	/**
 	 * Type of this module, various types are used for each module

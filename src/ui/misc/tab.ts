@@ -75,7 +75,7 @@ export class Tab {
 	/**
 	 * Whether to record velocity along with note. Useful for MIDI keyboards and the like
 	 */
-	public recordVelocity = true;
+	public recordVelocity = false;
 
 	/**
 	 * The current octave in the piano display. Also affects which notes are written to pattern editor

@@ -1,0 +1,67 @@
+.checkbox {
+	background: #1c1b1f;
+	display: inline-block;
+	font-family: sans-serif;
+	vertical-align: top;
+	color: #d6d6d6;
+
+	&> .checkbox_check {
+		float: right;
+		position: relative;
+		background: #393b40;
+		border-radius: 4px;
+		transition: background-color ease .2s;
+
+		&:hover {
+			background: #474750;
+		}
+
+		&:active {
+			background: #53565f;
+			transition-delay: 0s;
+		}
+
+		&> svg {
+			height: 100%;
+			width: 100%;
+
+			&> path {
+				stroke-width: 0;
+				transition: stroke-width 0.35s ease;
+			}
+		}
+
+		&.checked > svg > path {
+			stroke-width: 14;
+		}
+	}
+}
+
+.checkbox.checkbox_small {
+	.checkbox_size(1.5em, 10pt);
+}
+
+.checkbox.checkbox_medium {
+	.checkbox_size(1.5em, 12pt);
+}
+
+.checkbox.checkbox_large {
+	.checkbox_size(1.6em, 15pt);
+}
+
+.checkbox_size(@height, @font) {
+	height: @height;
+	font-size: @font;
+
+	&> .checkbox_label {
+		line-height: @height;
+		overflow: hidden;
+	}
+
+	&> .checkbox_check {
+		cursor: pointer;
+		margin: @height*0.15 @height*0.15;
+		height: @height*0.7;
+		width: @height*0.7;
+	}
+}

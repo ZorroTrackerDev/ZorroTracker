@@ -910,7 +910,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 
 		// ignore if not focused
 		if(!this.parent.tab.recordMode) {
-			return true;
+			return false;
 		}
 
 		// check if this is a volume or instrument column

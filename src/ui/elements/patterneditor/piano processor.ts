@@ -63,14 +63,10 @@ export class PianoProcessor {
 		const cache = this.parent.tab.notesCache[this.parent.tab.selectedChannel.type];
 		const freq = cache?.notes[note]?.frequency;
 
-		if(typeof freq === "number"){
-			// save the data to the queue finally
-			this.queue.push({ mode: false, freq, note, velocity, volume: Math.round(velocity * cache.maxvolume), });
-			setTimeout(() => this.runQueue().catch(console.error), 0);
-			return true;
-		}
-
-		return false;
+		// save the data to the queue finally
+		this.queue.push({ mode: false, freq: freq ?? 0, note, velocity, volume: Math.round(velocity * cache.maxvolume), });
+		setTimeout(() => this.runQueue().catch(console.error), 0);
+		return true;
 	}
 
 	/**

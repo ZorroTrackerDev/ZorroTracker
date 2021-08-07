@@ -151,7 +151,6 @@ export class PianoProcessor {
 
 					// project is dirty now
 					this.parent.tab.project.dirty();
-
 					this.enableRepeat(note, volume);
 
 				} else {

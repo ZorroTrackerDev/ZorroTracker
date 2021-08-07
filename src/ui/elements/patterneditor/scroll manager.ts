@@ -822,15 +822,16 @@ export class PatternEditorScrollManager {
 	 * Function to update some data in a specific place, and to request graphics reload for that place
 	 *
 	 * @param pattern The matrix pattern the update happened in
-	 * @param row The row the update happened in
+	 * @param start The first row to update
+	 * @param end The last row to update
 	 * @param channel The channel the update happened in
 	 */
-	public async updateDataRow(pattern:number, row:number, channel:number): Promise<void> {
+	public async updateDataRows(pattern:number, start:number, end:number, channel:number): Promise<void> {
 		// loop through all canvases, finding if any of them contain the requested pattern
 		const array = await Promise.all(this.canvas.map(async(c) => {
 			if(this.parent.tab.matrix.get(channel, c.pattern) === pattern) {
 				// if the matrix pattern matches, update the row
-				await c.dataRow(row, channel);
+				await c.dataChannel(start, end, channel);
 				return true;
 			}
 

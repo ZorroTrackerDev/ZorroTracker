@@ -25,7 +25,6 @@ import { getCookie, setCookie } from "./misc";
 
 // handle the UI requesting the application path
 ipcMain.on(ipcEnum.UiPath, (event, token) => {
-	console.log(ipcEnum.UiPath, token)
 	event.reply(ipcEnum.UiPath, token, { data: dataPath, home: app.getPath("home"), });
 });
 

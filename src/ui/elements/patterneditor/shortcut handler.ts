@@ -111,6 +111,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 		// has focus, process the shortcut
 		switch(data.shift()) {
 			case "sel": return this.handleSelectionShortcut(data);
+			case "data": return this.handleDataShortcut(data);
 			case "chfx": return this.handleChannelEffectsShortcut(data);
 			case "note": return this.handleNoteShortcut(data, state);
 		}
@@ -119,7 +120,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	}
 
 	/**
-	 * Handle shortcuts from the `sel` subgroup
+	 * Handle shortcuts from the `chfx` subgroup
 	 */
 	private handleChannelEffectsShortcut(data:string[]) {
 		return this.handleMovementCheck(data.shift(), async(pos:Position) => {
@@ -448,6 +449,193 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	}
 
 	/**
+	 * Handle shortcuts from the `data` subgroup
+	 */
+	private handleDataShortcut(data:string[]) {
+		switch(data.shift()) {
+			case "change1":
+				return this.handleMovementCheck(data.shift(), (pos:Position) => {
+					return pos.y ? this.handleDataChangeShortcut(-pos.y, false) : false;
+				});
+
+			case "change10":
+				return this.handleMovementCheck(data.shift(), (pos:Position) => {
+					return pos.y ? this.handleDataChangeShortcut(-pos.y, true) : false;
+				});
+		}
+
+		return false;
+	}
+
+	/**
+	 * Load the ordered selection, based on the
+	 */
+	private getOrderSelection(): MultiSelection {
+		const sl = this.parent.selectionManager.multi;
+
+		if(!sl) {
+			// single mode, just choose this single element
+			return [ this.parent.selectionManager.single, this.parent.selectionManager.single, ];
+		}
+
+		// multi mode, create new selections based on which side is which
+		const left = +((sl[0].channel !== sl[1].channel) ? (sl[0].channel > sl[1].channel) : (sl[0].element > sl[1].element));
+		const top = +((sl[0].pattern !== sl[1].pattern) ? (sl[0].pattern > sl[1].pattern) : (sl[0].row > sl[1].row));
+
+		return [
+			// top-left
+			{ pattern: sl[top].pattern, row: sl[top].row, channel: sl[left].channel, element: sl[left].element, },
+
+			// bottom-right
+			{ pattern: sl[1-top].pattern, row: sl[1-top].row, channel: sl[1-left].channel, element: sl[1-left].element, },
+		]
+	}
+
+	/**
+	 * Handle shortcuts that change the selected data offsets some amount
+	 */
+	private async handleDataChangeShortcut(direction:number, is10:boolean) {
+		// load the ordered boundaries of the selection
+		const sel = this.getOrderSelection();
+
+		// loop through each row
+		for(let channel = sel[0].channel;channel <= sel[1].channel; channel++) {
+			const pats:number[] = [];
+
+			for(let pattern = sel[0].pattern;pattern <= sel[1].pattern; pattern++) {
+				// get the real pattern number and check it exists and wasnt updated
+				const rp = this.parent.tab.matrix.get(channel, pattern);
+
+				if(typeof rp !== "number" || pats.includes(rp)) {
+					continue;
+				}
+
+				// load the pattern data based on pattern number
+				const pd = this.parent.tab.matrix.patterns[channel][rp];
+
+				if(!pd) {
+					continue;
+				}
+
+				// store the pattern as updated
+				pats.push(rp);
+
+				// get the rows for this channel
+				let rstart = 0, rend = this.parent.patternLen - 1;
+
+				if(pattern === sel[0].pattern) {
+					rstart = sel[0].row;
+				}
+
+				if(pattern === sel[1].pattern) {
+					rend = sel[1].row;
+				}
+
+				// get the elements for this channel
+				let estart = 0, eend = this.parent.channelInfo[channel].elements.length;
+
+				if(channel === sel[0].channel) {
+					estart = sel[0].element;
+				}
+
+				if(channel === sel[1].channel) {
+					eend = sel[1].element;
+				}
+
+				// handle rendering for this area
+				this.processDataChange(pd, direction, is10, channel, rstart, rend, estart, eend);
+
+				// update rows in channel
+				await this.parent.scrollManager.updateDataRows(pattern, rstart, rend + 1, channel);
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Helper function to process data change
+	 */
+	private processDataChange(pd:PatternData, dir:number, is10:boolean, channel:number, rstart:number, rend:number, estart:number, eend:number) {
+		let mod = false;
+
+		for(let e = estart;e <= eend;e ++) {
+			// find the element ID
+			const ele = this.parent.channelInfo[channel].elements[e];
+
+			for(let r = rstart;r <= rend;r ++) {
+				// handle this element increment
+				switch(ele) {
+					case 1: case 2: {		// volume, instrument
+						// find the maximum amount
+						const max = ele === 1 ? 0x100 : 1 + this.parent.tab.notesCache[this.parent.tab.channels[channel].type].maxvolume;
+
+						// load the value and check if it was not set
+						let value = pd.cells[r][ele === 1 ? "instrument" : "volume"];
+
+						if(value === 0xFF) {
+							continue;
+						}
+
+						// modify the value and convert FF to 00
+						value += dir * (is10 ? 0x10 : 1);
+						value = (max + value) % max;
+
+						if(value === 0xFF) {
+							value = 0;
+						}
+
+						// save value
+						pd.cells[r][ele === 1 ? "instrument" : "volume"] = value;
+						mod = true;
+						break;
+					}
+
+					case 0: {		// notes
+						let value = pd.cells[r].note;
+
+						if(value < Note.First) {
+							// ignore technical notes
+							continue;
+						}
+
+						// get notes info
+						const cache = this.parent.tab.notesCache[this.parent.tab.channels[channel].type];
+
+						// offset the note
+						value += dir * (is10 ? cache.octave.size : 1);
+
+						// check if note is valid
+						if(typeof cache.notes[value].frequency !== "number") {
+							// nope, ignore
+							continue;
+						}
+
+						// do not allow using technical notes
+						if(value < Note.First) {
+							value = Note.First;
+						}
+
+						// save note
+						pd.cells[r].note = value;
+						mod = true;
+						break;
+					}
+
+					default:		// ignore effects
+						break;
+				}
+			}
+		}
+
+		// if modified, make the project dirty
+		if(mod) {
+			this.parent.tab.project.dirty();
+			pd.edited = true;
+		}
+	}
+
+	/**
 	 * Map strings to note numbers. This will allow the Piano to correctly release notes
 	 */
 	private scmap:{ [key:string]: number, } = {};
@@ -563,7 +751,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	 */
 	public updateCurrentRow(pattern:number): Promise<void> {
 		const sel = this.parent.selectionManager.single;
-		return this.parent.scrollManager.updateDataRow(pattern, sel.row, sel.channel);
+		return this.parent.scrollManager.updateDataRows(pattern, sel.row, sel.row + 1, sel.channel);
 	}
 
 	/**

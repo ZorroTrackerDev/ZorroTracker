@@ -89,6 +89,11 @@
 	"pattern.chfx.up":						[ "shift++" ],							/* shortcut for increasing the number of effects in the selected channel */
 	"pattern.chfx.down":					[ "shift+-" ],							/* shortcut for decreasing the number of effects in the selected channel */
 
+	"pattern.data.change1.down":			[ "ctrl+F1" ],							/* shortcut for decreasing selected values by 1 */
+	"pattern.data.change1.up":				[ "ctrl+F2" ],							/* shortcut for increasing selected values by 1 */
+	"pattern.data.change10.down":			[ "ctrl+F3" ],							/* shortcut for decreasing selected values by 0x10 (or 1 octave in notes) */
+	"pattern.data.change10.up":				[ "ctrl+F4" ],							/* shortcut for increasing selected values by 0x10 (or 1 octave in notes) */
+
 	"*pattern.note.rest":					[ "Digit1" ],							/* shortcut for playing a rest */
 	"*pattern.note.cut":					[ "Backquote" ],						/* shortcut for playing a note cut */
 	"*pattern.note.octave0.C":				[ "KeyZ" ],								/* shortcut for playing C on current octave +0 */

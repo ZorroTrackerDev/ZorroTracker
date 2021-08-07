@@ -22,7 +22,9 @@ export class PatternEditorEventManager {
 		];
 
 		// update backdrop color
-		this.parent.scrollwrapper.style.backgroundColor = this.backdropColors[this.parent.tab?.recordMode ? 1 : 0];
+		if(this.parent.tab) {
+			this.changeRecordMode();
+		}
 	}
 
 	/**
@@ -34,11 +36,18 @@ export class PatternEditorEventManager {
 	 * Function to update the record mode of the pattern editor
 	 */
 	public changeRecordMode(): void {
+		const backdrop = this.backdropColors[this.parent.tab.recordMode ? 1 : 0];
+
 		// update backdrop color
-		this.parent.scrollwrapper.style.backgroundColor = this.backdropColors[this.parent.tab.recordMode ? 1 : 0];
+		this.parent.scrollwrapper.style.backgroundColor = backdrop;
 
 		// tell the scroll manager about it too
 		this.parent.scrollManager.changeRecordMode();
+
+		// update channel headers
+		for(let c = this.parent.channelInfo.length;c > 0; --c) {
+			(this.parent.scrollwrapper.children[c] as HTMLDivElement).style.borderColor = backdrop;
+		}
 	}
 
 	/**

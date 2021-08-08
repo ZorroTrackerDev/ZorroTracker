@@ -469,6 +469,11 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	 * @param note The note to check
 	 */
 	private async modNote(name:string, mode:"add"|"remove", note:number) {
+		// ignore when piano is hidden
+		if(this.hidden) {
+			return;
+		}
+
 		// calculate which octaves are being displayed
 		const [ ocMin, ocMax, ] = await this.getOctaveRange();
 

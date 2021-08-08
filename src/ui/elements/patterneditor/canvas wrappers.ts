@@ -445,8 +445,8 @@ export class PatternCanvas extends EditorCanvasBase {
 
 		// valid pattern found, fill the array now
 		res.push(this.convertNote(nd, cell.note as Note));
-		res.push(cell.instrument === 0xFF ? undefined : this.getHex(cell.instrument));
-		res.push(cell.volume === 0xFF ? undefined : this.getHex(cell.volume));
+		res.push(cell.instrument === null ? undefined : this.getHex(cell.instrument));
+		res.push(cell.volume === null ? undefined : this.getHex(cell.volume));
 
 		// load every effect
 		for(let i = 0;i < this.parent.maxEffects; i++) {

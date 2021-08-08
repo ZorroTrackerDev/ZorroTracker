@@ -767,13 +767,13 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 				// handle this element increment
 				switch(ele) {
 					case 1: case 2: {		// volume, instrument
-						// if already 0xFF, skip
-						if(pd.cells[r][ele === 1 ? "instrument" : "volume"] === 0xFF) {
+						// if already null, skip
+						if(pd.cells[r][ele === 1 ? "instrument" : "volume"] === null) {
 							continue;
 						}
 
 						// delete value
-						pd.cells[r][ele === 1 ? "instrument" : "volume"] = 0xFF;
+						pd.cells[r][ele === 1 ? "instrument" : "volume"] = null;
 						mod = true;
 						break;
 					}
@@ -833,12 +833,12 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 				switch(ele) {
 					case 1: case 2: {		// volume, instrument
 						// find the maximum amount
-						const max = ele === 1 ? 0xFE : 1 + this.parent.tab.notesCache[this.parent.tab.channels[channel].type].maxvolume;
+						const max = ele === 1 ? 0xFF : 1 + this.parent.tab.notesCache[this.parent.tab.channels[channel].type].maxvolume;
 
 						// load the value and check if it was not set
 						let value = pd.cells[r][ele === 1 ? "instrument" : "volume"];
 
-						if(value === 0xFF) {
+						if(value === null) {
 							continue;
 						}
 
@@ -931,7 +931,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 			return false;
 		}
 		// find the maximum amount
-		const max = eid === 1 ? 0xFE :
+		const max = eid === 1 ? 0xFF :
 			this.parent.tab.notesCache[this.parent.tab.channels[this.parent.selectionManager.single.channel].type].maxvolume;
 
 		// get the element name we're editing
@@ -957,7 +957,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 
 			case 1: {
 				// create the value in this dumb way
-				info[2][enm] = Math.min(max, (info[2][enm] << 4) | digit);
+				info[2][enm] = Math.min(max, ((info[2][enm] ?? 0) << 4) | digit);
 				step = true;
 				this.parent.selectionManager.digitEdit = 0;
 				break;

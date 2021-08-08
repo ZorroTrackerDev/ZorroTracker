@@ -357,7 +357,7 @@ export default class implements Driver {
 				// find new channel for polyphony, ignoring certain channels
 				const cc = this.findFreeChannel(channel, [], [
 					DefChanIds.YM2612FM1, DefChanIds.YM2612FM2, DefChanIds.YM2612FM3,
-					DefChanIds.YM2612FM4, DefChanIds.YM2612FM5, DefChanIds.YM2612FM6,
+					DefChanIds.YM2612FM4, DefChanIds.YM2612FM5,
 				]);
 
 				// find new channel for polyphony. If failed, jump out

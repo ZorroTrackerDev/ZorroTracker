@@ -8,13 +8,13 @@ import { Tab } from "../ui/misc/tab";
  */
  export class PatternCell {
 	public note: number;
-	public volume: number;
-	public instrument: number;
+	public volume: number|null;
+	public instrument: number|null;
 	public effects: { id: TrackerCommands|number, value: number, }[];
 
 	constructor(){
 		this.note = 0;
-		this.volume = this.instrument = 0xFF;
+		this.volume = this.instrument = null;
 		this.effects = [
 			{ id: TrackerCommands.Empty, value: 0, },
 			{ id: TrackerCommands.Empty, value: 0, },
@@ -33,40 +33,65 @@ import { Tab } from "../ui/misc/tab";
 	public save(): number[] {
 		const ret = [];
 
+		// generate a bitfield for what info is saved
+		let bits = 0;
+		bits |= (this.note !== 0 ? 1 : 0) << 7;
+		bits |= (this.instrument !== null ? 1 : 0) << 6;
+		bits |= (this.volume !== null ? 1 : 0) << 5;
+
+		// check if any effect is used
+		for(const c of this.effects) {
+			if(c.id !== 0){
+				bits |= 1;
+				break;
+			}
+		}
+
+		ret.push(bits);
+
 		// convert the note to bytes
-		ret.push(this.note);
+		if(this.note !== 0) {
+			ret.push(this.note);
+		}
 
 		// convert the volume and instrument to bytes
-		ret.push(this.volume);
-		ret.push(this.instrument);
+		if(this.instrument !== null) {
+			ret.push(this.instrument);
+		}
+
+		if(this.volume !== null) {
+			ret.push(this.volume);
+		}
 
 		// push each command to res
-		for(const c of this.effects) {
-			// push the command ID
-			ret.push(c.id & 0xFF, c.id >> 8);
+		if(bits & 1) {
+			for(const c of this.effects) {
+				// push the command ID
+				ret.push(c.id & 0xFF, c.id >> 8);
 
-			if(c.id > 0) {
-				ret.push(c.value & 0xFF);
-			}
+				if(c.id > 0) {
+					ret.push(c.value & 0xFF);
+				}
 
-			if(c.id >= 0x8000) {
-				ret.push((c.value >> 8) & 0xFF);
-			}
+				if(c.id >= 0x8000) {
+					ret.push((c.value >> 8) & 0xFF);
+				}
 
-			if(c.id >= 0xC000) {
-				ret.push((c.value >> 16) & 0xFF);
-			}
+				if(c.id >= 0xC000) {
+					ret.push((c.value >> 16) & 0xFF);
+				}
 
-			if(c.id >= 0xD000) {
-				ret.push((c.value >> 24) & 0xFF);
-			}
+				if(c.id >= 0xD000) {
+					ret.push((c.value >> 24) & 0xFF);
+				}
 
-			if(c.id >= 0xE000) {
-				ret.push((c.value >> 32) & 0xFF);
-			}
+				if(c.id >= 0xE000) {
+					ret.push((c.value >> 32) & 0xFF);
+				}
 
-			if(c.id >= 0xF000) {
-				ret.push((c.value >> 40) & 0xFF);
+				if(c.id >= 0xF000) {
+					ret.push((c.value >> 40) & 0xFF);
+				}
 			}
 		}
 
@@ -83,45 +108,62 @@ import { Tab } from "../ui/misc/tab";
 	public load(data:Buffer, idx:number, width:number): number {
 		let index = idx;
 
-		// load the note and the volume
-		this.note = data[index++];
-		this.volume = data[index++];
-		this.instrument = data[index++];
+		// load the bit data and check if any are set
+		const bits = data[index++];
+
+		if(bits === 0){
+			return index;
+		}
+
+		// load the note, instrument and volume
+		if(bits & 0x80) {
+			this.note = data[index++];
+		}
+
+		if(bits & 0x40) {
+			this.instrument = data[index++];
+		}
+
+		if(bits & 0x20) {
+			this.volume = data[index++];
+		}
 
 		// loop for each command
-		for(let i = 0;i < width; i++) {
-			// load the command ID
-			const id = data[index++] | (data[index++] << 8);
-			let value = 0;
+		if(bits & 1) {
+			for(let i = 0;i < width; i++) {
+				// load the command ID
+				const id = data[index++] | (data[index++] << 8);
+				let value = 0;
 
-			// get the value byte by byte, depending on the ID
-			if(id > 0) {
-				value |= data[index++];
+				// get the value byte by byte, depending on the ID
+				if(id > 0) {
+					value |= data[index++];
+				}
+
+				if(id >= 0x8000) {
+					value |= data[index++] << 8;
+				}
+
+				if(id >= 0xC000) {
+					value |= data[index++] << 16;
+				}
+
+				if(id >= 0xD000) {
+					value |= data[index++] << 24;
+				}
+
+				if(id >= 0xE000) {
+					value |= data[index++] << 32;
+				}
+
+				if(id >= 0xF000) {
+					value |= data[index++] << 40;
+				}
+
+				// finally, put dat command in
+				this.effects[i].id = id;
+				this.effects[i].value = value;
 			}
-
-			if(id >= 0x8000) {
-				value |= data[index++] << 8;
-			}
-
-			if(id >= 0xC000) {
-				value |= data[index++] << 16;
-			}
-
-			if(id >= 0xD000) {
-				value |= data[index++] << 24;
-			}
-
-			if(id >= 0xE000) {
-				value |= data[index++] << 32;
-			}
-
-			if(id >= 0xF000) {
-				value |= data[index++] << 40;
-			}
-
-			// finally, put dat command in
-			this.effects[i].id = id;
-			this.effects[i].value = value;
 		}
 
 		// return the new position

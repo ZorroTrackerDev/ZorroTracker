@@ -1,6 +1,7 @@
 import { ChannelType, Driver, DriverChannel, DriverConfig } from "../../../../api/driver";
 import * as fs from "fs";
 import { Chip } from "../../../../api/chip";
+import { PlaybackAPI } from "../../../../api/playback API";
 
 export default class implements Driver {
 	private vgm:Buffer;
@@ -14,6 +15,7 @@ export default class implements Driver {
 	private block:Buffer;
 	private blockAddr = 0;
 	private chip:Chip|undefined;
+	public playback: PlaybackAPI;
 
 	constructor() {
 		this.vgm = this.block = Buffer.alloc(0);

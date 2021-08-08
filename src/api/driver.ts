@@ -1,5 +1,6 @@
 import { GenericConfig } from "./config";
 import { Chip } from "./chip";
+import { PlaybackAPI } from "./playback API";
 
 // driver configuration file format
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -8,6 +9,11 @@ export interface DriverConfig extends GenericConfig {
 
 // interface for the driver emulator. All drivers must use this interface.
 export interface Driver {
+	/**
+	 * Helper object for dealing with the playback
+	 */
+	playback: PlaybackAPI|undefined;
+
 	/**
 	 * Initialize the driver.
 	 *
@@ -294,4 +300,36 @@ export enum FeatureFlag {
 
 	FREQ = 1 << 0,			// TODO
 	NOVU = 1 << 8,
+}
+
+export type PatternRowData = {
+	[key: number]: PatternCellData[],
+}
+
+export type PatternCellData = {
+	/**
+	 * The note ID for this row
+	 */
+	note?: number,
+	/**
+	 * The volume level for this row
+	 */
+	volume?: number,
+	/**
+	 * The instrument ID for this row
+	 */
+	instrument?: number;
+	/**
+	 * The effects for this row
+	 */
+	effects: { id: number, value: number, }[];
+}
+
+export interface PlaybackManagerAPI {
+	/**
+	 * Helper function to load the next pattern row data
+	 *
+	 * @returns The `PatternRowData` object, or `null` if no valid pattern data was found
+	 */
+	loadPatternRow(): PatternRowData|null;
 }

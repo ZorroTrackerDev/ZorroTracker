@@ -1,5 +1,6 @@
 import { ZorroEvent, ZorroEventEnum } from "../../../api/events";
 import { UIComponent } from "../../../api/ui";
+import { startPlayback, stopPlayback } from "../../misc/playback";
 import { PlayMode, Tab } from "../../misc/tab";
 import { loadSVG } from "../../misc/theme";
 
@@ -80,10 +81,11 @@ export class PlayBar implements UIComponent<HTMLDivElement> {
 	private buttonData = [
 		{
 			tooltip: "Stop playback",
-			click: (e:MouseEvent) => {
+			click: async(e:MouseEvent) => {
 				// change playback mode to stopped
-				if(e.button === 0 && Tab.active) {
+				if(e.button === 0 && Tab.active && Tab.active.playMode !== PlayMode.Stopped) {
 					Tab.active.playMode = PlayMode.Stopped;
+					await stopPlayback();
 				}
 			},
 			theme: async(p:PlayBar, e:HTMLButtonElement, index:number) => {
@@ -93,10 +95,11 @@ export class PlayBar implements UIComponent<HTMLDivElement> {
 		},
 		{
 			tooltip: "Start playback",
-			click: (e:MouseEvent) => {
+			click: async(e:MouseEvent) => {
 				// change playback mode to play all
-				if(e.button === 0 && Tab.active) {
+				if(e.button === 0 && Tab.active && Tab.active.playMode === PlayMode.Stopped) {
 					Tab.active.playMode = PlayMode.PlayAll;
+					await startPlayback(Tab.active, 0, false);
 				}
 			},
 			theme: async(p:PlayBar, e:HTMLButtonElement, index:number) => {
@@ -105,10 +108,11 @@ export class PlayBar implements UIComponent<HTMLDivElement> {
 		},
 		{
 			tooltip: "Repeat pattern",
-			click: (e:MouseEvent) => {
+			click: async(e:MouseEvent) => {
 				// change playback mode to play pattern
-				if(e.button === 0 && Tab.active) {
+				if(e.button === 0 && Tab.active && Tab.active.playMode === PlayMode.Stopped) {
 					Tab.active.playMode = PlayMode.PlayPattern;
+					await startPlayback(Tab.active, 0, true);
 				}
 			},
 			theme: async(p:PlayBar, e:HTMLButtonElement, index:number) => {

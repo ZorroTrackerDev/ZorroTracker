@@ -3,6 +3,8 @@ import { parentPort } from "worker_threads";
 import path from "path";
 import { Chip, ChipConfig } from "../../../../api/chip";
 import { Driver, DriverConfig } from "../../../../api/driver";
+import { PlaybackManager } from "./playback manager";
+import { ipcEnum } from "../../../../system/ipc/ipc enum";
 
 // eslint-disable-next-line camelcase
 declare const __non_webpack_require__: NodeRequire;
@@ -209,6 +211,49 @@ parentPort?.on("message", (data:{ token?:number, code:string, data:unknown, fn?:
 				break;
 
 			/**
+			 * Start module playback
+			 *
+			 * data: Various config and info options for the playback
+			 */
+			case "module-play":	// pattern, repeat, rate, ticksPerRow, length
+				if(driver) {
+					// load the play manager
+					const arr = data.data as { pattern:number, repeat:boolean, rate:number, ticksPerRow:number, length:number, };
+					playManager = new PlaybackManager(arr.pattern, arr.repeat, arr.rate, arr.ticksPerRow, arr.length, processAsyncMessage);
+
+					// initialize the driver and manager
+					driver.playback = playManager.getAPI();
+					playManager.loadPatternRow();
+
+					// tell the driver to start playback
+					driver.reset();
+					driver.play();
+				}
+
+				// let the parent know we're ready
+				parentPort?.postMessage({ token: data.token, code: data.code, data: driver !== undefined, });
+				break;
+
+			/**
+			 * Stop module playback
+			 *
+			 * data: Irrelevant
+			 */
+			case "module-stop":
+				playManager = undefined;
+
+				if(driver) {
+					driver.playback = undefined;
+
+					// tell the driver to stop playback
+					driver.stop();
+				}
+
+				// let the parent know we're ready
+				parentPort?.postMessage({ token: data.token, code: data.code, data: driver !== undefined, });
+				break;
+
+			/**
 			 * Communicate with the driver emulator
 			 *
 			 * data: Array with the properties
@@ -262,12 +307,54 @@ parentPort?.on("message", (data:{ token?:number, code:string, data:unknown, fn?:
 						break;
 				}
 				break;
+
+			/**
+			 * Response to an async function handler
+			 *
+			 * data: Depends on the function
+			 */
+			case "async-ui":
+				// check that the async function exists
+				if(asyncFuncs[data.token] && asyncFuncs[data.token].code === data.fn) {
+					// store the function and delete the function
+					const cb = asyncFuncs[data.token].callback;
+					delete asyncFuncs[data.token];
+
+					// call the actual function with the result
+					cb(data.data);
+
+				} else {
+					// the async function was not found. oops!
+					throw new Error("Async function with token "+ data.token +" and code "+ data.fn +" was received when it was not expected.");
+				}
+				break;
 		}
 	} catch(ex) {
 		console.error(ex);
 		parentPort?.postMessage({ code: "error", data: [ ex, ], });
 	}
 });
+
+// helper object that helps the chip process playback
+let playManager: undefined|PlaybackManager;
+
+function processAsyncMessage(code:ipcEnum, data:unknown, callback:(result:unknown) => void): void {
+	// if parent port is somehow null, we need to handle this gracefully... ish
+	if(!parentPort) {
+		return callback(undefined);
+	}
+
+	// generate a token
+	const token = Math.random();
+
+	// save the async function to later get the result
+	asyncFuncs[token] = { code, callback, };
+
+	// send the message to the port
+	parentPort.postMessage({ code: "async-ui", token: token, fn: code, data: data, });
+}
+
+const asyncFuncs: { [key:number]: { code: string, callback: (result:unknown) => void, }, } = {};
 
 /**
  * Function to handle opening a new output stream and buffering audio.

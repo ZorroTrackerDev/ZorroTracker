@@ -1,13 +1,15 @@
 // eslint-disable-next-line max-len
-import { ChannelType, Driver, DriverChannel, DriverConfig, FeatureFlag, NoteData, NoteReturnType, OctaveInfo, DefChanIds } from "../../../../api/driver";
+import { ChannelType, Driver, DriverChannel, DriverConfig, FeatureFlag, NoteData, NoteReturnType, OctaveInfo, DefChanIds, PatternCellData } from "../../../../api/driver";
 import { Chip, PSGCMD, YMKey, YMREG } from "../../../../api/chip";
 import { DefaultOctave, DefaultOctaveSharp, Note, OctaveSize } from "../../../../api/notes";
+import { PlaybackAPI } from "../../../../api/playback API";
 
 export default class implements Driver {
 	private chip: Chip|undefined;
 	private NoteFM: NoteReturnType;
 	private NotePSG: NoteReturnType;
 	private NoteDAC: NoteReturnType;
+	public playback: PlaybackAPI|undefined;
 
 	constructor() {
 		// process PSG notes
@@ -118,21 +120,142 @@ export default class implements Driver {
 	}
 
 	public reset():void {
-
+		this.tick = 0;
 	}
 
 	public play():void {
-
+		this.playing = true;
 	}
 
 	public stop():void {
+		this.playing = false;
 
+		// hardware mute all channels
+		this.writeYMch(0, YMREG.TL | YMREG.op4, 0x7F);
+		this.writeYMch(1, YMREG.TL | YMREG.op4, 0x7F);
+		this.writeYMch(2, YMREG.TL | YMREG.op4, 0x7F);
+		this.writeYMch(3, YMREG.TL | YMREG.op4, 0x7F);
+		this.writeYMch(4, YMREG.TL | YMREG.op4, 0x7F);
+		this.writeYMch(5, YMREG.TL | YMREG.op4, 0x7F);
+
+		this.chip.writePSG(PSGCMD.PSG1 | PSGCMD.VOLUME | 0xF);
+		this.chip.writePSG(PSGCMD.PSG2 | PSGCMD.VOLUME | 0xF);
+		this.chip.writePSG(PSGCMD.PSG3 | PSGCMD.VOLUME | 0xF);
+		this.chip.writePSG(PSGCMD.PSG4 | PSGCMD.VOLUME | 0xF);
 	}
 
-	public buffer(initSamples: number, advance:(samples:number) => number):void {
+	private playing = false;
+
+	/**
+	 * Tick counter for knowing when to process a row
+	 */
+	private tick = -1;
+
+	public buffer(samples:number, advance:(samples:number) => number):void {
 		if(!this.chip) {
 			throw new Error("chip is null");
 		}
+
+		// check if currently playing
+		if(!this.playing) {
+			return;
+		}
+
+		// increase tick timing
+		this.tick += samples / 44100 * this.playback.rate;
+
+		// check if we need to process the next row
+		if(this.tick >= this.playback.ticksPerRow) {
+			this.tick -= this.playback.ticksPerRow;
+
+			// load the data row to inspect
+			const data = this.playback.fetchRow();
+
+			if(!data) {
+				return;
+			}
+
+			// execute functions for each channel
+			for(const ch of Object.keys(data)) {
+				const chi = parseInt(ch, 10);
+
+				// load the actual function based on the channel ID
+				switch(chi) {
+					case DefChanIds.YM2612FM1: case DefChanIds.YM2612FM2: case DefChanIds.YM2612FM3:
+					case DefChanIds.YM2612FM4: case DefChanIds.YM2612FM5:
+						this.processFMCells(chi, data[chi]);
+						break;
+
+					case DefChanIds.YM7101PSG1: case DefChanIds.YM7101PSG2: case DefChanIds.YM7101PSG3: case DefChanIds.YM7101PSG4:
+						this.processPSGCells(chi, data[chi]);
+						break;
+
+					case DefChanIds.YM2612PCM1: case DefChanIds.YM2612PCM2: case DefChanIds.YM2612PCM3: case DefChanIds.YM2612PCM4:
+						this.processPCMCells(chi, data[chi]);
+						break;
+
+					case DefChanIds.YM2612TIMERA:
+						this.processTimerACells(chi, data[chi]);
+						break;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Function to process FM channel cell data
+	 */
+	private processFMCells(channel:number, cell:PatternCellData) {
+		// rest flag also controls whether we reset key
+		let rest = !cell.note;
+
+		if(!rest) {
+			// disable key
+			this.writeYM1(YMREG.Key, this.hwid[channel]);
+		}
+
+		if(cell.instrument !== undefined) {
+			this.loadFMVoice(this.hwid[channel]);
+		}
+
+		if(cell.note) {
+			if(cell.note === Note.Rest) {
+				rest = true;
+
+			} else {
+				this.loadFMNote(this.hwid[channel], cell.note);
+			}
+		}
+
+		if(cell.volume !== undefined) {
+			this.loadFMVolume(this.hwid[channel], 0x7F - cell.volume);
+		}
+
+		if(!rest) {
+			// enable key if not resting
+			this.writeYM1(YMREG.Key, this.hwid[channel] | YMKey.OpAll);
+		}
+	}
+
+	/**
+	 * Function to process PSG channel cell data
+	 */
+	private processPSGCells(channel:number, cell:PatternCellData) {
+
+	}
+
+	/**
+	 * Function to process PCM channel cell data
+	 */
+	private processPCMCells(channel:number, cell:PatternCellData) {
+
+	}
+
+	/**
+	 * Function to process Timer A channel cell data
+	 */
+	private processTimerACells(channel:number, cell:PatternCellData) {
+
 	}
 
 	public getChannels(): DriverChannel[] {
@@ -200,7 +323,7 @@ export default class implements Driver {
 			this.chip.mutePSG(id - DefChanIds.YM7101PSG1, state);
 			return true;
 
-		} else if(id <= DefChanIds.YM2612PCM2) {
+		} else if(id <= DefChanIds.YM2612PCM4) {
 			// DAC
 			return false;
 		}
@@ -264,6 +387,35 @@ export default class implements Driver {
 	private writeYMch(channel:number, register:YMREG, value:number) {
 		this.chip.writeYM(channel & 4 ? 2 : 0, register + (channel & 3));
 		this.chip.writeYM(channel & 4 ? 3 : 1, value);
+	}
+
+	/**
+	 * Helper function to set an FM volume
+	 *
+	 * @param channel The channel offset (0-2, 4-6) to load to
+	 * @param note The volume (00-7F) to load. Note that 00 is loudest
+	 */
+	private loadFMVolume(channel:number, volume:number) {
+		this.writeYMch(channel, YMREG.TL | YMREG.op4, volume);
+	}
+
+	/**
+	 * Helper function to play an FM note
+	 *
+	 * @param channel The channel offset (0-2, 4-6) to load to
+	 * @param note The note ID to load
+	 */
+	private loadFMNote(channel:number, note:number) {
+		// pretend this is FM
+		const data = this.NoteFM.notes[note];
+
+		// check for invalid notes
+		if(typeof data?.frequency !== "number") {
+			return;
+		}
+
+		// apply the frequency
+		this.loadFMFrequency(channel, data.frequency);
 	}
 
 	/**
@@ -346,7 +498,7 @@ export default class implements Driver {
 					return false;
 				}
 
-				// pretend this is PSG
+				// pretend this is FM
 				const data = this.NoteFM.notes[note];
 
 				// check for invalid notes

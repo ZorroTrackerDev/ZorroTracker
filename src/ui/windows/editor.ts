@@ -96,6 +96,7 @@ import { CheckboxEnum, makeCheckbox, CheckboxReturn } from "../elements/checkbox
 
 /* ipc communication */
 import "../../system/ipc/html editor";
+import "../misc/playback";
 
 // stored list of components active
 const components = new UIComponentStore();

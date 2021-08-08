@@ -37,8 +37,12 @@ export enum ipcEnum {
 	AudioPlay = "audio-play",
 	AudioStop = "audio-stop",
 
+	DriverPlay = "driver-play",
+	DriverStop = "driver-stop",
 	DriverFindAll = "driver-findall",
 	DriverFunc = "driver-func",
+
+	DriverFetchRow = "pb-row-fetch",
 
 	ChipFindAll = "chip-findall",
 	ChipFunc = "chip-func",

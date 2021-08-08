@@ -110,6 +110,24 @@ ipcMain.on(ipcEnum.AudioStop, () => {
 	worker?.postMessage({ code: "stop", });
 });
 
+// handle telling the audio adapter instance and driver that module playback is started
+ipcMain.on(ipcEnum.DriverPlay, (event, token, pattern, repeat, rate, ticksPerRow, matrixlen) => {
+	// post the info
+	workerAsync("module-play", { pattern, repeat, rate, ticksPerRow, length: matrixlen, }, undefined, () => {
+		// tell the UI we finished
+		event.reply(ipcEnum.DriverPlay, token);
+	});
+});
+
+// handle telling the audio adapter instance and driver that module playback is stopped
+ipcMain.on(ipcEnum.DriverStop, (event, token) => {
+	// post the info
+	workerAsync("module-stop", {}, undefined, () => {
+		// tell the UI we finished
+		event.reply(ipcEnum.DriverStop, token);
+	});
+});
+
 /**
  * Function to create ipc correctly
  */
@@ -122,10 +140,29 @@ export async function create(): Promise<void> {
 		worker = new Worker(cfg["audio"].entry);
 
 		// enable messages
-		worker.on("message", (data:{ code:string, data:unknown }) => {
+		worker.on("message", (data:{ code:string, fn?:string, data:unknown, token?:number }) => {
 			switch(data.code) {
 				case "error": log.error(...(data.data as unknown[])); break;
 				case "log": log.info(...(data.data as unknown[])); break;
+				case "async-ui": {
+					// load the channel
+					const channel = data.fn ?? "null";
+
+					// helper function to listen for the ipc events
+					const check = (event:unknown, token:number, result:unknown) => {
+						if(token === data.token) {
+							// found the message, tell the worker
+							ipcMain.off(channel, check);
+							(worker as Worker).postMessage({ code: "async-ui", token: data.token, fn: data.fn, data: result, });
+						}
+					};
+
+					// listen for the channel
+					ipcMain.on(channel, check);
+
+					// send the message
+					windows["editor"].webContents.send(channel, data.token, data.data);
+				}
 			}
 		});
 

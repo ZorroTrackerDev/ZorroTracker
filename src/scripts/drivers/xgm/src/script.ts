@@ -121,6 +121,12 @@ export default class implements Driver {
 
 	public reset():void {
 		this.tick = 0;
+		this.channelData = {};
+
+		// loop for each channel
+		for(const c of Object.keys(this.allChans)) {
+			this.channelData[parseInt(c, 10)] = { instrument: 0, volume: 0x7F, };
+		}
 	}
 
 	public play():void {
@@ -238,7 +244,13 @@ export default class implements Driver {
 			this.writeYM1(YMREG.Key, this.hwid[channel]);
 		}
 
+		if(cell.volume !== undefined) {
+			this.channelData[channel].volume = 0x7F - cell.volume;
+			this.updateFMchVolume(channel);
+		}
+
 		if(cell.instrument !== undefined) {
+			this.channelData[channel].instrument = cell.instrument;
 			this.loadFMVoice(this.hwid[channel], cell.instrument);
 		}
 
@@ -249,10 +261,6 @@ export default class implements Driver {
 			} else {
 				this.loadFMNote(this.hwid[channel], cell.note);
 			}
-		}
-
-		if(cell.volume !== undefined) {
-			this.loadFMVolume(this.hwid[channel], 0x7F - cell.volume);
 		}
 
 		if(!rest) {
@@ -282,30 +290,37 @@ export default class implements Driver {
 
 	}
 
-	public getChannels(): DriverChannel[] {
 		/* eslint-disable max-len */
-		return [
-			{ name: "FM1",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM1,		features: FeatureFlag.ALL, },
-			{ name: "FM2",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM2,		features: FeatureFlag.ALL, },
-			{ name: "TMRA", type: ChannelType.TimerA,    id: DefChanIds.YM2612TIMERA,	features: FeatureFlag.FREQ | FeatureFlag.EFFECTS | FeatureFlag.NOVU, },
-			{ name: "OP1",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM3OP1,	features: FeatureFlag.ALL, },
-			{ name: "OP2",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM3OP2,	features: FeatureFlag.ALL, },
-			{ name: "OP3",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM3OP3,	features: FeatureFlag.ALL, },
-			{ name: "OP4",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM3OP4,	features: FeatureFlag.ALL, },
-			{ name: "FM4",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM4,		features: FeatureFlag.ALL, },
-			{ name: "FM5",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM5,		features: FeatureFlag.ALL, },
-		//	{ name: "FM6",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM6,		features: FeatureFlag.ALL, },
-			{ name: "PCM1", type: ChannelType.YM2612DAC, id: DefChanIds.YM2612PCM1,		features: FeatureFlag.ALL, },
-			{ name: "PCM2", type: ChannelType.YM2612DAC, id: DefChanIds.YM2612PCM2,		features: FeatureFlag.ALL, },
-			{ name: "PCM3", type: ChannelType.YM2612DAC, id: DefChanIds.YM2612PCM3,		features: FeatureFlag.ALL, },
-			{ name: "PCM4", type: ChannelType.YM2612DAC, id: DefChanIds.YM2612PCM4,		features: FeatureFlag.ALL, },
-			{ name: "PSG1", type: ChannelType.YM7101PSG, id: DefChanIds.YM7101PSG1,		features: FeatureFlag.ALL, },
-			{ name: "PSG2", type: ChannelType.YM7101PSG, id: DefChanIds.YM7101PSG2,		features: FeatureFlag.ALL, },
-			{ name: "PSG3", type: ChannelType.YM7101PSG, id: DefChanIds.YM7101PSG3,		features: FeatureFlag.ALL, },
-			{ name: "PSG4", type: ChannelType.YM7101PSG, id: DefChanIds.YM7101PSG4,		features: FeatureFlag.ALL, },
-		];
-		/* eslint-enable max-len */
+	private allChans = [
+		{ name: "FM1",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM1,		features: FeatureFlag.ALL, },
+		{ name: "FM2",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM2,		features: FeatureFlag.ALL, },
+		{ name: "TMRA", type: ChannelType.TimerA,    id: DefChanIds.YM2612TIMERA,	features: FeatureFlag.FREQ | FeatureFlag.EFFECTS | FeatureFlag.NOVU, },
+		{ name: "OP1",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM3OP1,	features: FeatureFlag.ALL, },
+		{ name: "OP2",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM3OP2,	features: FeatureFlag.ALL, },
+		{ name: "OP3",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM3OP3,	features: FeatureFlag.ALL, },
+		{ name: "OP4",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM3OP4,	features: FeatureFlag.ALL, },
+		{ name: "FM4",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM4,		features: FeatureFlag.ALL, },
+		{ name: "FM5",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM5,		features: FeatureFlag.ALL, },
+	//	{ name: "FM6",  type: ChannelType.YM2612FM,  id: DefChanIds.YM2612FM6,		features: FeatureFlag.ALL, },
+		{ name: "PCM1", type: ChannelType.YM2612DAC, id: DefChanIds.YM2612PCM1,		features: FeatureFlag.ALL, },
+		{ name: "PCM2", type: ChannelType.YM2612DAC, id: DefChanIds.YM2612PCM2,		features: FeatureFlag.ALL, },
+		{ name: "PCM3", type: ChannelType.YM2612DAC, id: DefChanIds.YM2612PCM3,		features: FeatureFlag.ALL, },
+		{ name: "PCM4", type: ChannelType.YM2612DAC, id: DefChanIds.YM2612PCM4,		features: FeatureFlag.ALL, },
+		{ name: "PSG1", type: ChannelType.YM7101PSG, id: DefChanIds.YM7101PSG1,		features: FeatureFlag.ALL, },
+		{ name: "PSG2", type: ChannelType.YM7101PSG, id: DefChanIds.YM7101PSG2,		features: FeatureFlag.ALL, },
+		{ name: "PSG3", type: ChannelType.YM7101PSG, id: DefChanIds.YM7101PSG3,		features: FeatureFlag.ALL, },
+		{ name: "PSG4", type: ChannelType.YM7101PSG, id: DefChanIds.YM7101PSG4,		features: FeatureFlag.ALL, },
+	];
+	/* eslint-enable max-len */
+
+	public getChannels(): DriverChannel[] {
+		return this.allChans;
 	}
+
+	private channelData: { [key:number]: {
+		instrument: number,
+		volume: number,
+	} };
 
 	/**
 	 * Function to fetch target channel by its ID.
@@ -414,14 +429,48 @@ export default class implements Driver {
 	}
 
 	/**
-	 * Helper function to set an FM volume
+	 * Helper function to update FM channel volume
 	 *
 	 * @param channel The channel offset (0-2, 4-6) to load to
 	 * @param note The volume (00-7F) to load. Note that 00 is loudest
 	 */
-	private loadFMVolume(channel:number, volume:number) {
-		this.writeYMch(channel, YMREG.TL | YMREG.op4, volume);
+	private updateFMchVolume(channel:number) {
+		const voice = this.voices[this.channelData[channel].instrument];
+
+		// if invalid voice, quit
+		if(!voice) {
+			return;
+		}
+
+		// load the volume
+		const volume = this.channelData[channel].volume;
+		const slots = this.slotOps[voice[1] & 7];
+
+		// send YM writes for the register
+		this.writeYMch(channel, YMREG.TL | YMREG.op1, Math.min(0x7F, ((slots & 8) ? volume : 0) + voice[26]));
+		this.writeYMch(channel, YMREG.TL | YMREG.op2, Math.min(0x7F, ((slots & 4) ? volume : 0) + voice[27]));
+		this.writeYMch(channel, YMREG.TL | YMREG.op3, Math.min(0x7F, ((slots & 2) ? volume : 0) + voice[28]));
+		this.writeYMch(channel, YMREG.TL | YMREG.op4, Math.min(0x7F, ((slots & 1) ? volume : 0) + voice[29]));
+
+		console.log("vol", this.channelData[channel].instrument, volume, slots, "xx",
+			Math.min(0x7F, ((slots & 8) ? volume : 0) + voice[26]).toString(16),
+			Math.min(0x7F, ((slots & 4) ? volume : 0) + voice[27]).toString(16),
+			Math.min(0x7F, ((slots & 2) ? volume : 0) + voice[28]).toString(16),
+			Math.min(0x7F, ((slots & 1) ? volume : 0) + voice[29]).toString(16)
+		);
 	}
+
+	private slotOps = [
+		//1234
+		0b0001,				// algorithm 0
+		0b0001,				// algorithm 1
+		0b0001,				// algorithm 2
+		0b0001,				// algorithm 3
+		0b0101,				// algorithm 4
+		0b0111,				// algorithm 5
+		0b0111,				// algorithm 6
+		0b1111,				// algorithm 7
+	]
 
 	/**
 	 * Helper function to play an FM note
@@ -500,11 +549,7 @@ export default class implements Driver {
 		this.writeYMch(channel, YMREG.SSGEG | YMREG.op2, voice[i++]);
 		this.writeYMch(channel, YMREG.SSGEG | YMREG.op3, voice[i++]);
 		this.writeYMch(channel, YMREG.SSGEG | YMREG.op4, voice[i++]);
-
-		this.writeYMch(channel, YMREG.TL | YMREG.op1, voice[i++]);
-		this.writeYMch(channel, YMREG.TL | YMREG.op2, voice[i++]);
-		this.writeYMch(channel, YMREG.TL | YMREG.op3, voice[i++]);
-		this.writeYMch(channel, YMREG.TL | YMREG.op4, voice[i++]);
+		this.updateFMchVolume(channel);
 	}
 
 	/**
@@ -723,7 +768,7 @@ export default class implements Driver {
 	 */
 	private voices = [
 		/* eslint-disable max-len */
-		/* n/o   PAN   F/A       Detune/Multiple       Rate Scale/Attack Rate        Decay 1 Rate             Decay 2 Rate       Decay Level/Release Rate          SSG-EG                Total Level       */
+		/* n/o    PAN   F/A       Detune/Multiple      Rate Scale/Attack Rate        Decay 1 Rate             Decay 2 Rate       Decay Level/Release Rate          SSG-EG                Total Level       */
 		/* 0 */[ 0xC0, 0x3A,  0x01, 0x31, 0x07, 0x71,  0x8E, 0x8D, 0x8E, 0x53,  0x0E, 0x0E, 0x0E, 0x03,  0x00, 0x00, 0x00, 0x07,  0x1F, 0x1F, 0x1F, 0x0F,  0x00, 0x00, 0x00, 0x00,  0x18, 0x27, 0x28, 0x00, ],
 		/* 1 */[ 0xC0, 0x04,  0x71, 0x31, 0x41, 0x31,  0x12, 0x12, 0x12, 0x12,  0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,  0x0F, 0x0F, 0x0F, 0x0F,  0x00, 0x00, 0x00, 0x00,  0x23, 0x23, 0x00, 0x00, ],
 		/* 2 */[ 0xC0, 0x14,  0x75, 0x35, 0x72, 0x32,  0x9F, 0x9F, 0x9F, 0x9F,  0x05, 0x00, 0x05, 0x0A,  0x05, 0x07, 0x05, 0x05,  0x2F, 0x0F, 0xFF, 0x2F,  0x00, 0x00, 0x00, 0x00,  0x1E, 0x00, 0x14, 0x00, ],

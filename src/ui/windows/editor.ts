@@ -66,11 +66,12 @@ window.shortcutPriority = (data:string[]) => {
 				case "hex": return 3;
 				default: return 5;
 			}
+
 		case "matrix": return checkFocus("matrix") ? 1 : 11;
 		case "*pattern": return 4;
 		case "piano": return 12;
 		case "window": return 13;
-		case "ui": return 14;
+		case "ui": return 10;
 		default: return 999;
 	}
 }
@@ -97,6 +98,7 @@ import { CheckboxEnum, makeCheckbox, CheckboxReturn } from "../elements/checkbox
 /* ipc communication */
 import "../../system/ipc/html editor";
 import "../misc/playback";
+import { startPlayback, stopPlayback } from "../misc/playback";
 
 // stored list of components active
 const components = new UIComponentStore();
@@ -327,38 +329,39 @@ async function loadMainShortcuts() {
 		},
 
 		/* shortcut for enabling play mode */
-		// eslint-disable-next-line require-await
-		play: async() => {
-			if(!Tab.active || Tab.active.playMode === PlayMode.PlayAll){
+		play: () => {
+			if(!Tab.active || Tab.active.playMode !== PlayMode.Stopped){
 				return false;
 			}
 
 			// toggle play mode
 			Tab.active.playMode = PlayMode.PlayAll;
+			startPlayback(Tab.active, 0, false).catch(console.error);
 			return true;
 		},
 
 		/* shortcut for enabling play pattern mode */
-		// eslint-disable-next-line require-await
-		playpattern: async() => {
-			if(!Tab.active || Tab.active.playMode === PlayMode.PlayPattern){
+		playpattern: () => {
+			if(!Tab.active || Tab.active.playMode !== PlayMode.Stopped){
 				return false;
 			}
 
 			// toggle play mode
 			Tab.active.playMode = PlayMode.PlayPattern;
+			startPlayback(Tab.active, 0, true).catch(console.error);
 			return true;
 		},
 
 		/* shortcut for disabling playback mode */
 		// eslint-disable-next-line require-await
-		stop: async() => {
+		stop: () => {
 			if(!Tab.active || Tab.active.playMode === PlayMode.Stopped){
 				return false;
 			}
 
 			// toggle play mode
 			Tab.active.playMode = PlayMode.Stopped;
+			stopPlayback().catch(console.error);
 			return true;
 		},
 

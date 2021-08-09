@@ -519,9 +519,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 		switch(data.shift()) {
 			case "change1":
 				return this.handleMovementCheck(data.shift(), async(pos:Position) => {
-					if(!pos.y ? await this.handleDataChangeShortcut((sel:SingleSelection) => [ sel, sel, ],
+					if(!pos.y || !await this.handleDataChangeShortcut((sel:SingleSelection) => [ sel, sel, ],
 						(pd:PatternData, pattern:number, channel:number, rstart:number, rend:number, estart:number, eend:number) =>
-							this.processDataChange(-pos.y, false, pd, pattern, channel, rstart, rend, estart, eend)) : false){
+							this.processDataChange(-pos.y, false, pd, pattern, channel, rstart, rend, estart, eend))){
 								return false;
 							}
 
@@ -532,9 +532,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 
 			case "change10":
 				return this.handleMovementCheck(data.shift(), async(pos:Position) => {
-					if(!pos.y ? await this.handleDataChangeShortcut((sel:SingleSelection) => [ sel, sel, ],
+					if(!pos.y || !await this.handleDataChangeShortcut((sel:SingleSelection) => [ sel, sel, ],
 						(pd:PatternData, pattern:number, channel:number, rstart:number, rend:number, estart:number, eend:number) =>
-							this.processDataChange(-pos.y, true, pd, pattern, channel, rstart, rend, estart, eend)) : false){
+							this.processDataChange(-pos.y, true, pd, pattern, channel, rstart, rend, estart, eend))){
 								return false;
 							}
 

@@ -165,7 +165,7 @@ export default class implements Driver {
 		this.tick += samples / 44100 * this.playback.rate;
 
 		// check if we need to process the next row
-		if(this.tick >= this.playback.ticksPerRow) {
+		while(this.tick >= this.playback.ticksPerRow) {
 			this.tick -= this.playback.ticksPerRow;
 
 			// load the data row to inspect
@@ -199,6 +199,9 @@ export default class implements Driver {
 						break;
 				}
 			}
+
+			// advance emulation by some amount
+			advance(Math.min(samples, Math.floor(this.playback.ticksPerRow * 44100 / this.playback.rate)));
 		}
 	}
 

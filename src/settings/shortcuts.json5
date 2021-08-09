@@ -153,9 +153,9 @@
 	"ui.save":								[ "ctrl+S" ],							/* shortcut for saving the project */
 	"ui.saveas":							[ "ctrl+shift+S" ],						/* shortcut for saving the project as another file */
 
-	"ui.play":								[ "MediaPlayPause", "Enter" ],			/* shortcut for playing back the entire track */
-	"ui.playpattern":						[ "MediaTrackPrevious", "Shift+Enter" ],/* shortcut for playing back the current pattern */
-	"ui.stop":								[ "MediaStop", "Shift+Enter", "Enter" ],/* shortcut for stopping playback */
+	"ui.play":								[ "Enter" ],							/* shortcut for playing back the entire track */
+	"ui.playpattern":						[ "Shift+Enter" ],						/* shortcut for playing back the current pattern */
+	"ui.stop":								[ "Shift+Enter", "Enter" ],				/* shortcut for stopping playback */
 	"ui.record":							[ "Space" ],							/* shortcut for toggling record mode */
 
 	"ui.muteselected":						[ "F9" ],								/* shortcut for muting selected channel */

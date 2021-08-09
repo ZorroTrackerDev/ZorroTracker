@@ -131,6 +131,27 @@ export default class implements Driver {
 		this.playing = false;
 
 		// hardware mute all channels
+		this.writeYMch(0, YMREG.TL | YMREG.op1, 0x7F);
+		this.writeYMch(1, YMREG.TL | YMREG.op1, 0x7F);
+		this.writeYMch(2, YMREG.TL | YMREG.op1, 0x7F);
+		this.writeYMch(3, YMREG.TL | YMREG.op1, 0x7F);
+		this.writeYMch(4, YMREG.TL | YMREG.op1, 0x7F);
+		this.writeYMch(5, YMREG.TL | YMREG.op1, 0x7F);
+
+		this.writeYMch(0, YMREG.TL | YMREG.op2, 0x7F);
+		this.writeYMch(1, YMREG.TL | YMREG.op2, 0x7F);
+		this.writeYMch(2, YMREG.TL | YMREG.op2, 0x7F);
+		this.writeYMch(3, YMREG.TL | YMREG.op2, 0x7F);
+		this.writeYMch(4, YMREG.TL | YMREG.op2, 0x7F);
+		this.writeYMch(5, YMREG.TL | YMREG.op2, 0x7F);
+
+		this.writeYMch(0, YMREG.TL | YMREG.op3, 0x7F);
+		this.writeYMch(1, YMREG.TL | YMREG.op3, 0x7F);
+		this.writeYMch(2, YMREG.TL | YMREG.op3, 0x7F);
+		this.writeYMch(3, YMREG.TL | YMREG.op3, 0x7F);
+		this.writeYMch(4, YMREG.TL | YMREG.op3, 0x7F);
+		this.writeYMch(5, YMREG.TL | YMREG.op3, 0x7F);
+
 		this.writeYMch(0, YMREG.TL | YMREG.op4, 0x7F);
 		this.writeYMch(1, YMREG.TL | YMREG.op4, 0x7F);
 		this.writeYMch(2, YMREG.TL | YMREG.op4, 0x7F);
@@ -218,7 +239,7 @@ export default class implements Driver {
 		}
 
 		if(cell.instrument !== undefined) {
-			this.loadFMVoice(this.hwid[channel]);
+			this.loadFMVoice(this.hwid[channel], cell.instrument);
 		}
 
 		if(cell.note) {
@@ -437,44 +458,53 @@ export default class implements Driver {
 	 *
 	 * @param channel The channel offset (0-2, 4-6) to load to
 	 */
-	private loadFMVoice(channel:number) {
-		this.writeYMch(channel, YMREG.DM | YMREG.op1, 0x62);
-		this.writeYMch(channel, YMREG.DM | YMREG.op2, 0x44);
-		this.writeYMch(channel, YMREG.DM | YMREG.op3, 0x40);
-		this.writeYMch(channel, YMREG.DM | YMREG.op4, 0x31);
+	private loadFMVoice(channel:number, id:number) {
+		const voice = this.voices[id];
 
-		this.writeYMch(channel, YMREG.RSAR | YMREG.op1, 0x1F);
-		this.writeYMch(channel, YMREG.RSAR | YMREG.op2, 0x1F);
-		this.writeYMch(channel, YMREG.RSAR | YMREG.op3, 0x1F);
-		this.writeYMch(channel, YMREG.RSAR | YMREG.op4, 0x1C);
+		// if invalid voice, quit
+		if(!voice) {
+			return;
+		}
 
-		this.writeYMch(channel, YMREG.D1R | YMREG.op1, 0x08);
-		this.writeYMch(channel, YMREG.D1R | YMREG.op2, 0x04);
-		this.writeYMch(channel, YMREG.D1R | YMREG.op3, 0x0B);
-		this.writeYMch(channel, YMREG.D1R | YMREG.op4, 0x06);
+		let i = 0;
 
-		this.writeYMch(channel, YMREG.D2R | YMREG.op1, 0x0B);
-		this.writeYMch(channel, YMREG.D2R | YMREG.op2, 0x02);
-		this.writeYMch(channel, YMREG.D2R | YMREG.op3, 0x0A);
-		this.writeYMch(channel, YMREG.D2R | YMREG.op4, 0x01);
+		this.writeYMch(channel, YMREG.PL, voice[i++]);
+		this.writeYMch(channel, YMREG.FA, voice[i++]);
 
-		this.writeYMch(channel, YMREG.DLRR | YMREG.op1, 0x1F);
-		this.writeYMch(channel, YMREG.DLRR | YMREG.op2, 0x1F);
-		this.writeYMch(channel, YMREG.DLRR | YMREG.op3, 0x1F);
-		this.writeYMch(channel, YMREG.DLRR | YMREG.op4, 0x1F);
+		this.writeYMch(channel, YMREG.DM | YMREG.op1, voice[i++]);
+		this.writeYMch(channel, YMREG.DM | YMREG.op2, voice[i++]);
+		this.writeYMch(channel, YMREG.DM | YMREG.op3, voice[i++]);
+		this.writeYMch(channel, YMREG.DM | YMREG.op4, voice[i++]);
 
-		this.writeYMch(channel, YMREG.SSGEG | YMREG.op1, 0x00);
-		this.writeYMch(channel, YMREG.SSGEG | YMREG.op2, 0x00);
-		this.writeYMch(channel, YMREG.SSGEG | YMREG.op3, 0x00);
-		this.writeYMch(channel, YMREG.SSGEG | YMREG.op4, 0x00);
+		this.writeYMch(channel, YMREG.RSAR | YMREG.op1, voice[i++]);
+		this.writeYMch(channel, YMREG.RSAR | YMREG.op2, voice[i++]);
+		this.writeYMch(channel, YMREG.RSAR | YMREG.op3, voice[i++]);
+		this.writeYMch(channel, YMREG.RSAR | YMREG.op4, voice[i++]);
 
-		this.writeYMch(channel, YMREG.TL | YMREG.op1, 0x2A);
-		this.writeYMch(channel, YMREG.TL | YMREG.op2, 0x2B);
-		this.writeYMch(channel, YMREG.TL | YMREG.op3, 0x1A);
-		this.writeYMch(channel, YMREG.TL | YMREG.op4, 0x00);
+		this.writeYMch(channel, YMREG.D1R | YMREG.op1, voice[i++]);
+		this.writeYMch(channel, YMREG.D1R | YMREG.op2, voice[i++]);
+		this.writeYMch(channel, YMREG.D1R | YMREG.op3, voice[i++]);
+		this.writeYMch(channel, YMREG.D1R | YMREG.op4, voice[i++]);
 
-		this.writeYMch(channel, YMREG.FA, 0x03);
-		this.writeYMch(channel, YMREG.PL, 0xC0);
+		this.writeYMch(channel, YMREG.D2R | YMREG.op1, voice[i++]);
+		this.writeYMch(channel, YMREG.D2R | YMREG.op2, voice[i++]);
+		this.writeYMch(channel, YMREG.D2R | YMREG.op3, voice[i++]);
+		this.writeYMch(channel, YMREG.D2R | YMREG.op4, voice[i++]);
+
+		this.writeYMch(channel, YMREG.DLRR | YMREG.op1, voice[i++]);
+		this.writeYMch(channel, YMREG.DLRR | YMREG.op2, voice[i++]);
+		this.writeYMch(channel, YMREG.DLRR | YMREG.op3, voice[i++]);
+		this.writeYMch(channel, YMREG.DLRR | YMREG.op4, voice[i++]);
+
+		this.writeYMch(channel, YMREG.SSGEG | YMREG.op1, voice[i++]);
+		this.writeYMch(channel, YMREG.SSGEG | YMREG.op2, voice[i++]);
+		this.writeYMch(channel, YMREG.SSGEG | YMREG.op3, voice[i++]);
+		this.writeYMch(channel, YMREG.SSGEG | YMREG.op4, voice[i++]);
+
+		this.writeYMch(channel, YMREG.TL | YMREG.op1, voice[i++]);
+		this.writeYMch(channel, YMREG.TL | YMREG.op2, voice[i++]);
+		this.writeYMch(channel, YMREG.TL | YMREG.op3, voice[i++]);
+		this.writeYMch(channel, YMREG.TL | YMREG.op4, voice[i++]);
 	}
 
 	/**
@@ -483,9 +513,10 @@ export default class implements Driver {
 	 * @param note The ID of the note to trigger
 	 * @param velocity A value between 0 and 1, representing the velocity of the note. 0 = mute
 	 * @param channel The ID of the channel to trigger the note on
+	 * @param instrument The instrument ID to use for this note
 	 * @returns Whether the note was triggered
 	 */
-	public pianoTrigger(note:number, velocity:number, channel:number): boolean {
+	public pianoTrigger(note:number, velocity:number, channel:number, instrument:number): boolean {
 		// check if note is already playing
 		if(typeof this.getPianoCh(note) === "number") {
 			return true;
@@ -525,7 +556,7 @@ export default class implements Driver {
 
 				// load voice
 				const cx = this.hwid[cc];
-				this.loadFMVoice(cx);
+				this.loadFMVoice(cx, instrument);
 
 				// disable key
 				this.writeYM1(YMREG.Key, cx);
@@ -686,4 +717,22 @@ export default class implements Driver {
 
 		return undefined;
 	}
+
+	/**
+	 * Temporary array of supported voices
+	 */
+	private voices = [
+		/* eslint-disable max-len */
+		/* n/o   PAN   F/A       Detune/Multiple       Rate Scale/Attack Rate        Decay 1 Rate             Decay 2 Rate       Decay Level/Release Rate          SSG-EG                Total Level       */
+		/* 0 */[ 0xC0, 0x3A,  0x01, 0x31, 0x07, 0x71,  0x8E, 0x8D, 0x8E, 0x53,  0x0E, 0x0E, 0x0E, 0x03,  0x00, 0x00, 0x00, 0x07,  0x1F, 0x1F, 0x1F, 0x0F,  0x00, 0x00, 0x00, 0x00,  0x18, 0x27, 0x28, 0x00, ],
+		/* 1 */[ 0xC0, 0x04,  0x71, 0x31, 0x41, 0x31,  0x12, 0x12, 0x12, 0x12,  0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,  0x0F, 0x0F, 0x0F, 0x0F,  0x00, 0x00, 0x00, 0x00,  0x23, 0x23, 0x00, 0x00, ],
+		/* 2 */[ 0xC0, 0x14,  0x75, 0x35, 0x72, 0x32,  0x9F, 0x9F, 0x9F, 0x9F,  0x05, 0x00, 0x05, 0x0A,  0x05, 0x07, 0x05, 0x05,  0x2F, 0x0F, 0xFF, 0x2F,  0x00, 0x00, 0x00, 0x00,  0x1E, 0x00, 0x14, 0x00, ],
+		/* 3 */[ 0xC0, 0x3D,  0x01, 0x01, 0x01, 0x02,  0x12, 0x1F, 0x1F, 0x14,  0x07, 0x02, 0x02, 0x0A,  0x05, 0x05, 0x05, 0x05,  0x2F, 0x2F, 0x2F, 0xAF,  0x00, 0x00, 0x00, 0x00,  0x1C, 0x02, 0x00, 0x00, ],
+		/* 4 */[ 0xC0, 0x3A,  0x70, 0x30, 0x76, 0x71,  0x1F, 0x1F, 0x95, 0x1F,  0x0E, 0x05, 0x0F, 0x0C,  0x07, 0x06, 0x06, 0x07,  0x2F, 0x1F, 0x4F, 0x5F,  0x00, 0x00, 0x00, 0x00,  0x21, 0x28, 0x12, 0x00, ],
+		/* 5 */[ 0xC0, 0x28,  0x71, 0x30, 0x00, 0x01,  0x1F, 0x1D, 0x1F, 0x1F,  0x13, 0x06, 0x13, 0x05,  0x03, 0x02, 0x03, 0x05,  0x4F, 0x2F, 0x4F, 0x3F,  0x00, 0x00, 0x00, 0x00,  0x0E, 0x1E, 0x14, 0x00, ],
+		/* 6 */[ 0xC0, 0x3E,  0x38, 0x7A, 0x01, 0x34,  0x59, 0x5F, 0xD9, 0x9C,  0x0F, 0x0F, 0x04, 0x0A,  0x02, 0x05, 0x02, 0x05,  0xAF, 0x66, 0xAF, 0x66,  0x00, 0x00, 0x00, 0x00,  0x28, 0x23, 0x00, 0x00, ],
+		/* 7 */[ 0xC0, 0x39,  0x32, 0x72, 0x31, 0x71,  0x1F, 0x1F, 0x1F, 0x1F,  0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,  0x0F, 0x0F, 0x0F, 0x0F,  0x00, 0x00, 0x00, 0x00,  0x1B, 0x28, 0x32, 0x00, ],
+		/* 8 */[ 0xC0, 0x07,  0x34, 0x32, 0x74, 0x71,  0x1F, 0x1F, 0x1F, 0x1F,  0x0A, 0x05, 0x0A, 0x03,  0x00, 0x00, 0x00, 0x00,  0x3F, 0x2F, 0x3F, 0x2F,  0x00, 0x00, 0x00, 0x00,  0x0A, 0x00, 0x0A, 0x00, ],
+		/* eslint-enable max-len */
+	]
 }

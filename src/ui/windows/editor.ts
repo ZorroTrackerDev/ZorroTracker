@@ -923,7 +923,7 @@ class SettingsPanelRight implements UIComponent<HTMLDivElement> {
 		});
 
 		// make a title
-		this.rate.label.title = "The driver hertz rate. Higher value = faster music.";
+		this.rate.label.title = "The driver refresh rate. Higher value = faster music.";
 
 		// create the tempo box
 		this.ttpr = await makeValueBox([ 1, 32, ], 6, "Ticks/row", 1, (value) => {
@@ -937,7 +937,7 @@ class SettingsPanelRight implements UIComponent<HTMLDivElement> {
 		});
 
 		// make a title
-		this.rate.label.title = "How many ticks are between each row. Higher value = slower music.";
+		this.ttpr.label.title = "How many ticks are between each row. Higher value = slower music.";
 
 		// append all items in order
 		this.element.appendChild(this.rate.element);
@@ -953,12 +953,22 @@ class SettingsPanelRight implements UIComponent<HTMLDivElement> {
 		const midi = document.createElement("div");
 		midi.id = "midi";
 		this.element.appendChild(midi);
+
+		// create the instrument test
+		this.ins = await makeValueBox([ 0, 256, ], 0, "Instrument", 2, (value) => {
+			this.tab.selectedInstrument = value;
+		});
+
+		// make a title
+		this.ins.label.title = "Set the selected instrument ID";
+		this.element.appendChild(this.ins.element);
 		return this.element;
 	}
 
 	// these are the various elements that are loaded as settings
 	private rate!: SimpleValueReturn;
 	private ttpr!: SimpleValueReturn;
+	private ins!: SimpleValueReturn;
 
 	/**
 	 * Function to load the component

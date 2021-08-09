@@ -73,6 +73,11 @@ export class Tab {
 	public step = 1;
 
 	/**
+	 * The currently selected instrument in the nstrument editor
+	 */
+	public selectedInstrument = 0;
+
+	/**
 	 * Whether to record velocity along with note. Useful for MIDI keyboards and the like
 	 */
 	public recordVelocity = false;

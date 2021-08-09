@@ -983,6 +983,29 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	}
 
 	/**
+	 * Function to find the last instrument # in this pattern and channel
+	 */
+	public getLastInstrument(): number|null {
+		// load the next pattern and check if its valid
+		const pat = this.getCurrentPattern();
+
+		if(!pat) {
+			return null;
+		}
+
+		// loop for each row, trying to find the instrument
+		for(let r = this.parent.selectionManager.single.row;r >= 0; --r) {
+			if(pat[1].cells[r] && pat[1].cells[r].instrument !== null) {
+				// found the instrument, return it
+				return pat[1].cells[r].instrument;
+			}
+		}
+
+		// no instrument found
+		return null;
+	}
+
+	/**
 	 * Helper function to get the ID of the currently selected element in single selection
 	 */
 	public getCurrentElementId(): number {
@@ -992,7 +1015,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	/**
 	 * Helper function to get the currently active pattern cell
 	 */
-	public getCurrentPatternCell(): null|[ number, PatternData, PatternCell, ] {
+	public getCurrentPattern(): null|[ number, PatternData, ] {
 		// load the current channel
 		const ch = this.parent.selectionManager.single.channel;
 
@@ -1011,8 +1034,22 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 		}
 
 		// find the cell that we're targeting
-		const cell = pd.cells[this.parent.selectionManager.single.row];
-		return !cell ? null : [ rp, pd, cell, ];
+		return [ rp, pd, ];
+	}
+
+	/**
+	 * Helper function to get the currently active pattern cell
+	 */
+	public getCurrentPatternCell(): null|[ number, PatternData, PatternCell, ] {
+		const pat = this.getCurrentPattern();
+
+		if(!pat) {
+			return null;
+		}
+
+		// find the cell that we're targeting
+		const cell = pat[1].cells[this.parent.selectionManager.single.row];
+		return !cell ? null : [ ...pat, cell, ];
 	}
 
 	/**

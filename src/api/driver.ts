@@ -93,9 +93,10 @@ export interface Driver {
 	 * @param note The ID of the note to trigger
 	 * @param velocity A value between 0 and 1, representing the velocity of the note. 1 = mute, 0 = loudest
 	 * @param channel The ID of the channel to trigger the note on
+	 * @param instrument The instrument ID to use for this note
 	 * @returns Whether the note was triggered
 	 */
-	pianoTrigger: (note:number, velocity:number, channel:number) => boolean|Promise<boolean>,
+	pianoTrigger: (note:number, velocity:number, channel:number, instrument:number) => boolean|Promise<boolean>,
 
 	/**
 	 * Release a note via the piano.

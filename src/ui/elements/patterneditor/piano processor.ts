@@ -130,6 +130,11 @@ export class PianoProcessor {
 						info[2].volume = volume;
 					}
 
+					// if the instrument is different, also change that
+					if(this.parent.shortcuts.getLastInstrument() !== this.parent.tab.selectedInstrument) {
+						info[2].instrument = this.parent.tab.selectedInstrument;
+					}
+
 					if(this.activeNote) {
 						// note is active, release it quickly
 						await eventNoteOff(this.parent.tab.selectedChannelId, this.activeNote, 0);

@@ -299,13 +299,13 @@ export class Project {
 	 */
 	public static projectError(text:string): void {
 		confirmationDialog({
-			color: PopupColors.Normal,
+			color: PopupColors.Error,
 			size: PopupSizes.Small,
 			html: /*html*/`
 				<h2>Can not load the project file!</h2>
 				<p>${ text }</p>
 			`, buttons: [
-				{ result: undefined, float: "right", color: PopupColors.Normal, html: "OK", default: true, },
+				{ result: undefined, float: "right", color: PopupColors.Error, html: "OK", default: true, },
 			],
 		}).catch(console.error);
 	}

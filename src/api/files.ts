@@ -4,6 +4,11 @@ import path from "path";
 import { confirmationDialog, createFilename, PopupColors, PopupSizes } from "../ui/elements/popup/popup";
 
 /**
+ * What formats are valid ZorroTracker files
+ */
+export const zorroFormats = [ "ztm", "zip", ];
+
+/**
  * SettingsTypes enum is here to enforce data safety and allowing us to rename properties without breaking code that uses them.
  */
 export enum SettingsTypes {

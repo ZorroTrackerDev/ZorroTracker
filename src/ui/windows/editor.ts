@@ -1,4 +1,5 @@
 import { WindowType } from "../../defs/windowtype";
+import fs from "fs";
 /**
  * So.. In order for Jest testing to work, we need to load stuff as modules. However, browsers really don't like CommonJS modules
  * Also, Electron does not work with ES2015 modules. Also, trying to use mix of both is apparently borked to hell. Here we have an
@@ -78,7 +79,7 @@ window.shortcutPriority = (data:string[]) => {
 
 import { addShortcutReceiver, doShortcut } from "../misc/shortcuts";
 import { loadDefaultToolbar } from "../elements/toolbar/toolbar";
-import { loadFlag, SettingsTypes } from "../../api/files";
+import { loadFlag, SettingsTypes, zorroFormats } from "../../api/files";
 import { Module, Project } from "../misc/project";
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../api/events";
 import { createVolumeSlider, simpleValue, SimpleValueReturn, SliderEnum } from "../elements/slider/slider";
@@ -120,6 +121,9 @@ window.ipc.ui.path().then(async() => {
 		try {
 			// check if an url was provided
 			if((url?.length ?? 0) > 0) {
+				// check if file exists. generates and error if not
+				await fs.promises.access(url as string, fs.constants.F_OK);
+
 				// attempt to load project
 				const p = await Project.loadProject(url as string);
 
@@ -219,6 +223,7 @@ async function loadMainShortcuts() {
 
 			// check if loaded and if was allowed to load
 			if(!p || !await Project.setActiveProject(p)){
+				disableLoading();
 				return false;
 			}
 
@@ -256,6 +261,7 @@ async function loadMainShortcuts() {
 
 			// check if loaded and if was allowed to load
 			if(!p || !await Project.setActiveProject(p)){
+				disableLoading();
 				return false;
 			}
 
@@ -646,6 +652,75 @@ async function initLayout() {
 
 	// let the piano access certain functions in shortcuts
 	_piano.pianoReceiver = _pe.shortcuts;
+
+	// quick hacky drag-n-drop support
+	body.addEventListener("drop", async(e) => {
+		e.preventDefault();
+
+		// check if a file was dropped
+		if (e.dataTransfer?.items && e.dataTransfer.items.length === 1 && e.dataTransfer.items[0].kind === "file") {
+			const filename = e.dataTransfer.items[0].getAsFile()?.path;
+
+			// check if the file is a valid zorrotracker supported format
+			if(!filename) {
+				return;
+			}
+
+			for(const fmt of zorroFormats) {
+				// file extension check
+				if(filename.endsWith("."+ fmt)) {
+					// check file save dialog
+					if(!await askSavePopup()) {
+						return false;
+					}
+
+					// open loading animation
+					Undo.clear();
+					await enableLoading();
+
+					// try to load the project
+					const p = await Project.loadProject(filename);
+
+					// check if loaded and if was allowed to load
+					if(!p || !await Project.setActiveProject(p)){
+						disableLoading();
+						return false;
+					}
+
+					// unload all components properly
+					await components.unloadComponents(10);
+
+					// create a tab for the project
+					Tab.active = new Tab(p);
+
+					// let all windows know about the loaded project
+					window.ipc.project?.init(p);
+
+					// load all of the components with this new tab
+					components.setComponentTab(Tab.active as Tab);
+					await components.loadComponents(10);
+
+					// remove loading animation
+					disableLoading();
+					return;
+				}
+			}
+
+			// tell the user the file isnt recognized
+			await confirmationDialog({
+				color: PopupColors.Error,
+				size: PopupSizes.Small,
+				html: /*html*/`
+					<h2>File was not recognized</h2>
+					<p>This file is not a ZorroTracker project file!</p>
+				`, buttons: [
+					{ result: undefined, float: "right", color: PopupColors.Error, html: "OK", default: true, },
+				],
+			});
+		}
+	});
+
+	body.addEventListener("dragover", (e) => e.preventDefault());
 }
 
 // helper function to enable or disable focus on pattern

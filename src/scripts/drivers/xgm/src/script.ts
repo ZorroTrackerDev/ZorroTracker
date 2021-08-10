@@ -447,17 +447,10 @@ export default class implements Driver {
 		const slots = this.slotOps[voice[1] & 7];
 
 		// send YM writes for the register
-		this.writeYMch(channel, YMREG.TL | YMREG.op1, Math.min(0x7F, ((slots & 8) ? volume : 0) + voice[26]));
-		this.writeYMch(channel, YMREG.TL | YMREG.op2, Math.min(0x7F, ((slots & 4) ? volume : 0) + voice[27]));
-		this.writeYMch(channel, YMREG.TL | YMREG.op3, Math.min(0x7F, ((slots & 2) ? volume : 0) + voice[28]));
-		this.writeYMch(channel, YMREG.TL | YMREG.op4, Math.min(0x7F, ((slots & 1) ? volume : 0) + voice[29]));
-
-		console.log("vol", this.channelData[channel].instrument, volume, slots, "xx",
-			Math.min(0x7F, ((slots & 8) ? volume : 0) + voice[26]).toString(16),
-			Math.min(0x7F, ((slots & 4) ? volume : 0) + voice[27]).toString(16),
-			Math.min(0x7F, ((slots & 2) ? volume : 0) + voice[28]).toString(16),
-			Math.min(0x7F, ((slots & 1) ? volume : 0) + voice[29]).toString(16)
-		);
+		this.writeYMch(this.hwid[channel], YMREG.TL | YMREG.op1, Math.min(0x7F, ((slots & 8) ? volume : 0) + voice[26]));
+		this.writeYMch(this.hwid[channel], YMREG.TL | YMREG.op2, Math.min(0x7F, ((slots & 4) ? volume : 0) + voice[27]));
+		this.writeYMch(this.hwid[channel], YMREG.TL | YMREG.op3, Math.min(0x7F, ((slots & 2) ? volume : 0) + voice[28]));
+		this.writeYMch(this.hwid[channel], YMREG.TL | YMREG.op4, Math.min(0x7F, ((slots & 1) ? volume : 0) + voice[29]));
 	}
 
 	private slotOps = [

@@ -3,6 +3,8 @@ import { ChannelType, Driver, DriverChannel, DriverConfig, FeatureFlag, NoteData
 import { Chip, PSGCMD, YMKey, YMREG } from "../../../../api/chip";
 import { DefaultOctave, DefaultOctaveSharp, Note, OctaveSize } from "../../../../api/notes";
 import { PlaybackAPI } from "../../../../api/playback API";
+import { loadFMFrequency, loadFMNote, loadFMVoice, muteAllYMChannels, updateFMchVolume, writeYM1 } from "./fm.lib";
+import { hwid } from "./shared.lib";
 
 export default class implements Driver {
 	private chip: Chip|undefined;
@@ -138,34 +140,7 @@ export default class implements Driver {
 		this.playing = false;
 
 		// hardware mute all channels
-		this.writeYMch(0, YMREG.TL | YMREG.op1, 0x7F);
-		this.writeYMch(1, YMREG.TL | YMREG.op1, 0x7F);
-		this.writeYMch(2, YMREG.TL | YMREG.op1, 0x7F);
-		this.writeYMch(3, YMREG.TL | YMREG.op1, 0x7F);
-		this.writeYMch(4, YMREG.TL | YMREG.op1, 0x7F);
-		this.writeYMch(5, YMREG.TL | YMREG.op1, 0x7F);
-
-		this.writeYMch(0, YMREG.TL | YMREG.op2, 0x7F);
-		this.writeYMch(1, YMREG.TL | YMREG.op2, 0x7F);
-		this.writeYMch(2, YMREG.TL | YMREG.op2, 0x7F);
-		this.writeYMch(3, YMREG.TL | YMREG.op2, 0x7F);
-		this.writeYMch(4, YMREG.TL | YMREG.op2, 0x7F);
-		this.writeYMch(5, YMREG.TL | YMREG.op2, 0x7F);
-
-		this.writeYMch(0, YMREG.TL | YMREG.op3, 0x7F);
-		this.writeYMch(1, YMREG.TL | YMREG.op3, 0x7F);
-		this.writeYMch(2, YMREG.TL | YMREG.op3, 0x7F);
-		this.writeYMch(3, YMREG.TL | YMREG.op3, 0x7F);
-		this.writeYMch(4, YMREG.TL | YMREG.op3, 0x7F);
-		this.writeYMch(5, YMREG.TL | YMREG.op3, 0x7F);
-
-		this.writeYMch(0, YMREG.TL | YMREG.op4, 0x7F);
-		this.writeYMch(1, YMREG.TL | YMREG.op4, 0x7F);
-		this.writeYMch(2, YMREG.TL | YMREG.op4, 0x7F);
-		this.writeYMch(3, YMREG.TL | YMREG.op4, 0x7F);
-		this.writeYMch(4, YMREG.TL | YMREG.op4, 0x7F);
-		this.writeYMch(5, YMREG.TL | YMREG.op4, 0x7F);
-
+		muteAllYMChannels(this.chip);
 		this.chip.writePSG(PSGCMD.PSG1 | PSGCMD.VOLUME | 0xF);
 		this.chip.writePSG(PSGCMD.PSG2 | PSGCMD.VOLUME | 0xF);
 		this.chip.writePSG(PSGCMD.PSG3 | PSGCMD.VOLUME | 0xF);
@@ -239,20 +214,21 @@ export default class implements Driver {
 	private processFMCells(channel:number, cell:PatternCellData) {
 		// rest flag also controls whether we reset key
 		let rest = !cell.note;
+		const hwc = hwid[channel];
 
 		if(!rest) {
 			// disable key
-			this.writeYM1(YMREG.Key, this.hwid[channel]);
+			writeYM1(this.chip, YMREG.Key, hwc);
 		}
 
 		if(cell.volume !== undefined) {
 			this.channelData[channel].volume = 0x7F - cell.volume;
-			this.updateFMchVolume(channel);
+			updateFMchVolume(this.chip, hwc, this.channelData[channel].instrument, this.channelData[channel].volume);
 		}
 
 		if(cell.instrument !== undefined) {
 			this.channelData[channel].instrument = cell.instrument;
-			this.loadFMVoice(channel, cell.instrument);
+			loadFMVoice(this.chip, hwc, this.channelData[channel].instrument, this.channelData[channel].volume);
 		}
 
 		if(cell.note) {
@@ -260,13 +236,13 @@ export default class implements Driver {
 				rest = true;
 
 			} else {
-				this.loadFMNote(this.hwid[channel], cell.note);
+				loadFMNote(this.chip, hwc, this.NoteFM.notes[cell.note]);
 			}
 		}
 
 		if(!rest) {
 			// enable key if not resting
-			this.writeYM1(YMREG.Key, this.hwid[channel] | YMKey.OpAll);
+			writeYM1(this.chip, YMREG.Key, hwc | YMKey.OpAll);
 		}
 	}
 
@@ -395,157 +371,6 @@ export default class implements Driver {
 
 		return undefined;
 	}
-	/**
-	 * Helper function to write a YM register to port 0.
-	 *
-	 * @param register The register base to write to.
-	 * @param value The value to write to the register.
-	 */
-	private writeYM1(register:YMREG, value:number) {
-		this.chip.writeYM(0, register);
-		this.chip.writeYM(1, value);
-	}
-
-	/**
-	 * Helper function to write a YM register to port 2.
-	 *
-	 * @param register The register base to write to.
-	 * @param value The value to write to the register.
-	 */
-	private writeYM2(register:YMREG, value:number) {
-		this.chip.writeYM(2, register);
-		this.chip.writeYM(3, value);
-	}
-
-	/**
-	 * Helper function to write a YM register based on the channel.
-	 *
-	 * @param channel The channel offset (0-2, 4-6) to write to
-	 * @param register The register base to write to.
-	 * @param value The value to write to the register.
-	 */
-	private writeYMch(channel:number, register:YMREG, value:number) {
-		this.chip.writeYM(channel & 4 ? 2 : 0, register + (channel & 3));
-		this.chip.writeYM(channel & 4 ? 3 : 1, value);
-	}
-
-	/**
-	 * Helper function to update FM channel volume
-	 *
-	 * @param channel The channel offset (0-2, 4-6) to load to
-	 * @param note The volume (00-7F) to load. Note that 00 is loudest
-	 */
-	private updateFMchVolume(channel:number) {
-		const voice = this.voices[this.channelData[channel].instrument];
-
-		// if invalid voice, quit
-		if(!voice) {
-			return;
-		}
-
-		// load the volume
-		const volume = this.channelData[channel].volume;
-		const slots = this.slotOps[voice[1] & 7];
-
-		// send YM writes for the register
-		this.writeYMch(this.hwid[channel], YMREG.TL | YMREG.op1, Math.min(0x7F, ((slots & 8) ? volume : 0) + voice[26]));
-		this.writeYMch(this.hwid[channel], YMREG.TL | YMREG.op2, Math.min(0x7F, ((slots & 4) ? volume : 0) + voice[27]));
-		this.writeYMch(this.hwid[channel], YMREG.TL | YMREG.op3, Math.min(0x7F, ((slots & 2) ? volume : 0) + voice[28]));
-		this.writeYMch(this.hwid[channel], YMREG.TL | YMREG.op4, Math.min(0x7F, ((slots & 1) ? volume : 0) + voice[29]));
-	}
-
-	private slotOps = [
-		//1234
-		0b0001,				// algorithm 0
-		0b0001,				// algorithm 1
-		0b0001,				// algorithm 2
-		0b0001,				// algorithm 3
-		0b0101,				// algorithm 4
-		0b0111,				// algorithm 5
-		0b0111,				// algorithm 6
-		0b1111,				// algorithm 7
-	]
-
-	/**
-	 * Helper function to play an FM note
-	 *
-	 * @param channel The channel offset (0-2, 4-6) to load to
-	 * @param note The note ID to load
-	 */
-	private loadFMNote(channel:number, note:number) {
-		// pretend this is FM
-		const data = this.NoteFM.notes[note];
-
-		// check for invalid notes
-		if(typeof data?.frequency !== "number") {
-			return;
-		}
-
-		// apply the frequency
-		this.loadFMFrequency(channel, data.frequency);
-	}
-
-	/**
-	 * Helper function to load an FM voice
-	 *
-	 * @param channel The channel offset (0-2, 4-6) to load to
-	 * @param frequency The frequency to load
-	 */
-	private loadFMFrequency(channel:number, frequency:number) {
-		this.writeYMch(channel, YMREG.FreqMSB, frequency >> 8);
-		this.writeYMch(channel, YMREG.FreqLSB, frequency & 0xFF);
-	}
-
-	/**
-	 * Helper function to load an FM voice
-	 *
-	 * @param channel The channel offset (0-2, 4-6) to load to
-	 */
-	private loadFMVoice(channel:number, id:number) {
-		let voice = this.voices[id];
-
-		// if invalid voice, quit
-		if(!voice) {
-			voice = this.invalidVoice;
-		}
-
-		let i = 0;
-		const hc = this.hwid[channel];
-
-		this.writeYMch(hc, YMREG.PL, voice[i++]);
-		this.writeYMch(hc, YMREG.FA, voice[i++]);
-
-		this.writeYMch(hc, YMREG.DM | YMREG.op1, voice[i++]);
-		this.writeYMch(hc, YMREG.DM | YMREG.op2, voice[i++]);
-		this.writeYMch(hc, YMREG.DM | YMREG.op3, voice[i++]);
-		this.writeYMch(hc, YMREG.DM | YMREG.op4, voice[i++]);
-
-		this.writeYMch(hc, YMREG.RSAR | YMREG.op1, voice[i++]);
-		this.writeYMch(hc, YMREG.RSAR | YMREG.op2, voice[i++]);
-		this.writeYMch(hc, YMREG.RSAR | YMREG.op3, voice[i++]);
-		this.writeYMch(hc, YMREG.RSAR | YMREG.op4, voice[i++]);
-
-		this.writeYMch(hc, YMREG.D1R | YMREG.op1, voice[i++]);
-		this.writeYMch(hc, YMREG.D1R | YMREG.op2, voice[i++]);
-		this.writeYMch(hc, YMREG.D1R | YMREG.op3, voice[i++]);
-		this.writeYMch(hc, YMREG.D1R | YMREG.op4, voice[i++]);
-
-		this.writeYMch(hc, YMREG.D2R | YMREG.op1, voice[i++]);
-		this.writeYMch(hc, YMREG.D2R | YMREG.op2, voice[i++]);
-		this.writeYMch(hc, YMREG.D2R | YMREG.op3, voice[i++]);
-		this.writeYMch(hc, YMREG.D2R | YMREG.op4, voice[i++]);
-
-		this.writeYMch(hc, YMREG.DLRR | YMREG.op1, voice[i++]);
-		this.writeYMch(hc, YMREG.DLRR | YMREG.op2, voice[i++]);
-		this.writeYMch(hc, YMREG.DLRR | YMREG.op3, voice[i++]);
-		this.writeYMch(hc, YMREG.DLRR | YMREG.op4, voice[i++]);
-
-		this.writeYMch(hc, YMREG.SSGEG | YMREG.op1, voice[i++]);
-		this.writeYMch(hc, YMREG.SSGEG | YMREG.op2, voice[i++]);
-		this.writeYMch(hc, YMREG.SSGEG | YMREG.op3, voice[i++]);
-		this.writeYMch(hc, YMREG.SSGEG | YMREG.op4, voice[i++]);
-		this.updateFMchVolume(channel);
-	}
 
 	/**
 	 * Trigger a note via the piano. The channel is a mere suggestion for the driver to know how to handle this.
@@ -595,19 +420,17 @@ export default class implements Driver {
 				this.pianoNotes[cc] = note;
 
 				// load voice
-				this.channelData[cc].volume = 0x3F - Math.floor(velocity * 0x3F);
-				this.channelData[cc].instrument = instrument;
-				this.loadFMVoice(cc, instrument);
+				const cx = hwid[cc];
+				loadFMVoice(this.chip, cx, instrument, 0x3F - Math.floor(velocity * 0x3F));
 
 				// disable key
-				const cx = this.hwid[cc];
-				this.writeYM1(YMREG.Key, cx);
+				writeYM1(this.chip, YMREG.Key, cx);
 
 				// enable FM frequency
-				this.loadFMFrequency(cx, data.frequency);
+				loadFMFrequency(this.chip, cx, data.frequency);
 
 				// enable key
-				this.writeYM1(YMREG.Key, cx | YMKey.OpAll);
+				writeYM1(this.chip, YMREG.Key, cx | YMKey.OpAll);
 				break;
 			}
 
@@ -635,32 +458,22 @@ export default class implements Driver {
 				// enable PSG frequency (special PSG4: set frequency to PSG3)
 				if(cc === 9) {
 					this.chip.writePSG(PSGCMD.FREQ | PSGCMD.PSG4 | PSGCMD.WHITE | PSGCMD.TONE3);
-					this.chip.writePSG(PSGCMD.FREQ | this.hwid[DefChanIds.YM7101PSG3] | (data.frequency & 0xF));
+					this.chip.writePSG(PSGCMD.FREQ | hwid[DefChanIds.YM7101PSG3] | (data.frequency & 0xF));
 
 				} else {
-					this.chip.writePSG(PSGCMD.FREQ | this.hwid[cc] | (data.frequency & 0xF));
+					this.chip.writePSG(PSGCMD.FREQ | hwid[cc] | (data.frequency & 0xF));
 				}
 
 				this.chip.writePSG((data.frequency & 0x3F0) >> 4);
 
 				// enable PSG volume
-				this.chip.writePSG(PSGCMD.VOLUME | this.hwid[cc] | this.PSGVol[Math.floor(velocity * (this.PSGVol.length - 1))]);
+				this.chip.writePSG(PSGCMD.VOLUME | hwid[cc] | this.PSGVol[Math.floor(velocity * (this.PSGVol.length - 1))]);
 				break;
 			}
 		}
 
 		return true;
 	}
-
-	/**
-	 * Mapping table between channel ID and hardware-based ID
-	 */
-	private hwid = [
-		YMREG.ch1, YMREG.ch2, YMREG.ch3,
-		YMREG.ch1 | 4, YMREG.ch2 | 4, YMREG.ch3 | 4,
-		PSGCMD.PSG1, PSGCMD.PSG2, PSGCMD.PSG3, PSGCMD.PSG4,
-		0, 0,
-	];
 
 	/**
 	 * PSG volume LUT
@@ -688,12 +501,12 @@ export default class implements Driver {
 			switch(ch.type) {
 				case ChannelType.YM2612FM:
 					// release note
-					this.writeYM1(YMREG.Key, this.hwid[channel]);
+					writeYM1(this.chip, YMREG.Key, hwid[channel]);
 					break;
 
 				case ChannelType.YM7101PSG:
 					// release note
-					this.chip.writePSG(PSGCMD.VOLUME | this.hwid[channel] | 0xF);
+					this.chip.writePSG(PSGCMD.VOLUME | hwid[channel] | 0xF);
 					break;
 			}
 
@@ -756,25 +569,4 @@ export default class implements Driver {
 
 		return undefined;
 	}
-
-	/**
-	 * Temporary array of supported voices
-	 */
-	private voices = [
-		/* eslint-disable max-len */
-		/* n/o    PAN   F/A       Detune/Multiple      Rate Scale/Attack Rate        Decay 1 Rate             Decay 2 Rate       Decay Level/Release Rate          SSG-EG                Total Level       */
-		/* 0 */[ 0xC0, 0x3A,  0x01, 0x31, 0x07, 0x71,  0x8E, 0x8D, 0x8E, 0x53,  0x0E, 0x0E, 0x0E, 0x03,  0x00, 0x00, 0x00, 0x07,  0x1F, 0x1F, 0x1F, 0x0F,  0x00, 0x00, 0x00, 0x00,  0x18, 0x27, 0x28, 0x00, ],
-		/* 1 */[ 0xC0, 0x04,  0x71, 0x31, 0x41, 0x31,  0x12, 0x12, 0x12, 0x12,  0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,  0x0F, 0x0F, 0x0F, 0x0F,  0x00, 0x00, 0x00, 0x00,  0x23, 0x23, 0x00, 0x00, ],
-		/* 2 */[ 0xC0, 0x14,  0x75, 0x35, 0x72, 0x32,  0x9F, 0x9F, 0x9F, 0x9F,  0x05, 0x00, 0x05, 0x0A,  0x05, 0x07, 0x05, 0x05,  0x2F, 0x0F, 0xFF, 0x2F,  0x00, 0x00, 0x00, 0x00,  0x1E, 0x14, 0x00, 0x00, ],
-		/* 3 */[ 0xC0, 0x3D,  0x01, 0x01, 0x01, 0x02,  0x12, 0x1F, 0x1F, 0x14,  0x07, 0x02, 0x02, 0x0A,  0x05, 0x05, 0x05, 0x05,  0x2F, 0x2F, 0x2F, 0xAF,  0x00, 0x00, 0x00, 0x00,  0x1C, 0x02, 0x00, 0x00, ],
-		/* 4 */[ 0xC0, 0x3A,  0x70, 0x30, 0x76, 0x71,  0x1F, 0x1F, 0x95, 0x1F,  0x0E, 0x05, 0x0F, 0x0C,  0x07, 0x06, 0x06, 0x07,  0x2F, 0x1F, 0x4F, 0x5F,  0x00, 0x00, 0x00, 0x00,  0x21, 0x28, 0x12, 0x00, ],
-		/* 5 */[ 0xC0, 0x28,  0x71, 0x30, 0x00, 0x01,  0x1F, 0x1D, 0x1F, 0x1F,  0x13, 0x06, 0x13, 0x05,  0x03, 0x02, 0x03, 0x05,  0x4F, 0x2F, 0x4F, 0x3F,  0x00, 0x00, 0x00, 0x00,  0x0E, 0x1E, 0x14, 0x00, ],
-		/* 6 */[ 0xC0, 0x3E,  0x38, 0x7A, 0x01, 0x34,  0x59, 0x5F, 0xD9, 0x9C,  0x0F, 0x0F, 0x04, 0x0A,  0x02, 0x05, 0x02, 0x05,  0xAF, 0x66, 0xAF, 0x66,  0x00, 0x00, 0x00, 0x00,  0x28, 0x23, 0x00, 0x00, ],
-		/* 7 */[ 0xC0, 0x39,  0x32, 0x72, 0x31, 0x71,  0x1F, 0x1F, 0x1F, 0x1F,  0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,  0x0F, 0x0F, 0x0F, 0x0F,  0x00, 0x00, 0x00, 0x00,  0x1B, 0x28, 0x32, 0x00, ],
-		/* 8 */[ 0xC0, 0x07,  0x34, 0x32, 0x74, 0x71,  0x1F, 0x1F, 0x1F, 0x1F,  0x0A, 0x05, 0x0A, 0x03,  0x00, 0x00, 0x00, 0x00,  0x3F, 0x2F, 0x3F, 0x2F,  0x00, 0x00, 0x00, 0x00,  0x0A, 0x00, 0x0A, 0x00, ],
-		/* eslint-enable max-len */
-	];
-
-	// eslint-disable-next-line max-len
-	private invalidVoice = [ 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,  0xFF, 0xFF, 0xFF, 0xFF,  0xFF, 0xFF, 0xFF, 0xFF,  0xFF, 0xFF, 0xFF, 0xFF,  0xFF, 0xFF, 0xFF, 0xFF,  0x00, 0x00, 0x00, 0x00,  0x7F, 0x7F, 0x7F, 0x7F, ];
 }

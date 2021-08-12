@@ -1,6 +1,7 @@
 node_modules/
 build/
 dist/
+autosaves/
 coverage/
 temp.zip
 temp.ztm

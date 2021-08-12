@@ -2,7 +2,7 @@ import admZip from "adm-zip";
 import fs from "fs";
 import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 import { ConfigVersion } from "../../api/config";
-import { fserror, loadFlag } from "../../api/files";
+import { fserror, getOldestFilesInDirectory, loadFlag, totalDirectorySize, zorroFormats } from "../../api/files";
 import { confirmationDialog, PopupColors, PopupSizes } from "../elements/popup/popup";
 import { ipcRenderer } from "electron";
 import { ipcEnum } from "../../system/ipc/ipc enum";
@@ -10,6 +10,7 @@ import { WindowType } from "../../defs/windowtype";
 import { setTitle } from "../elements/toolbar/toolbar";
 import { ChannelInfo, DriverChannel } from "../../api/driver";
 import { Tab } from "./tab";
+import path from "path";
 
 // load all the events
 const eventProject = ZorroEvent.createEvent(ZorroEventEnum.ProjectOpen);
@@ -233,7 +234,7 @@ export class Project {
 	 * @param load The function to handle loading module data
 	 * @param save The function to handle saving module data
 	 */
-	public setDataHandlers(load:(data:LoadSaveData<LoadType>, module:Module) => void, save:() => LoadSaveData<SaveType>):void {
+	public setDataHandlers(load:(data:LoadSaveData<LoadType>, module:Module) => void, save:() => LoadSaveData<SaveType>): Promise<void> {
 		// load some variables used below
 		const module = () => this.modules[this.activeModuleIndex];
 		const file = () => "modules/"+ module().file +"/";
@@ -270,6 +271,8 @@ export class Project {
 		// must cause to load the first time its called
 		try {
 			this.loadHandler();
+			return this.initAutosave();
+
 		} catch(ex){
 			Project.projectError(ex);
 			throw ex;
@@ -319,6 +322,12 @@ export class Project {
 	constructor(file:string, zip:admZip) {
 		this.file = file;
 		this.zip = zip;
+
+		// initialize autosave variables
+		this.autosaveTimer = null;
+		this.autosaveBytes = (loadFlag<number>("AUTOSAVE_SIZE") ?? 100) * 1024 * 1024;
+		this.autosaveDelay = (loadFlag<number>("AUTOSAVE_DELAY") ?? 0) * 60 * 1000;
+		this.autosaveDir = loadFlag<string>("AUTOSAVE_DIRECTORY") ?? "./autosaves";
 	}
 
 	private zip:admZip;
@@ -326,6 +335,42 @@ export class Project {
 	public config!:ProjectConfig;
 	public modules!:Module[];
 	public driverChannels!:DriverChannel[];
+
+	/**
+	 * Function to generate an autosave
+	 */
+	private async autosave() {
+		try {
+			// check if we need to delete previous files
+			const ttl = await totalDirectorySize(this.autosaveDir, true);
+			console.log("check autosave folder size", this.autosaveDir, ttl, "bytes", "("+ this.autosaveBytes +" is max)", ttl > this.autosaveBytes)
+
+			if(ttl > this.autosaveBytes) {
+				// must delete old files (only ztm and zip)
+				const files = (await getOldestFilesInDirectory(this.autosaveDir, true)).filter((f) => {
+					// get the file extension and see if it is in the zorroformats list
+					const ext = path.extname(f);
+					return ext.length && zorroFormats.includes(ext.substring(1));
+				});
+
+				console.log("delete file", path.resolve(files[0]));
+			}
+
+			// generate the filename
+			const base = !this.file ? "Untitled" : path.basename(this.file, path.extname(this.file));
+			const filename = path.join(this.autosaveDir, base +" - "+ new Date().toISOString().replace(/:/g, "-") +".ztm");
+
+			// do teh save
+			await this.saveData(path.resolve(filename), this.config.autosave ?? this.file, true);
+
+			// do another autosave later
+			this.autosaveTimer = setTimeout(() => this.autosave(), this.autosaveDelay);
+
+		} catch(ex) {
+			// log dat error
+			console.error(ex);
+		}
+	}
 
 	/**
 	 * Helper function to get the file location of this project
@@ -365,9 +410,14 @@ export class Project {
 		}
 
 		try {
-			// set the new file and save data
+			// set the new filename
 			this.file = result;
-			await this.saveData(result);
+
+			// reset autosave
+			this.resetAutosave();
+
+			// save data to disk
+			await this.saveData(result, this.config.autosave, false);
 
 		} catch(ex) {
 			console.error(ex);
@@ -383,10 +433,9 @@ export class Project {
 	/**
 	 * Function to save the project to disk
 	 *
-	 * @param autosave Whether to do an autosave, or if to make a normal save
 	 * @returns boolean indicating whether the save was successful
 	 */
-	public async save(autosave:boolean): Promise<boolean> {
+	public async save(): Promise<boolean> {
 		window.isLoading = true;
 
 		// check if the file does not exist
@@ -395,8 +444,11 @@ export class Project {
 		}
 
 		try {
+			// reset autosave
+			this.resetAutosave();
+
 			// save the actual data
-			await this.saveData(this.file);
+			await this.saveData(this.file, this.config.autosave, false);
 
 		} catch(ex) {
 			console.error(ex);
@@ -404,7 +456,7 @@ export class Project {
 		}
 
 		// if not autosaving, then clear the dirty flag
-		this._dirty = this._dirty && autosave;
+		this._dirty = false;
 		this.updateTitle();
 		window.isLoading = false;
 		return true;
@@ -414,13 +466,15 @@ export class Project {
 	 * Function to save the project data to file
 	 *
 	 * @param file The output file location
+	 * @param parent The parent file of this file. For autosaves this is the real file, for normal saves this is `null`
+	 * @param autosave whether this is an autosave instead of an user save
 	 */
-	private async saveData(file:string): Promise<void> {
-		window.isLoading = true;
+	private async saveData(file:string, parent:null|string, autosave:boolean): Promise<void> {
+		window.isLoading = !autosave;
 		console.info("Save project: "+ file);
 
 		{	// store project config to zip
-			const _json = JSON.stringify(this.config);
+			const _json = JSON.stringify({ autosave: parent, ...this.config, });
 			this.zip.addFile(".zorro", Buffer.alloc(_json.length, _json));
 		}
 
@@ -452,8 +506,10 @@ export class Project {
 					// success, resolve the promise
 					res();
 
-					// also save this as the last opened project now
-					window.ipc.cookie.set("lastproject", file);
+					if(!autosave) {
+						// also save this as the last opened project now
+						window.ipc.cookie.set("lastproject", file);
+					}
 				});
 			});
 		});
@@ -784,6 +840,47 @@ export class Project {
 	private moduleFiles = [
 		".matrix", ".patterns",
 	];
+
+	/**
+	 * Variables relating to autosaves
+	 */
+	private autosaveTimer:null|NodeJS.Timeout;
+	private autosaveDelay:number;
+	private autosaveBytes:number;
+	private autosaveDir:string;
+
+	/**
+	 * Helper function to initialize autosave on this project
+	 */
+	public async initAutosave(): Promise<void> {
+		if(this.autosaveDelay > 0) {
+			// generate the directory first
+			await fs.promises.mkdir(this.autosaveDir, { recursive: true, });
+
+			// run autosave immediately
+			await this.autosave();
+		}
+	}
+
+	/**
+	 * Helper function to stop autosaving on this project
+	 */
+	public clearAutosave(): void {
+		if(this.autosaveTimer) {
+			clearTimeout(this.autosaveTimer);
+		}
+	}
+
+	/**
+	 * Helper function to reset the autosave timer
+	 */
+	public resetAutosave(): void {
+		if(this.autosaveTimer) {
+			// clear and then restart autosave
+			clearTimeout(this.autosaveTimer);
+			this.autosaveTimer = setTimeout(() => this.autosave(), this.autosaveDelay);
+		}
+	}
 }
 
 /**

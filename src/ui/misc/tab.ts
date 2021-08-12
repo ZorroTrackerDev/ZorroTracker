@@ -63,7 +63,7 @@ export class Tab {
 					patterns: this.matrix.savePatterns(),
 					matrix: this.matrix.saveMatrix(),
 				}
-			});
+			}).catch(console.error);
 		}
 	}
 

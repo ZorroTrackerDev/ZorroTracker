@@ -217,6 +217,7 @@ async function loadMainShortcuts() {
 			// open loading animation
 			Undo.clear();
 			await enableLoading();
+			Tab.active?.project.clearAutosave();
 
 			// try to load the project
 			const p = await Project.loadProject(result);
@@ -255,6 +256,7 @@ async function loadMainShortcuts() {
 			// open loading animation
 			Undo.clear();
 			await enableLoading();
+			Tab.active?.project.clearAutosave();
 
 			// try to load the project
 			const p = await Project.createProject();
@@ -301,7 +303,7 @@ async function loadMainShortcuts() {
 		/* shortcut for doing a save action */
 		save: async() => {
 			try {
-				return await Tab.active?.project.save(false) ?? false;
+				return await Tab.active?.project.save() ?? false;
 
 			} catch(ex)  {
 				console.error(ex);
@@ -475,6 +477,7 @@ export async function loadToModule(index:number): Promise<void> {
 	// open loading animation
 	Undo.clear();
 	await enableLoading();
+	Tab.active?.project.clearAutosave();
 
 	// unload all components properly
 	await components.unloadComponents(10);
@@ -677,6 +680,7 @@ async function initLayout() {
 					// open loading animation
 					Undo.clear();
 					await enableLoading();
+					Tab.active?.project.clearAutosave();
 
 					// try to load the project
 					const p = await Project.loadProject(filename);
@@ -762,7 +766,7 @@ export async function askSavePopup():Promise<boolean> {
 			}) as number) {
 				case 2:						// ask the user to save.
 					// If there is a save-as dialog and user cancels, or save fails, pretend the cancel button was pressed.
-					return Tab.active?.project.save(false);
+					return Tab.active?.project.save();
 
 				case 0: return true;		// literally do nothing
 				default: return false;		// indicate as cancelling

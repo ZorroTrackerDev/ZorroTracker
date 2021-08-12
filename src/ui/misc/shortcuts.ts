@@ -159,7 +159,7 @@ function shortcutSort(name:string[]) {
  */
 export async function doShortcut(name:string[], event?:KeyboardEvent, state?:boolean):Promise<undefined|string> {
 	// if loading currently, disable all shortcuts
-	if(window.isLoading) {
+	if(window.isLoading && state !== false) {
 		return;
 	}
 

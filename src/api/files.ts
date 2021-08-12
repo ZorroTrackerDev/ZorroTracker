@@ -9,6 +9,82 @@ import { confirmationDialog, createFilename, PopupColors, PopupSizes } from "../
 export const zorroFormats = [ "ztm", "zip", ];
 
 /**
+ * Function to get all the files in current directory and subdirectories
+ *
+ * @param directory The directory to inspect for files
+ * @param recursive Whether to process subdirectories too
+ */
+export async function getAllFiles(directory:string, recursive:boolean): Promise<string[]> {
+	// read the directory contents
+	const files = (await fs.promises.readdir(directory)).map((f) => path.join(directory, f));
+
+	// convert to promises for checking what the files are
+	const promises = files.map((f) => fs.promises.lstat(f));
+
+	// convert these to booleans for the final checks
+	const directories = (await Promise.all(promises)).map((f) => f.isDirectory());
+
+	// loop through each directory to fetch files
+	const ret:string[] = [];
+	const subs:Promise<string[]>[] = [];
+
+	for(let i = 0;i < directories.length;i ++) {
+		if(directories[i]) {
+			if(recursive) {
+				// handle recursive directory calls
+				subs.push(getAllFiles(files[i], true));
+			}
+		} else {
+			// append the file in there
+			ret.push(files[i]);
+		}
+	}
+
+	// resolve all subdirectories
+	(await Promise.all(subs)).forEach((fls) => ret.push(...fls));
+
+	// return the final result
+	return ret;
+}
+
+/**
+ * Function to find how many bytes are taken up by all files in a directory
+ *
+ * @param directory The directory to inspect for files
+ * @param recursive Whether to process subdirectories too
+ */
+export async function totalDirectorySize(directory:string, recursive:boolean): Promise<number> {
+	// get all the files to inspect
+	const files = await getAllFiles(directory, recursive);
+
+	// convert to promises for checking what the files are
+	const promises = files.map((f) => fs.promises.lstat(f));
+
+	// convert these to booleans for the final checks
+	return (await Promise.all(promises)).reduce((acc, f) => acc + f.size, 0);
+}
+
+/**
+ * Function to get all the files in the directory, sorted oldest to newest
+ *
+ * @param directory The directory to inspect for files
+ * @param recursive Whether to process subdirectories too
+ */
+export async function getOldestFilesInDirectory(directory:string, recursive:boolean): Promise<string[]> {
+	// get all the files to inspect
+	const files = await getAllFiles(directory, recursive);
+
+	// convert to promises for checking what the files are
+	const promises = await Promise.all(files.map((f) => fs.promises.lstat(f)));
+
+	// convert to array of [ file, stats ]
+	const foc = files.map((f, ix) => [ f, promises[ix], ]) as [ string, fs.Stats ][];
+
+	// sort the array and convert to only filenames
+	return foc.sort((a, b) => a[1].mtimeMs - b[1].mtimeMs).map((d) => d[0]);
+}
+
+/**
  * SettingsTypes enum is here to enforce data safety and allowing us to rename properties without breaking code that uses them.
  */
 export enum SettingsTypes {

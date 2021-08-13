@@ -91,7 +91,7 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 		this.position = Math.max(-1, Math.min(1, this.position + offset));
 
 		// update the float value
-		((this.element.children[0] as HTMLDivElement).children[0] as HTMLDivElement).style.float = [ "left", "", "right", ][this.position + 1];
+		(this.element.children[0] as HTMLDivElement).style.float = [ "left", "", "right", ][this.position + 1];
 
 		if(this.hidden) {
 			// if hidden, unhide and redraw
@@ -221,8 +221,10 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	public onRangeUpdate(func:(min: number, max: number, ) => void): void {
 		// generate the range update function
 		this.rangeUpdateFunc = async() => {
-			const { min, max, } = (await this.tab.getNotes(this.tab.selectedChannel.type)).octave;
-			func(min, max - 1);
+			if(this.tab.selectedChannel) {
+				const { min, max, } = (await this.tab.getNotes(this.tab.selectedChannel.type)).octave;
+				func(min, max - 1);
+			}
 		};
 
 		// run the function once, too
@@ -431,12 +433,13 @@ export class Piano implements UIComponent<HTMLDivElement>, UIShortcutHandler {
 	 * Trigger a note at a certain velocity
 	 *
 	 * @param note The note ID to play
-	 * @param velocity The velocity to play the note with, from 0 to 1.0.
+	 * @param velocity The velocity to play the note with, from 0 to 1.0
+	 * @param polyphony Whether to enable polyphony and finding a free channel for this note
 	 * @returns boolean indicatin whether the note was triggered
 	 */
-	public async triggerNote(note:number, velocity:number):Promise<boolean> {
+	public async triggerNote(note:number, velocity:number, polyphony:boolean):Promise<boolean> {
 		// check if this note exists
-		if(await window.ipc.driver.pianoTrigger(note, velocity, this.tab.selectedChannel.info.id, this.tab.selectedInstrument)){
+		if(await window.ipc.driver.pianoTrigger(note, velocity, this.tab.selectedChannel.info.id, this.tab.selectedInstrument, polyphony)){
 			// add the active class
 			await this.modNote("active", "add", note);
 			return true;
@@ -502,10 +505,10 @@ let _piano: Piano;
 /**
  * Helper event listener for the PianoNoteOn event, so that the piano can receive notes from the system
  */
-ZorroEvent.addListener(ZorroEventEnum.PianoNoteOn, async(event:ZorroEventObject, channel:number, note:number, velocity:number) => {
+ZorroEvent.addListener(ZorroEventEnum.PianoNoteOn, async(event:ZorroEventObject, channel:number, note:number, velocity:number, polyphony:boolean) => {
 	if(_piano) {
 		// attempt to trigger the note
-		await _piano.triggerNote(note, velocity);
+		await _piano.triggerNote(note, velocity, polyphony);
 	}
 });
 

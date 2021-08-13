@@ -225,7 +225,7 @@ export interface ZorroListenerTypes {
 
 	[ZorroEventEnum.MidiNoteOn]: (event:ZorroEventObject, channel:number, note:number, velocity:number) => ZorroListenerReturn<void>,
 	[ZorroEventEnum.MidiNoteOff]: (event:ZorroEventObject, channel:number, note:number, velocity:number) => ZorroListenerReturn<void>,
-	[ZorroEventEnum.PianoNoteOn]: (event:ZorroEventObject, channel:number, note:number, velocity:number) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.PianoNoteOn]: (event:ZorroEventObject, channel:number, note:number, velocity:number, polyphony:boolean) => ZorroListenerReturn<void>,
 	[ZorroEventEnum.PianoNoteOff]: (event:ZorroEventObject, channel:number, note:number, velocity:number) => ZorroListenerReturn<void>,
 }
 
@@ -265,7 +265,7 @@ export interface ZorroSenderTypes {
 
 	[ZorroEventEnum.MidiNoteOn]: (channel:number, note:number, velocity:number) => ZorroSenderReturn<undefined>,
 	[ZorroEventEnum.MidiNoteOff]: (channel:number, note:number, velocity:number) => ZorroSenderReturn<undefined>,
-	[ZorroEventEnum.PianoNoteOn]: (channel:number, note:number, velocity:number) => ZorroSenderReturn<undefined>,
+	[ZorroEventEnum.PianoNoteOn]: (channel:number, note:number, velocity:number, polyphony:boolean) => ZorroSenderReturn<undefined>,
 	[ZorroEventEnum.PianoNoteOff]: (channel:number, note:number, velocity:number) => ZorroSenderReturn<undefined>,
 }
 /* eslint-enable max-len*/

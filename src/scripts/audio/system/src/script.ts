@@ -295,7 +295,7 @@ parentPort?.on("message", (data:{ token?:number, code:string, data:unknown, fn?:
 					case "pianoTrigger":
 						parentPort?.postMessage({
 							token: data.token, code: "cd", fn: data.fn,
-							data: driver?.pianoTrigger(...(data.data as [number, number, number, number])) ?? false,
+							data: driver?.pianoTrigger(...(data.data as [ number, number, number, number, boolean ])) ?? false,
 						});
 						break;
 

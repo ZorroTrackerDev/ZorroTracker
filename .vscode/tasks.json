@@ -1,0 +1,10 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "XGM compile",
+			"type": "shell",
+			"command": "cd src/scripts/audio/system; npm run build; cd ../../drivers/xgm; npm run build; cd ../../../..",
+		}
+	]
+}

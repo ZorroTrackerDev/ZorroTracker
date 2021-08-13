@@ -84,7 +84,7 @@ const slotOps = [
 	0b0001,				// algorithm 1
 	0b0001,				// algorithm 2
 	0b0001,				// algorithm 3
-	0b0101,				// algorithm 4
+	0b0011,				// algorithm 4
 	0b0111,				// algorithm 5
 	0b0111,				// algorithm 6
 	0b1111,				// algorithm 7

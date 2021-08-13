@@ -5,22 +5,29 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
-		"command": "npm start",
-		"name": "Build & Run",
-		"request": "launch",
-		"type": "node-terminal"
+			"command": "npm start",
+			"name": "Build & Run",
+			"request": "launch",
+			"type": "node-terminal"
 		},
 		{
-		"command": "npm run copy \"&\" npm run electron",
-		"name": "Copy & Run",
-		"request": "launch",
-		"type": "node-terminal"
+			"command": "npm run copy \"&\" npm run electron",
+			"name": "Copy & Run",
+			"request": "launch",
+			"type": "node-terminal"
 		},
 		{
-		"command": "npm run electron",
-		"name": "Run",
-		"request": "launch",
-		"type": "node-terminal"
+			"command": "npm run electron",
+			"name": "Run",
+			"request": "launch",
+			"type": "node-terminal"
+		},
+		{
+			"preLaunchTask": "XGM compile",
+			"command": "npm run copy \"&\" npm run electron",
+			"name": "XGM dev",
+			"request": "launch",
+			"type": "node-terminal"
 		},
 		{
 			"type": "node",

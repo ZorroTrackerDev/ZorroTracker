@@ -379,9 +379,10 @@ export default class implements Driver {
 	 * @param velocity A value between 0 and 1, representing the velocity of the note. 0 = mute
 	 * @param channel The ID of the channel to trigger the note on
 	 * @param instrument The instrument ID to use for this note
+	 * @param polyphony Whether to enable polyphony and finding a free channel for this note
 	 * @returns Whether the note was triggered
 	 */
-	public pianoTrigger(note:number, velocity:number, channel:number, instrument:number): boolean {
+	public pianoTrigger(note:number, velocity:number, channel:number, instrument:number, polyphony:boolean): boolean {
 		// check if note is already playing
 		if(typeof this.getPianoCh(note) === "number") {
 			return true;
@@ -406,7 +407,7 @@ export default class implements Driver {
 				}
 
 				// find new channel for polyphony, ignoring certain channels
-				const cc = this.findFreeChannel(channel, [], [
+				const cc = this.findFreeChannel(channel, [], !polyphony ? [ channel, ] : [
 					DefChanIds.YM2612FM1, DefChanIds.YM2612FM2, DefChanIds.YM2612FM3,
 					DefChanIds.YM2612FM4, DefChanIds.YM2612FM5,
 				]);
@@ -444,8 +445,9 @@ export default class implements Driver {
 				}
 
 				// find new channel for polyphony, ignoring certain channels
-				const cc = this.findFreeChannel(channel, [ DefChanIds.YM7101PSG4, ],
-					[ DefChanIds.YM7101PSG1, DefChanIds.YM7101PSG2, DefChanIds.YM7101PSG3, ]);
+				const cc = this.findFreeChannel(channel, [ DefChanIds.YM7101PSG4, ], !polyphony ? [ channel, ] : [
+					DefChanIds.YM7101PSG1, DefChanIds.YM7101PSG2, DefChanIds.YM7101PSG3,
+				]);
 
 				// find new channel for polyphony. If failed, jump out
 				if(typeof cc !== "number") {

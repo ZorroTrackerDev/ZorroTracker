@@ -324,9 +324,10 @@ declare global {
 				 * @param velocity A value between 0 and 1, representing the velocity of the note. 0 = mute
 				 * @param channel The ID of the channel to trigger the note on
 				 * @param instrument The instrument ID to use for this note
+				 * @param polyphony Whether to enable polyphony and finding a free channel for this note
 				 * @returns Whether the note was triggered
 				 */
-				pianoTrigger: (note:number, velocity:number, channel:number, instrument:number) => Promise<boolean>,
+				pianoTrigger: (note:number, velocity:number, channel:number, instrument:number, polyphony:boolean) => Promise<boolean>,
 
 				/**
 				 * Release a note via the piano.

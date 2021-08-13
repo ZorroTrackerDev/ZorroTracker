@@ -1,5 +1,6 @@
 import { ZorroEvent, ZorroEventEnum } from "../../../api/events";
 import { loadFlag } from "../../../api/files";
+import { PlayMode } from "../../misc/tab";
 import { PatternEditor } from "./main";
 
 // create events
@@ -107,6 +108,8 @@ export class PianoProcessor {
 				}
 
 			} else {
+				let polyphony = true;
+
 				// if in record mode, check whether to place this note
 				if(this.parent.tab.recordMode){
 					if(this.parent.shortcuts.getCurrentElementId() !== 0 || !this.parent.shortcuts.editorHasFocus()) {
@@ -153,15 +156,29 @@ export class PianoProcessor {
 					// project is dirty now
 					this.parent.tab.project.dirty();
 					this.enableRepeat(note, volume);
+					polyphony = false;
 
 				} else {
 					// if not in record mode then try to disable repeat anyway!!!
 					this.disableRepeat();
+
+					if(this.parent.tab.playMode !== PlayMode.Stopped) {
+						// special note handling when playing to disable polyphony
+						if(this.activeNote) {
+							// note is active, release it quickly
+							await eventNoteOff(this.parent.tab.selectedChannelId, this.activeNote, 0);
+							this.disableRepeat();
+						}
+
+						// set new active note
+						this.activeNote = note;
+						polyphony = false;
+					}
 				}
 
 				if(!isNaN(freq)) {
 					// can play on piano
-					await eventNoteOn(this.parent.tab.selectedChannelId, note, velocity);
+					await eventNoteOn(this.parent.tab.selectedChannelId, note, velocity, polyphony);
 				}
 			}
 		}

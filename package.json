@@ -41,7 +41,6 @@
 		"@types/wicg-mediasession": "^1.1.2",
 		"@typescript-eslint/eslint-plugin": "^4.22.0",
 		"@typescript-eslint/parser": "^4.22.0",
-		"chromedriver": "^89.0.0",
 		"compile-less-cli": "^1.7.0",
 		"concurrently": "^6.1.0",
 		"copyfiles": "^2.4.1",
@@ -50,8 +49,6 @@
 		"eslint": "^7.24.0",
 		"less": "^4.1.1",
 		"less-watch-compiler": "^1.15.0",
-		"spectron": "^14.0.0",
-		"ts-jest": "^26.5.4",
 		"typescript": "^4.2.4"
 	},
 	"dependencies": {
@@ -61,38 +58,6 @@
 		"native-keymap": "^2.2.1",
 		"nuked-opn2-node": "file:./vendor/Nuked-OPN2.rs/nuked-opn2-node",
 		"nuked-psg-node": "file:./vendor/Nuked-PSG.rs/nuked-psg-node"
-	},
-	"jest": {
-		"verbose": true,
-		"preset": "ts-jest",
-		"testEnvironment": "node",
-		"testMatch": [
-			"**/tests/**/*.[jt]s?(x)",
-			"**/src/**/?(*.)+(spec|test).[jt]s?(x)",
-			"!**/dist/**/*"
-		],
-		"modulePathIgnorePatterns": [
-			"/tests/_base.ts"
-		],
-		"clearMocks": true,
-		"coverageDirectory": "coverage",
-		"coverageProvider": "v8",
-		"collectCoverageFrom": [
-			"**/*.ts",
-			"!**/*.d.ts"
-		],
-		"coveragePathIgnorePatterns": [
-			"node_modules",
-			"build",
-			"coverage",
-			"dist",
-			"src/main.ts",
-			"src/system/ipc.ts",
-			"src/ui/ipc ui.ts",
-			"src/scripts/",
-			"src/system/",
-			"src/ui/"
-		]
 	},
 	"build": {
 		"appId": "dev.zorrotracker",

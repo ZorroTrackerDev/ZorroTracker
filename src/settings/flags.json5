@@ -7,20 +7,24 @@
 	THEME: "prototype",															/* The UUID of the theme to use */
 	CHIP: "9d8d2954-ad94-11eb-8529-0242ac130003",								/* The UUID of the chip to use for ZorroTracker */
 	DEFAULT_DRIVER: "ec6a4880-3c17-495f-b3d7-6b35dcc56493",						/* The UUID of the default driver to use for new projects. */
+
+	OPEN_PREVIOUS: true,														/* If true, the previous project will be opened if possible. Otherwise, always create an empty project. */
 	UNDO_STACK_SIZE: 100,														/* The size of the undo stack, how many steps away to remember undo data */
 	MEDIA_KEYS: false,															/* If true, ZorroTracker will ask your OS to control the program via the media keys */
 	DISCORD_RPC: true,															/* If true, the program will attempt to update the Discord RPC status. */
+
 	AUTOSAVE_DELAY: 5,															/* The delay between each autosave in minutes. Set to 0 to disable it */
 	AUTOSAVE_SIZE: 100,															/* The amount of storage space all of the autosaves can take up in megabytes. If more space is taken up, then older files will be deleted. */
 	AUTOSAVE_DIRECTORY: "./autosaves",											/* The directory the autosaves are stored. This supports relative and absolute file paths. Make sure ZorroTracker has write access to this directory! */
+
 	PIANO_DEFAULT_SIZE: 4,														/* The default amount of octaves in the piano */
 	PIANO_DEFAULT_POSITION: 0,													/* The default piano position. 0 = center, -1 = left, 1 = right */
 	PIANO_DEFAULT_OCTAVE: 3,													/* The default starting ocatave */
 	PIANO_REPEAT_DELAY: 800,													/* How long to hold down the piano key until it will start repeating */
 	PIANO_REPEAT_WAIT: 70,														/* How long time to to wait between key repeats */
 	MIDI_ENABLE: true,															/* If true, ZorroTracker will scan for MIDI devices and allow them to interface with ZorroTracker */
+
 	ROW_NUM_IN_HEX: false,														/* If true, row numbers will be in hexadecimal */
-	OPEN_PREVIOUS: true,														/* If true, the previous project will be opened if possible. Otherwise, always create an empty project. */
 	PATTERN_PREVIEW: true,														/* If true, pattern previews will also be rendered */
 	INITIAL_PATTERN_ROWS: 64,													/* The default size of each pattern */
 	INITIAL_EFFECT_COUNT: 1,													/* The amount of effects a channel starts out with */

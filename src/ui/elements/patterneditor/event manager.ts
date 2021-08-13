@@ -96,9 +96,11 @@ ZorroEvent.addListener(ZorroEventEnum.ProjectPatternRows, async(event, project, 
 	// handle scrolling
 	await manager?.parent.scrollManager.setPatternRows(rows);
 
-	// handle selection
-	manager?.parent.selectionManager.handleMatrixResize();
-	manager?.parent.selectionManager.render();
+	setTimeout(() => {
+		// handle selection
+		manager?.parent.selectionManager.handleMatrixResize();
+		manager?.parent.selectionManager.render();
+	}, 1);
 });
 
 // listen to matrix being resized
@@ -120,5 +122,29 @@ ZorroEvent.addListener(ZorroEventEnum.MatrixSet, async(event, matrix, channel, r
 	setTimeout(() => {
 		// tell the scrolling manager about dis
 		manager?.parent.scrollManager.patternChanged(channel, row);
+	}, 1);
+});
+
+// listen to matrix cells being inserted
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.MatrixInsert, async(event, matrix, row) => {
+	setTimeout(() => {
+		// loops for every channel
+		for(let ch = (manager?.parent.tab.channels.length ?? 1) - 1;ch >= 0; --ch) {
+			// tell the scrolling manager about dis
+			manager?.parent.scrollManager.patternShifted(ch, row);
+		}
+	}, 1);
+});
+
+// listen to matrix cells being removed
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.MatrixRemove, async(event, matrix, row) => {
+	setTimeout(() => {
+		// loops for every channel
+		for(let ch = (manager?.parent.tab.channels.length ?? 1) - 1;ch >= 0; --ch) {
+			// tell the scrolling manager about dis
+			manager?.parent.scrollManager.patternShifted(ch, row);
+		}
 	}, 1);
 });

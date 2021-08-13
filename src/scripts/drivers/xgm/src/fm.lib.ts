@@ -8,10 +8,14 @@ import { NoteData } from "../../../../api/driver";
  */
 export function muteAllYMChannels(chip:Chip): void {
 	for(let ch = 0;ch < 6; ch++) {
+		// mute op 1-4
 		writeYMch(chip, ch, YMREG.TL | YMREG.op1, 0x7F);
 		writeYMch(chip, ch, YMREG.TL | YMREG.op2, 0x7F);
 		writeYMch(chip, ch, YMREG.TL | YMREG.op3, 0x7F);
 		writeYMch(chip, ch, YMREG.TL | YMREG.op4, 0x7F);
+
+		// key off all ops
+		writeYM1(chip, YMREG.Key, ch);
 	}
 }
 

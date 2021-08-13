@@ -800,13 +800,33 @@ export class PatternEditorScrollManager {
 	 * @param channel The channel that is affected
 	 * @param position The position index that is affected
 	 */
-	public async patternChanged(channel:number, position:number): Promise<void> {
+	public patternChanged(channel:number, position:number): Promise<void> {
+		return this.patternRenderCheck(channel, (pat:PatternCanvas) => pat.pattern === position);
+	}
+
+	/**
+	 * Helper function to inform us that a pattern index was shifted
+	 *
+	 * @param channel The channel that is affected
+	 * @param position The position that the shift started in
+	 */
+	public patternShifted(channel:number, position:number): Promise<void> {
+		return this.patternRenderCheck(channel, (pat:PatternCanvas) => pat.pattern >= position);
+	}
+
+	/**
+	 * Helper function to inform us that a pattern index was shifted
+	 *
+	 * @param channel The channel that is affected
+	 * @param position The position that the shift started in
+	 */
+	private async patternRenderCheck(channel:number, check:(pat:PatternCanvas) => boolean): Promise<void> {
 		let render = false;
 
 		// ensure that the pattern is actually visible currently
 		for(const c of this.canvas) {
-			if(c.pattern === position) {
-				// if this has the same pattern, invalidate the affected channel
+			if(check(c)) {
+				// if check succeeds, invalidate the affected channel
 				await c.invalidateChannels(channel, channel + 1);
 				render = true;
 			}

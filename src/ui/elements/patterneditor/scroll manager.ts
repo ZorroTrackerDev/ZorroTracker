@@ -100,7 +100,7 @@ export class PatternEditorScrollManager {
 	public load(): Promise<boolean> {
 		return new Promise((res, rej) => {
 			// reset some variables
-			this.scrolledRow = 0;
+			this.parent.tab.activeRow = 0;
 
 			requestAnimationFrame(() => {
 				// initialize the scrolling region size
@@ -187,17 +187,12 @@ export class PatternEditorScrollManager {
 	}
 
 	/**
-	 * Store the vertical scroll position of channel datas
-	 */
-	public scrolledRow = 0;
-
-	/**
 	 * Helper function to scroll to vertical row
 	 *
 	 * @param row The row to scroll to
 	 */
 	public scrollToRow(row:number): Promise<void> {
-		this.scrolledRow = row;
+		this.parent.tab.activeRow = row;
 		return this.verticalScroll(0);
 	}
 
@@ -218,19 +213,19 @@ export class PatternEditorScrollManager {
 	 */
 	public async verticalScroll(delta:number): Promise<void> {
 		// update the scrolling position based on delta
-		this.scrolledRow = Math.round((delta * 0.03) + this.scrolledRow);
+		this.parent.tab.activeRow = Math.round((delta * 0.03) + this.parent.tab.activeRow);
 
 		// check clamping scrolling position above 0th
-		if(this.scrolledRow <= 0) {
-			this.scrolledRow = 0;
+		if(this.parent.tab.activeRow <= 0) {
+			this.parent.tab.activeRow = 0;
 
 		} else {
 			// calculate the maximum scrolling position
 			const max = (this.parent.tab.matrix.matrixlen * (this.parent.tab.module?.patternRows ?? 64)) - 1;
 
 			// check clamping scrolling position below last
-			if(this.scrolledRow > max) {
-				this.scrolledRow = max;
+			if(this.parent.tab.activeRow > max) {
+				this.parent.tab.activeRow = max;
 			}
 		}
 
@@ -627,7 +622,7 @@ export class PatternEditorScrollManager {
 	 */
 	public async setPatternRows(rows:number): Promise<void> {
 		// prepare some variables
-		const pat = this.parent.activePattern, offs = this.scrolledRow % this.parent.patternLen;
+		const pat = this.parent.activePattern, offs = this.parent.tab.activeRow % this.parent.patternLen;
 		const _old = this.parent.patternLen;
 		this.parent.patternLen = rows;
 
@@ -644,7 +639,7 @@ export class PatternEditorScrollManager {
 			this.rows.forEach((c) => c.render());
 
 			// scroll to a different row based on the new size
-			this.scrolledRow = (pat * rows) + Math.min(offs, rows - 1);
+			this.parent.tab.activeRow = (pat * rows) + Math.min(offs, rows - 1);
 
 			// also load the missing rows if bigger
 			if(_old < rows) {
@@ -696,7 +691,7 @@ export class PatternEditorScrollManager {
 			}
 
 			// update canvas y-position
-			const offsetTop = ((this.parent.activePattern * patternRows) - this.scrolledRow);
+			const offsetTop = ((this.parent.activePattern * patternRows) - this.parent.tab.activeRow);
 
 			// request to render every visible row in this pattern
 			this.canvas[0].render(
@@ -722,7 +717,7 @@ export class PatternEditorScrollManager {
 			const cv = this.canvas[co];
 
 			// calculate canvas y-position
-			const offsetTop = ((pat * patternRows) - this.scrolledRow);
+			const offsetTop = ((pat * patternRows) - this.parent.tab.activeRow);
 			const top = ((offsetTop * this.rowHeight) + this.scrollMiddle) +"px";
 
 			// invalidate layout if it is not the same pattern as before
@@ -781,7 +776,7 @@ export class PatternEditorScrollManager {
 			}
 
 			// calculate row y-position
-			const top = ((((ppos * patternRows) - this.scrolledRow) * this.rowHeight) + this.scrollMiddle) +"px";
+			const top = ((((ppos * patternRows) - this.parent.tab.activeRow) * this.rowHeight) + this.scrollMiddle) +"px";
 
 			// update row position
 			cr.element.style.top = top;
@@ -894,7 +889,7 @@ export class PatternEditorScrollManager {
 	 */
 	private updateFocusRowData() {
 		// calculate the current highlight ID
-		const row = this.scrolledRow % this.parent.patternLen;
+		const row = this.parent.tab.activeRow % this.parent.patternLen;
 		const hid = (this.parent.tab.recordMode ? 3 : 0) + ((row % this.rowHighlights[0]) === 0 ? 2 : (row % this.rowHighlights[1]) === 0 ? 1 : 0);
 
 		// update background color and blend mode for this row

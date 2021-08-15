@@ -88,6 +88,11 @@ export class Tab {
 	public octave: number;
 
 	/**
+	 * The currently selected absolute row
+	 */
+	public activeRow = 0;
+
+	/**
 	 * The currently selected channel in the pattern editor
 	 */
 	public selectedChannelId = 0;

@@ -970,7 +970,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 			return false;
 		}
 
-		// ignore if not focused
+		// ignore if not in record mode
 		if(!this.parent.tab.recordMode) {
 			return false;
 		}
@@ -983,7 +983,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 			case 1: case 2: break;
 
 			default:
-				return false;
+				return true;
 		}
 
 		// find the current cell and check its valid

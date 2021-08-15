@@ -440,7 +440,7 @@ export class PatternEditorSelectionManager {
 	private getAbsolutePointer(cursor:Position): Position {
 		return {
 			x: cursor.x - this.parent.padding.left + this.parent.scrollManager.horizScroll,
-			y: cursor.y - this.parent.scrollManager.scrollMiddle + ((this.parent.scrollManager.scrolledRow) * this.rowHeight),
+			y: cursor.y - this.parent.scrollManager.scrollMiddle + (this.parent.tab.activeRow * this.rowHeight),
 		}
 	}
 
@@ -597,7 +597,7 @@ export class PatternEditorSelectionManager {
 	 * @returns The screen position for the top of the element
 	 */
 	private getElementTop(data:{ pattern:number, row:number }) : number {
-		const row = ((data.pattern * this.parent.patternLen) + data.row) - this.parent.scrollManager.scrolledRow;
+		const row = ((data.pattern * this.parent.patternLen) + data.row) - this.parent.tab.activeRow;
 		return (row * this.rowHeight) + this.parent.scrollManager.scrollMiddle;
 	}
 
@@ -642,7 +642,7 @@ export class PatternEditorSelectionManager {
 		// row bounds
 		return new Bounds(
 			// eslint-disable-next-line
-			0, ((((data.pattern * this.parent.patternLen) + data.row) - this.parent.scrollManager.scrolledRow) * this.rowHeight) + this.parent.scrollManager.scrollMiddle,
+			0, ((((data.pattern * this.parent.patternLen) + data.row) - this.parent.tab.activeRow) * this.rowHeight) + this.parent.scrollManager.scrollMiddle,
 			this.parent.padding.left - this.parent.scrollManager.rowNumBorderWidth, this.rowHeight
 		);
 	}

@@ -266,7 +266,7 @@ export class PatternEditorClipboard {
 			}
 
 			// reload graphics for channel
-			await this.parent.scrollManager.updateDataRows(sel[0].pattern, sel[0].row, sel[1].row + 1, channel);
+			await this.parent.scrollManager.updateDataRows(rp, sel[0].row, sel[1].row + 1, channel);
 			this.parent.tab.project.dirty();
 		}
 	}

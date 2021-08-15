@@ -520,6 +520,21 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 		}
 
 		switch(data.shift()) {
+			case "cut": {
+				// generate clipboard data
+				const data = await this.clipboard.generateCopy(this.parent.selectionManager.multi);
+
+				if(data) {
+					// if data is valid, update clipboard
+					await clipboard.set(ClipboardType.Pattern, data);
+
+					// delete this section
+					await this.deleteSelection();
+				}
+
+				return true;
+			}
+
 			case "copy": {
 				// generate clipboard data
 				const data = await this.clipboard.generateCopy(this.parent.selectionManager.multi);
@@ -583,49 +598,13 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 				});
 
 			case "delete":
-				if(!await this.handleDataChangeShortcut((sel:SingleSelection) => {
-						// if in the note column in single selection, also delete the volume and instrument
-						const els = this.parent.channelInfo[sel.channel].elements;
-
-						if(els[sel.element] === 0) {
-							let last = sel.element;
-
-							// check if there is a note and instrument column
-							for(let e = sel.element;e < els.length;e++) {
-								if(els[e] > 2) {
-									break;
-								}
-
-								// note or instrument
-								last = e;
-							}
-
-							return [ sel, { pattern: sel.pattern, row: sel.row, channel: sel.channel, element: last, }, ];
-						}
-
-						// delete this single cell
-						return [ sel, sel, ];
-					},
-					(pd:PatternData, pattern:number, channel:number, rstart:number, rend:number, estart:number, eend:number) =>
-						this.deleteData(pd, pattern, channel, rstart, rend, estart, eend)
-					)){
-						return false;
-					}
-
-				// disable digit editing mode
-				this.parent.selectionManager.clearEditMode();
-
-				// if this is single selection, apply step
-				if(!this.parent.selectionManager.multi) {
-					await this.parent.selectionManager.applyStep();
-				}
-
+				await this.deleteSelection();
 				return true;
 
 			case "insert":
 				if(!await this.handleDataChangeShortcut((sel:SingleSelection) => [
-						{ pattern: sel.pattern, row: sel.row, channel: 0, element: 0, },
-						{ pattern: sel.pattern, row: sel.row, channel: this.parent.channelInfo.length - 1, element: 0, },
+						{ pattern: sel.pattern, row: sel.row, channel: sel.channel, element: 0, },
+						{ pattern: sel.pattern, row: sel.row, channel: sel.channel, element: 0, },
 					], (pd:PatternData, pattern:number, channel:number, rstart:number, rend:number) =>
 						this.insertRows(pd, pattern, channel, rstart, rend)
 					)){
@@ -638,8 +617,8 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 
 			case "remove":
 				if(!await this.handleDataChangeShortcut((sel:SingleSelection) => sel.row === 0 ? null : [
-						{ pattern: sel.pattern, row: sel.row - 1, channel: 0, element: 0, },
-						{ pattern: sel.pattern, row: sel.row - 1, channel: this.parent.channelInfo.length - 1, element: 0, },
+						{ pattern: sel.pattern, row: sel.row - 1, channel: sel.channel, element: 0, },
+						{ pattern: sel.pattern, row: sel.row - 1, channel: sel.channel, element: 0, },
 					], (pd:PatternData, pattern:number, channel:number, rstart:number, rend:number) =>
 						this.removeRows(pd, pattern, channel, rstart, rend)
 					)){
@@ -658,6 +637,48 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Function to delete the current selection. Used for the delete and cut shortcuts
+	 */
+	private async deleteSelection() {
+		if(!await this.handleDataChangeShortcut((sel:SingleSelection) => {
+			// if in the note column in single selection, also delete the volume and instrument
+			const els = this.parent.channelInfo[sel.channel].elements;
+
+			if(els[sel.element] === 0) {
+				let last = sel.element;
+
+				// check if there is a note and instrument column
+				for(let e = sel.element;e < els.length;e++) {
+					if(els[e] > 2) {
+						break;
+					}
+
+					// note or instrument
+					last = e;
+				}
+
+				return [ sel, { pattern: sel.pattern, row: sel.row, channel: sel.channel, element: last, }, ];
+			}
+
+			// delete this single cell
+			return [ sel, sel, ];
+		},
+		(pd:PatternData, pattern:number, channel:number, rstart:number, rend:number, estart:number, eend:number) =>
+			this.deleteData(pd, pattern, channel, rstart, rend, estart, eend)
+		)){
+			return false;
+		}
+
+		// disable digit editing mode
+		this.parent.selectionManager.clearEditMode();
+
+		// if this is single selection, apply step
+		if(!this.parent.selectionManager.multi) {
+			await this.parent.selectionManager.applyStep();
+		}
 	}
 
 	/**

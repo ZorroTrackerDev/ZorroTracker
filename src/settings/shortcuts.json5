@@ -97,6 +97,7 @@
 	"pattern.data.insert":					[ "Insert" ],							/* shortcut for inserting a row */
 	"pattern.data.remove":					[ "Backspace" ],						/* shortcut for removing a row */
 	"pattern.data.copy":					[ "ctrl+C" ],							/* shortcut for copying a selection */
+	"pattern.data.cut":						[ "ctrl+X" ],							/* shortcut for cutting a selection */
 	"pattern.data.paste":					[ "ctrl+V" ],							/* shortcut for pasting to cursor */
 	"pattern.data.mix":						[ "ctrl+M" ],							/* shortcut for pasting with mixing enabled to cursor */
 

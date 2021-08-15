@@ -193,6 +193,9 @@ export class PatternEditorClipboard {
 				continue;
 			}
 
+			// make sure the pattern is no longer automatically deleted
+			pd.edited = true;
+
 			// loop through all rows and channels, merging data
 			for(let row = sel[0].row;row <= sel[1].row;row++){
 				for(let element = 0;element < tokens[row - sel[0].row][channel - sel[0].channel].length; element++) {

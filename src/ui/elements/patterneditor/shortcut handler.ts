@@ -2,7 +2,8 @@ import { FeatureFlag } from "../../../api/driver";
 import { ZorroEvent, ZorroEventEnum, ZorroEventObject } from "../../../api/events";
 import { PatternCell, PatternData } from "../../../api/matrix";
 import { Note } from "../../../api/notes";
-import { Position, shortcutDirection, UIShortcutHandler } from "../../../api/ui";
+import { clipboard, ClipboardType, Position, shortcutDirection, UIShortcutHandler } from "../../../api/ui";
+import { PatternEditorClipboard } from "./clipboard";
 import { PatternEditor } from "./main";
 import { PianoProcessor } from "./piano processor";
 import { MultiSelection, SingleSelection } from "./selection manager";
@@ -10,13 +11,15 @@ import { MultiSelection, SingleSelection } from "./selection manager";
 export class PatternEditorShortcuts implements UIShortcutHandler {
 	private parent:PatternEditor;
 	private pianoProcessor:PianoProcessor;
+	private clipboard:PatternEditorClipboard;
 
 	constructor(parent:PatternEditor) {
 		this.parent = parent;
 		_shortcut = this;
 
-		// generate the piano processor isntance
+		// generate helpers
 		this.pianoProcessor = new PianoProcessor(parent);
+		this.clipboard = new PatternEditorClipboard(parent);
 	}
 
 	/**
@@ -517,6 +520,42 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 		}
 
 		switch(data.shift()) {
+			case "copy": {
+				// generate clipboard data
+				const data = await this.clipboard.generateCopy(this.parent.selectionManager.multi);
+
+				if(data) {
+					// if data is valid, update clipboard
+					await clipboard.set(ClipboardType.Pattern, data);
+				}
+
+				return true;
+			}
+
+			case "paste": {
+				// load clipboard data
+				const data = await clipboard.get(ClipboardType.Pattern);
+
+				if(data) {
+					// if data is valid, update clipboard
+					await this.clipboard.pasteData(this.parent.selectionManager.single, data, false);
+				}
+
+				return true;
+			}
+
+			case "mix": {
+				// load clipboard data
+				const data = await clipboard.get(ClipboardType.Pattern);
+
+				if(data) {
+					// if data is valid, update clipboard
+					await this.clipboard.pasteData(this.parent.selectionManager.single, data, true);
+				}
+
+				return true;
+			}
+
 			case "change1":
 				return this.handleMovementCheck(data.shift(), async(pos:Position) => {
 					if(!pos.y || !await this.handleDataChangeShortcut((sel:SingleSelection) => [ sel, sel, ],
@@ -622,26 +661,28 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	}
 
 	/**
-	 * Load the ordered selection, based on the
+	 * Load the ordered selection (index 0 is top-left, index 1 is bottom-right), based on the current multi- or single-selection
+	 *
+	 * @param multi The multi-selection to use for checking. It can also be valid if single selection should be used
+	 * @param single A function to call to handle single selections correctly
+	 * @returns The new multi-selection based on the input, or `null` if failed
 	 */
-	private getOrderSelection(single: (sel:SingleSelection) => null|MultiSelection): null|MultiSelection {
-		const sl = this.parent.selectionManager.multi;
-
-		if(!sl) {
+	public getOrderSelection(multi:null|MultiSelection, single:(sel:SingleSelection) => null|MultiSelection): null|MultiSelection {
+		if(!multi) {
 			// single mode, just choose this single element
 			return single(this.parent.selectionManager.single);
 		}
 
 		// multi mode, create new selections based on which side is which
-		const left = +((sl[0].channel !== sl[1].channel) ? (sl[0].channel > sl[1].channel) : (sl[0].element > sl[1].element));
-		const top = +((sl[0].pattern !== sl[1].pattern) ? (sl[0].pattern > sl[1].pattern) : (sl[0].row > sl[1].row));
+		const left = +((multi[0].channel !== multi[1].channel) ? (multi[0].channel > multi[1].channel) : (multi[0].element > multi[1].element));
+		const top = +((multi[0].pattern !== multi[1].pattern) ? (multi[0].pattern > multi[1].pattern) : (multi[0].row > multi[1].row));
 
 		return [
 			// top-left
-			{ pattern: sl[top].pattern, row: sl[top].row, channel: sl[left].channel, element: sl[left].element, },
+			{ pattern: multi[top].pattern, row: multi[top].row, channel: multi[left].channel, element: multi[left].element, },
 
 			// bottom-right
-			{ pattern: sl[1-top].pattern, row: sl[1-top].row, channel: sl[1-left].channel, element: sl[1-left].element, },
+			{ pattern: multi[1-top].pattern, row: multi[1-top].row, channel: multi[1-left].channel, element: multi[1-left].element, },
 		]
 	}
 
@@ -651,7 +692,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	private async handleDataChangeShortcut(single: (sel:SingleSelection) => null|MultiSelection,
 		func: (pd:PatternData, pattern:number, channel:number, rstart:number, rend:number, estart:number, eend:number) => Promise<unknown>|unknown) {
 		// load the ordered boundaries of the selection
-		const sel = this.getOrderSelection(single);
+		const sel = this.getOrderSelection(this.parent.selectionManager.multi, single);
 
 		if(!sel) {
 			return false;

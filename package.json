@@ -34,7 +34,6 @@
 		"@types/adm-zip": "^0.4.34",
 		"@types/css-font-loading-module": "^0.0.6",
 		"@types/discord-rich-presence": "^0.0.0",
-		"@types/jest": "^26.0.22",
 		"@types/jsdom": "^16.2.10",
 		"@types/node": "^15.0.0",
 		"@types/webmidi": "^2.0.5",

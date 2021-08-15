@@ -374,7 +374,7 @@ export const clipboard = {
  * Differnt types of clipboard data events, used so that event listeners can listen to specific clipboard events.
  */
 export enum ClipboardType {
-	Matrix,
+	Matrix, Pattern,
 }
 
 // generate event emitters for clipboard events

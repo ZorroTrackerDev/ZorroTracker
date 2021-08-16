@@ -363,6 +363,11 @@ export class MatrixEditor implements UIComponent<HTMLDivElement>, UIShortcutHand
 			}
 
 			case "hex": {
+				// must be selected
+				if(document.querySelector(":focus") !== this.element) {
+					return false;
+				}
+
 				// parse the value we passed
 				const value = parseInt(data.shift() ?? "NaN", 16);
 

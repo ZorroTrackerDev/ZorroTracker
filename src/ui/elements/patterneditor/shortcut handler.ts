@@ -983,7 +983,7 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 			case 1: case 2: break;
 
 			default:
-				return true;
+				return false;
 		}
 
 		// find the current cell and check its valid

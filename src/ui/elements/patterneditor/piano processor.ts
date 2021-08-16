@@ -1,5 +1,6 @@
 import { ZorroEvent, ZorroEventEnum } from "../../../api/events";
 import { loadFlag } from "../../../api/files";
+import { Note } from "../../../api/notes";
 import { PlayMode } from "../../misc/tab";
 import { PatternEditor } from "./main";
 
@@ -134,7 +135,7 @@ export class PianoProcessor {
 					}
 
 					// if the instrument is different, also change that
-					if(this.parent.shortcuts.getLastInstrument() !== this.parent.tab.selectedInstrument) {
+					if(note >= Note.First && this.parent.shortcuts.getLastInstrument() !== this.parent.tab.selectedInstrument) {
 						info[2].instrument = this.parent.tab.selectedInstrument;
 					}
 
@@ -216,6 +217,11 @@ export class PianoProcessor {
 			// if enabled, also updates the note velocity
 			if(this.parent.tab.recordVelocity) {
 				info[2].volume = volume;
+			}
+
+			// if the instrument is different, also change that
+			if(note >= Note.First && this.parent.shortcuts.getLastInstrument() !== this.parent.tab.selectedInstrument) {
+				info[2].instrument = this.parent.tab.selectedInstrument;
 			}
 
 			// reload this row

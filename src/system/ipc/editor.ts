@@ -145,7 +145,7 @@ ipcMain.on(ipcEnum.ManagerMatrix, (event, token, data) => {
 	});
 });
 
-ipcMain.on(ipcEnum.MAnagerPattern, (event, channel, index, data) => {
+ipcMain.on(ipcEnum.ManagerPattern, (event, channel, index, data) => {
 	worker?.postMessage({ code: "module-pattern", data: { channel, index, data, }, });
 });
 

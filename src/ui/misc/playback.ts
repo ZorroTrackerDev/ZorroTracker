@@ -49,7 +49,7 @@ async function uploadInitial(matrix:Matrix) {
 			if(typeof pat === "number" && !loaded[pat]) {
 				// needs to be loaded
 				loaded[pat] = true;
-				ipcRenderer.send(ipcEnum.MAnagerPattern, c, pat, matrix.patterns[c][pat]?.cells);
+				ipcRenderer.send(ipcEnum.ManagerPattern, c, pat, matrix.patterns[c][pat]?.cells);
 			}
 		}
 	}
@@ -109,7 +109,23 @@ function matrixSend(matrix:Matrix){
 	}, 1);
 }
 
+/**
+ * Function to send the pattern data at a certain position
+ *
+ * @param data The actual matrix data
+ */
+export function setPattern(matrix:Matrix, channel:number, pattern:number): void {
+	ipcRenderer.send(ipcEnum.ManagerPattern, channel, pattern, matrix.patterns[channel][pattern]?.cells);
+}
+
 let currentTab: Tab;
+
+/**
+ * Events that make the need for reloading the managers
+ */
+ZorroEvent.addListener(ZorroEventEnum.SelectModule, async() => {
+	await stopPlayback();
+});
 
 /**
  * Events that make the need for the matrix to be re-rendered
@@ -124,6 +140,13 @@ ZorroEvent.addListener(ZorroEventEnum.MatrixRemove, async(event, matrix) => matr
 /**
  * Events that make the need for flags to be updated
  */
-ZorroEvent.addListener(ZorroEventEnum.MatrixResize, async() => {
-	await setFlags(currentTab)
-});
+ZorroEvent.addListener(ZorroEventEnum.MatrixResize, async() => { await setFlags(currentTab); });
+ZorroEvent.addListener(ZorroEventEnum.ProjectPatternRows, async() => { await setFlags(currentTab); });
+
+/**
+ * Events that make the need for pattern data to be updated
+ */
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.PatternMake, async(event, matrix, channel, position) => { setPattern(matrix, channel, position); });
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.PatternData, async(event, matrix, channel, pattern) => { setPattern(matrix, channel, pattern); });

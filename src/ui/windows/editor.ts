@@ -506,6 +506,9 @@ export async function loadToModule(index:number): Promise<void> {
 	components.setComponentTab(Tab.active as Tab);
 	await components.loadComponents(10);
 
+	// initialize playback manager of the module
+	await initPlayback(Tab.active as Tab);
+
 	// remove loading animation
 	disableLoading();
 }
@@ -871,9 +874,6 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 
 				// project is now dirty!
 				this.tab.project.dirty();
-
-				// update playback manager flags
-				await setFlags(this.tab);
 			}
 		});
 

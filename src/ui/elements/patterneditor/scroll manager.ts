@@ -853,14 +853,19 @@ export class PatternEditorScrollManager {
 			return false;
 		}));
 
+		// update the event manager too
+		const promise = this.parent.eventData(this.parent.tab.matrix, channel, pattern, start, end);
+
 		// loop through all results, checking if any were changed. If so, then we must also render
 		for(const render of array) {
 			if(render) {
 				// must render, ignore all other results
 				this.doGraphicsLater();
-				return;
+				return promise;
 			}
 		}
+
+		return promise;
 	}
 
 	/**

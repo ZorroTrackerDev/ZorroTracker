@@ -1117,9 +1117,9 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 	/**
 	 * Helper function to update the current data row
 	 */
-	public updateCurrentRow(pattern:number): Promise<void> {
+	public async updateCurrentRow(pattern:number): Promise<void> {
 		const sel = this.parent.selectionManager.single;
-		return this.parent.scrollManager.updateDataRows(pattern, sel.row, sel.row + 1, sel.channel);
+		await this.parent.scrollManager.updateDataRows(pattern, sel.row, sel.row + 1, sel.channel);
 	}
 
 	/**

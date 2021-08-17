@@ -156,6 +156,8 @@ export class PianoProcessor {
 
 					// project is dirty now
 					this.parent.tab.project.dirty();
+
+					// enable key repeat
 					this.enableRepeat(note, volume);
 					polyphony = false;
 

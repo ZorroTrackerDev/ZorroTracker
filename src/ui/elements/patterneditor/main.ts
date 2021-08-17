@@ -1,4 +1,5 @@
 import { FeatureFlag } from "../../../api/driver";
+import { ZorroEvent, ZorroEventEnum, ZorroSenderTypes } from "../../../api/events";
 import { UIComponent, UIShortcutHandler } from "../../../api/ui";
 import { Tab } from "../../misc/tab";
 import { theme } from "../../misc/theme";
@@ -87,11 +88,19 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	public shortcuts: PatternEditorShortcuts;
 
 	/**
+	 * The event dispatcher for when data changes
+	 */
+	public eventData: ZorroSenderTypes[ZorroEventEnum.PatternData];
+
+	/**
 	 * Initialize this PatternEditor instance
 	 *
 	 * @param tab The tab that this pattern editor is targeting
 	 */
 	constructor() {
+		// create events
+		this.eventData = ZorroEvent.createEvent(ZorroEventEnum.PatternData);
+
 		// initialize managers
 		this.shortcuts = new PatternEditorShortcuts(this);
 		this.eventManager = new PatternEditorEventManager(this);

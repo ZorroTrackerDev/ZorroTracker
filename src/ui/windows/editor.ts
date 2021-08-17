@@ -344,26 +344,31 @@ async function loadMainShortcuts() {
 		},
 
 		/* shortcut for enabling play mode */
-		play: () => {
+		play: async() => {
 			if(!Tab.active || Tab.active.playMode !== PlayMode.Stopped){
 				return false;
 			}
 
 			// toggle play mode
-			Tab.active.playMode = PlayMode.PlayAll;
-			startPlayback(Tab.active, Tab.active?.activeRow ?? 0, false).catch(console.error);
+			if(await startPlayback(Tab.active, Tab.active?.activeRow ?? 0, false)){
+				Tab.active.playMode = PlayMode.PlayAll;
+			}
+
 			return true;
 		},
 
 		/* shortcut for enabling play pattern mode */
-		playpattern: () => {
+		playpattern: async() => {
 			if(!Tab.active || Tab.active.playMode !== PlayMode.Stopped){
 				return false;
 			}
 
 			// toggle play mode
 			Tab.active.playMode = PlayMode.PlayPattern;
-			startPlayback(Tab.active, Tab.active?.activeRow ?? 0, true).catch(console.error);
+			if(await startPlayback(Tab.active, Tab.active?.activeRow ?? 0, true)){
+				Tab.active.playMode = PlayMode.PlayPattern;
+			}
+
 			return true;
 		},
 

@@ -1,3 +1,4 @@
+import { Matrix } from "../../api/matrix";
 import { _async } from "../../system/ipc/html";
 import { ipcEnum } from "../../system/ipc/ipc enum";
 import { Tab } from "./tab";
@@ -16,27 +17,46 @@ export function stopPlayback(): Promise<unknown> {
  */
 export async function initPlayback(tab:Tab): Promise<unknown> {
 	targetTab = tab;
+	init = false;
 
-	// TEMP: upload all data before playing
-	console.time("driver-upload")
+	console.time("init-playback")
 	// eslint-disable-next-line max-len
 	await _async(ipcEnum.DriverInit, tab.module?.patternRows ?? 64, tab.channels.length, tab.module?.rate ?? 1, tab.module?.ticksPerRow ?? 1, tab.matrix.matrixlen);
 
+	// send all the data to the playback engine
+	setTimeout(() => uploadInitial(tab.matrix), 0);
+	console.timeEnd("init-playback")
+	return undefined;
+}
+
+let init = false;
+
+async function uploadInitial(matrix:Matrix) {
+	console.time("driver-upload")
+
 	// send the matrix first and prepare promises array
-	const promises = [ await _async(ipcEnum.DriverMatrix, tab.matrix.matrix), ];
+	await setMatrix(matrix.matrix);
 
 	// loop for all channels in pattern data
-	for(let c = 0;c < tab.channels.length;c ++) {
-		// loop for all patterns in channel
-		for(let pat = 0;pat < tab.matrix.patterns[c].length;pat ++) {
-			promises.push(await _async(ipcEnum.DriverPattern, c, pat, tab.matrix.patterns[c][pat]?.cells));
+	for(let c = 0;c < matrix.matrix.length;c ++) {
+		const loaded = Array(256).fill(false);
+
+		// loop for all patterns for this channel
+		for(let row = 0;row < matrix.matrixlen;row ++) {
+			const pat = matrix.matrix[c][row];
+
+			if(typeof pat === "number" && !loaded[pat]) {
+				// needs to be loaded
+				loaded[pat] = true;
+				await _async(ipcEnum.DriverPattern, c, pat, matrix.patterns[c][pat]?.cells);
+			}
 		}
 	}
 
 	// wait for everything to finish processing
-	await Promise.all(promises);
 	console.timeEnd("driver-upload");
-	return undefined;
+
+	init = true;
 }
 
 /**
@@ -46,9 +66,27 @@ export async function initPlayback(tab:Tab): Promise<unknown> {
  * @param row The absolute row number to start playback in
  * @param repeat Whether to repeat the above mentioned pattern infinitely
  */
-export function startPlayback(tab:Tab, row:number, repeat:boolean): Promise<unknown> {
+export async function startPlayback(tab:Tab, row:number, repeat:boolean): Promise<boolean> {
+	// if init is not done, do not allow playback
+	if(!init) {
+		return false;
+	}
+
+	// initialize playback
 	targetTab = tab;
-	return _async(ipcEnum.DriverPlay, row, repeat);
+	await _async(ipcEnum.DriverPlay, row, repeat);
+	return true;
 }
 
 let targetTab:Tab;
+
+/**
+ * Function to send the entire matrix to the playback engine
+ *
+ * @param data The actual matrix data
+ */
+export async function setMatrix(data:Uint8Array[]): Promise<void> {
+	console.time("driver-matrix")
+	await _async(ipcEnum.DriverMatrix, data);
+	console.timeEnd("driver-matrix");
+}

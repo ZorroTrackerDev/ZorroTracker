@@ -222,7 +222,7 @@ parentPort?.on("message", (data:{ token?:number, code:string, data:unknown, fn?:
 					const arr = data.data as { channels:number, };
 
 					// eslint-disable-next-line max-len
-					playManager = new PlaybackManager(arr.channels, processAsyncMessage);
+					playManager = new PlaybackManager(arr.channels, processMessage);
 
 					// initialize the driver and manager
 					driver.playback = playManager.getAPI();
@@ -241,7 +241,7 @@ parentPort?.on("message", (data:{ token?:number, code:string, data:unknown, fn?:
 				if(driver && playManager) {
 					// set playback mode
 					const arr = data.data as { row:number, repeat:boolean, };
-					playManager.setMode(arr.row, arr.repeat)
+					playManager.setMode(arr.row, arr.repeat);
 
 					// tell the driver to start playback
 					driver.reset();
@@ -258,8 +258,9 @@ parentPort?.on("message", (data:{ token?:number, code:string, data:unknown, fn?:
 			 * data: Irrelevant
 			 */
 			case "module-stop":
-				if(driver) {
+				if(driver && playManager) {
 					// tell the driver to stop playback
+					playManager.stop();
 					driver.stop();
 				}
 
@@ -394,20 +395,26 @@ parentPort?.on("message", (data:{ token?:number, code:string, data:unknown, fn?:
 // helper object that helps the chip process playback
 let playManager: undefined|PlaybackManager;
 
-function processAsyncMessage(code:ipcEnum, data:unknown, callback:(result:unknown) => void): void {
+function processMessage(async:boolean, code:ipcEnum, data:unknown, callback:(result:unknown) => void): void {
 	// if parent port is somehow null, we need to handle this gracefully... ish
 	if(!parentPort) {
 		return callback(undefined);
 	}
 
-	// generate a token
-	const token = Math.random();
+	if(async) {
+		// generate a token
+		const token = Math.random();
 
-	// save the async function to later get the result
-	asyncFuncs[token] = { code, callback, };
+		// save the async function to later get the result
+		asyncFuncs[token] = { code, callback, };
 
-	// send the message to the port
-	parentPort.postMessage({ code: "async-ui", token: token, fn: code, data: data, });
+		// send the message to the port
+		parentPort.postMessage({ code: "async-ui", token: token, fn: code, data: data, });
+
+	} else {
+		// send the message to the port
+		parentPort.postMessage({ code: "ui", fn: code, data: data, });
+	}
 }
 
 const asyncFuncs: { [key:number]: { code: string, callback: (result:unknown) => void, }, } = {};

@@ -97,8 +97,10 @@ export class PlayBar implements UIComponent<HTMLDivElement> {
 			tooltip: "Start playback",
 			click: async(e:MouseEvent) => {
 				// change playback mode to play all
-				if(e.button === 0 && Tab.active && Tab.active.playMode === PlayMode.Stopped) {
-					if(await startPlayback(Tab.active?.activeRow ?? 0, false)) {
+				if(e.button === 0 && Tab.active && Tab.active.playMode !== PlayMode.PlayAll) {
+					const row = Tab.active?.activeRow ?? 0;
+
+					if(await startPlayback(row - (row % (Tab.active?.module?.patternRows ?? 1)), false)) {
 						Tab.active.playMode = PlayMode.PlayAll;
 					}
 				}
@@ -111,8 +113,10 @@ export class PlayBar implements UIComponent<HTMLDivElement> {
 			tooltip: "Repeat pattern",
 			click: async(e:MouseEvent) => {
 				// change playback mode to play pattern
-				if(e.button === 0 && Tab.active && Tab.active.playMode === PlayMode.Stopped) {
-					if(await startPlayback(Tab.active?.activeRow ?? 0, true)) {
+				if(e.button === 0 && Tab.active && Tab.active.playMode !== PlayMode.PlayPattern) {
+					const row = Tab.active?.activeRow ?? 0;
+
+					if(await startPlayback(row - (row % (Tab.active?.module?.patternRows ?? 1)), true)) {
 						Tab.active.playMode = PlayMode.PlayPattern;
 					}
 				}

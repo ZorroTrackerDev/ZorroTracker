@@ -158,6 +158,8 @@ export enum ZorroEventEnum {
 	PatternMake,					// event that is ran when a new pattern will be created
 	PatternData,					// event that is ran when pattern data is updated
 
+	PlaybackPosition,				// event that is ran when the playback position is updated
+
 	MidiNoteOn,						// event that is ran when a MIDI note is triggered
 	MidiNoteOff,					// event that is ran when a MIDI note is released
 	PianoNoteOn,					// event that is ran when a note is to be triggered via the piano
@@ -225,6 +227,8 @@ export interface ZorroListenerTypes {
 	[ZorroEventEnum.PatternMake]: (event:ZorroEventObject, matrix:Matrix, channel:number, position:number) => ZorroListenerReturn<void>,
 	[ZorroEventEnum.PatternData]: (event:ZorroEventObject, matrix:Matrix, channel:number, pattern:number, start:number, end:number) => ZorroListenerReturn<void>,
 
+	[ZorroEventEnum.PlaybackPosition]: (event:ZorroEventObject, row:number) => ZorroListenerReturn<void>,
+
 	[ZorroEventEnum.MidiNoteOn]: (event:ZorroEventObject, channel:number, note:number, velocity:number) => ZorroListenerReturn<void>,
 	[ZorroEventEnum.MidiNoteOff]: (event:ZorroEventObject, channel:number, note:number, velocity:number) => ZorroListenerReturn<void>,
 	[ZorroEventEnum.PianoNoteOn]: (event:ZorroEventObject, channel:number, note:number, velocity:number, polyphony:boolean) => ZorroListenerReturn<void>,
@@ -265,6 +269,8 @@ export interface ZorroSenderTypes {
 	[ZorroEventEnum.PatternTrim]: (matrix:Matrix, channel:number, position:number) => ZorroSenderReturn<undefined>,
 	[ZorroEventEnum.PatternMake]: (matrix:Matrix, channel:number, position:number) => ZorroSenderReturn<undefined>,
 	[ZorroEventEnum.PatternData]: (matrix:Matrix, channel:number, pattern:number, start:number, end:number) => ZorroListenerReturn<void>,
+
+	[ZorroEventEnum.PlaybackPosition]: (row:number) => ZorroListenerReturn<void>,
 
 	[ZorroEventEnum.MidiNoteOn]: (channel:number, note:number, velocity:number) => ZorroSenderReturn<undefined>,
 	[ZorroEventEnum.MidiNoteOff]: (channel:number, note:number, velocity:number) => ZorroSenderReturn<undefined>,

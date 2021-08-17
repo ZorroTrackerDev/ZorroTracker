@@ -1,5 +1,6 @@
 import { Channel } from "../../../api/driver";
 import { ZorroEvent, ZorroEventEnum } from "../../../api/events";
+import { PlayMode } from "../../misc/tab";
 import { theme } from "../../misc/theme";
 import { PatternEditor } from "./main";
 
@@ -74,6 +75,38 @@ export class PatternEditorEventManager {
  */
 let manager:PatternEditorEventManager|undefined;
 
+// listen to playback position updates
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.PlaybackPosition, async(event, row) => {
+	if(manager) {
+		if(row < 0) {
+			// update the song position
+			manager.parent.songRow = -1;
+			manager.parent.scrollManager.updateSongScroll();
+
+		} else if(manager.parent.tab.playMode !== PlayMode.Stopped){
+			// update the song position
+			manager.parent.songRow = row;
+			manager.parent.scrollManager.updateSongRowData();
+
+			if(manager.parent.tab.follow) {
+				// update current row
+				manager.parent.selectionManager.single.pattern = Math.floor(row / manager.parent.patternLen);
+				manager.parent.selectionManager.single.row = row % manager.parent.patternLen;
+
+				manager.parent.tab.activeRow = row;
+
+				// redraw all and update scroling
+				await manager.parent.scrollManager.verticalScroll(0);
+
+			} else {
+				// update song scrolling
+				manager.parent.scrollManager.updateSongScroll();
+			}
+		}
+	}
+});
+
 // listen to theme reloading
 ZorroEvent.addListener(ZorroEventEnum.LoadTheme, async() => {
 	await manager?.parent.reloadTheme(false);
@@ -99,7 +132,7 @@ ZorroEvent.addListener(ZorroEventEnum.ProjectPatternRows, async(event, project, 
 	setTimeout(() => {
 		// handle selection
 		manager?.parent.selectionManager.handleMatrixResize();
-		manager?.parent.selectionManager.render();
+		return manager?.parent.selectionManager.render();
 	}, 1);
 });
 

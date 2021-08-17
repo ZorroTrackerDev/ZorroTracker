@@ -73,9 +73,21 @@ export class Tab {
 	public step = 1;
 
 	/**
-	 * The currently selected instrument in the nstrument editor
+	 * The currently selected instrument in the instrument editor
 	 */
 	public selectedInstrument = 0;
+
+	/**
+	 * Whether to follow the playback. If enabled with playmode, then this should block manual movement on the pattern editor and matrix editor
+	 */
+	public follow = true;
+
+	/**
+	 * Whether to block vertical movement in the pattern editor and matrix editor
+	 */
+	public get blockMovement(): boolean {
+		return this.follow && this._playMode !== PlayMode.Stopped;
+	}
 
 	/**
 	 * Whether to record velocity along with note. Useful for MIDI keyboards and the like

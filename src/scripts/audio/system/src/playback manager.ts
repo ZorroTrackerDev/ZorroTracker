@@ -5,7 +5,7 @@ import { ipcEnum } from "../../../../system/ipc/ipc enum";
 /**
  * Helper type for message functions to the UI
  */
-export type UIMessageFunction = (code:ipcEnum, data:unknown, callback:(result:unknown) => void) => void;
+export type UIMessageFunction = (async:boolean, code:ipcEnum, data:unknown, callback:(result:unknown) => void) => void;
 
 export class PlaybackManager implements PlaybackManagerAPI {
 	/**
@@ -106,6 +106,9 @@ export class PlaybackManager implements PlaybackManagerAPI {
 	 * Helper function to load the next row data and keep the UI up to date
 	 */
 	public loadDataRow(): PatternCellData[]|null {
+		// send the current row to ui
+		this.messageFunc(false, ipcEnum.ManagerPosition, this.row + (this.pattern * this.patternLen), () => 0);
+
 		// load the current row data into ret variable
 		const ret:PatternCellData[] = [];
 
@@ -130,6 +133,14 @@ export class PlaybackManager implements PlaybackManagerAPI {
 
 		// return the previous row
 		return ret;
+	}
+
+	/**
+	 * Inform the UI the playback has stopped
+	 */
+	public stop(): void {
+		// send the current row to ui
+		this.messageFunc(false, ipcEnum.ManagerPosition, -1, () => 0);
 	}
 
 	/**

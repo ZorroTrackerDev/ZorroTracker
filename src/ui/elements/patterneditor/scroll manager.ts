@@ -39,7 +39,7 @@ export class PatternEditorScrollManager {
 				await this.parent.selectionManager.moveSingle(Math.round(e.deltaX * 0.03), 0, false);
 			}
 
-			if(e.deltaY) {
+			if(e.deltaY && !this.parent.tab.blockMovement) {
 				// there is vertical movement, call the special scroll handler
 				await this.parent.selectionManager.moveSingle(0, Math.round(e.deltaY * 0.03), false);
 			}
@@ -234,6 +234,24 @@ export class PatternEditorScrollManager {
 
 		// tell the selection manager to update scrolling
 		this.parent.selectionManager.render();
+
+		// update song scrolling
+		this.updateSongScroll();
+	}
+
+	/**
+	 * Function to update the song scrolling position
+	 */
+	public updateSongScroll(): void {
+		// update song highlight
+		if(this.parent.songRow < 0) {
+			this.parent.songBar.style.top = "-10000px";
+			return;
+		}
+
+		// load the offset in pixels and update the bar position
+		const offset = (this.parent.songRow - this.parent.tab.activeRow) * this.rowHeight;
+		this.parent.songBar.style.top = (offset + this.scrollMiddle) +"px";
 	}
 
 	/**
@@ -293,7 +311,8 @@ export class PatternEditorScrollManager {
 	 */
 	private updateFocusWidth() {
 		// update highlight to be at this location too
-		this.parent.focusBar.style.maxWidth = (this.renderAreaWidth - this.horizScroll - this.rowNumBorderWidth) +"px";
+		const w = (this.renderAreaWidth - this.horizScroll - this.rowNumBorderWidth) +"px";
+		this.parent.songBar.style.maxWidth = this.parent.focusBar.style.maxWidth = w;
 	}
 
 	/**
@@ -904,6 +923,31 @@ export class PatternEditorScrollManager {
 	}
 
 	/**
+	 * The color and blend mode settings for the song bar
+	 */
+	private songBarColorNormal!: [ string, string, string,  string, string, string, ];
+	private songBarBlendNormal!: [ string, string, string,  string, string, string, ];
+
+	/**
+	 * Helper function to update focus row details
+	 */
+	public updateSongRowData(): void {
+		// ignore when hidden
+		if(this.parent.songRow < 0) {
+			return;
+		}
+
+		// calculate the current highlight ID
+		const row = this.parent.tab.activeRow % this.parent.patternLen;
+		const hid = (this.parent.tab.recordMode ? 3 : 0) + ((row % this.rowHighlights[0]) === 0 ? 2 : (row % this.rowHighlights[1]) === 0 ? 1 : 0);
+
+		// update background color and blend mode for this row
+		this.parent.songBar.style.backgroundColor = this.songBarColorNormal[hid];
+		// @ts-expect-error This property does exist, but TypeScript doesn't recognize it
+		this.parent.songBar.style.mixBlendMode = this.songBarBlendNormal[hid];
+	}
+
+	/**
 	 * The number of pixels the row number border is wide.
 	 */
 	public rowNumBorderWidth = 0;
@@ -939,8 +983,21 @@ export class PatternEditorScrollManager {
 			...theme?.pattern?.main?.focus?.recordblend ?? [ "", "", "", ],
 		];
 
+
+		// load the tables handling the song bar colors
+		this.songBarColorNormal = [
+			...theme?.pattern?.main?.song?.color ?? [ "#000", "#000", "#000", ],
+			...theme?.pattern?.main?.song?.recordcolor ?? [ "#000", "#000", "#000", ],
+		];
+
+		this.songBarBlendNormal = [
+			...theme?.pattern?.main?.song?.blend ?? [ "", "", "", ],
+			...theme?.pattern?.main?.song?.recordblend ?? [ "", "", "", ],
+		];
+
 		// update elements that use the row height directly
 		this.parent.focusBar.style.height = this.rowHeight +"px";
+		this.parent.songBar.style.height = this.rowHeight +"px";
 
 		if(!preload) {
 			// wait for them to finish

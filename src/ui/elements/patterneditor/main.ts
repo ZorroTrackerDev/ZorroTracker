@@ -52,6 +52,7 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	public element!: HTMLDivElement;
 	public scrollwrapper!: HTMLDivElement;
 	public focusBar!: HTMLDivElement;
+	public songBar!: HTMLDivElement;
 	public singleSelection!: HTMLDivElement;
 	public multiSelection!: HTMLDivElement;
 	public cursor!: HTMLDivElement;
@@ -168,6 +169,11 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 			this.focusBar = document.createElement("div");
 			this.focusBar.classList.add("focus");
 			wrap.appendChild(this.focusBar);
+
+			// initialize the song bar element
+			this.songBar = document.createElement("div");
+			this.songBar.classList.add("focus");
+			wrap.appendChild(this.songBar);
 
 			// initialize the cursor element
 			this.cursor = document.createElement("div");
@@ -457,6 +463,11 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	public get activePattern(): number {
 		return Math.floor(this.tab.activeRow / this.patternLen);
 	}
+
+	/**
+	 * The current row where the channel is located at
+	 */
+	public songRow = -1;
 
 	/**
 	 * Various channel statistics

@@ -290,6 +290,11 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 				// disable digit editing mode
 				this.parent.selectionManager.clearEditMode();
 
+				// ignore when follow mode is enabled
+				if(this.parent.tab.blockMovement) {
+					return true;
+				}
+
 				// load the selection target
 				const [ target, fn, wrap, ] = this.getSelectionTarget();
 
@@ -302,6 +307,11 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 				// disable digit editing mode
 				this.parent.selectionManager.clearEditMode();
 
+				// ignore when follow mode is enabled
+				if(this.parent.tab.blockMovement) {
+					return true;
+				}
+
 				// load the selection target
 				const [ target, fn, wrap, ] = this.getSelectionTarget();
 
@@ -313,6 +323,11 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 			case "extendtop": {
 				// disable digit editing mode
 				this.parent.selectionManager.clearEditMode();
+
+				// ignore when follow mode is enabled
+				if(this.parent.tab.blockMovement) {
+					return true;
+				}
 
 				// if there is no multi selection, clone single selection as the multi selection
 				this.checkMultiSelection();
@@ -330,6 +345,11 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 			case "extendbottom": {
 				// disable digit editing mode
 				this.parent.selectionManager.clearEditMode();
+
+				// ignore when follow mode is enabled
+				if(this.parent.tab.blockMovement) {
+					return true;
+				}
 
 				// if there is no multi selection, clone single selection as the multi selection
 				this.checkMultiSelection();
@@ -365,6 +385,11 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 					if(pos.y) {
 						// disable digit editing mode
 						this.parent.selectionManager.clearEditMode();
+
+						// ignore when follow mode is enabled
+						if(this.parent.tab.blockMovement) {
+							return true;
+						}
 
 						// remove multi selection
 						this.parent.selectionManager.clearMultiSelection();
@@ -411,6 +436,11 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 				// disable digit editing mode
 				this.parent.selectionManager.clearEditMode();
 
+				// ignore when follow mode is enabled
+				if(this.parent.tab.blockMovement) {
+					return true;
+				}
+
 				// remove multi selection
 				this.parent.selectionManager.clearMultiSelection();
 
@@ -423,6 +453,11 @@ export class PatternEditorShortcuts implements UIShortcutHandler {
 			case "patternbottom": {
 				// disable digit editing mode
 				this.parent.selectionManager.clearEditMode();
+
+				// ignore when follow mode is enabled
+				if(this.parent.tab.blockMovement) {
+					return true;
+				}
 
 				// remove multi selection
 				this.parent.selectionManager.clearMultiSelection();

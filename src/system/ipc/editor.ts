@@ -173,6 +173,13 @@ export async function create(): Promise<void> {
 			switch(data.code) {
 				case "error": log.error(...(data.data as unknown[])); break;
 				case "log": log.info(...(data.data as unknown[])); break;
+
+				case "ui": {
+					// send the message
+					windows["editor"].webContents.send(data.fn ?? "null", data.data);
+					break;
+				}
+
 				case "async-ui": {
 					// load the channel
 					const channel = data.fn ?? "null";
@@ -191,6 +198,7 @@ export async function create(): Promise<void> {
 
 					// send the message
 					windows["editor"].webContents.send(channel, data.token, data.data);
+					break;
 				}
 			}
 		});

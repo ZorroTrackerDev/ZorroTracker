@@ -271,7 +271,7 @@ export class PatternEditorSelectionManager {
 				this.preview = null;
 
 				// tell the scrolling manager to make channels visible
-				await await this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
+				await this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
 
 				// tell the scrolling manager to change the current row
 				await this.parent.scrollManager.scrollToSelection(this.single);
@@ -830,7 +830,7 @@ export class PatternEditorSelectionManager {
 	 */
 	public async moveSingle(x:number, y:number, wrap:boolean): Promise<boolean> {
 		// handle selection movement
-		const vscrl = this.moveSelection(this.single, Math.round(x), y, wrap, false);
+		const vscrl = this.moveSelection(this.single, Math.round(x), this.parent.tab.blockMovement ? 0 : y, wrap, false);
 
 		// ensure the channel is visible
 		await this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
@@ -936,8 +936,8 @@ export class PatternEditorSelectionManager {
 		}
 
 		// handle selection movement
-		this.moveSelection(this.multi[0], Math.round(x), y, wrap, true);
-		this.moveSelection(this.multi[1], Math.round(x), y, wrap, true);
+		this.moveSelection(this.multi[0], Math.round(x), this.parent.tab.blockMovement ? 0 : y, wrap, true);
+		this.moveSelection(this.multi[1], Math.round(x), this.parent.tab.blockMovement ? 0 : y, wrap, true);
 
 		if(x !== 0) {
 			// ensure the channel is visible
@@ -955,7 +955,7 @@ export class PatternEditorSelectionManager {
 			await this.parent.tab.setSelectedChannel(this.single.channel);
 		}
 
-		if(y !== 0) {
+		if(!this.parent.tab.blockMovement && y !== 0) {
 			// ensure the row is visible
 			const row = Math[y > 0 ? "max" : "min"](this.multi[0].row, this.multi[1].row);
 			this.single.row = row;
@@ -974,7 +974,7 @@ export class PatternEditorSelectionManager {
 		}
 
 		// handle selection movement
-		this.moveSelection(this.multi[1], x, y, wrap, true);
+		this.moveSelection(this.multi[1], x, this.parent.tab.blockMovement ? 0 : y, wrap, true);
 
 		// ensure the channel is visible
 		await this.parent.scrollManager.ensureVisibleChannel(this.multi[1].channel, this.multi[1].channel);
@@ -982,7 +982,10 @@ export class PatternEditorSelectionManager {
 		// update single selection
 		this.single.channel = this.multi[1].channel;
 		this.single.element = this.multi[1].element;
-		this.single.row = this.multi[1].row;
+
+		if(!this.parent.tab.blockMovement) {
+			this.single.row = this.multi[1].row;
+		}
 
 		// update the scrolled row
 		await this.parent.scrollManager.scrollToSelection(this.single);

@@ -5,6 +5,15 @@ import { _async } from "../../system/ipc/html";
 import { ipcEnum } from "../../system/ipc/ipc enum";
 import { Tab } from "./tab";
 
+// create events
+const position = ZorroEvent.createEvent(ZorroEventEnum.PlaybackPosition);
+
+// listen to updates on the playback position
+ipcRenderer.on(ipcEnum.ManagerPosition, (event, row:number) => {
+	// pass straight to the event system
+	return position(row);
+});
+
 /**
  * Function to stop any playback that is currently happening
  */

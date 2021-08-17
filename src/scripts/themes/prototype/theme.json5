@@ -167,7 +167,27 @@
 				// see: https://developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode
 				// format: normal, highlight a, highlight b
 				recordblend: [ "screen", "screen", "screen", ],
-			}
+			},
+			// Settings related to the song row
+			song: {
+				// the color used with blending mode to create the final output colors in display mode
+				// format: normal, highlight a, highlight b
+				color: [ "#333300", "#333300", "#333300", ],
+
+				// the background blending mode for the colors in display mode. This allows you to change the color with less performance impact.
+				// see: https://developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode
+				// format: normal, highlight a, highlight b
+				blend: [ "screen", "screen", "screen", ],
+
+				// the color used with blending mode to create the final output colors in record mode
+				// format: normal, highlight a, highlight b
+				recordcolor: [ "#333A0C", "#333A0C", "#333A0C", ],
+
+				// the background blending mode for the colors in record mode. This allows you to change the color with less performance impact.
+				// see: https://developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode
+				// format: normal, highlight a, highlight b
+				recordblend: [ "screen", "screen", "screen", ],
+			},
 		},
 		extras: {
 			// settings related to the currently "focused row" (the one which is being played or in the middle of the screen)

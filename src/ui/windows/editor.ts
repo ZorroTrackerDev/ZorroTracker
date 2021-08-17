@@ -345,12 +345,14 @@ async function loadMainShortcuts() {
 
 		/* shortcut for enabling play mode */
 		play: async() => {
-			if(!Tab.active || Tab.active.playMode !== PlayMode.Stopped){
+			if(!Tab.active || Tab.active.playMode === PlayMode.PlayAll){
 				return false;
 			}
 
 			// toggle play mode
-			if(await startPlayback(Tab.active?.activeRow ?? 0, false)){
+			const row = Tab.active?.activeRow ?? 0;
+
+			if(await startPlayback(row - (row % (Tab.active?.module?.patternRows ?? 1)), false)){
 				Tab.active.playMode = PlayMode.PlayAll;
 			}
 
@@ -359,13 +361,14 @@ async function loadMainShortcuts() {
 
 		/* shortcut for enabling play pattern mode */
 		playpattern: async() => {
-			if(!Tab.active || Tab.active.playMode !== PlayMode.Stopped){
+			if(!Tab.active || Tab.active.playMode === PlayMode.PlayPattern){
 				return false;
 			}
 
 			// toggle play mode
-			Tab.active.playMode = PlayMode.PlayPattern;
-			if(await startPlayback(Tab.active?.activeRow ?? 0, true)){
+			const row = Tab.active?.activeRow ?? 0;
+
+			if(await startPlayback(row - (row % (Tab.active?.module?.patternRows ?? 1)), true)){
 				Tab.active.playMode = PlayMode.PlayPattern;
 			}
 
@@ -919,7 +922,18 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 		// make a title
 		this.step.label.title = "Number of rows to skip on edit.";
 
-		// create the step offset element
+		// create the follow mode element
+		this.follow = makeCheckbox(CheckboxEnum.Medium, (value) => {
+			this.tab.follow = value;
+		});
+
+		// configure the label
+		this.follow.label.innerText = "Follow playback";
+		this.follow.element.style.width = "176px";
+		this.follow.label.style.paddingLeft = "5px";
+		this.follow.label.title = "Choose whether to follow the playback or not.";
+
+		// create the record velocity element
 		this.velocity = makeCheckbox(CheckboxEnum.Medium, (value) => {
 			this.tab.recordVelocity = value;
 		});
@@ -937,6 +951,7 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 		this.element.appendChild(this.hlb.element);
 		this.element.appendChild(this.step.element);
 		this.element.appendChild(this.velocity.element);
+		this.element.appendChild(this.follow.element);
 		return this.element;
 	}
 
@@ -946,6 +961,7 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 	private step!: SimpleValueReturn;
 	private hla!: SimpleValueReturn;
 	private hlb!: SimpleValueReturn;
+	private follow!: CheckboxReturn;
 	private velocity!: CheckboxReturn;
 
 	/**
@@ -981,6 +997,8 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 		this.hlb.setValue((this.tab.module as Module).highlights[0].toString(), (this.tab.module as Module).highlights[0]);
 		edit?.scrollManager?.changeHighlight(0, (this.tab.module as Module).highlights[0]);
 		updateBPM();
+
+		this.follow.setValue(true);
 		return false;
 	}
 

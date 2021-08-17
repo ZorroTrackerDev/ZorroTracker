@@ -210,26 +210,32 @@ declare interface PatternEditorThemeSettings {
 	/**
 	 * Settings related to the focused row
 	 */
-	focus?: {
-		/**
-		 * The color of the focused row. This is blended according to blending settings
-		 */
-		color?: WorkerThemeHighlight,
-		/**
-		 * The CSS blending mode for the row. This will allow you to create composite colors with little performance hit.
-		 * See: https://developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode
-		 */
-		blend?: WorkerThemeHighlight,
-		/**
-		 * The color of the focused row. This is blended according to blending settings in record mode
-		 */
-		recordcolor?: WorkerThemeHighlight,
-		/**
-		 * The CSS blending mode for the row in record mode. This will allow you to create composite colors with little performance hit.
-		 * See: https://developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode
-		 */
-		recordblend?: WorkerThemeHighlight,
-	}
+	focus?: PatternEditorBarThemeSettings,
+	/**
+	 * Settings related to the song row
+	 */
+	song?: PatternEditorBarThemeSettings,
+}
+
+declare interface PatternEditorBarThemeSettings {
+	/**
+	 * The color of the focused row. This is blended according to blending settings
+	 */
+	color?: WorkerThemeHighlight,
+	/**
+	 * The CSS blending mode for the row. This will allow you to create composite colors with little performance hit.
+	 * See: https://developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode
+	 */
+	blend?: WorkerThemeHighlight,
+	/**
+	 * The color of the focused row. This is blended according to blending settings in record mode
+	 */
+	recordcolor?: WorkerThemeHighlight,
+	/**
+	 * The CSS blending mode for the row in record mode. This will allow you to create composite colors with little performance hit.
+	 * See: https://developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode
+	 */
+	recordblend?: WorkerThemeHighlight,
 }
 
 type WorkerThemeHighlight = [ string, string, string ];

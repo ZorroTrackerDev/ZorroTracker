@@ -146,15 +146,9 @@ ipcMain.on(ipcEnum.DriverMatrix, (event, token, data) => {
 	});
 });
 
-// handle telling the audio adapter instance and driver about new module pattern data
-ipcMain.on(ipcEnum.DriverPattern, (event, token, channel, index, data) => {
-	// post the info
-	workerAsync("module-pattern", { channel, index, data, }, undefined, () => {
-		// tell the UI we finished
-		event.reply(ipcEnum.DriverPattern, token);
-	});
+ipcMain.on(ipcEnum.DriverPattern, (event, channel, index, data) => {
+	worker?.postMessage({ code: "module-pattern", data: { channel, index, data, }, });
 });
-
 
 /**
  * Function to create ipc correctly

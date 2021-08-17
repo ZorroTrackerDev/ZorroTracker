@@ -1,3 +1,5 @@
+import { ipcRenderer } from "electron";
+import { ZorroEvent, ZorroEventEnum } from "../../api/events";
 import { Matrix } from "../../api/matrix";
 import { _async } from "../../system/ipc/html";
 import { ipcEnum } from "../../system/ipc/ipc enum";
@@ -32,8 +34,6 @@ export async function initPlayback(tab:Tab): Promise<unknown> {
 let init = false;
 
 async function uploadInitial(matrix:Matrix) {
-	console.time("driver-upload")
-
 	// send the matrix first and prepare promises array
 	await setMatrix(matrix.matrix);
 
@@ -48,13 +48,10 @@ async function uploadInitial(matrix:Matrix) {
 			if(typeof pat === "number" && !loaded[pat]) {
 				// needs to be loaded
 				loaded[pat] = true;
-				await _async(ipcEnum.DriverPattern, c, pat, matrix.patterns[c][pat]?.cells);
+				ipcRenderer.send(ipcEnum.DriverPattern, c, pat, matrix.patterns[c][pat]?.cells);
 			}
 		}
 	}
-
-	// wait for everything to finish processing
-	console.timeEnd("driver-upload");
 
 	init = true;
 }
@@ -86,7 +83,31 @@ let targetTab:Tab;
  * @param data The actual matrix data
  */
 export async function setMatrix(data:Uint8Array[]): Promise<void> {
-	console.time("driver-matrix")
 	await _async(ipcEnum.DriverMatrix, data);
-	console.timeEnd("driver-matrix");
 }
+
+let matrixTimeout:undefined|NodeJS.Timeout;
+
+function matrixSend(matrix:Matrix){
+	// clear previous timeouts
+	if(matrixTimeout) {
+		clearTimeout(matrixTimeout);
+	}
+
+	// make sure to call the timeout when matrix is fully updated
+	matrixTimeout = setTimeout(() => {
+		matrixTimeout = undefined;
+		setMatrix(matrix.matrix).catch(console.error);
+	}, 1);
+}
+
+/**
+ * Events that make the need for the matrix to be re-rendered
+ */
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.MatrixSet, async(event, matrix) => matrixSend(matrix));
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.MatrixInsert, async(event, matrix) => matrixSend(matrix));
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.MatrixRemove, async(event, matrix) => matrixSend(matrix));
+

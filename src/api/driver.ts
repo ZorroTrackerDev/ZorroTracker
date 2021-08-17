@@ -305,7 +305,7 @@ export enum FeatureFlag {
 	NOVU = 1 << 8,
 }
 
-export type PatternRowData = (PatternCellData | null)[][][];
+export type PatternRowData = PatternCellData[][][];
 
 export type PatternCellData = {
 	/**

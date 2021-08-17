@@ -291,9 +291,6 @@ parentPort?.on("message", (data:{ token?:number, code:string, data:unknown, fn?:
 					const arr = data.data as { channel:number, index:number, data:PatternCellData[]|null };
 					playManager.loadPatterns(arr.channel, arr.index, arr.data);
 				}
-
-				// let the parent know we're ready
-				parentPort?.postMessage({ token: data.token, code: data.code, data: playManager !== undefined, });
 				break;
 
 			/**

@@ -41,7 +41,6 @@ jobs:
       if: runner.os == 'Windows'
       run: |
         npm cache clean --force
-        npm install --global --production windows-build-tools@4.0.0 --vs2017
         npm config set msvs_version 2017 –global
 
     - name: Install dependencies

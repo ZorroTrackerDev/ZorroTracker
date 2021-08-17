@@ -218,12 +218,14 @@ parentPort?.on("message", (data:{ token?:number, code:string, data:unknown, fn?:
 			case "module-play":	// pattern, repeat, rate, ticksPerRow, length
 				if(driver) {
 					// load the play manager
-					const arr = data.data as { pattern:number, repeat:boolean, rate:number, ticksPerRow:number, length:number, };
-					playManager = new PlaybackManager(arr.pattern, arr.repeat, arr.rate, arr.ticksPerRow, arr.length, processAsyncMessage);
+					const arr = data.data as { row:number, patternlen:number, repeat:boolean, rate:number, ticksPerRow:number, length:number, };
+
+					// eslint-disable-next-line max-len
+					playManager = new PlaybackManager(arr.row, arr.patternlen, arr.repeat, arr.rate, arr.ticksPerRow, arr.length, processAsyncMessage);
 
 					// initialize the driver and manager
 					driver.playback = playManager.getAPI();
-					playManager.loadPatternRow();
+					playManager.loadDataRow();
 
 					// tell the driver to start playback
 					driver.reset();

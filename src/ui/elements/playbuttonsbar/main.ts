@@ -99,7 +99,7 @@ export class PlayBar implements UIComponent<HTMLDivElement> {
 				// change playback mode to play all
 				if(e.button === 0 && Tab.active && Tab.active.playMode === PlayMode.Stopped) {
 					Tab.active.playMode = PlayMode.PlayAll;
-					await startPlayback(Tab.active, Math.floor((Tab.active?.activeRow ?? 0) / (Tab.active?.module?.patternRows ?? 2)), false);
+					await startPlayback(Tab.active, Tab.active?.activeRow ?? 0, false);
 				}
 			},
 			theme: async(p:PlayBar, e:HTMLButtonElement, index:number) => {
@@ -112,7 +112,7 @@ export class PlayBar implements UIComponent<HTMLDivElement> {
 				// change playback mode to play pattern
 				if(e.button === 0 && Tab.active && Tab.active.playMode === PlayMode.Stopped) {
 					Tab.active.playMode = PlayMode.PlayPattern;
-					await startPlayback(Tab.active, Math.floor((Tab.active?.activeRow ?? 0) / (Tab.active?.module?.patternRows ?? 2)), true);
+					await startPlayback(Tab.active, Tab.active?.activeRow ?? 0, true);
 				}
 			},
 			theme: async(p:PlayBar, e:HTMLButtonElement, index:number) => {

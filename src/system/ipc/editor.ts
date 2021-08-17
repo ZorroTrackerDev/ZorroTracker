@@ -111,9 +111,9 @@ ipcMain.on(ipcEnum.AudioStop, () => {
 });
 
 // handle telling the audio adapter instance and driver that module playback is started
-ipcMain.on(ipcEnum.DriverPlay, (event, token, pattern, repeat, rate, ticksPerRow, matrixlen) => {
+ipcMain.on(ipcEnum.DriverPlay, (event, token, row, patternlen, repeat, rate, ticksPerRow, matrixlen) => {
 	// post the info
-	workerAsync("module-play", { pattern, repeat, rate, ticksPerRow, length: matrixlen, }, undefined, () => {
+	workerAsync("module-play", { row, patternlen, repeat, rate, ticksPerRow, length: matrixlen, }, undefined, () => {
 		// tell the UI we finished
 		event.reply(ipcEnum.DriverPlay, token);
 	});

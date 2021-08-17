@@ -15,12 +15,13 @@ export function stopPlayback(): Promise<unknown> {
  * Function to start playback of the module inside of the tab
  *
  * @param tab The tab that is the target of the playback
- * @param pattern The pattern to start the playback in
+ * @param row The absolute row number to start playback in
  * @param repeat Whether to repeat the above mentioned pattern infinitely
  */
-export function startPlayback(tab:Tab, pattern:number, repeat:boolean): Promise<unknown> {
+export function startPlayback(tab:Tab, row:number, repeat:boolean): Promise<unknown> {
 	targetTab = tab;
-	return _async(ipcEnum.DriverPlay, pattern, repeat, tab.module?.rate ?? 1, tab.module?.ticksPerRow ?? 1, tab.matrix.matrixlen);
+	const m = tab.module;
+	return _async(ipcEnum.DriverPlay, row, m?.patternRows ?? 64, repeat, m?.rate ?? 1, m?.ticksPerRow ?? 1, tab.matrix.matrixlen);
 }
 
 let targetTab:Tab;

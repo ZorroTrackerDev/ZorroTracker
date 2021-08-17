@@ -347,7 +347,7 @@ async function loadMainShortcuts() {
 
 			// toggle play mode
 			Tab.active.playMode = PlayMode.PlayAll;
-			startPlayback(Tab.active, 0, false).catch(console.error);
+			startPlayback(Tab.active, Tab.active?.activeRow ?? 0, false).catch(console.error);
 			return true;
 		},
 
@@ -359,7 +359,7 @@ async function loadMainShortcuts() {
 
 			// toggle play mode
 			Tab.active.playMode = PlayMode.PlayPattern;
-			startPlayback(Tab.active, 0, true).catch(console.error);
+			startPlayback(Tab.active, Tab.active?.activeRow ?? 0, true).catch(console.error);
 			return true;
 		},
 

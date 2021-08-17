@@ -328,9 +328,9 @@ export type PatternCellData = {
 
 export interface PlaybackManagerAPI {
 	/**
-	 * Helper function to load the next pattern row data
+	 * Helper function to load the next data row
 	 *
-	 * @returns The `PatternRowData` object, or `null` if no valid pattern data was found
+	 * @returns The `PatternCellData` array, or `null` if no valid pattern data was found
 	 */
-	loadPatternRow(): PatternRowData|null;
+	loadDataRow(): PatternCellData[]|null;
 }

@@ -180,6 +180,11 @@ export default class implements Driver {
 
 			// execute functions for each channel
 			for(let ch = 0;ch < data.length;ch ++) {
+				// ignore failed cell fetches
+				if(!data[ch]) {
+					continue;
+				}
+
 				const chi = this.allChans[ch].id;
 
 				// load the actual function based on the channel ID

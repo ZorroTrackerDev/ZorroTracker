@@ -1,5 +1,3 @@
-import { ipcRenderer } from "electron";
-import { PatternRowData } from "../../api/driver";
 import { _async } from "../../system/ipc/html";
 import { ipcEnum } from "../../system/ipc/ipc enum";
 import { Tab } from "./tab";
@@ -12,6 +10,36 @@ export function stopPlayback(): Promise<unknown> {
 }
 
 /**
+ * Function to initialize the playback state of the module
+ *
+ * @param tab The tab that is the target of the playback
+ */
+export async function initPlayback(tab:Tab): Promise<unknown> {
+	targetTab = tab;
+
+	// TEMP: upload all data before playing
+	console.time("driver-upload")
+	// eslint-disable-next-line max-len
+	await _async(ipcEnum.DriverInit, tab.module?.patternRows ?? 64, tab.channels.length, tab.module?.rate ?? 1, tab.module?.ticksPerRow ?? 1, tab.matrix.matrixlen);
+
+	// send the matrix first and prepare promises array
+	const promises = [ await _async(ipcEnum.DriverMatrix, tab.matrix.matrix), ];
+
+	// loop for all channels in pattern data
+	for(let c = 0;c < tab.channels.length;c ++) {
+		// loop for all patterns in channel
+		for(let pat = 0;pat < tab.matrix.patterns[c].length;pat ++) {
+			promises.push(await _async(ipcEnum.DriverPattern, c, pat, tab.matrix.patterns[c][pat]?.cells));
+		}
+	}
+
+	// wait for everything to finish processing
+	await Promise.all(promises);
+	console.timeEnd("driver-upload");
+	return undefined;
+}
+
+/**
  * Function to start playback of the module inside of the tab
  *
  * @param tab The tab that is the target of the playback
@@ -20,40 +48,7 @@ export function stopPlayback(): Promise<unknown> {
  */
 export function startPlayback(tab:Tab, row:number, repeat:boolean): Promise<unknown> {
 	targetTab = tab;
-	const m = tab.module;
-	return _async(ipcEnum.DriverPlay, row, m?.patternRows ?? 64, repeat, m?.rate ?? 1, m?.ticksPerRow ?? 1, tab.matrix.matrixlen);
+	return _async(ipcEnum.DriverPlay, row, repeat);
 }
 
 let targetTab:Tab;
-
-// handle requests from the audio backend to get pattern data
-ipcRenderer.on(ipcEnum.DriverFetchRow, (event, token:number, patternRow:number) => {
-	let ret:PatternRowData|null = null;
-
-	// check if this row is valid
-	if(targetTab && patternRow >= 0 && patternRow < targetTab.matrix.matrixlen) {
-		ret = [];
-
-		// store tab so that the reference won't be borked accidentally
-		const _tab = targetTab;
-
-		// handle channel by channel
-		for(let c = 0;c < _tab.channels.length;c ++) {
-			// generate channel array
-			ret[c] = [];
-
-			// get the pattern data
-			const rp = _tab.matrix.matrix[c][patternRow];
-			const pat = _tab.matrix.patterns[c][rp];
-
-			// fill the channel array
-			for(let r = 0;r < (_tab.module?.patternRows ?? 0);r ++) {
-				// save the cell data
-				const cell = pat?.cells[r];
-				ret[c].push(cell ?? { note: 0, volume: null, instrument: null, effects: [], });
-			}
-		}
-	}
-
-	ipcRenderer.send(ipcEnum.DriverFetchRow, token, ret);
-});

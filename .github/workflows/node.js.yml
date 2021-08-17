@@ -38,9 +38,11 @@ jobs:
         node-version: ${{ env.NODE_VERSION }}
 
     - name: Bodge node-gyp [Windows]
+      if: runner.os == 'Windows'
       run: |
         npm cache clean --force
-        npm install -g windows-build-tools
+        npm install --global --production windows-build-tools --vs2015
+        npm config set msvs_version 2015 –global
 
     - name: Install dependencies
       run: npm install

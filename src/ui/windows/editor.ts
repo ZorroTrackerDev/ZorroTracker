@@ -99,7 +99,7 @@ import { CheckboxEnum, makeCheckbox, CheckboxReturn } from "../elements/checkbox
 /* ipc communication */
 import "../../system/ipc/html editor";
 import "../misc/playback";
-import { startPlayback, stopPlayback } from "../misc/playback";
+import { initPlayback, startPlayback, stopPlayback } from "../misc/playback";
 
 // stored list of components active
 const components = new UIComponentStore();
@@ -145,6 +145,8 @@ window.ipc.ui.path().then(async() => {
 			Tab.active = new Tab(p);
 		}
 	}
+
+	await initPlayback(Tab.active as Tab);
 
 	// let the other windows know about this project
 	window.ipc.project?.init(Tab.active?.project);
@@ -236,6 +238,7 @@ async function loadMainShortcuts() {
 
 			// create a tab for the project
 			Tab.active = new Tab(p);
+			await initPlayback(Tab.active as Tab);
 
 			// let all windows know about the loaded project
 			window.ipc.project?.init(p);
@@ -275,6 +278,7 @@ async function loadMainShortcuts() {
 
 			// create a tab for the project
 			Tab.active = new Tab(p);
+			await initPlayback(Tab.active as Tab);
 
 			// let all windows know about the loaded project
 			window.ipc.project?.init(p);
@@ -699,6 +703,7 @@ async function initLayout() {
 
 					// create a tab for the project
 					Tab.active = new Tab(p);
+					await initPlayback(Tab.active as Tab);
 
 					// let all windows know about the loaded project
 					window.ipc.project?.init(p);

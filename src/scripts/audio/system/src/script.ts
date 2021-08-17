@@ -2,7 +2,7 @@ import { RtAudio, RtAudioApi, RtAudioFormat } from "audify";
 import { parentPort } from "worker_threads";
 import path from "path";
 import { Chip, ChipConfig } from "../../../../api/chip";
-import { Driver, DriverConfig } from "../../../../api/driver";
+import { Driver, DriverConfig, PatternCellData } from "../../../../api/driver";
 import { PlaybackManager } from "./playback manager";
 import { ipcEnum } from "../../../../system/ipc/ipc enum";
 
@@ -211,21 +211,37 @@ parentPort?.on("message", (data:{ token?:number, code:string, data:unknown, fn?:
 				break;
 
 			/**
+			 * Init module playback
+			 *
+			 * data: Various config and info options for the playback
+			 */
+			case "module-init":	// pattern, repeat, rate, ticksPerRow, length
+				if(driver) {
+					// load the play manager
+					// eslint-disable-next-line max-len
+					const arr = data.data as { patternlen:number, channels:number, rate:number, ticksPerRow:number, length:number, };
+
+					// eslint-disable-next-line max-len
+					playManager = new PlaybackManager(arr.patternlen, arr.channels, arr.rate, arr.ticksPerRow, arr.length, processAsyncMessage);
+
+					// initialize the driver and manager
+					driver.playback = playManager.getAPI();
+				}
+
+				// let the parent know we're ready
+				parentPort?.postMessage({ token: data.token, code: data.code, data: driver !== undefined, });
+				break;
+
+			/**
 			 * Start module playback
 			 *
 			 * data: Various config and info options for the playback
 			 */
 			case "module-play":	// pattern, repeat, rate, ticksPerRow, length
-				if(driver) {
-					// load the play manager
-					const arr = data.data as { row:number, patternlen:number, repeat:boolean, rate:number, ticksPerRow:number, length:number, };
-
-					// eslint-disable-next-line max-len
-					playManager = new PlaybackManager(arr.row, arr.patternlen, arr.repeat, arr.rate, arr.ticksPerRow, arr.length, processAsyncMessage);
-
-					// initialize the driver and manager
-					driver.playback = playManager.getAPI();
-					playManager.loadDataRow();
+				if(driver && playManager) {
+					// set playback mode
+					const arr = data.data as { row:number, repeat:boolean, };
+					playManager.setMode(arr.row, arr.repeat)
 
 					// tell the driver to start playback
 					driver.reset();
@@ -242,17 +258,42 @@ parentPort?.on("message", (data:{ token?:number, code:string, data:unknown, fn?:
 			 * data: Irrelevant
 			 */
 			case "module-stop":
-				playManager = undefined;
-
 				if(driver) {
-					driver.playback = undefined;
-
 					// tell the driver to stop playback
 					driver.stop();
 				}
 
 				// let the parent know we're ready
 				parentPort?.postMessage({ token: data.token, code: data.code, data: driver !== undefined, });
+				break;
+
+			/**
+			 * Upload matrix data to script
+			 *
+			 * data: the matrix data
+			 */
+			case "module-matrix":
+				if(playManager) {
+					playManager.loadMatrix(data.data as Uint8Array[])
+				}
+
+				// let the parent know we're ready
+				parentPort?.postMessage({ token: data.token, code: data.code, data: playManager !== undefined, });
+				break;
+
+			/**
+			 * Upload matrix data to script
+			 *
+			 * data: parameters for the function call
+			 */
+			case "module-pattern":
+				if(playManager) {
+					const arr = data.data as { channel:number, index:number, data:PatternCellData[]|null };
+					playManager.loadPatterns(arr.channel, arr.index, arr.data);
+				}
+
+				// let the parent know we're ready
+				parentPort?.postMessage({ token: data.token, code: data.code, data: playManager !== undefined, });
 				break;
 
 			/**

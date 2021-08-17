@@ -25,26 +25,52 @@ export class PlaybackManager implements PlaybackManagerAPI {
 	 */
 	private messageFunc: UIMessageFunction;
 
-	constructor(row:number, patternLen:number, repeat:boolean, rate:number, ticksPerRow:number, length:number, message:UIMessageFunction) {
+	/**
+	 * The number of rows in a pattern
+	 */
+	private patternLen: number;
+
+	/**
+	 * The total number of patterns
+	 */
+	private length: number;
+
+	/**
+	 * The total number of channels
+	 */
+	private channels: number;
+
+	// eslint-disable-next-line max-len
+	constructor(patternLen:number, channels:number, rate:number, ticksPerRow:number, length:number, message:UIMessageFunction) {
 		// initialize the playback api
 		this.api = new PlaybackAPI(this, rate, ticksPerRow);
 
 		// initialize other variables
 		this.messageFunc = message;
-		this.pattern = Math.floor(row / patternLen);
-		this.row = row % patternLen;
 		this.patternLen = patternLen;
-		this.repeat = repeat;
+		this.channels = channels;
 		this.length = length;
 
-		// request the next pattern row from the UI
-		this.messageFunc(ipcEnum.DriverFetchRow, this.pattern, (result) => {
-			this.thisRow = result as PatternRowData;
+		// initialize matrix
+		this.matrix = [];
 
-			this.messageFunc(ipcEnum.DriverFetchRow, this.pattern + 1, (result) => {
-				this.nextRow = result as PatternRowData;
-			});
-		});
+		for(let c = 0;c < channels;c ++) {
+			this.matrix.push(new Uint8Array(256).fill(0));
+		}
+
+		// initialize patterns
+		this.patterns = [];
+
+		for(let c = 0;c < channels;c ++) {
+			const p = [];
+
+			// generate the row data as nulls
+			for(let y = 0;y < 256;y ++) {
+				p.push(Array(256).fill(null));
+			}
+
+			this.patterns.push(p);
+		}
 	}
 
 	/**
@@ -63,58 +89,69 @@ export class PlaybackManager implements PlaybackManagerAPI {
 	private row: number;
 
 	/**
-	 * The number of rows in a pattern
+	 * Function to set playback mode
 	 */
-	private patternLen: number;
-
-	/**
-	 * The total number of patterns
-	 */
-	private length: number;
-
-	/**
-	 * The next row data
-	 */
-	private nextRow: PatternRowData|null;
-	private thisRow: PatternRowData|null;
+	public setMode(row:number, repeat:boolean): void {
+		this.pattern = Math.floor(row / this.patternLen);
+		this.row = row % this.patternLen;
+		this.repeat = repeat;
+	}
 
 	/**
 	 * Helper function to load the next row data and keep the UI up to date
 	 */
 	public loadDataRow(): PatternCellData[]|null {
-		if(!this.thisRow) {
-			return null;
-		}
-
 		// load the current row data into ret variable
 		const ret:PatternCellData[] = [];
 
-		for(let c = 0;c < this.thisRow.length;c ++) {
-			ret.push(this.thisRow[c][this.row]);
+		for(let c = 0;c < this.channels;c ++) {
+			// load the pattern from matrix and push that data out
+			const pat = this.matrix[c][this.pattern];
+			ret.push(this.patterns[c][pat][this.row]);
 		}
 
 		// handle row math
 		if(++this.row >= this.patternLen) {
-			// the next row would be out of bounds, force a reload
-			this.thisRow = null;
+			// the next row would be out of bounds, go to next pattern
 			this.row = 0;
 
-			// go to the next pattern and loop it all
 			if(!this.repeat) {
+				// update pattern and loop to 0. TODO: Loop points via song
 				if(++this.pattern >= this.length) {
 					this.pattern = 0;
 				}
 			}
-
-			this.thisRow = this.nextRow;
-
-			// request the next pattern row from the UI
-			this.messageFunc(ipcEnum.DriverFetchRow, this.pattern + 1, (result) => {
-				this.nextRow = result as PatternRowData;
-			});
 		}
 
 		// return the previous row
 		return ret;
+	}
+
+	/**
+	 * Stores the pattern matrix, where the mappings from song order to pattern index are stored. Usage: matrix[channel][index].
+	 */
+	private matrix: Uint8Array[];
+
+	/**
+	 * Function to load matrix data into the internal instance
+	 */
+	public loadMatrix(data:Uint8Array[]): void {
+		this.matrix = data;
+	}
+
+	/**
+	 * Stores a list of patterns per channel. Usage: patterns[channel][index][row]. `null` or `undefined` means the value is unused.
+	 */
+	private patterns: PatternRowData;
+
+	/**
+	 * Function to load pattern data into the internal instance
+	 *
+	 * @param channel The channel number that this data belongs to
+	 * @param index The row index of this data
+	 * @param data The actual data for this row
+	 */
+	public loadPatterns(channel:number, index:number, data:PatternCellData[]|null): void {
+		this.patterns[channel][index] = data;
 	}
 }

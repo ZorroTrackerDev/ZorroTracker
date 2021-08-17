@@ -110,10 +110,19 @@ ipcMain.on(ipcEnum.AudioStop, () => {
 	worker?.postMessage({ code: "stop", });
 });
 
-// handle telling the audio adapter instance and driver that module playback is started
-ipcMain.on(ipcEnum.DriverPlay, (event, token, row, patternlen, repeat, rate, ticksPerRow, matrixlen) => {
+// handle telling the audio adapter instance and driver that module playback needs initializing
+ipcMain.on(ipcEnum.DriverInit, (event, token, patternlen, channels, rate, ticksPerRow, matrixlen) => {
 	// post the info
-	workerAsync("module-play", { row, patternlen, repeat, rate, ticksPerRow, length: matrixlen, }, undefined, () => {
+	workerAsync("module-init", { patternlen, channels, rate, ticksPerRow, length: matrixlen, }, undefined, () => {
+		// tell the UI we finished
+		event.reply(ipcEnum.DriverInit, token);
+	});
+});
+
+// handle telling the audio adapter instance and driver that module playback is started
+ipcMain.on(ipcEnum.DriverPlay, (event, token, row, repeat) => {
+	// post the info
+	workerAsync("module-play", { row, repeat, }, undefined, () => {
 		// tell the UI we finished
 		event.reply(ipcEnum.DriverPlay, token);
 	});
@@ -127,6 +136,25 @@ ipcMain.on(ipcEnum.DriverStop, (event, token) => {
 		event.reply(ipcEnum.DriverStop, token);
 	});
 });
+
+// handle telling the audio adapter instance and driver about new module matrix data
+ipcMain.on(ipcEnum.DriverMatrix, (event, token, data) => {
+	// post the info
+	workerAsync("module-matrix", data, undefined, () => {
+		// tell the UI we finished
+		event.reply(ipcEnum.DriverMatrix, token);
+	});
+});
+
+// handle telling the audio adapter instance and driver about new module pattern data
+ipcMain.on(ipcEnum.DriverPattern, (event, token, channel, index, data) => {
+	// post the info
+	workerAsync("module-pattern", { channel, index, data, }, undefined, () => {
+		// tell the UI we finished
+		event.reply(ipcEnum.DriverPattern, token);
+	});
+});
+
 
 /**
  * Function to create ipc correctly

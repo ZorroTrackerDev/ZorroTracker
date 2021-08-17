@@ -61,3 +61,7 @@ ZorroEvent.addListener(ZorroEventEnum.SelectModule, async(event:ZorroEventObject
 ZorroEvent.addListener(ZorroEventEnum.ModuleUpdate, async(event:ZorroEventObject, project:Project|undefined) => {
 	update(project, project?.modules[project.activeModuleIndex], (project?.activeModuleIndex ?? -1) < 0);
 });
+
+export function init(project:Project|undefined): void {
+	update(project, project?.modules[project.activeModuleIndex], (project?.activeModuleIndex ?? -1) < 0);
+}

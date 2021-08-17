@@ -1,6 +1,7 @@
 import { GenericConfig } from "./config";
 import { Chip } from "./chip";
 import { PlaybackAPI } from "./playback API";
+import { TrackerCommands } from "./commands";
 
 // driver configuration file format
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -304,27 +305,25 @@ export enum FeatureFlag {
 	NOVU = 1 << 8,
 }
 
-export type PatternRowData = {
-	[key: number]: PatternCellData[],
-}
+export type PatternRowData = PatternCellData[][];
 
 export type PatternCellData = {
 	/**
 	 * The note ID for this row
 	 */
-	note?: number,
+	note: number,
 	/**
 	 * The volume level for this row
 	 */
-	volume?: number,
+	volume: number|null,
 	/**
 	 * The instrument ID for this row
 	 */
-	instrument?: number;
+	instrument: number|null,
 	/**
 	 * The effects for this row
 	 */
-	effects: { id: number, value: number, }[];
+	effects: { id: TrackerCommands|number, value: number, }[];
 }
 
 export interface PlaybackManagerAPI {

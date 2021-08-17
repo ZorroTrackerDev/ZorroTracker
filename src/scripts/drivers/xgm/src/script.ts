@@ -179,26 +179,26 @@ export default class implements Driver {
 			}
 
 			// execute functions for each channel
-			for(const ch of Object.keys(data)) {
-				const chi = parseInt(ch, 10);
+			for(let ch = 0;ch < data.length;ch ++) {
+				const chi = this.allChans[ch].id;
 
 				// load the actual function based on the channel ID
 				switch(chi) {
 					case DefChanIds.YM2612FM1: case DefChanIds.YM2612FM2: case DefChanIds.YM2612FM3:
 					case DefChanIds.YM2612FM4: case DefChanIds.YM2612FM5:
-						this.processFMCells(chi, data[chi]);
+						this.processFMCells(chi, data[ch]);
 						break;
 
 					case DefChanIds.YM7101PSG1: case DefChanIds.YM7101PSG2: case DefChanIds.YM7101PSG3: case DefChanIds.YM7101PSG4:
-						this.processPSGCells(chi, data[chi]);
+						this.processPSGCells(chi, data[ch]);
 						break;
 
 					case DefChanIds.YM2612PCM1: case DefChanIds.YM2612PCM2: case DefChanIds.YM2612PCM3: case DefChanIds.YM2612PCM4:
-						this.processPCMCells(chi, data[chi]);
+						this.processPCMCells(chi, data[ch]);
 						break;
 
 					case DefChanIds.YM2612TIMERA:
-						this.processTimerACells(chi, data[chi]);
+						this.processTimerACells(chi, data[ch]);
 						break;
 				}
 			}
@@ -221,12 +221,12 @@ export default class implements Driver {
 			writeYM1(this.chip, YMREG.Key, hwc);
 		}
 
-		if(cell.volume !== undefined) {
+		if(cell.volume !== null) {
 			this.channelData[channel].volume = 0x7F - cell.volume;
 			updateFMchVolume(this.chip, hwc, this.channelData[channel].instrument, this.channelData[channel].volume);
 		}
 
-		if(cell.instrument !== undefined) {
+		if(cell.instrument !== null) {
 			this.channelData[channel].instrument = cell.instrument;
 			loadFMVoice(this.chip, hwc, this.channelData[channel].instrument, this.channelData[channel].volume);
 		}

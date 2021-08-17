@@ -173,7 +173,10 @@ window.ipc.ui.path().then(async() => {
 			if(loadFlag<boolean>("DISCORD_RPC")) {
 				// load Discord RPC integration
 				window.ipc.rpc?.init();
-				import("../misc/rpc").catch(console.error);
+
+				import("../misc/rpc").then((module) => {
+					module.init(Tab.active?.project);
+				}).catch(console.error);
 			}
 
 			// STEP 6: make all the UI components load

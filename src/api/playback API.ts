@@ -37,7 +37,7 @@ export class PlaybackAPI {
 	/**
 	 * Function to fetch the row of
 	 */
-	public fetchRow(): null|({ [key: number]: PatternCellData, }) {
+	public fetchRow(): null|PatternCellData[] {
 		// fetch the row data first if invalid
 		if(!this.patternRow) {
 			this.patternRow = this.manager.loadPatternRow();
@@ -50,16 +50,14 @@ export class PlaybackAPI {
 		}
 
 		// load the current row data into ret variable
-		const ret:{	[key: number]: PatternCellData, } = {};
-		let rows = 0;
+		const ret:PatternCellData[] = [];
 
-		for(const c of Object.keys(this.patternRow) as unknown as number[]) {
-			ret[c] = this.patternRow[c][this.row];
-			rows = this.patternRow[c].length;
+		for(let c = 0;c < this.patternRow.length;c ++) {
+			ret.push(this.patternRow[c][this.row]);
 		}
 
 		// handle row math
-		if(++this.row >= rows) {
+		if(++this.row >= this.patternRow[0].length) {
 			// the next row would be out of bounds, force a reload
 			this.patternRow = null;
 		}

@@ -2,11 +2,12 @@ import { Position } from "./ui";
 import { ZorroEvent, ZorroEventEnum, ZorroSenderTypes } from "./events";
 import { TrackerCommands } from "./commands";
 import { Tab } from "../ui/misc/tab";
+import { PatternCellData } from "./driver";
 
 /**
  * Class for a single pattern cell, which can only be used to store its immediate values.
  */
- export class PatternCell {
+ export class PatternCell implements PatternCellData {
 	public note: number;
 	public volume: number|null;
 	public instrument: number|null;

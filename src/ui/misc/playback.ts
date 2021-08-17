@@ -1,5 +1,5 @@
 import { ipcRenderer } from "electron";
-import { PatternCellData, PatternRowData } from "../../api/driver";
+import { PatternRowData } from "../../api/driver";
 import { _async } from "../../system/ipc/html";
 import { ipcEnum } from "../../system/ipc/ipc enum";
 import { Tab } from "./tab";
@@ -39,7 +39,7 @@ ipcRenderer.on(ipcEnum.DriverFetchRow, (event, token:number, patternRow:number) 
 		// handle channel by channel
 		for(let c = 0;c < _tab.channels.length;c ++) {
 			// generate channel array
-			ret[_tab.channels[c].info.id] = [];
+			ret[c] = [];
 
 			// get the pattern data
 			const rp = _tab.matrix.matrix[c][patternRow];
@@ -47,20 +47,9 @@ ipcRenderer.on(ipcEnum.DriverFetchRow, (event, token:number, patternRow:number) 
 
 			// fill the channel array
 			for(let r = 0;r < (_tab.module?.patternRows ?? 0);r ++) {
-				// create the data element and check if cell exists
-				const dat = { effects: [], } as PatternCellData;
+				// save the cell data
 				const cell = pat?.cells[r];
-
-				if(pat && cell) {
-					/* eslint-disable @typescript-eslint/no-unused-expressions */
-					cell.note !== 0 && (dat.note = cell.note);
-					cell.volume !== null && (dat.volume = cell.volume);
-					cell.instrument !== null && (dat.instrument = cell.instrument);
-					/* eslint-enable @typescript-eslint/no-unused-expressions */
-				}
-
-				// save the data element
-				ret[_tab.channels[c].info.id].push(dat);
+				ret[c].push(cell ?? { note: 0, volume: null, instrument: null, effects: [], });
 			}
 		}
 	}

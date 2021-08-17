@@ -9,23 +9,26 @@ export class PlaybackAPI {
 	/**
 	 * The driver-specific playback rate
 	 */
-	public rate:number;
+	public rate = 0;
 
 	/**
 	 * How many ticks there are between rows
 	 */
-	public ticksPerRow:number;
+	public ticksPerRow = 1;
 
 	/**
 	 * The current row within the loaded pattern
 	 */
 	private row: number;
 
-	constructor(manager: PlaybackManagerAPI, rate:number, ticksPerRow:number) {
+	constructor(manager:PlaybackManagerAPI) {
 		this.manager = manager;
+		this.row = 0;
+	}
+
+	public setFlags(rate:number, ticksPerRow:number): void {
 		this.rate = rate;
 		this.ticksPerRow = ticksPerRow;
-		this.row = 0;
 	}
 
 	/**

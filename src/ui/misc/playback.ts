@@ -18,15 +18,16 @@ export function stopPlayback(): Promise<unknown> {
  * @param tab The tab that is the target of the playback
  */
 export async function initPlayback(tab:Tab): Promise<unknown> {
-	targetTab = tab;
 	init = false;
+	currentTab = tab;
 
 	console.time("init-playback")
 	// eslint-disable-next-line max-len
-	await _async(ipcEnum.DriverInit, tab.module?.patternRows ?? 64, tab.channels.length, tab.module?.rate ?? 1, tab.module?.ticksPerRow ?? 1, tab.matrix.matrixlen);
+	await _async(ipcEnum.DriverInit, tab.channels.length);
+	await setFlags(tab);
 
 	// send all the data to the playback engine
-	setTimeout(() => uploadInitial(tab.matrix), 0);
+	await uploadInitial(tab.matrix);
 	console.timeEnd("init-playback")
 	return undefined;
 }
@@ -48,7 +49,7 @@ async function uploadInitial(matrix:Matrix) {
 			if(typeof pat === "number" && !loaded[pat]) {
 				// needs to be loaded
 				loaded[pat] = true;
-				ipcRenderer.send(ipcEnum.DriverPattern, c, pat, matrix.patterns[c][pat]?.cells);
+				ipcRenderer.send(ipcEnum.MAnagerPattern, c, pat, matrix.patterns[c][pat]?.cells);
 			}
 		}
 	}
@@ -63,19 +64,26 @@ async function uploadInitial(matrix:Matrix) {
  * @param row The absolute row number to start playback in
  * @param repeat Whether to repeat the above mentioned pattern infinitely
  */
-export async function startPlayback(tab:Tab, row:number, repeat:boolean): Promise<boolean> {
+export async function startPlayback(row:number, repeat:boolean): Promise<boolean> {
 	// if init is not done, do not allow playback
 	if(!init) {
 		return false;
 	}
 
 	// initialize playback
-	targetTab = tab;
 	await _async(ipcEnum.DriverPlay, row, repeat);
 	return true;
 }
 
-let targetTab:Tab;
+/**
+ *
+ *
+ * @param tab The tab that is the target of the playback
+ */
+export function setFlags(tab:Tab): Promise<unknown> {
+	// eslint-disable-next-line max-len
+	return _async(ipcEnum.ManagerFlags, tab.module?.patternRows ?? 64, tab.module?.rate ?? 1, tab.module?.ticksPerRow ?? 1, tab.matrix.matrixlen);
+}
 
 /**
  * Function to send the entire matrix to the playback engine
@@ -83,7 +91,7 @@ let targetTab:Tab;
  * @param data The actual matrix data
  */
 export async function setMatrix(data:Uint8Array[]): Promise<void> {
-	await _async(ipcEnum.DriverMatrix, data);
+	await _async(ipcEnum.ManagerMatrix, data);
 }
 
 let matrixTimeout:undefined|NodeJS.Timeout;
@@ -101,6 +109,8 @@ function matrixSend(matrix:Matrix){
 	}, 1);
 }
 
+let currentTab: Tab;
+
 /**
  * Events that make the need for the matrix to be re-rendered
  */
@@ -111,3 +121,9 @@ ZorroEvent.addListener(ZorroEventEnum.MatrixInsert, async(event, matrix) => matr
 // eslint-disable-next-line require-await
 ZorroEvent.addListener(ZorroEventEnum.MatrixRemove, async(event, matrix) => matrixSend(matrix));
 
+/**
+ * Events that make the need for flags to be updated
+ */
+ZorroEvent.addListener(ZorroEventEnum.MatrixResize, async() => {
+	await setFlags(currentTab)
+});

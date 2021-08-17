@@ -25,31 +25,15 @@ export class PlaybackManager implements PlaybackManagerAPI {
 	 */
 	private messageFunc: UIMessageFunction;
 
-	/**
-	 * The number of rows in a pattern
-	 */
-	private patternLen: number;
-
-	/**
-	 * The total number of patterns
-	 */
-	private length: number;
-
-	/**
-	 * The total number of channels
-	 */
-	private channels: number;
-
 	// eslint-disable-next-line max-len
-	constructor(patternLen:number, channels:number, rate:number, ticksPerRow:number, length:number, message:UIMessageFunction) {
+	constructor(channels:number, message:UIMessageFunction) {
+		this.channels = channels;
+
 		// initialize the playback api
-		this.api = new PlaybackAPI(this, rate, ticksPerRow);
+		this.api = new PlaybackAPI(this);
 
 		// initialize other variables
 		this.messageFunc = message;
-		this.patternLen = patternLen;
-		this.channels = channels;
-		this.length = length;
 
 		// initialize matrix
 		this.matrix = [];
@@ -71,6 +55,27 @@ export class PlaybackManager implements PlaybackManagerAPI {
 
 			this.patterns.push(p);
 		}
+	}
+
+	/**
+	 * The number of rows in a pattern
+	 */
+	private patternLen: number;
+
+	/**
+	 * The total number of patterns
+	 */
+	private length: number;
+
+	/**
+	 * The total number of channels
+	 */
+	private channels: number;
+
+	public setFlags(patternLen:number, rate:number, ticksPerRow:number, length:number): void {
+		this.patternLen = patternLen;
+		this.length = length;
+		this.api.setFlags(rate, ticksPerRow);
 	}
 
 	/**

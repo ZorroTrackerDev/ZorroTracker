@@ -43,9 +43,9 @@ export enum ipcEnum {
 	DriverFindAll = "driver-findall",
 	DriverFunc = "driver-func",
 
-	DriverMatrix = "pb-matrix",
-	DriverPattern = "pb-pattern",
-	DriverFetchRow = "pb-row-fetch",
+	ManagerMatrix = "man-matrix",
+	MAnagerPattern = "man-pattern",
+	ManagerFlags = "man-flags",
 
 	ChipFindAll = "chip-findall",
 	ChipFunc = "chip-func",

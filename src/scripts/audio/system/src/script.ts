@@ -219,10 +219,10 @@ parentPort?.on("message", (data:{ token?:number, code:string, data:unknown, fn?:
 				if(driver) {
 					// load the play manager
 					// eslint-disable-next-line max-len
-					const arr = data.data as { patternlen:number, channels:number, rate:number, ticksPerRow:number, length:number, };
+					const arr = data.data as { channels:number, };
 
 					// eslint-disable-next-line max-len
-					playManager = new PlaybackManager(arr.patternlen, arr.channels, arr.rate, arr.ticksPerRow, arr.length, processAsyncMessage);
+					playManager = new PlaybackManager(arr.channels, processAsyncMessage);
 
 					// initialize the driver and manager
 					driver.playback = playManager.getAPI();
@@ -261,6 +261,22 @@ parentPort?.on("message", (data:{ token?:number, code:string, data:unknown, fn?:
 				if(driver) {
 					// tell the driver to stop playback
 					driver.stop();
+				}
+
+				// let the parent know we're ready
+				parentPort?.postMessage({ token: data.token, code: data.code, data: driver !== undefined, });
+				break;
+
+			/**
+			 * Init module flags
+			 *
+			 * data: Various config and info options for the flags
+			 */
+			case "module-flags":	// pattern, repeat, rate, ticksPerRow, length
+				if(playManager) {
+					// eslint-disable-next-line max-len
+					const arr = data.data as { patternlen:number, channels:number, rate:number, ticksPerRow:number, length:number, };
+					playManager.setFlags(arr.patternlen, arr.rate, arr.ticksPerRow, arr.length);
 				}
 
 				// let the parent know we're ready

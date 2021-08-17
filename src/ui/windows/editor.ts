@@ -99,7 +99,7 @@ import { CheckboxEnum, makeCheckbox, CheckboxReturn } from "../elements/checkbox
 /* ipc communication */
 import "../../system/ipc/html editor";
 import "../misc/playback";
-import { initPlayback, startPlayback, stopPlayback } from "../misc/playback";
+import { initPlayback, setFlags, startPlayback, stopPlayback } from "../misc/playback";
 
 // stored list of components active
 const components = new UIComponentStore();
@@ -350,7 +350,7 @@ async function loadMainShortcuts() {
 			}
 
 			// toggle play mode
-			if(await startPlayback(Tab.active, Tab.active?.activeRow ?? 0, false)){
+			if(await startPlayback(Tab.active?.activeRow ?? 0, false)){
 				Tab.active.playMode = PlayMode.PlayAll;
 			}
 
@@ -365,7 +365,7 @@ async function loadMainShortcuts() {
 
 			// toggle play mode
 			Tab.active.playMode = PlayMode.PlayPattern;
-			if(await startPlayback(Tab.active, Tab.active?.activeRow ?? 0, true)){
+			if(await startPlayback(Tab.active?.activeRow ?? 0, true)){
 				Tab.active.playMode = PlayMode.PlayPattern;
 			}
 
@@ -871,6 +871,9 @@ class SettingsPanelLeft implements UIComponent<HTMLDivElement> {
 
 				// project is now dirty!
 				this.tab.project.dirty();
+
+				// update playback manager flags
+				await setFlags(this.tab);
 			}
 		});
 
@@ -1011,6 +1014,9 @@ class SettingsPanelRight implements UIComponent<HTMLDivElement> {
 
 				// project is now dirty!
 				this.tab.project.dirty();
+
+				// update playback manager flags
+				return setFlags(this.tab);
 			}
 		});
 
@@ -1025,6 +1031,9 @@ class SettingsPanelRight implements UIComponent<HTMLDivElement> {
 
 				// project is now dirty!
 				this.tab.project.dirty();
+
+				// update playback manager flags
+				return setFlags(this.tab);
 			}
 		});
 

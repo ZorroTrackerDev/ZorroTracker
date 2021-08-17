@@ -110,16 +110,17 @@ ipcMain.on(ipcEnum.AudioStop, () => {
 	worker?.postMessage({ code: "stop", });
 });
 
-// handle telling the audio adapter instance and driver that module playback needs initializing
-ipcMain.on(ipcEnum.DriverInit, (event, token, patternlen, channels, rate, ticksPerRow, matrixlen) => {
+/**
+ * Pass-throughs for various playback controller functions
+ */
+ipcMain.on(ipcEnum.DriverInit, (event, token, channels) => {
 	// post the info
-	workerAsync("module-init", { patternlen, channels, rate, ticksPerRow, length: matrixlen, }, undefined, () => {
+	workerAsync("module-init", { channels, }, undefined, () => {
 		// tell the UI we finished
 		event.reply(ipcEnum.DriverInit, token);
 	});
 });
 
-// handle telling the audio adapter instance and driver that module playback is started
 ipcMain.on(ipcEnum.DriverPlay, (event, token, row, repeat) => {
 	// post the info
 	workerAsync("module-play", { row, repeat, }, undefined, () => {
@@ -128,7 +129,6 @@ ipcMain.on(ipcEnum.DriverPlay, (event, token, row, repeat) => {
 	});
 });
 
-// handle telling the audio adapter instance and driver that module playback is stopped
 ipcMain.on(ipcEnum.DriverStop, (event, token) => {
 	// post the info
 	workerAsync("module-stop", {}, undefined, () => {
@@ -137,17 +137,24 @@ ipcMain.on(ipcEnum.DriverStop, (event, token) => {
 	});
 });
 
-// handle telling the audio adapter instance and driver about new module matrix data
-ipcMain.on(ipcEnum.DriverMatrix, (event, token, data) => {
+ipcMain.on(ipcEnum.ManagerMatrix, (event, token, data) => {
 	// post the info
 	workerAsync("module-matrix", data, undefined, () => {
 		// tell the UI we finished
-		event.reply(ipcEnum.DriverMatrix, token);
+		event.reply(ipcEnum.ManagerMatrix, token);
 	});
 });
 
-ipcMain.on(ipcEnum.DriverPattern, (event, channel, index, data) => {
+ipcMain.on(ipcEnum.MAnagerPattern, (event, channel, index, data) => {
 	worker?.postMessage({ code: "module-pattern", data: { channel, index, data, }, });
+});
+
+ipcMain.on(ipcEnum.ManagerFlags, (event, token, patternlen, rate, ticksPerRow, matrixlen) => {
+	// post the info
+	workerAsync("module-flags", { patternlen, rate, ticksPerRow, length: matrixlen, }, undefined, () => {
+		// tell the UI we finished
+		event.reply(ipcEnum.ManagerFlags, token);
+	});
 });
 
 /**

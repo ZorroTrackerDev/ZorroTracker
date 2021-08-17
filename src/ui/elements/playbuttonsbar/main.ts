@@ -98,7 +98,7 @@ export class PlayBar implements UIComponent<HTMLDivElement> {
 			click: async(e:MouseEvent) => {
 				// change playback mode to play all
 				if(e.button === 0 && Tab.active && Tab.active.playMode === PlayMode.Stopped) {
-					if(await startPlayback(Tab.active, Tab.active?.activeRow ?? 0, false)) {
+					if(await startPlayback(Tab.active?.activeRow ?? 0, false)) {
 						Tab.active.playMode = PlayMode.PlayAll;
 					}
 				}
@@ -112,7 +112,7 @@ export class PlayBar implements UIComponent<HTMLDivElement> {
 			click: async(e:MouseEvent) => {
 				// change playback mode to play pattern
 				if(e.button === 0 && Tab.active && Tab.active.playMode === PlayMode.Stopped) {
-					if(await startPlayback(Tab.active, Tab.active?.activeRow ?? 0, true)) {
+					if(await startPlayback(Tab.active?.activeRow ?? 0, true)) {
 						Tab.active.playMode = PlayMode.PlayPattern;
 					}
 				}

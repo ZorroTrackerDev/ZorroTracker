@@ -37,8 +37,10 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
 
-    - name: Clean cache [Windows]
-      run: npm cache clean --force
+    - name: Bodge node-gyp [Windows]
+      run: |
+        npm cache clean --force
+        npm install -g windows-build-tools
 
     - name: Install dependencies
       run: npm install

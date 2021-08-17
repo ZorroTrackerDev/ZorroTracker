@@ -41,7 +41,6 @@ jobs:
       if: runner.os == 'Windows'
       run: |
         npm cache clean --force
-        npm config set msvs_version 2017 –global
 
     - name: Install dependencies
       run: npm install

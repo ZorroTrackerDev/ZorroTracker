@@ -94,11 +94,13 @@ export class PlayBar implements UIComponent<HTMLDivElement> {
 			},
 		},
 		{
-			tooltip: "Start playback",
+			tooltip: "Start playback at current pattern.\nCTRL+Click = Start from current row.",
 			click: async(e:MouseEvent) => {
 				// change playback mode to play all
 				if(e.button === 0 && Tab.active && Tab.active.playMode !== PlayMode.PlayAll) {
-					if(await startPlayback(0, false, false)) {
+					const row = Tab.active.activeRow, cr = e.ctrlKey ? row : row - (row % (Tab.active.module?.patternRows ?? 1));
+
+					if(await startPlayback(cr, false, false)) {
 						Tab.active.playMode = PlayMode.PlayAll;
 					}
 				}
@@ -108,13 +110,13 @@ export class PlayBar implements UIComponent<HTMLDivElement> {
 			},
 		},
 		{
-			tooltip: "Repeat pattern",
+			tooltip: "Repeat playback of the current pattern.\nCTRL+Click = Start from current row.",
 			click: async(e:MouseEvent) => {
 				// change playback mode to play pattern
 				if(e.button === 0 && Tab.active && Tab.active.playMode !== PlayMode.PlayPattern) {
-					const row = Tab.active.activeRow;
+					const row = Tab.active.activeRow, cr = e.ctrlKey ? row : row - (row % (Tab.active.module?.patternRows ?? 1));
 
-					if(await startPlayback(row - (row % (Tab.active.module?.patternRows ?? 1)), true, false)) {
+					if(await startPlayback(cr, true, false)) {
 						Tab.active.playMode = PlayMode.PlayPattern;
 					}
 				}

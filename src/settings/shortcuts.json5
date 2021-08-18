@@ -157,11 +157,12 @@
 	"ui.save":								[ "ctrl+S" ],							/* shortcut for saving the project */
 	"ui.saveas":							[ "ctrl+shift+S" ],						/* shortcut for saving the project as another file */
 
-	"ui.play":								[ "Enter", "F5" ],						/* shortcut for playing from start */
-	"ui.playpattern":						[ "F6" ],								/* shortcut for playing back the current pattern */
+	"ui.playstart":							[ "shift+Enter" ],						/* shortcut for playing from the start of the first pattern */
+	"ui.play":								[ "Enter", "F5" ],						/* shortcut for playing from the current pattern */
+	"ui.repeatpattern":						[ "F6" ],								/* shortcut for repeating the current pattern */
 	"ui.playrow":							[ "F7" ],								/* shortcut for playing from the current row */
-	"ui.playstep":							[ "ctrl+Enter" ],						/* shortcut for playing from the current row */
-	"ui.stop":								[ "F5", "F6", "F7", "Enter" ],			/* shortcut for stopping playback */
+	"ui.playstep":							[ "ctrl+Enter" ],						/* shortcut for stepping the current row */
+	"ui.stop":								[ "F8", "Enter" ],						/* shortcut for stopping playback */
 	"ui.record":							[ "Space" ],							/* shortcut for toggling record mode */
 
 	"ui.muteselected":						[ "F9" ],								/* shortcut for muting selected channel */

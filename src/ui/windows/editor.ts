@@ -351,7 +351,9 @@ async function loadMainShortcuts() {
 			}
 
 			// toggle play mode
-			if(await startPlayback(0, false, false)){
+			const row = Tab.active.activeRow;
+
+			if(await startPlayback(row - (row % (Tab.active.module?.patternRows ?? 1)), false, false)){
 				Tab.active.playMode = PlayMode.PlayAll;
 			}
 
@@ -365,7 +367,7 @@ async function loadMainShortcuts() {
 			}
 
 			// toggle play mode
-			if(await startPlayback(Tab.active.playMode === PlayMode.Stopped ? Tab.active.activeRow : -1, false, false)){
+			if(await startPlayback(Tab.active.activeRow, false, false)){
 				Tab.active.playMode = PlayMode.PlayAll;
 			}
 
@@ -373,7 +375,7 @@ async function loadMainShortcuts() {
 		},
 
 		/* shortcut for enabling play pattern mode */
-		playpattern: async() => {
+		repeatpattern: async() => {
 			if(!Tab.active || Tab.active.playMode === PlayMode.PlayPattern){
 				return false;
 			}
@@ -383,6 +385,20 @@ async function loadMainShortcuts() {
 
 			if(await startPlayback(row - (row % (Tab.active.module?.patternRows ?? 1)), true, false)){
 				Tab.active.playMode = PlayMode.PlayPattern;
+			}
+
+			return true;
+		},
+
+		/* shortcut for enabling play pattern mode */
+		playstart: async() => {
+			if(!Tab.active || Tab.active.playMode === PlayMode.PlayPattern){
+				return false;
+			}
+
+			// toggle play mode
+			if(await startPlayback(0, false, false)){
+				Tab.active.playMode = PlayMode.PlayAll;
 			}
 
 			return true;

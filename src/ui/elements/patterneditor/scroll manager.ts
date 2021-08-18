@@ -244,13 +244,13 @@ export class PatternEditorScrollManager {
 	 */
 	public updateSongScroll(): void {
 		// update song highlight
-		if(this.parent.songRow < 0) {
+		if(this.parent.tab.songRow < 0) {
 			this.parent.songBar.style.top = "-10000px";
 			return;
 		}
 
 		// load the offset in pixels and update the bar position
-		const offset = (this.parent.songRow - this.parent.tab.activeRow) * this.rowHeight;
+		const offset = (this.parent.tab.songRow - this.parent.tab.activeRow) * this.rowHeight;
 		this.parent.songBar.style.top = (offset + this.scrollMiddle) +"px";
 	}
 
@@ -933,7 +933,7 @@ export class PatternEditorScrollManager {
 	 */
 	public updateSongRowData(): void {
 		// ignore when hidden
-		if(this.parent.songRow < 0) {
+		if(this.parent.tab.songRow < 0) {
 			return;
 		}
 

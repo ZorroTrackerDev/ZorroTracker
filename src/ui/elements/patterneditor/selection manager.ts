@@ -866,7 +866,7 @@ export class PatternEditorSelectionManager {
 			await this.parent.scrollManager.scrollToSelection(this.single);
 
 			// update the seconds counter
-			await this.parent.eventManager.updateSeconds(this.single.row + (this.single.pattern * this.parent.patternLen));
+			await this.parent.eventManager.updateSeconds();
 		}
 
 		return true;
@@ -984,7 +984,7 @@ export class PatternEditorSelectionManager {
 			await this.parent.scrollManager.scrollToRow(row + (this.multi[0].pattern * this.parent.patternLen));
 
 			// update the seconds counter
-			await this.parent.eventManager.updateSeconds(row + (this.single.pattern * this.parent.patternLen));
+			await this.parent.eventManager.updateSeconds();
 		}
 
 		return true;
@@ -1012,7 +1012,7 @@ export class PatternEditorSelectionManager {
 			this.single.row = this.multi[1].row;
 
 			// update the seconds counter
-			await this.parent.eventManager.updateSeconds(this.single.row + (this.single.pattern * this.parent.patternLen));
+			await this.parent.eventManager.updateSeconds();
 		}
 
 		// update the scrolled row

@@ -149,13 +149,22 @@ ZorroEvent.addListener(ZorroEventEnum.MatrixRemove, async(event, matrix) => matr
 /**
  * Events that make the need for flags to be updated
  */
-ZorroEvent.addListener(ZorroEventEnum.MatrixResize, async() => { await setFlags(currentTab); });
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.MatrixResize, async(event, matrix) => {
+	setTimeout(() => setFlags(currentTab), 1);
+	matrixSend(matrix);
+});
+
 ZorroEvent.addListener(ZorroEventEnum.ProjectPatternRows, async() => { await setFlags(currentTab); });
 
 /**
  * Events that make the need for pattern data to be updated
  */
 // eslint-disable-next-line require-await
-ZorroEvent.addListener(ZorroEventEnum.PatternMake, async(event, matrix, channel, position) => { setPattern(matrix, channel, position); });
+ZorroEvent.addListener(ZorroEventEnum.PatternMake, async(event, matrix, channel, position) => {
+	setTimeout(() => setPattern(matrix, channel, position), 0);
+});
 // eslint-disable-next-line require-await
-ZorroEvent.addListener(ZorroEventEnum.PatternData, async(event, matrix, channel, pattern) => { setPattern(matrix, channel, pattern); });
+ZorroEvent.addListener(ZorroEventEnum.PatternData, async(event, matrix, channel, pattern) => {
+	setTimeout(() => setPattern(matrix, channel, pattern), 0);
+});

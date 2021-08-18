@@ -465,11 +465,6 @@ export class PatternEditor implements UIComponent<HTMLDivElement>, UIShortcutHan
 	}
 
 	/**
-	 * The current row where the channel is located at
-	 */
-	public songRow = -1;
-
-	/**
 	 * Various channel statistics
 	 */
 	public channelInfo!: PatternChannelInfo[];

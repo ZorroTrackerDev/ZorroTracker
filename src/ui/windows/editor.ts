@@ -1040,7 +1040,7 @@ class SettingsPanelRight implements UIComponent<HTMLDivElement> {
 				await setFlags(this.tab);
 
 				// update song seconds
-				await updateSeconds(this.tab.activeRow, this.tab.secondsPerTick * this.tab.module.ticksPerRow, this.tab.module.patternRows);
+				await updateSeconds();
 			}
 		});
 
@@ -1060,7 +1060,7 @@ class SettingsPanelRight implements UIComponent<HTMLDivElement> {
 				await setFlags(this.tab);
 
 				// update song seconds
-				await updateSeconds(this.tab.activeRow, this.tab.secondsPerTick * value, this.tab.module.patternRows);
+				await updateSeconds();
 			}
 		});
 
@@ -1092,7 +1092,7 @@ class SettingsPanelRight implements UIComponent<HTMLDivElement> {
 		this.element.appendChild(this.ins.element);
 
 		// add time display
-		this.element.appendChild(makeTimeDisplay());
+		this.element.appendChild(makeTimeDisplay(() => this.tab));
 		return this.element;
 	}
 

@@ -229,7 +229,7 @@ export interface ZorroListenerTypes {
 	[ZorroEventEnum.PatternData]: (event:ZorroEventObject, matrix:Matrix, channel:number, pattern:number, start:number, end:number) => ZorroListenerReturn<void>,
 
 	[ZorroEventEnum.PlaybackPosition]: (event:ZorroEventObject, row:number) => ZorroListenerReturn<void>,
-	[ZorroEventEnum.PlaybackSeconds]: (event:ZorroEventObject, row:number, secondsPerRow:number, rowsPerPattern:number) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.PlaybackSeconds]: (event:ZorroEventObject) => ZorroListenerReturn<void>,
 
 	[ZorroEventEnum.MidiNoteOn]: (event:ZorroEventObject, channel:number, note:number, velocity:number) => ZorroListenerReturn<void>,
 	[ZorroEventEnum.MidiNoteOff]: (event:ZorroEventObject, channel:number, note:number, velocity:number) => ZorroListenerReturn<void>,
@@ -273,7 +273,7 @@ export interface ZorroSenderTypes {
 	[ZorroEventEnum.PatternData]: (matrix:Matrix, channel:number, pattern:number, start:number, end:number) => ZorroSenderReturn<void>,
 
 	[ZorroEventEnum.PlaybackPosition]: (row:number) => ZorroSenderReturn<void>,
-	[ZorroEventEnum.PlaybackSeconds]: (row:number, secondsPerRow:number, rowsPerPattern:number) => ZorroSenderReturn<void>,
+	[ZorroEventEnum.PlaybackSeconds]: () => ZorroSenderReturn<void>,
 
 	[ZorroEventEnum.MidiNoteOn]: (channel:number, note:number, velocity:number) => ZorroSenderReturn<undefined>,
 	[ZorroEventEnum.MidiNoteOff]: (channel:number, note:number, velocity:number) => ZorroSenderReturn<undefined>,

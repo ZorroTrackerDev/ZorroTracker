@@ -74,13 +74,13 @@ export class PatternEditorEventManager {
 	 *
 	 * @param row The row to update seconds counter to
 	 */
-	public updateSeconds(row:number): undefined|Promise<unknown> {
+	public updateSeconds(): undefined|Promise<unknown> {
 		if(this.parent.tab.playMode !== PlayMode.Stopped) {
 			return;
 		}
 
 		// update song seconds
-		return updateSeconds(row, this.parent.tab.secondsPerTick * (this.parent.tab.module?.ticksPerRow ?? 1), this.parent.patternLen);
+		return updateSeconds();
 	}
 }
 
@@ -97,16 +97,16 @@ ZorroEvent.addListener(ZorroEventEnum.PlaybackPosition, async(event, row) => {
 	if(manager) {
 		if(row < 0) {
 			// update the song position
-			manager.parent.songRow = -1;
+			manager.parent.tab.songRow = -1;
 			manager.parent.scrollManager.updateSongScroll();
 
 		} else if(manager.parent.tab.playMode !== PlayMode.Stopped){
 			// update song seconds
-			await updateSeconds(row, manager.parent.tab.secondsPerTick * (manager.parent.tab.module?.ticksPerRow ?? 1), manager.parent.patternLen);
+			await updateSeconds();
 
 			if(!manager.parent.tab.follow) {
 				// update the song position
-				manager.parent.songRow = row;
+				manager.parent.tab.songRow = row;
 				manager.parent.scrollManager.updateSongRowData();
 
 				// update song scrolling
@@ -118,7 +118,7 @@ ZorroEvent.addListener(ZorroEventEnum.PlaybackPosition, async(event, row) => {
 				manager.parent.selectionManager.single.row = row % manager.parent.patternLen;
 
 				manager.parent.tab.activeRow = row;
-				manager.parent.songRow = -1;
+				manager.parent.tab.songRow = -1;
 
 				// redraw all and update scroling
 				await manager.parent.scrollManager.verticalScroll(0);

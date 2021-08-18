@@ -217,6 +217,10 @@ export default class implements Driver {
 		}
 	}
 
+	public secondsPerTick(): number {
+		return 0;
+	}
+
 	public notes(): undefined {
 		return undefined;
 	}

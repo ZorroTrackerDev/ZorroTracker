@@ -1,6 +1,9 @@
 import { ZorroEvent, ZorroEventEnum } from "../../../api/events";
+import { PlayMode, Tab } from "../../misc/tab";
 
-export function makeTimeDisplay(): HTMLDivElement {
+export function makeTimeDisplay(getTab:() => Tab): HTMLDivElement {
+	currentTab = getTab;
+
 	// generate the base element
 	current = document.createElement("div");
 	current.classList.add("timedisplay");
@@ -22,39 +25,71 @@ export function makeTimeDisplay(): HTMLDivElement {
 	return current;
 }
 
+let currentTab: () => Tab;
 let current: HTMLDivElement;
 let mode = 0;
-
-// the text strings for the display
-const text = [
-	[ "00", ":00", ":000", ],
-	[ "000", ":00", "", ],
-];
 
 /**
  * Function to load the text in the current mode
  */
 function updateText() {
-	(current.children[0] as HTMLDivElement).innerText = text[mode][0];
-	(current.children[1] as HTMLDivElement).innerText = text[mode][1];
-	(current.children[2] as HTMLDivElement).innerText = text[mode][2];
+	if(!current || !currentTab) {
+		return;
+	}
+
+	// load the text and place it on the DOM
+	const text = loadMode();
+	(current.children[0] as HTMLDivElement).innerText = text[0];
+	(current.children[1] as HTMLDivElement).innerText = text[1];
+	(current.children[2] as HTMLDivElement).innerText = text[2];
 }
 
-// listen to record mode changing
+/**
+ * Function to load the text for the current mode
+ */
+function loadMode(): [ string, string, string, ] {
+	// load the tab and ignore if failed
+	const tab = currentTab();
+
+	if(!tab) {
+		return [ "00", ":00", ":000", ];
+	}
+
+	// load the row to target and process the mode
+	const row = tab.songRow < 0 || tab.playMode === PlayMode.Stopped || tab.follow ? tab.activeRow : tab.songRow;
+
+	switch(mode) {
+		case 0: {	// mode 0: mmm:ss:iii
+			const time = row * tab.secondsPerTick * (tab.module?.ticksPerRow ?? 1);
+
+			return [
+				(Math.floor(time / 60) % 99).toString(10).padStart(2, "0"),
+				":"+ (Math.floor(time) % 60).toString(10).padStart(2, "0"),
+				":"+ (Math.floor(time * 1000) % 1000).toString(10).padStart(3, "0"),
+			];
+		}
+
+		case 1: {	// mode 1: pp:rr
+			const rpp = tab.module?.patternRows ?? 2;
+			const pattern = Math.floor(row / rpp), rown = Math.floor(row % rpp);
+
+			return [
+				rown.toString(10).padStart(3, "0"),
+				":"+ pattern.toString(16).toUpperCase().padStart(2, "0"),
+				"",
+			];
+		}
+	}
+
+	return [ "", "", "", ];
+}
+
 // eslint-disable-next-line require-await
-ZorroEvent.addListener(ZorroEventEnum.PlaybackSeconds, async(event, row, secondsPerRow, rowsPerPattern) => {
-	{	// mode 0: mmm:ss:iii
-		const time = row * secondsPerRow;
-		text[0][2] = ":"+ (Math.floor(time * 1000) % 1000).toString(10).padStart(3, "0");
-		text[0][1] = ":"+ (Math.floor(time) % 60).toString(10).padStart(2, "0");
-		text[0][0] = (Math.floor(time / 60) % 99).toString(10).padStart(2, "0");
-	}
+ZorroEvent.addListener(ZorroEventEnum.PlaybackSeconds, async() => { updateText(); });
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.MatrixResize, async() => { updateText(); });
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.ProjectPatternRows, async() => { updateText(); });
+// eslint-disable-next-line require-await
+ZorroEvent.addListener(ZorroEventEnum.SelectModule, async() => { updateText(); });
 
-	{	// mode 1: pp:rr
-		const pattern = Math.floor(row / rowsPerPattern), rown = Math.floor(row % rowsPerPattern);
-		text[1][1] = ":"+ pattern.toString(16).toUpperCase().padStart(2, "0");
-		text[1][0] = rown.toString(10).padStart(3, "0");
-	}
-
-	updateText();
-});

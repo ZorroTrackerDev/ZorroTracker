@@ -110,6 +110,11 @@ export class Tab {
 	public activeRow = 0;
 
 	/**
+	 * The current row where the song is located at
+	 */
+	public songRow = -1;
+
+	/**
 	 * The currently selected channel in the pattern editor
 	 */
 	public selectedChannelId = 0;

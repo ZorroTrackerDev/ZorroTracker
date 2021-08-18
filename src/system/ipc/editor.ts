@@ -121,9 +121,9 @@ ipcMain.on(ipcEnum.DriverInit, (event, token, channels) => {
 	});
 });
 
-ipcMain.on(ipcEnum.DriverPlay, (event, token, row, repeat) => {
+ipcMain.on(ipcEnum.DriverPlay, (event, token, row, repeat, step) => {
 	// post the info
-	workerAsync("module-play", { row, repeat, }, undefined, () => {
+	workerAsync("module-play", { row, repeat, step, }, undefined, () => {
 		// tell the UI we finished
 		event.reply(ipcEnum.DriverPlay, token);
 	});

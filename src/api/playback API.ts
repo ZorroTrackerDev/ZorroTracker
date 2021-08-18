@@ -54,9 +54,11 @@ export class PlaybackAPI {
 	public fetchRow(): null|PatternCellData[] {
 		// check step mode
 		if(this.stepMode) {
-			if(this.steps-- === 0) {
+			if(this.steps === 0) {
 				return null;
 			}
+
+			--this.steps;
 		}
 
 		// fetch the row

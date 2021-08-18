@@ -108,10 +108,9 @@ export class PlaybackManager implements PlaybackManagerAPI {
 		}
 
 		this.repeat = repeat;
-		this.step = step;
-		this.api.stepMode = step;
 
-		if(step) {
+		// handle step mode initialization
+		if((this.step = this.api.stepMode = step)) {
 			this.api.steps++;
 
 		} else {
@@ -123,8 +122,10 @@ export class PlaybackManager implements PlaybackManagerAPI {
 	 * Helper function to load the next row data and keep the UI up to date
 	 */
 	public loadDataRow(): PatternCellData[]|null {
-		// send the current row to ui
-		this.messageFunc(false, ipcEnum.ManagerPosition, this.row + (this.pattern * this.patternLen), () => 0);
+		if(!this.step) {
+			// send the current row to ui
+			this.messageFunc(false, ipcEnum.ManagerPosition, this.row + (this.pattern * this.patternLen), () => 0);
+		}
 
 		// load the current row data into ret variable
 		const ret:PatternCellData[] = [];
@@ -148,6 +149,11 @@ export class PlaybackManager implements PlaybackManagerAPI {
 			}
 		}
 
+		if(this.step) {
+			// send the next row to ui
+			this.messageFunc(false, ipcEnum.ManagerPosition, this.row + (this.pattern * this.patternLen), () => 0);
+		}
+
 		// return the previous row
 		return ret;
 	}
@@ -156,10 +162,8 @@ export class PlaybackManager implements PlaybackManagerAPI {
 	 * Inform the UI the playback has stopped
 	 */
 	public stop(): void {
-		if(!this.step) {
-			// send the current row to ui
-			this.messageFunc(false, ipcEnum.ManagerPosition, -1, () => 0);
-		}
+		// send the current row to ui
+		this.messageFunc(false, ipcEnum.ManagerPosition, -1, () => 0);
 	}
 
 	/**

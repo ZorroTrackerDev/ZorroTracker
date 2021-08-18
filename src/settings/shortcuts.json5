@@ -157,9 +157,11 @@
 	"ui.save":								[ "ctrl+S" ],							/* shortcut for saving the project */
 	"ui.saveas":							[ "ctrl+shift+S" ],						/* shortcut for saving the project as another file */
 
-	"ui.play":								[ "Enter" ],							/* shortcut for playing back the entire track */
-	"ui.playpattern":						[ "Shift+Enter" ],						/* shortcut for playing back the current pattern */
-	"ui.stop":								[ "Shift+Enter", "Enter" ],				/* shortcut for stopping playback */
+	"ui.play":								[ "Enter", "F5" ],						/* shortcut for playing from start */
+	"ui.playpattern":						[ "F6" ],								/* shortcut for playing back the current pattern */
+	"ui.playrow":							[ "F7" ],								/* shortcut for playing from the current row */
+	"ui.playstep":							[ "ctrl+Enter" ],						/* shortcut for playing from the current row */
+	"ui.stop":								[ "F5", "F6", "F7", "Enter" ],			/* shortcut for stopping playback */
 	"ui.record":							[ "Space" ],							/* shortcut for toggling record mode */
 
 	"ui.muteselected":						[ "F9" ],								/* shortcut for muting selected channel */

@@ -244,7 +244,10 @@ parentPort?.on("message", (data:{ token?:number, code:string, data:unknown, fn?:
 					playManager.setMode(arr.row, arr.repeat, arr.step);
 
 					// tell the driver to start playback
-					driver.reset();
+					if(!arr.step) {
+						driver.reset();
+					}
+
 					driver.play();
 				}
 

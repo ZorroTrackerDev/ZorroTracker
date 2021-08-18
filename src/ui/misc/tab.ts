@@ -91,7 +91,7 @@ export class Tab {
 	 * Whether to block vertical movement in the pattern editor and matrix editor
 	 */
 	public get blockMovement(): boolean {
-		return this.follow && this._playMode !== PlayMode.Stopped;
+		return this.follow && this._playMode !== PlayMode.Stopped && this._playMode !== PlayMode.PlayStep;
 	}
 
 	/**
@@ -304,4 +304,5 @@ export enum PlayMode {
 	Stopped = 0,				// not playing anything right now
 	PlayAll = 1,				// playing the entire song in repeat (including loop point)
 	PlayPattern = 2,			// playing the current pattern
+	PlayStep = -1,				// playing step by step with user input
 }

@@ -41,6 +41,7 @@ jobs:
       if: runner.os == 'Windows'
       run: |
         npm cache clean --force
+        del /s /q C:\Users\runneradmin\.electron-gyp\*.*
 
     - name: Install dependencies
       run: npm install

@@ -33,6 +33,11 @@ export interface Driver {
 	buffer:(samples: number, advance:(samples:number) => number) => void;
 
 	/**
+	 * Gets the number of seconds per tick. This is most likely a small fraction of a second
+	 */
+	secondsPerTick: () => number,
+
+	/**
 	 * Enable driver to continue playing back from hwere it left off.
 	 */
 	play:(special?: string) => void;

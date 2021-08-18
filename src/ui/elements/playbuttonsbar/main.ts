@@ -100,7 +100,7 @@ export class PlayBar implements UIComponent<HTMLDivElement> {
 				if(e.button === 0 && Tab.active && Tab.active.playMode !== PlayMode.PlayAll) {
 					const row = Tab.active?.activeRow ?? 0;
 
-					if(await startPlayback(row - (row % (Tab.active?.module?.patternRows ?? 1)), false)) {
+					if(await startPlayback(row - (row % (Tab.active?.module?.patternRows ?? 1)), false, false)) {
 						Tab.active.playMode = PlayMode.PlayAll;
 					}
 				}
@@ -116,7 +116,7 @@ export class PlayBar implements UIComponent<HTMLDivElement> {
 				if(e.button === 0 && Tab.active && Tab.active.playMode !== PlayMode.PlayPattern) {
 					const row = Tab.active?.activeRow ?? 0;
 
-					if(await startPlayback(row - (row % (Tab.active?.module?.patternRows ?? 1)), true)) {
+					if(await startPlayback(row - (row % (Tab.active?.module?.patternRows ?? 1)), true, false)) {
 						Tab.active.playMode = PlayMode.PlayPattern;
 					}
 				}

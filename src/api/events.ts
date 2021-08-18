@@ -159,6 +159,7 @@ export enum ZorroEventEnum {
 	PatternData,					// event that is ran when pattern data is updated
 
 	PlaybackPosition,				// event that is ran when the playback position is updated
+	PlaybackSeconds,				// event that is ran to update the seconds counter
 
 	MidiNoteOn,						// event that is ran when a MIDI note is triggered
 	MidiNoteOff,					// event that is ran when a MIDI note is released
@@ -228,6 +229,7 @@ export interface ZorroListenerTypes {
 	[ZorroEventEnum.PatternData]: (event:ZorroEventObject, matrix:Matrix, channel:number, pattern:number, start:number, end:number) => ZorroListenerReturn<void>,
 
 	[ZorroEventEnum.PlaybackPosition]: (event:ZorroEventObject, row:number) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.PlaybackSeconds]: (event:ZorroEventObject, row:number, secondsPerRow:number, rowsPerPattern:number) => ZorroListenerReturn<void>,
 
 	[ZorroEventEnum.MidiNoteOn]: (event:ZorroEventObject, channel:number, note:number, velocity:number) => ZorroListenerReturn<void>,
 	[ZorroEventEnum.MidiNoteOff]: (event:ZorroEventObject, channel:number, note:number, velocity:number) => ZorroListenerReturn<void>,
@@ -268,9 +270,10 @@ export interface ZorroSenderTypes {
 
 	[ZorroEventEnum.PatternTrim]: (matrix:Matrix, channel:number, position:number) => ZorroSenderReturn<undefined>,
 	[ZorroEventEnum.PatternMake]: (matrix:Matrix, channel:number, position:number) => ZorroSenderReturn<undefined>,
-	[ZorroEventEnum.PatternData]: (matrix:Matrix, channel:number, pattern:number, start:number, end:number) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.PatternData]: (matrix:Matrix, channel:number, pattern:number, start:number, end:number) => ZorroSenderReturn<void>,
 
-	[ZorroEventEnum.PlaybackPosition]: (row:number) => ZorroListenerReturn<void>,
+	[ZorroEventEnum.PlaybackPosition]: (row:number) => ZorroSenderReturn<void>,
+	[ZorroEventEnum.PlaybackSeconds]: (row:number, secondsPerRow:number, rowsPerPattern:number) => ZorroSenderReturn<void>,
 
 	[ZorroEventEnum.MidiNoteOn]: (channel:number, note:number, velocity:number) => ZorroSenderReturn<undefined>,
 	[ZorroEventEnum.MidiNoteOff]: (channel:number, note:number, velocity:number) => ZorroSenderReturn<undefined>,

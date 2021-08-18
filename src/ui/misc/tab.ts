@@ -68,6 +68,11 @@ export class Tab {
 	}
 
 	/**
+	 * The number of seconds per tick of playback
+	 */
+	public secondsPerTick = 0;
+
+	/**
 	 * The step offset for this tab
 	 */
 	public step = 1;

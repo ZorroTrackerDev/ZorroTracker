@@ -240,8 +240,8 @@ parentPort?.on("message", (data:{ token?:number, code:string, data:unknown, fn?:
 			case "module-play":	// pattern, repeat, rate, ticksPerRow, length
 				if(driver && playManager) {
 					// set playback mode
-					const arr = data.data as { row:number, repeat:boolean, };
-					playManager.setMode(arr.row, arr.repeat);
+					const arr = data.data as { row:number, repeat:boolean, step:boolean, };
+					playManager.setMode(arr.row, arr.repeat, arr.step);
 
 					// tell the driver to start playback
 					driver.reset();
@@ -281,7 +281,7 @@ parentPort?.on("message", (data:{ token?:number, code:string, data:unknown, fn?:
 				}
 
 				// let the parent know we're ready
-				parentPort?.postMessage({ token: data.token, code: data.code, data: driver !== undefined, });
+				parentPort?.postMessage({ token: data.token, code: data.code, data: driver?.secondsPerTick() ?? 0, });
 				break;
 
 			/**

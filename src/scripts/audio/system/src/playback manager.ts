@@ -84,6 +84,11 @@ export class PlaybackManager implements PlaybackManagerAPI {
 	private repeat: boolean;
 
 	/**
+	 * Whether to only step to the next row regardless of speed
+	 */
+	private step: boolean;
+
+	/**
 	 * The current pattern we are playing
 	 */
 	private pattern: number;
@@ -96,10 +101,22 @@ export class PlaybackManager implements PlaybackManagerAPI {
 	/**
 	 * Function to set playback mode
 	 */
-	public setMode(row:number, repeat:boolean): void {
-		this.pattern = Math.floor(row / this.patternLen);
-		this.row = row % this.patternLen;
+	public setMode(row:number, repeat:boolean, step:boolean): void {
+		if(row >= 0) {
+			this.pattern = Math.floor(row / this.patternLen);
+			this.row = row % this.patternLen;
+		}
+
 		this.repeat = repeat;
+		this.step = step;
+		this.api.stepMode = step;
+
+		if(step) {
+			this.api.steps++;
+
+		} else {
+			this.api.steps = 0;
+		}
 	}
 
 	/**
@@ -139,8 +156,10 @@ export class PlaybackManager implements PlaybackManagerAPI {
 	 * Inform the UI the playback has stopped
 	 */
 	public stop(): void {
-		// send the current row to ui
-		this.messageFunc(false, ipcEnum.ManagerPosition, -1, () => 0);
+		if(!this.step) {
+			// send the current row to ui
+			this.messageFunc(false, ipcEnum.ManagerPosition, -1, () => 0);
+		}
 	}
 
 	/**

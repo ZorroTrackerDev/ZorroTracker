@@ -100,6 +100,7 @@ import { CheckboxEnum, makeCheckbox, CheckboxReturn } from "../elements/checkbox
 import "../../system/ipc/html editor";
 import "../misc/playback";
 import { initPlayback, setFlags, startPlayback, stopPlayback } from "../misc/playback";
+import { makeTimeDisplay } from "../elements/time display/time";
 
 // stored list of components active
 const components = new UIComponentStore();
@@ -352,7 +353,7 @@ async function loadMainShortcuts() {
 			// toggle play mode
 			const row = Tab.active?.activeRow ?? 0;
 
-			if(await startPlayback(row - (row % (Tab.active?.module?.patternRows ?? 1)), false)){
+			if(await startPlayback(row - (row % (Tab.active?.module?.patternRows ?? 1)), false, false)){
 				Tab.active.playMode = PlayMode.PlayAll;
 			}
 
@@ -368,7 +369,7 @@ async function loadMainShortcuts() {
 			// toggle play mode
 			const row = Tab.active?.activeRow ?? 0;
 
-			if(await startPlayback(row - (row % (Tab.active?.module?.patternRows ?? 1)), true)){
+			if(await startPlayback(row - (row % (Tab.active?.module?.patternRows ?? 1)), true, false)){
 				Tab.active.playMode = PlayMode.PlayPattern;
 			}
 
@@ -841,6 +842,8 @@ function updateBPM() {
 	}
 }
 
+const updateSeconds = ZorroEvent.createEvent(ZorroEventEnum.PlaybackSeconds);
+
 /**
  * Class for dealing with the left side of the settings pane
  */
@@ -1025,7 +1028,7 @@ class SettingsPanelRight implements UIComponent<HTMLDivElement> {
 		this.element = document.createElement("div");
 
 		// create the tempo box
-		this.rate = await makeValueBox([ 1, 400, ], 60, "Rate (Hz)", 2, (value) => {
+		this.rate = await makeValueBox([ 1, 400, ], 60, "Rate (Hz)", 2, async(value) => {
 			if(this.tab.module) {
 				this.tab.module.rate = value;
 				updateBPM();
@@ -1034,7 +1037,10 @@ class SettingsPanelRight implements UIComponent<HTMLDivElement> {
 				this.tab.project.dirty();
 
 				// update playback manager flags
-				return setFlags(this.tab);
+				await setFlags(this.tab);
+
+				// update song seconds
+				await updateSeconds(this.tab.activeRow, this.tab.secondsPerTick * this.tab.module.ticksPerRow, this.tab.module.patternRows);
 			}
 		});
 
@@ -1042,7 +1048,7 @@ class SettingsPanelRight implements UIComponent<HTMLDivElement> {
 		this.rate.label.title = "The driver refresh rate. Higher value = faster music.";
 
 		// create the tempo box
-		this.ttpr = await makeValueBox([ 1, 32, ], 6, "Ticks/row", 1, (value) => {
+		this.ttpr = await makeValueBox([ 1, 32, ], 6, "Ticks/row", 1, async(value) => {
 			if(this.tab.module) {
 				this.tab.module.ticksPerRow = value;
 				updateBPM();
@@ -1051,7 +1057,10 @@ class SettingsPanelRight implements UIComponent<HTMLDivElement> {
 				this.tab.project.dirty();
 
 				// update playback manager flags
-				return setFlags(this.tab);
+				await setFlags(this.tab);
+
+				// update song seconds
+				await updateSeconds(this.tab.activeRow, this.tab.secondsPerTick * value, this.tab.module.patternRows);
 			}
 		});
 
@@ -1081,6 +1090,9 @@ class SettingsPanelRight implements UIComponent<HTMLDivElement> {
 		// make a title
 		this.ins.label.title = "Set the selected instrument ID";
 		this.element.appendChild(this.ins.element);
+
+		// add time display
+		this.element.appendChild(makeTimeDisplay());
 		return this.element;
 	}
 

@@ -116,7 +116,6 @@ export default class implements Driver {
 		};
 	}
 
-
 	public init(samplerate:number, config:DriverConfig|null, chip:Chip):void {
 		this.chip = chip;
 		this.reset();
@@ -149,12 +148,16 @@ export default class implements Driver {
 
 	private playing = false;
 
+	public secondsPerTick(): number {
+		return 1 / this.playback.rate;
+	}
+
 	/**
 	 * Tick counter for knowing when to process a row
 	 */
 	private tick = -1;
 
-	public buffer(samples:number, advance:(samples:number) => number):void {
+	public buffer(samples:number, advance:(samples:number) => number): void {
 		if(!this.chip) {
 			throw new Error("chip is null");
 		}

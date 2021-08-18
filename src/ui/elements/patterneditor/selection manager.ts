@@ -242,13 +242,15 @@ export class PatternEditorSelectionManager {
 					// disable the window-wide listeners and just use element wide
 					this.disableWindowListeners();
 
-					// actually, the row is being held down, update single selection
-					const x = this.findElementAt(this.getAbsolutePointer({ x: this.parent.padding.left + 1, y: e.offsetY, }));
-					this.single.row = x.row;
-					this.single.pattern = x.pattern;
+					if(!this.parent.tab.blockMovement) {
+						// actually, the row is being held down, update single selection
+						const x = this.findElementAt(this.getAbsolutePointer({ x: this.parent.padding.left + 1, y: e.offsetY, }));
+						this.single.row = x.row;
+						this.single.pattern = x.pattern;
 
-					// tell the scrolling manager to change the current row
-					await this.parent.scrollManager.scrollToSelection(this.single);
+						// tell the scrolling manager to change the current row
+						await this.parent.scrollManager.scrollToSelection(this.single);
+					}
 
 					// disable row hold mode
 					this.rowHold = false;
@@ -264,8 +266,15 @@ export class PatternEditorSelectionManager {
 
 			// check whether to create multi or single selection
 			if(this.arePositionsEqual(...(this.preview as MultiSelection))) {
-				// single mode
-				this.single = (this.preview as MultiSelection)[0];
+				if(!this.parent.tab.blockMovement) {
+					// single mode
+					this.single = (this.preview as MultiSelection)[0];
+
+				} else {
+					// single mode
+					this.single.channel = (this.preview as MultiSelection)[0].channel;
+					this.single.element = (this.preview as MultiSelection)[0].element;
+				}
 
 				// clear the preview selection
 				this.preview = null;
@@ -273,8 +282,10 @@ export class PatternEditorSelectionManager {
 				// tell the scrolling manager to make channels visible
 				await this.parent.scrollManager.ensureVisibleChannel(this.single.channel, this.single.channel);
 
-				// tell the scrolling manager to change the current row
-				await this.parent.scrollManager.scrollToSelection(this.single);
+				if(!this.parent.tab.blockMovement) {
+					// tell the scrolling manager to change the current row
+					await this.parent.scrollManager.scrollToSelection(this.single);
+				}
 
 				// set the selected tab channel
 				await this.parent.tab.setSelectedChannel(this.single.channel);
@@ -282,16 +293,24 @@ export class PatternEditorSelectionManager {
 			} else {
 				// multi mode
 				this.multi = this.preview as MultiSelection;
-				this.single = { ...(this.preview as MultiSelection)[1], };
+
+				if(!this.parent.tab.blockMovement) {
+					this.single = { ...(this.preview as MultiSelection)[1], };
+
+					// tell the scrolling manager to change the current row
+					await this.parent.scrollManager.scrollToSelection(this.multi[1]);
+
+				} else {
+					// special code for when vertical movement is prevented
+					this.single.channel = this.multi[1].channel;
+					this.single.element = this.multi[1].element;
+				}
 
 				// clear the preview selection
 				this.preview = null;
 
 				// tell the scrolling manager to make channels visible
 				await this.parent.scrollManager.ensureVisibleChannel(this.multi[1].channel, this.multi[1].channel);
-
-				// tell the scrolling manager to change the current row
-				await this.parent.scrollManager.scrollToSelection(this.multi[1]);
 
 				// update scrolling anyway
 				this.render();
@@ -845,6 +864,9 @@ export class PatternEditorSelectionManager {
 		} else {
 			// update the scrolled row
 			await this.parent.scrollManager.scrollToSelection(this.single);
+
+			// update the seconds counter
+			await this.parent.eventManager.updateSeconds(this.single.row + (this.single.pattern * this.parent.patternLen));
 		}
 
 		return true;
@@ -960,6 +982,9 @@ export class PatternEditorSelectionManager {
 			const row = Math[y > 0 ? "max" : "min"](this.multi[0].row, this.multi[1].row);
 			this.single.row = row;
 			await this.parent.scrollManager.scrollToRow(row + (this.multi[0].pattern * this.parent.patternLen));
+
+			// update the seconds counter
+			await this.parent.eventManager.updateSeconds(row + (this.single.pattern * this.parent.patternLen));
 		}
 
 		return true;
@@ -985,6 +1010,9 @@ export class PatternEditorSelectionManager {
 
 		if(!this.parent.tab.blockMovement) {
 			this.single.row = this.multi[1].row;
+
+			// update the seconds counter
+			await this.parent.eventManager.updateSeconds(this.single.row + (this.single.pattern * this.parent.patternLen));
 		}
 
 		// update the scrolled row

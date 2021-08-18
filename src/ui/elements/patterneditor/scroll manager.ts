@@ -860,7 +860,7 @@ export class PatternEditorScrollManager {
 	 * @param end The last row to update
 	 * @param channel The channel the update happened in
 	 */
-	public async updateDataRows(pattern:number, start:number, end:number, channel:number): Promise<void> {
+	public async updateDataRows(pattern:number, start:number, end:number, channel:number): Promise<unknown> {
 		// loop through all canvases, finding if any of them contain the requested pattern
 		const array = await Promise.all(this.canvas.map(async(c) => {
 			if(this.parent.tab.matrix.get(channel, c.pattern) === pattern) {

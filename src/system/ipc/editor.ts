@@ -151,9 +151,9 @@ ipcMain.on(ipcEnum.ManagerPattern, (event, channel, index, data) => {
 
 ipcMain.on(ipcEnum.ManagerFlags, (event, token, patternlen, rate, ticksPerRow, matrixlen) => {
 	// post the info
-	workerAsync("module-flags", { patternlen, rate, ticksPerRow, length: matrixlen, }, undefined, () => {
+	workerAsync("module-flags", { patternlen, rate, ticksPerRow, length: matrixlen, }, undefined, (data) => {
 		// tell the UI we finished
-		event.reply(ipcEnum.ManagerFlags, token);
+		event.reply(ipcEnum.ManagerFlags, token, data);
 	});
 });
 

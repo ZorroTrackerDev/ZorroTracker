@@ -69,18 +69,18 @@ async function uploadInitial(matrix:Matrix) {
 /**
  * Function to start playback of the module inside of the tab
  *
- * @param tab The tab that is the target of the playback
  * @param row The absolute row number to start playback in
  * @param repeat Whether to repeat the above mentioned pattern infinitely
+ * @param step Whether to execute playback via the keyboard, or in normal mode
  */
-export async function startPlayback(row:number, repeat:boolean): Promise<boolean> {
+export async function startPlayback(row:number, repeat:boolean, step:boolean): Promise<boolean> {
 	// if init is not done, do not allow playback
 	if(!init) {
 		return false;
 	}
 
 	// initialize playback
-	await _async(ipcEnum.DriverPlay, row, repeat);
+	await _async(ipcEnum.DriverPlay, row, repeat, step);
 	return true;
 }
 
@@ -89,9 +89,9 @@ export async function startPlayback(row:number, repeat:boolean): Promise<boolean
  *
  * @param tab The tab that is the target of the playback
  */
-export function setFlags(tab:Tab): Promise<unknown> {
+export async function setFlags(tab:Tab): Promise<void> {
 	// eslint-disable-next-line max-len
-	return _async(ipcEnum.ManagerFlags, tab.module?.patternRows ?? 64, tab.module?.rate ?? 1, tab.module?.ticksPerRow ?? 1, tab.matrix.matrixlen);
+	tab.secondsPerTick = await _async(ipcEnum.ManagerFlags, tab.module?.patternRows ?? 64, tab.module?.rate ?? 1, tab.module?.ticksPerRow ?? 1, tab.matrix.matrixlen) as number;
 }
 
 /**

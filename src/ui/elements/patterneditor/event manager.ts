@@ -68,12 +68,28 @@ export class PatternEditorEventManager {
 			}
 		}
 	}
+
+	/**
+	 * Function to update the seconds counter. This only applies when not playing.
+	 *
+	 * @param row The row to update seconds counter to
+	 */
+	public updateSeconds(row:number): undefined|Promise<unknown> {
+		if(this.parent.tab.playMode !== PlayMode.Stopped) {
+			return;
+		}
+
+		// update song seconds
+		return updateSeconds(row, this.parent.tab.secondsPerTick * (this.parent.tab.module?.ticksPerRow ?? 1), this.parent.patternLen);
+	}
 }
 
 /**
  * The manager instance itself
  */
 let manager:PatternEditorEventManager|undefined;
+
+const updateSeconds = ZorroEvent.createEvent(ZorroEventEnum.PlaybackSeconds);
 
 // listen to playback position updates
 // eslint-disable-next-line require-await
@@ -85,23 +101,27 @@ ZorroEvent.addListener(ZorroEventEnum.PlaybackPosition, async(event, row) => {
 			manager.parent.scrollManager.updateSongScroll();
 
 		} else if(manager.parent.tab.playMode !== PlayMode.Stopped){
-			// update the song position
-			manager.parent.songRow = row;
-			manager.parent.scrollManager.updateSongRowData();
+			// update song seconds
+			await updateSeconds(row, manager.parent.tab.secondsPerTick * (manager.parent.tab.module?.ticksPerRow ?? 1), manager.parent.patternLen);
 
-			if(manager.parent.tab.follow) {
+			if(!manager.parent.tab.follow) {
+				// update the song position
+				manager.parent.songRow = row;
+				manager.parent.scrollManager.updateSongRowData();
+
+				// update song scrolling
+				manager.parent.scrollManager.updateSongScroll();
+
+			} else {
 				// update current row
 				manager.parent.selectionManager.single.pattern = Math.floor(row / manager.parent.patternLen);
 				manager.parent.selectionManager.single.row = row % manager.parent.patternLen;
 
 				manager.parent.tab.activeRow = row;
+				manager.parent.songRow = -1;
 
 				// redraw all and update scroling
 				await manager.parent.scrollManager.verticalScroll(0);
-
-			} else {
-				// update song scrolling
-				manager.parent.scrollManager.updateSongScroll();
 			}
 		}
 	}
